@@ -8,6 +8,14 @@
 			{{ t('setting.warn-inheritence', 'These values are being overridden by another profile and may not take effect.') }}
 		</div>
 
+		<div
+			v-if="(item.warn_icons || (has_icons && item.warn_icons !== false)) && context.mod_icons === false"
+			class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1"
+		>
+			<span class="ffz-i-info" />
+			{{ t('setting.actions.warn-hidden', 'You currently have Mod Icons turned off in your Twitch chat settings, so some actions might be hidden as a result. Use the settings menu in chat to toggle them.') }}
+		</div>
+
 		<div class="tw-pd-b-1 tw-border-b tw-mg-b-1">
 			<div class="tw-flex tw-flex-wrap tw-align-items-center ffz--inline">
 				{{ t('setting.actions.preview', 'Preview:') }}

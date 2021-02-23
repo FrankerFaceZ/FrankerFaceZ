@@ -25,6 +25,7 @@ export default class SocketClient extends Module {
 		super(...args);
 
 		this.inject('settings');
+		this.inject('experiments');
 
 		this.settings.addUI('socket.info', {
 			path: 'Debugging > Socket >> Info @{"sort": -1000}',
@@ -99,7 +100,14 @@ export default class SocketClient extends Module {
 	}
 
 
-	onEnable() { this.connect() }
+	onEnable() {
+		// For now, stop connecting to the sockets for people using the
+		// API links experiment.
+		if ( this.experiments.getAssignment('api_links') )
+			return;
+
+		this.connect();
+	}
 	onDisable() { this.disconnect() }
 
 

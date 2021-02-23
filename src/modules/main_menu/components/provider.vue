@@ -1,6 +1,6 @@
 <template lang="html">
 	<div class="ffz--provider tw-pd-t-05">
-		<div v-if="not_www" class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
+		<div v-if="not_www" class="ffz--notice tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
 			<h3 class="ffz-i-attention">
 				{{ t('setting.provider.warn-domain.title', 'You\'re far from home!') }}
 			</h3>
@@ -9,12 +9,12 @@
 			</div>
 		</div>
 
-		<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
+		<div class="ffz--notice tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
 			<h3 class="ffz-i-attention">
 				{{ t('setting.provider.warn.title', 'Be careful!') }}
 			</h3>
 			<div>
-				<markdown :source="t('setting.provider.warn.desc', 'Please close any other Twitch tabs before using this tool. It is **recommended to create a backup** before changing your provider, in case anything happens.')" />
+				<markdown :source="t('setting.provider.warn.desc', 'Please close any other Twitch tabs before using this tool. It is **recommended to [create a backup](~data_management.backup_and_restore)** before changing your provider, in case anything happens.')" />
 			</div>
 		</div>
 

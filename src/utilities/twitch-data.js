@@ -159,6 +159,19 @@ export default class TwitchData extends Module {
 	}
 
 	// ========================================================================
+	// Badges
+	// ========================================================================
+
+	async getBadges() {
+		const data = await this.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './data/global-badges.gql')
+		);
+
+		return get('data.badges', data);
+	}
+
+
+	// ========================================================================
 	// Categories
 	// ========================================================================
 

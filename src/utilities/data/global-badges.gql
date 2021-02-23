@@ -1,0 +1,13 @@
+query FFZ_GlobalBadges {
+	badges {
+		id
+		clickURL
+		onClickAction
+		title
+		setID
+		version
+		image1x: imageURL(size: NORMAL)
+		image2x: imageURL(size: DOUBLE)
+		image4x: imageURL(size: QUADRUPLE)
+	}
+}

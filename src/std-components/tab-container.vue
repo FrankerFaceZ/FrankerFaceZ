@@ -82,8 +82,18 @@ export default {
 		}
 	},
 
+	created() {
+		if ( ! this.item._component )
+			this.item._component = this;
+	},
+
 	mounted() {
 		this.markSeen()
+	},
+
+	destroyed() {
+		if ( this.item._component === this )
+			this.item._component = null;
 	},
 
 	methods: {

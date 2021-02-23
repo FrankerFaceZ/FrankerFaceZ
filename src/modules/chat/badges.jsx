@@ -242,7 +242,7 @@ export default class Badges extends Module {
 				path: 'Chat > Badges >> tabs ~> Visibility',
 				title: 'Visibility',
 				component: 'badge-visibility',
-				data: () => this.getSettingsBadges(true)
+				getBadges: cb => this.getSettingsBadges(true, cb)
 			}
 		});
 
@@ -276,13 +276,23 @@ export default class Badges extends Module {
 		this.handleClick = this.handleClick.bind(this);
 	}
 
-	getSettingsBadges(include_addons) {
+	getSettingsBadges(include_addons, callback) {
 		const twitch = [],
 			owl = [],
 			tcon = [],
 			game = [],
 			ffz = [],
 			addon = [];
+
+		const twitch_keys = Object.keys(this.twitch_badges);
+		if ( ! twitch_keys.length && callback ) {
+			const td = this.resolve('site.twitch_data');
+			if ( td )
+				td.getBadges().then(data => {
+					this.updateTwitchBadges(data);
+					callback();
+				});
+		}
 
 		for(const key in this.twitch_badges)
 			if ( has(this.twitch_badges, key) ) {
@@ -333,6 +343,9 @@ export default class Badges extends Module {
 				if ( has(this.badges, key) ) {
 					const badge = this.badges[key],
 						image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image;
+
+					if ( badge.no_visibility )
+						continue;
 
 					(badge.addon ? addon : ffz).push({
 						id: key,
@@ -1070,6 +1083,9 @@ export function fixBadgeData(badge) {
 		return badge;
 
 	// Click Behavior
+	if ( ! badge.clickAction && badge.onClickAction )
+		badge.clickAction = badge.onClickAction;
+
 	if ( badge.clickAction === 'VISIT_URL' && badge.clickURL )
 		badge.click_url = badge.clickURL;
 

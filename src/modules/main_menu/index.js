@@ -216,6 +216,15 @@ export default class MainMenu extends Module {
 	}
 
 
+	mdNavigate(thing) {
+		const path = thing?.dataset?.settingsLink;
+		if ( ! path )
+			return;
+
+		this.requestPage(path);
+	}
+
+
 	updateContext(context) {
 		if ( ! context )
 			context = this._context;
@@ -732,6 +741,7 @@ export default class MainMenu extends Module {
 			can_proxy: context._context.can_proxy,
 			proxied: context._context.proxied,
 			has_update: this.has_update,
+			mod_icons: context.get('context.chat.showModIcons'),
 
 			setProxied: val => {
 				this.use_context = val;
@@ -828,8 +838,9 @@ export default class MainMenu extends Module {
 					const profiles = context.manager.__profiles,
 						ids = this.profiles = context.__profiles.map(profile => profile.id);
 
-					this.proxied = this.context.proxied;
-					this.can_proxy = this.context.can_proxy;
+					_c.proxied = this.context.proxied;
+					_c.can_proxy = this.context.can_proxy;
+					_c.mod_icons = context.get('context.chat.showModIcons');
 
 					for(let i=0; i < profiles.length; i++) {
 						const id = profiles[i].id,

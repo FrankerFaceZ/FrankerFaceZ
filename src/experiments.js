@@ -58,18 +58,17 @@ export default class ExperimentManager extends Module {
 			getExtraTerms: () => {
 				const values = [];
 
-				for(const [key,val] of Object.entries(this.experiments)) {
-					values.push(key);
-					if ( val.name )
-						values.push(val.name);
-					if ( val.description )
-						values.push(val.description);
-				}
+				for(const exps of [this.experiments, this.getTwitchExperiments()]) {
+					if ( ! exps )
+						continue;
 
-				for(const [key, val] of Object.entries(this.getTwitchExperiments())) {
-					values.push(key);
-					if ( val.name )
-						values.push(val.name);
+					for(const [key, val] of Object.entries(exps)) {
+						values.push(key);
+						if ( val.name )
+							values.push(val.name);
+						if ( val.description )
+							values.push(val.description);
+					}
 				}
 
 				return values;

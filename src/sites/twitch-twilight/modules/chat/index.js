@@ -298,7 +298,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Appearance >> Replies',
 				title: 'Style',
-				description: `Twitch's default style adds a floating button to the right and displays a notice above messages that are replies. FrankerFaceZ uses an In-Line Chat Action (that can be removed in Chat > Actions > In-Line) and uses an in-line mention to denote replies.`,
+				description: `Twitch's default style adds a floating button to the right and displays a notice above messages that are replies. FrankerFaceZ uses an In-Line Chat Action (that can be removed in [Chat > Actions > In-Line](~chat.actions.in_line)) and uses an in-line mention to denote replies.`,
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},
@@ -469,7 +469,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Appearance >> Community',
 				title: 'Display Leaderboard',
-				description: 'The leaderboard shows the top cheerers and sub gifters in a channel.\n\nBy default due to a previous implementation, this inherits its value from Chat > Bits and Cheering > Display Bits.',
+				description: 'The leaderboard shows the top cheerers and sub gifters in a channel.\n\nBy default due to a previous implementation, this inherits its value from [Chat > Bits and Cheering > Display Bits](~chat.bits_and_cheering).',
 				component: 'setting-check-box'
 			}
 		});

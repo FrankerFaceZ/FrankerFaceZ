@@ -28,6 +28,7 @@
 				:key="addon.id"
 				:addon="addon"
 				:item="item"
+				:context="context"
 				@navigate="navigate"
 			/>
 		</div>

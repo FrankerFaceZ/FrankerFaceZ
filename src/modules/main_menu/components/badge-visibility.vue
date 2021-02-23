@@ -25,7 +25,7 @@
 		</div>
 
 		<section
-			v-for="sec in data"
+			v-for="sec in badges"
 			:key="sec.title"
 			class="ffz--menu-container tw-border-t"
 		>
@@ -58,7 +58,7 @@
 			</header>
 			<ul class="tw-flex tw-flex-wrap tw-align-content-start">
 				<li
-					v-for="i in sort(sec.badges)"
+					v-for="i in sec.badges"
 					:key="i.id"
 					:class="{default: badgeDefault(i.id)}"
 					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex ffz-checkbox"
@@ -115,11 +115,41 @@
 import SettingMixin from '../setting-mixin';
 import {has} from 'utilities/object';
 
+function sortBadges(items) {
+	return items.sort((a, b) => {
+		const an = a.name.toLowerCase(),
+			bn = b.name.toLowerCase();
+
+		if ( an < bn ) return -1;
+		if ( an > bn ) return 1;
+		return 0;
+	});
+}
+
 export default {
 	mixins: [SettingMixin],
 	props: ['item', 'context'],
 
+	data() {
+		return {
+			badges: []
+		}
+	},
+
+	created() {
+		this.updateBadges();
+	},
+
 	methods: {
+		updateBadges() {
+			const badges = this.item.getBadges(() => this.updateBadges());
+			for(const section of badges) {
+				section.badges = sortBadges(section.badges);
+			}
+
+			this.badges = badges;
+		},
+
 		badgeChecked(id) {
 			return ! this.value[id];
 		},
@@ -143,17 +173,6 @@ export default {
 				this.clear();
 			else
 				this.set(val);
-		},
-
-		sort(items) {
-			return items.sort((a, b) => {
-				const an = a.name.toLowerCase(),
-					bn = b.name.toLowerCase();
-
-				if ( an < bn ) return -1;
-				if ( an > bn ) return 1;
-				return 0;
-			});
 		}
 	}
 }

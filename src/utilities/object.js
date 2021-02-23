@@ -197,7 +197,7 @@ export function deep_equals(object, other, ignore_undefined = false, seen, other
 	const source_keys = Object.keys(object),
 		dest_keys = Object.keys(other);
 
-	if ( ! ignore_undefined && ! array_equals(source_keys, dest_keys) )
+	if ( ! ignore_undefined && ! set_equals(new Set(source_keys), new Set(dest_keys)) )
 		return false;
 
 	for(const key of source_keys)
@@ -216,10 +216,14 @@ export function deep_equals(object, other, ignore_undefined = false, seen, other
 
 
 export function shallow_object_equals(a, b) {
-	if ( typeof a !== 'object' || typeof b !== 'object' || ! array_equals(Object.keys(a), Object.keys(b)) )
+	if ( typeof a !== 'object' || typeof b !== 'object' )
 		return false;
 
-	for(const key in a)
+	const keys = Object.keys(a);
+	if ( ! set_equals(new Set(keys), new Set(Object.keys(b))) )
+		return false;
+
+	for(const key of keys)
 		if ( a[key] !== b[key] )
 			return false;
 

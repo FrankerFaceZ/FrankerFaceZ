@@ -29,7 +29,7 @@ export default class BitsButton extends Module {
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
 				title: 'Show the Get Bits button.',
-				description: 'By default, this inherits its value from Chat > Bits and Cheering > Display Bits',
+				description: 'By default, this inherits its value from [Chat > Bits and Cheering > Display Bits](~chat.bits_and_cheering)',
 				component: 'setting-check-box'
 			},
 

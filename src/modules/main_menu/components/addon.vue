@@ -124,7 +124,7 @@
 <script>
 
 export default {
-	props: ['id', 'addon', 'item'],
+	props: ['id', 'addon', 'item', 'context'],
 
 	data() {
 		return {

@@ -7,6 +7,10 @@
 					:src="current.image"
 					class="ffz--badge-term-image"
 				>
+				<div
+					v-else
+					class="ffz--badge-term-image"
+				/>
 			</div>
 			<div class="tw-flex-grow-1 tw-mg-r-05">
 				<h4 v-if="! editing && ! current" class="ffz-monospace">
@@ -20,6 +24,9 @@
 					v-model="edit_data.v"
 					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				>
+					<option v-if="adding" value="">
+						{{ t('setting.terms.please-select', 'Please select an option.') }}
+					</option>
 					<optgroup
 						v-for="section in badges"
 						:key="section.title"
@@ -69,14 +76,24 @@
 				</div>
 			</div>
 			<div v-if="adding" class="tw-flex-shrink-0">
-				<button class="tw-button" @click="save">
+				<button
+					class="tw-button"
+					:class="! valid && 'tw-button--disabled'"
+					:disabled="! valid"
+					@click="save"
+				>
 					<span class="tw-button__text">
 						{{ t('setting.terms.add-term', 'Add') }}
 					</span>
 				</button>
 			</div>
 			<div v-else-if="editing" class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip__container" @click="save">
+				<button
+					class="tw-button tw-button--text tw-tooltip__container"
+					:class="! valid && 'tw-button--disabled'"
+					:disabled="! valid"
+					@click="save"
+				>
 					<span class="tw-button__text ffz-i-floppy" />
 					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
 						{{ t('setting.save', 'Save') }}
@@ -163,6 +180,10 @@ export default {
 	},
 
 	computed: {
+		valid() {
+			return this.display.v && this.display.v !== '';
+		},
+
 		display() {
 			return this.editing ? this.edit_data : this.term;
 		},
@@ -207,7 +228,8 @@ export default {
 		},
 
 		save() {
-			this.$emit('save', this.edit_data);
+			if ( this.valid )
+				this.$emit('save', this.edit_data);
 			this.cancel();
 		}
 	}

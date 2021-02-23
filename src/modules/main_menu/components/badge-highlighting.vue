@@ -40,7 +40,7 @@ export default {
 	data() {
 		return {
 			default_term: {
-				v: 'broadcaster',
+				v: '',
 				c: '',
 				remove: false
 			}

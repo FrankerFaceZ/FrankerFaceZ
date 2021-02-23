@@ -193,14 +193,24 @@ export default {
 
 			this.markSeen(item);
 
+			if ( item.redirect )
+				return this.navigate(Array.isArray(item.redirect) ? item.redirect : item.redirect.split(/\./g));
+
 			this.currentItem = item;
 			this.restoredItem = true;
+
+			let url;
+			if ( this.exclusive ) {
+				url = new URL(location.href);
+				url.searchParams.set('ffz-settings', item.full_key);
+				url = url.toString();
+			}
 
 			try {
 				window.history.replaceState({
 					...window.history.state,
 					ffzcc: item.full_key
-				}, document.title)
+				}, document.title, url);
 			} catch(err) {
 				/* no-op */
 			}
@@ -251,13 +261,34 @@ export default {
 					break;
 			}
 
-			while(item && item.page)
+			const tabs = [];
+
+			while(item && item.page) {
+				if ( item.tab && item.parent?.tabs )
+					tabs.push([item.parent, item.parent.tabs.indexOf(item)]);
+
 				item = item.parent;
+			}
 
 			if ( ! item )
 				return;
 
 			this.changeItem(item);
+
+			// Asynchronously walk down the tab tree, so that
+			// we can switch every tab correctly.
+			if ( tabs.length ) {
+				const bits = () => {
+					const latest = tabs.pop();
+					if ( latest?.[0]?._component )
+						latest[0]._component.select(latest[1]);
+
+					if ( tabs.length )
+						this.$nextTick(bits);
+				}
+
+				this.$nextTick(bits);
+			}
 		}
 	}
 }

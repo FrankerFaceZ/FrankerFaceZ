@@ -500,7 +500,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Blocked Badges',
+				path: 'Chat > Filtering >> Blocked Badges @{"description": "**Note:** This section is for filtering messages out of chat from users with specific badges. If you wish to hide a badge, go to [Chat > Badges >> Visibility](~chat.badges.tabs.visibility)."}',
 				component: 'badge-highlighting',
 				removable: true,
 				data: () => this.badges.getSettingsBadges()

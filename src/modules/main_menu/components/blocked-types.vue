@@ -36,7 +36,7 @@ export default {
 	data() {
 		return {
 			default_type: {
-				v: 'Hosted'
+				v: ''
 			}
 		}
 	},

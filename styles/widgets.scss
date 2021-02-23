@@ -18,9 +18,28 @@
 .tw-display-inline { display: inline !important }
 .tw-width-auto { width: auto !important }
 
+.ffz--notice {
+	a {
+		color: var(--color-text-overlay-link);
+
+		&:hover, &:hover:focus {
+			color: var(--color-text-overlay-link-hover);
+		}
+
+		&:focus {
+			color: var(--color-text-overlay-link-focus);
+		}
+	}
+}
+
 .ffz-unmatched-item { opacity: 0.25 }
 .ffz-monospace { font-family: monospace }
 .ffz-bottom-100 { bottom: 100% }
+
+.ffz--badge-term-image {
+	height: 3.6rem;
+	width: 3.6rem;
+}
 
 .ffz--autocomplete {
 	.scrollable-area {

@@ -10,6 +10,9 @@
 					v-model="edit_data.v"
 					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				>
+					<option v-if="adding" value="">
+						{{ t('setting.terms.please-select', 'Please select an option.') }}
+					</option>
 					<option
 						v-for="type in types"
 						:key="type"
@@ -20,7 +23,12 @@
 				</select>
 			</div>
 			<div v-if="adding" class="tw-flex-shrink-0">
-				<button class="tw-button" @click="save">
+				<button
+					class="tw-button"
+					:class="! valid && 'tw-button--disabled'"
+					:disabled="! valid"
+					@click="save"
+				>
 					<span class="tw-button__text">
 						{{ t('setting.terms.add-term', 'Add') }}
 					</span>
@@ -94,6 +102,10 @@ export default {
 	},
 
 	computed: {
+		valid() {
+			return this.display.v && this.display.v !== '';
+		},
+
 		display() {
 			return this.editing ? this.edit_data : this.term;
 		}

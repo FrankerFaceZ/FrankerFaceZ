@@ -6,6 +6,7 @@
 
 import Module from 'utilities/module';
 import {deep_equals, has, debounce, deep_copy} from 'utilities/object';
+import {parse as new_parse} from 'utilities/path-parser';
 
 import SettingsProfile from './profile';
 import SettingsContext from './context';
@@ -913,9 +914,14 @@ export default class SettingsManager extends Module {
 }
 
 
-const PATH_SPLITTER = /(?:^|\s*([~>]+))\s*([^~>@]+)\s*(?:@([^~>]+))?/g;
-
 export function parse_path(path) {
+	return new_parse(path);
+}
+
+
+/*const PATH_SPLITTER = /(?:^|\s*([~>]+))\s*([^~>@]+)\s*(?:@([^~>]+))?/g;
+
+export function old_parse_path(path) {
 	const tokens = [];
 	let match;
 
@@ -928,14 +934,20 @@ export function parse_path(path) {
 
 			opts = { key, title, page, tab };
 
-		if ( options )
-			Object.assign(opts, JSON.parse(options));
+		if ( options ) {
+			try {
+				Object.assign(opts, JSON.parse(options));
+			} catch(err) {
+				console.warn('Matched segment:', options);
+				throw err;
+			}
+		}
 
 		tokens.push(opts);
 	}
 
 	return tokens;
-}
+}*/
 
 
 export function format_path_tokens(tokens) {
