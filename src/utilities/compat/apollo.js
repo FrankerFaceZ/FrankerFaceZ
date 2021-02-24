@@ -8,6 +8,7 @@
 import Module from 'utilities/module';
 import {get} from 'utilities/object';
 import merge from 'utilities/graphql';
+import { FFZEvent } from 'utilities/events';
 
 
 /*const BAD_ERRORS = [
@@ -35,6 +36,20 @@ function skip_error(err) {
 }*/
 
 
+export class ApolloEvent extends FFZEvent {
+	constructor(data) {
+		super(data);
+
+		this._changed = false;
+	}
+
+	markChanged() {
+		this._changed = true;
+		return this;
+	}
+}
+
+
 export class GQLError extends Error {
 	constructor(err) {
 		super(`${err.message}; Location: ${err.locations}`);
@@ -49,11 +64,20 @@ export default class Apollo extends Module {
 		this.modifiers = {};
 		this.post_modifiers = {};
 
-		this.inject('..web_munch');
 		this.inject('..fine');
 	}
 
-	async onEnable() {
+	get gqlPrint() {
+		if ( this._gql_print )
+			return this._gql_print;
+
+		const web_munch = this.resolve('site.web_munch'),
+			printer = this._gql_print = web_munch?.getModule?.('gql-printer');
+
+		return printer;
+	}
+
+	onEnable() {
 		// TODO: Come up with a better way to await something existing.
 		let client = this.client;
 
@@ -68,9 +92,6 @@ export default class Apollo extends Module {
 
 		if ( ! client )
 			return new Promise(() => this.onEnable(), 50);
-
-		this.printer = await this.web_munch.findModule('gql-printer');
-		this.gql_print = this.printer && this.printer.print;
 
 		// Register middleware so that we can intercept requests.
 		if ( ! this.client.link || ! this.client.queryManager || ! this.client.queryManager.link ) {
@@ -216,19 +237,25 @@ export default class Apollo extends Module {
 
 	onDisable() {
 		// Remove our references to things.
-		this.client = this.printer = this.gql_print = this.old_link = this.old_qm_dedup = this.old_qm_link = null;
+		this.client = this.printer = this._gql_print = this.old_link = this.old_qm_dedup = this.old_qm_link = null;
 	}
 
 
 	apolloPreFlight(request) {
 		const operation = request.operationName,
-			qm = this.client.queryManager,
+			modifiers = this.modifiers[operation],
+			event = `:request.${operation}`,
+			has_listeners = this.hasListeners(event);
+
+		if ( ! modifiers && ! has_listeners )
+			return;
+
+		const qm = this.client.queryManager,
 			id_map = qm && qm.queryIdsByName,
 			query_map = qm && qm.queries,
 			raw_id = id_map && id_map[operation],
 			id = Array.isArray(raw_id) ? raw_id[0] : raw_id,
-			query = query_map && query_map.get(id),
-			modifiers = this.modifiers[operation];
+			query = query_map && query_map.get(id);
 
 		if ( modifiers ) {
 			for(const mod of modifiers) {
@@ -239,30 +266,43 @@ export default class Apollo extends Module {
 			}
 		}
 
-		this.emit(`:request.${operation}`, request.query, request.variables);
+		let modified = !! modifiers;
 
-		// Wipe the old query data. This is obviously not optimal, but Apollo will
-		// raise an exception otherwise because the query string doesn't match.
+		if ( has_listeners ) {
+			const e = new ApolloEvent({
+				operation,
+				request
+			});
 
-		const q = this.client.queryManager.queryStore.store[id],
-			qs = this.gql_print && this.gql_print(request.query);
+			this.emit(event, e);
+			if ( e._changed )
+				modified = true;
+		}
 
-		if ( q )
-			if ( qs ) {
-				q.queryString = qs;
-				request.query.loc.source.body = qs;
-				request.query.loc.end = qs.length;
+		if ( modified ) {
+			// Wipe the old query data. This is obviously not optimal, but Apollo will
+			// raise an exception otherwise because the query string doesn't match.
 
-				if ( query ) {
-					query.document = request.query;
-					if ( query.observableQuery && query.observableQuery.options )
-						query.observableQuery.options.query = request.query;
+			const q = this.client.queryManager.queryStore.store[id],
+				qs = this.gqlPrint && this.gqlPrint(request.query);
+
+			if ( q )
+				if ( qs ) {
+					q.queryString = qs;
+					request.query.loc.source.body = qs;
+					request.query.loc.end = qs.length;
+
+					if ( query ) {
+						query.document = request.query;
+						if ( query.observableQuery && query.observableQuery.options )
+							query.observableQuery.options.query = request.query;
+					}
+
+				} else {
+					this.log.info('Unable to find GQL Print. Clearing store for query:', operation);
+					this.client.queryManager.queryStore.store[id] = null;
 				}
-
-			} else {
-				this.log.info('Unable to find GQL Print. Clearing store for query:', operation);
-				this.client.queryManager.queryStore.store[id] = null;
-			}
+		}
 	}
 
 	apolloPostFlight(response) {

@@ -174,43 +174,111 @@ export default class Twilight extends BaseSite {
 	}
 
 	getCore() {
-		if ( this._core )
-			return this._core;
+		if ( ! this._core )
+			this._core = this.web_munch.getModule('core');
 
-		let core = this.web_munch.getModule('core-1');
-		if ( core )
-			return this._core = core.o;
-
-		core = this.web_munch.getModule('core-2');
-		if ( core )
-			return this._core = core.p;
-
-		core = this.web_munch.getModule('core-3');
-		if ( core )
-			return this._core = core.q;
+		return this._core;
 	}
 }
 
 
+const CALCULATE_BITS = '_calculateChangedBits';
+
 Twilight.KNOWN_MODULES = {
 	simplebar: n => n.globalObserver && n.initDOMLoadedElements,
 	react: n => n.Component && n.createElement,
-	'core-1': n => n.o && n.o.experiments,
-	'core-2': n => n.p && n.p.experiments,
-	'core-3': n => n.q && n.q.experiments,
+	core: n => {
+		if ( n['$6']?.experiments )
+			return n['$6'];
+		if ( n.p?.experiments )
+			return n.p;
+		if ( n.o?.experiments )
+			return n.o;
+		if ( n.q?.experiments )
+			return n.q;
+	},
 	cookie: n => n && n.set && n.get && n.getJSON && n.withConverter,
 	'extension-service': n => n.extensionService,
-	'chat-types': n => n.b && has(n.b, 'Message') && has(n.b, 'RoomMods'),
-	'gql-printer': n => n !== window && n.print,
+	'chat-types': n => {
+		if ( has(n.b, 'Message') && has(n.b, 'RoomMods') )
+			return {
+				automod: n.a,
+				chat: n.b,
+				message: n.c,
+				mod: n.e
+			};
+
+		if ( has(n.SJ, 'Message') && has(n.SJ, 'RoomMods') )
+			return {
+				automod: n.mT,
+				chat: n.SJ,
+				message: n.Ay,
+				mod: n.Aw
+			};
+	},
+	'gql-printer': n => {
+		if ( n === window )
+			return;
+
+		if ( n.print && n.print.toString().includes('.visit') )
+			return n.print;
+
+		if ( n.S && n.S.toString().includes('.visit') )
+			return n.S;
+	},
 	mousetrap: n => n.bindGlobal && n.unbind && n.handleKey,
-	'algolia-search': n => n.a && n.a.prototype && n.a.prototype.queryTopResults && n.a.prototype.queryForType,
-	highlightstack: n => n.b && has(n.b, '_calculateChangedBits') && n.c && has(n.c, '_calculateChangedBits')
+	'algolia-search': n => {
+		if ( n.a?.prototype?.queryTopResults && n.a.prototype.queryForType )
+			return n.a;
+		if ( n.w9?.prototype?.queryTopResults && n.w9.prototype.queryForType )
+			return n.w9;
+	},
+	highlightstack: n => {
+		if ( has(n.b, CALCULATE_BITS) && has(n.c, CALCULATE_BITS) )
+			return {
+				stack: n.b,
+				dispatch: n.c
+			};
+
+		if ( has(n.fQ, CALCULATE_BITS) && has(n.vJ, CALCULATE_BITS) )
+			return {
+				stack: n.fQ,
+				dispatch: n.vJ
+			};
+	}
 }
+
+const VEND_CHUNK = n => n && n.includes('vendor');
+
+Twilight.KNOWN_MODULES.core.use_result = true;
+//Twilight.KNOWN_MODULES.core.chunks = 'core';
+
+Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES.react.chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES.cookie.chunks = VEND_CHUNK;
+
+Twilight.KNOWN_MODULES['gql-printer'].use_result = true;
+Twilight.KNOWN_MODULES['gql-printer'].chunks = VEND_CHUNK;
+
+Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CHUNK;
+
+const CHAT_CHUNK = n => n && n.includes('chat');
+
+Twilight.KNOWN_MODULES['chat-types'].use_result = true;
+Twilight.KNOWN_MODULES['chat-types'].chunks = CHAT_CHUNK;
+Twilight.KNOWN_MODULES['highlightstack'].use_result = true;
+Twilight.KNOWN_MODULES['highlightstack'].chunks = CHAT_CHUNK;
+
+Twilight.KNOWN_MODULES['algolia-search'].use_result = true;
+Twilight.KNOWN_MODULES['algolia-search'].chunks = 'core';
+
 
 
 Twilight.POPOUT_ROUTES = [
 	'embed-chat',
-	'popout'
+	'popout',
+	'dash-popout-chat',
+	'mod-popout-chat'
 ];
 
 
@@ -233,7 +301,9 @@ Twilight.CHAT_ROUTES = [
 	'squad',
 	'command-center',
 	'dash-stream-manager',
-	'mod-view'
+	'dash-popout-chat',
+	'mod-view',
+	'mod-popout-chat'
 ];
 
 
@@ -243,7 +313,7 @@ Twilight.ROUTE_NAMES = {
 	'dir-all': 'Browse Live Channels',
 	'dash': 'Dashboard',
 	'popout': 'Popout Chat',
-	'dash-chat': 'Dashboard Popout Chat',
+	'dash-popout-chat': 'Dashboard Popout Chat',
 	'user-video': 'Channel Video',
 	'popout-player': 'Popout/Embed Player'
 };
@@ -293,6 +363,7 @@ Twilight.DASH_ROUTES = {
 	'dash-settings-revenue': '/u/:userName/settings/revenue',
 	'dash-extensions': '/u/:userName/extensions',
 	'dash-streaming-tools': '/u/:userName/broadcast',
+	'dash-popout-chat': '/popout/u/:userName/stream-manager/chat',
 };
 
 Twilight.ROUTES = {
@@ -313,7 +384,7 @@ Twilight.ROUTES = {
 	//'dash-automod': '/:userName/dashboard/settings/automod',
 	'event': '/event/:eventName',
 	'popout': '/popout/:userName/chat',
-	'dash-chat': '/popout/:userName/dashboard/live/chat',
+	//'dash-chat': '/popout/:userName/dashboard/live/chat',
 	'video': '/videos/:videoID',
 	'user-video': '/:userName/video/:videoID',
 	'user-videos': '/:userName/videos/:filter?',
@@ -331,7 +402,8 @@ Twilight.ROUTES = {
 	'squad': '/:userName/squad',
 	'command-center': '/:userName/commandcenter',
 	'embed-chat': '/embed/:userName/chat',
-	'mod-view': '/moderator/:userName'
+	'mod-view': '/moderator/:userName',
+	'mod-popout-chat': '/popout/moderator/:userName/chat'
 };
 
 

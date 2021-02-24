@@ -127,7 +127,6 @@ export function createElement(tag, props, ...children) {
 				else if ( BOOLEAN_ATTRS.includes(lk) ) {
 					if ( prop && prop !== 'false' )
 						el.setAttribute(key, prop);
-					console.log('bool-attr', key, prop);
 
 				} else if ( lk.startsWith('aria-') || ATTRS.includes(lk) )
 					el.setAttribute(key, prop);

@@ -193,8 +193,11 @@ export default class Channel extends Module {
 			this.removePanelTips(inst);
 
 		if ( ! inst._ffz_tips ) {
-			inst._ffz_tips = this.resolve('tooltips')._createInstance(el, 'tw-link', 'link');
-			inst._ffz_tip_el = el;
+			const tt = this.resolve('tooltips');
+			if ( tt ) {
+				inst._ffz_tips = tt._createInstance(el, 'tw-link', 'link', tt.getRoot());
+				inst._ffz_tip_el = el;
+			}
 		}
 	}
 

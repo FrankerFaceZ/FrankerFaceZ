@@ -124,6 +124,10 @@ export class EventEmitter {
 		return list ? Array.from(list) : [];
 	}
 
+	hasListeners(event) {
+		return !! this.__listeners[event]
+	}
+
 	emitUnsafe(event, ...args) {
 		let list = this.__listeners[event];
 		if ( ! list )
@@ -446,6 +450,7 @@ export class HierarchicalEventEmitter extends EventEmitter {
 	waitFor(event) { return super.waitFor(this.abs_path(event)) }
 	off(event, fn, ctx) { return super.off(this.abs_path(event), fn, ctx) }
 	listeners(event) { return super.listeners(this.abs_path(event)) }
+	hasListeners(event) { return super.hasListeners(this.abs_path(event)) }
 
 	emit(event, ...args) { return super.emit(this.abs_path(event), ...args) }
 	emitUnsafe(event, ...args) { return super.emitUnsafe(this.abs_path(event), ...args) }

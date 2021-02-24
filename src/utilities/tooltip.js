@@ -45,6 +45,7 @@ export class Tooltip {
 		this.check_modifiers = this.options.check_modifiers;
 
 		this.parent = parent;
+		this.container = this.options.container || this.parent;
 		this.cls = cls;
 
 		if ( this.check_modifiers )
@@ -134,6 +135,7 @@ export class Tooltip {
 
 		this.elements = null;
 		this._onMouseOut = this._onMouseOver = null;
+		this.container = null;
 		this.parent = null;
 	}
 
@@ -367,8 +369,9 @@ export class Tooltip {
 
 		tip._update = () => {
 			if ( tip.popper ) {
-				tip.popper.destroy();
-				tip.popper = new Popper(popper_target, el, pop_opts);
+				tip.popper.update();
+				/*tip.popper.destroy();
+				tip.popper = new Popper(popper_target, el, pop_opts);*/
 			}
 		}
 
@@ -412,7 +415,7 @@ export class Tooltip {
 
 		// Add everything to the DOM and create the Popper instance.
 		tip.popper = new Popper(popper_target, el, pop_opts);
-		this.parent.appendChild(el);
+		this.container.appendChild(el);
 		tip.visible = true;
 
 		if ( opts.onShow )

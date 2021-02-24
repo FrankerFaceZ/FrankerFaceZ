@@ -6,3 +6,7 @@
 .top-nav__menu > div:empty {
 	display: none
 }
+
+.twilight-main > .tw-relative.tw-z-above.tw-bottom-0 {
+	position: absolute !important;
+}

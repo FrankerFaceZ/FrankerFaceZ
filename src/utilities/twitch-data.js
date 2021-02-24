@@ -138,11 +138,9 @@ export default class TwitchData extends Module {
 			return this._search;
 
 		const apollo = this.apollo.client,
-			core = this.site.getCore(),
+			core = this.site.getCore();
 
-			search_module = this.web_munch.getModule('algolia-search'),
-			SearchClient = search_module && search_module.a;
-
+		const SearchClient = this.web_munch.getModule('algolia-search');
 		if ( ! SearchClient || ! apollo || ! core )
 			return null;
 

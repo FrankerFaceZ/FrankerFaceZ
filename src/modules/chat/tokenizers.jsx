@@ -70,7 +70,7 @@ export const Links = {
 				i18n: this.i18n,
 				allow_media: show_images,
 				allow_unsafe: show_unsafe,
-				onload: tip.update
+				onload: () => requestAnimationFrame(() => tip.update())
 			};
 
 			let content;
@@ -214,7 +214,7 @@ Links.tooltip.interactive = function(target) {
 };
 
 Links.tooltip.delayHide = function(target) {
-	if ( ! this.context.get('tooltip.rich-links') || ! this.context.get('tooltip.link-interaction') || target.dataset.isMail === 'true' )
+	if ( ! this.context.get('tooltip.rich-links') || target.dataset.isMail === 'true' )
 		return 0;
 
 	return 64;

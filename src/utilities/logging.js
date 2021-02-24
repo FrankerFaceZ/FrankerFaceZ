@@ -8,6 +8,22 @@ const RAVEN_LEVELS = {
 };
 
 
+function readLSLevel() {
+	const level = localStorage.ffzLogLevel;
+	if ( ! level )
+		return null;
+
+	const upper = level.toUpperCase();
+	if ( Logger[upper] )
+		return Logger[upper];
+
+	if ( /^\d+$/.test(level) )
+		return parseInt(level, 10);
+
+	return null;
+}
+
+
 export class Logger {
 	constructor(parent, name, level, raven) {
 		this.root = parent ? parent.root : this;
@@ -21,7 +37,7 @@ export class Logger {
 
 		this.init = false;
 		this.enabled = true;
-		this.level = level || (parent && parent.level) || Logger.DEFAULT_LEVEL;
+		this.level = level ?? (parent && parent.level) ?? readLSLevel() ?? Logger.DEFAULT_LEVEL;
 		this.raven = raven || (parent && parent.raven);
 
 		this.children = {};
@@ -32,6 +48,10 @@ export class Logger {
 			this.children[name] = new Logger(this, (this.name ? `${this.name}.${name}` : name), level);
 
 		return this.children[name];
+	}
+
+	verbose(...args) {
+		return this.invoke(Logger.VERBOSE, args);
 	}
 
 	debug(...args) {
@@ -79,26 +99,28 @@ export class Logger {
 
 		const message = Array.prototype.slice.call(args);
 
-		if ( this.root.init )
-			this.root.captured_init.push({
-				time: Date.now(),
-				category: this.name,
+		if ( level !== Logger.VERBOSE ) {
+			if ( this.root.init )
+				this.root.captured_init.push({
+					time: Date.now(),
+					category: this.name,
+					message: message.join(' '),
+					level: RAVEN_LEVELS[level] || level
+				});
+
+			this.crumb({
 				message: message.join(' '),
+				category: this.name,
 				level: RAVEN_LEVELS[level] || level
 			});
-
-		this.crumb({
-			message: message.join(' '),
-			category: this.name,
-			level: RAVEN_LEVELS[level] || level
-		});
+		}
 
 		if ( this.name )
 			message.unshift(`%c${this.root.label} [%c${this.name}%c]:%c`, 'color:#755000; font-weight:bold', '', 'color:#755000; font-weight:bold', '');
 		else
 			message.unshift(`%c${this.root.label}:%c`, 'color:#755000; font-weight:bold', '');
 
-		if ( level === Logger.DEBUG )
+		if ( level === Logger.DEBUG || level === Logger.VERBOSE )
 			console.debug(...message);
 
 		else if ( level === Logger.INFO )
@@ -115,14 +137,14 @@ export class Logger {
 	}
 }
 
-
-Logger.DEFAULT_LEVEL = 2;
-
+Logger.VERBOSE = 0;
 Logger.DEBUG = 1;
 Logger.INFO = 2;
 Logger.WARN = 4;
 Logger.WARNING = 4;
 Logger.ERROR = 8;
 Logger.OFF = 99;
+
+Logger.DEFAULT_LEVEL = Logger.INFO;
 
 export default Logger;

@@ -735,27 +735,32 @@ export default class ChatHook extends Module {
 
 
 	async grabTypes() {
-		const ct = await this.web_munch.findModule('chat-types'),
-			changes = [];
+		if ( this.types_loaded )
+			return;
 
-		this.automod_types = ct && ct.a || AUTOMOD_TYPES;
-		this.chat_types = ct && ct.b || CHAT_TYPES;
-		this.message_types = ct && ct.c || MESSAGE_TYPES;
-		this.mod_types = ct && ct.e || MOD_TYPES;
+		const ct = await this.web_munch.findModule('chat-types');
+
+		this.automod_types = ct?.automod || AUTOMOD_TYPES;
+		this.chat_types = ct?.chat || CHAT_TYPES;
+		this.message_types = ct?.message || MESSAGE_TYPES;
+		this.mod_types = ct?.mod || MOD_TYPES;
 
 		if ( ! ct )
 			return;
 
-		if ( ct.a && ! shallow_object_equals(ct.a, AUTOMOD_TYPES) )
+		this.types_loaded = true;
+		const changes = [];
+
+		if ( ! shallow_object_equals(this.automod_types, AUTOMOD_TYPES) )
 			changes.push('AUTOMOD_TYPES');
 
-		if ( ct.b && ! shallow_object_equals(ct.b, CHAT_TYPES) )
+		if ( ! shallow_object_equals(this.chat_types, CHAT_TYPES) )
 			changes.push('CHAT_TYPES');
 
-		if ( ct.c && ! shallow_object_equals(ct.c, MESSAGE_TYPES) )
+		if ( ! shallow_object_equals(this.message_types, MESSAGE_TYPES) )
 			changes.push('MESSAGE_TYPES');
 
-		if ( ct.e && ! shallow_object_equals(ct.e, MOD_TYPES) )
+		if ( ! shallow_object_equals(this.mod_types, MOD_TYPES) )
 			changes.push('MOD_TYPES');
 
 		if ( changes.length )
@@ -1296,15 +1301,15 @@ export default class ChatHook extends Module {
 
 		const t = this,
 			React = this.web_munch.getModule('react'),
-			Stack = this.web_munch.getModule('highlightstack'),
-			createElement = React && React.createElement;
+			createElement = React && React.createElement,
+			StackMod = this.web_munch.getModule('highlightstack');
 
-		if ( ! createElement || ! Stack || ! Stack.b )
+		if ( ! createElement || ! StackMod )
 			return false;
 
 		this.CommunityStackHandler = function() {
-			const stack = React.useContext(Stack.b),
-				dispatch = React.useContext(Stack.c);
+			const stack = React.useContext(StackMod.stack),
+				dispatch = React.useContext(StackMod.dispatch);
 
 			t.community_stack = stack;
 			t.community_dispatch = dispatch;

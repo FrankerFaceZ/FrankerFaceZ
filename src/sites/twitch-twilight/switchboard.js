@@ -16,6 +16,8 @@ export default class Switchboard extends Module {
 		this.inject('site.web_munch');
 		this.inject('site.fine');
 		this.inject('site.router');
+
+		this.tried = new Set;
 	}
 
 
@@ -64,29 +66,49 @@ export default class Switchboard extends Module {
 		const router = await this.awaitRouter();
 
 		this.log.info(`Found Route and Switch with ${da_switch.props.children.length} routes.`);
-		const location = router.props.location.pathname;
+		this.da_switch = da_switch;
+		this.location = router.props.location.pathname;
+		//const location = router.props.location.pathname;
 
-		if ( ! this.loadRoute(da_switch, location, false) )
-			this.loadRoute(da_switch, location, true);
+		this.loadOne();
 	}
 
-	loadRoute(da_switch, location, with_params) {
-		for(const route of da_switch.props.children) {
+	loadOne() {
+		if ( ! this.loadRoute(false) )
+			this.loadRoute(true);
+	}
+
+	waitAndSee() {
+		requestAnimationFrame(() => {
+			if ( this.web_munch._require )
+				return;
+
+			this.log.info('We still need require(). Trying again.');
+			this.loadOne();
+		});
+	}
+
+	loadRoute(with_params) {
+		for(const route of this.da_switch.props.children) {
 			if ( ! route.props || ! route.props.component )
 				continue;
 
 			if ( with_params !== null && with_params !== route.props.path.includes(':') )
 				continue;
 
+			if ( this.tried.has(route.props.path) )
+				continue;
+
 			try {
 				const reg = pathToRegexp(route.props.path);
-				if ( ! reg.exec || reg.exec(location) )
+				if ( ! reg.exec || reg.exec(this.location) )
 					continue;
 
 			} catch(err) {
 				continue;
 			}
 
+			this.tried.add(route.props.path);
 			this.log.info('Found Non-Matching Route', route.props.path);
 
 			const component_class = route.props.component;
@@ -107,6 +129,7 @@ export default class Switchboard extends Module {
 				try {
 					component.props.loader().then(() => {
 						this.log.info('Successfully forced a chunk to load using route', route.props.path)
+						this.waitAndSee();
 					});
 				} catch(err) {
 					this.log.warn('Unexpected result trying to use component pre-loader to force loading of another chunk.');
@@ -126,6 +149,7 @@ export default class Switchboard extends Module {
 				try {
 					component.props.children.props.loader().then(() => {
 						this.log.info('Successfully forced a chunk to load using route', route.props.path)
+						this.waitAndSee();
 					});
 				} catch(err) {
 					this.log.warn('Unexpected result trying to use component loader to force loading of another chunk.');

@@ -112,7 +112,7 @@ export default class TooltipProvider extends Module {
 
 
 	onEnable() {
-		const container = document.querySelector('.sunlight-root') || document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
+		const container = this.getRoot();
 
 		window.addEventListener('fullscreenchange', this.onFSChange);
 
@@ -125,12 +125,17 @@ export default class TooltipProvider extends Module {
 		this.on(':cleanup', this.cleanup);
 	}
 
-	_createInstance(container, klass = 'ffz-tooltip', default_type = 'text') {
+	getRoot() { // eslint-disable-line class-methods-use-this
+		return document.querySelector('.sunlight-root') || document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
+	}
+
+	_createInstance(container, klass = 'ffz-tooltip', default_type = 'text', tip_container) {
 		return new Tooltip(container, klass, {
 			html: true,
 			i18n: this.i18n,
 			live: true,
 			check_modifiers: true,
+			container: tip_container || container,
 
 			delayHide: this.checkDelayHide.bind(this, default_type),
 			delayShow: this.checkDelayShow.bind(this, default_type),

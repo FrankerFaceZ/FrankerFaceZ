@@ -7,7 +7,17 @@
 
 import Module from 'utilities/module';
 import {has} from 'utilities/object';
+import { DEBUG } from '../constants';
 
+const NAMES = [
+	'webpackJsonp',
+	'webpackChunktwitch_twilight'
+];
+
+const HARD_MODULES = [
+	[0, 'vendor'],
+	[1, 'core']
+];
 
 let last_muncher = 0;
 
@@ -20,8 +30,10 @@ export default class WebMunch extends Module {
 		this._original_loader = null;
 		this._known_rules = {};
 		this._require = null;
-		this._module_names = {};
+		this._chunk_names = {};
 		this._mod_cache = {};
+
+		this._known_ids = new Set;
 
 		this.v4 = null;
 
@@ -38,37 +50,47 @@ export default class WebMunch extends Module {
 		if ( this._original_loader )
 			return this.log.warn('Attempted to call hookLoader twice.');
 
-		if ( ! window.webpackJsonp ) {
+		let name;
+		for(const n of NAMES)
+			if ( window[n] ) {
+				name = n;
+				break;
+			}
+
+		if ( ! name ) {
 			if ( attempts > 500 )
 				return this.log.error("Unable to find webpack's loader after two minutes.");
 
 			return setTimeout(this.hookLoader.bind(this, attempts + 1), 250);
 		}
 
-		if ( typeof window.webpackJsonp === 'function' ) {
+		const thing = window[name];
+
+		if ( typeof thing === 'function' ) {
 			// v3
 			this.v4 = false;
-			this._original_loader = window.webpackJsonp;
+			this._original_loader = thing;
 
 			try {
-				window.webpackJsonp = this.webpackJsonpv3.bind(this);
+				window[name] = this.webpackJsonpv3.bind(this);
 			} catch(err) {
 				this.log.warn('Unable to wrap webpackJsonp due to write protection.');
 				return;
 			}
 
-		} else if ( Array.isArray(window.webpackJsonp) ) {
+		} else if ( Array.isArray(thing) ) {
 			// v4
 			this.v4 = true;
-			this._original_loader = window.webpackJsonp.push;
+			this._original_store = thing;
+			this._original_loader = thing.push;
 
 			// Wrap all existing modules in case any of them haven't been required yet.
-			for(const chunk of window.webpackJsonp)
+			for(const chunk of thing)
 				if ( chunk && chunk[1] )
 					this.processModulesV4(chunk[1]);
 
 			try {
-				window.webpackJsonp.push = this.webpackJsonpv4.bind(this);
+				thing.push = this.webpackJsonpv4.bind(this);
 			} catch(err) {
 				this.log.warn('Unable to wrap webpackJsonp (v4) due to write protection.');
 				return;
@@ -84,9 +106,9 @@ export default class WebMunch extends Module {
 
 
 	webpackJsonpv3(chunk_ids, modules) {
-		const names = chunk_ids.map(x => this._module_names[x] || x).join(', ');
-		this.log.debug(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
-		this.log.debug(`Modules: ${Object.keys(modules)}`);
+		const names = chunk_ids.map(x => this._chunk_names[x] || x).join(', ');
+		this.log.verbose(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
+		this.log.verbose(`Modules: ${Object.keys(modules)}`);
 
 		const res = this._original_loader.apply(window, arguments); // eslint-disable-line prefer-rest-params
 
@@ -101,6 +123,7 @@ export default class WebMunch extends Module {
 
 		for(const mod_id in modules)
 			if ( has(modules, mod_id) ) {
+				this._known_ids.add(mod_id);
 				const original_module = modules[mod_id];
 				modules[mod_id] = function(module, exports, require, ...args) {
 					if ( ! t._require && typeof require === 'function' ) {
@@ -127,15 +150,15 @@ export default class WebMunch extends Module {
 	webpackJsonpv4(data) {
 		const chunk_ids = data[0],
 			modules = data[1],
-			names = Array.isArray(chunk_ids) && chunk_ids.map(x => this._module_names[x] || x).join(', ');
+			names = Array.isArray(chunk_ids) && chunk_ids.map(x => this._chunk_names[x] || x).join(', ');
 
-		this.log.debug(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
-		this.log.debug(`Modules: ${Object.keys(modules)}`);
+		this.log.verbose(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
+		this.log.verbose(`Modules: ${Object.keys(modules)}`);
 
 		if ( modules )
 			this.processModulesV4(modules);
 
-		const res = this._original_loader.apply(window.webpackJsonp, arguments); // eslint-disable-line prefer-rest-params
+		const res = this._original_loader.apply(this._original_store, arguments); // eslint-disable-line prefer-rest-params
 		this.emit(':loaded', chunk_ids, names, modules);
 		return res;
 	}
@@ -166,6 +189,54 @@ export default class WebMunch extends Module {
 	}
 
 
+	findDeep(chunks, predicate, multi = true) {
+		if ( chunks && ! Array.isArray(chunks) )
+			chunks = [chunks];
+
+		if ( ! this._require || ! this.v4 || ! this._original_store )
+			return new Error('We do not have webpack');
+
+		const out = [],
+			names = this._chunk_names;
+		for(const [cs, modules] of this._original_store) {
+			if ( chunks ) {
+				let matched = false;
+				for(const c of cs) {
+					if ( chunks.includes(c) || chunks.includes(`${c}`) || (names[c] && chunks.includes(names[c])) ) {
+						matched = true;
+						break;
+					}
+				}
+
+				if ( ! matched )
+					continue;
+			}
+
+			for(const id of Object.keys(modules)) {
+				try {
+					const mod = this._require(id);
+					for(const key in mod)
+						if ( mod[key] && predicate(mod[key]) ) {
+							this.log.info(`Found in key "${key}" of module "${id}" (${this.chunkNameForModule(id)})`);
+							if ( ! multi )
+								return mod;
+							out.push(mod);
+							break;
+						}
+				} catch(err) {
+					this.log.warn('Exception while deep scanning webpack.', err);
+				}
+			}
+		}
+
+		if ( out.length )
+			return out;
+
+		this.log.info('Unable to find deep scan target.');
+		return null;
+	}
+
+
 	getModule(key, predicate) {
 		if ( typeof key === 'function' ) {
 			predicate = key;
@@ -176,7 +247,7 @@ export default class WebMunch extends Module {
 			return this._mod_cache[key];
 
 		const require = this._require;
-		if ( ! require || ! require.c )
+		if ( ! require )
 			return null;
 
 		if ( ! predicate )
@@ -185,17 +256,147 @@ export default class WebMunch extends Module {
 		if ( ! predicate )
 			throw new Error(`no known predicate for locating ${key}`);
 
-		for(const k in require.c)
+		if ( require.c )
+			return this._oldGetModule(key, predicate, require);
+
+		if ( require.m )
+			return this._newGetModule(key, predicate, require);
+	}
+
+	_chunksForModule(id) {
+		if ( ! this.v4 )
+			return null;
+
+		if ( ! this._original_store )
+			return null;
+
+		for(const [chunks, modules] of this._original_store) {
+			if ( modules[id] )
+				return chunks;
+		}
+	}
+
+	chunkNameForModule(id) {
+		const chunks = this._chunksForModule(id);
+		if ( ! chunks )
+			return null;
+
+		for(const chunk of chunks) {
+			const name = this._chunk_names[chunk];
+			if ( name )
+				return name;
+		}
+
+		return null;
+	}
+
+
+	_oldGetModule(key, predicate, require) {
+		if ( ! require || ! require.c )
+			return null;
+
+		let ids;
+		if ( this._original_store && predicate.chunks ) {
+			const chunk_pred = typeof predicate.chunks === 'function';
+			if ( ! chunk_pred && ! Array.isArray(predicate.chunks) )
+				predicate.chunks = [predicate.chunks];
+
+			const chunks = predicate.chunks,
+				names = this._chunk_names;
+
+			ids = [];
+			for(const [cs, modules] of this._original_store) {
+				let matched = false;
+				for(const c of cs) {
+					if ( chunk_pred ? chunks(names[c], c) : (chunks.includes(c) || chunks.includes(String(c)) || (names[c] && chunks.includes(names[c]))) ) {
+						matched = true;
+						break;
+					}
+				}
+
+				if ( matched )
+					ids = [...ids, ...Object.keys(modules)];
+			}
+
+			ids = new Set(ids);
+		} else
+			ids = Object.keys(require.c);
+
+		let checked = 0;
+		for(const k of ids)
 			if ( has(require.c, k) ) {
+				checked++;
 				const module = require.c[k],
 					mod = module && module.exports;
 
-				if ( mod && predicate(mod) ) {
-					if ( key )
-						this._mod_cache[key] = mod;
-					return mod;
+				if ( mod ) {
+					const ret = predicate(mod);
+					if ( ret ) {
+						this.log.debug(`Located module "${key}" in module ${k}${DEBUG ? ` (${this.chunkNameForModule(k)})` : ''} after ${checked} tries`);
+						const out = predicate.use_result ? ret : mod;
+						if ( key )
+							this._mod_cache[key] = out;
+						return out;
+					}
 				}
 			}
+
+		this.log.debug(`Unable to locate module "${key}"`);
+		return null;
+	}
+
+	_newGetModule(key, predicate, require) {
+		if ( ! require )
+			return null;
+
+		let ids = this._known_ids;
+		if ( this._original_store && predicate.chunks ) {
+			const chunk_pred = typeof predicate.chunks === 'function';
+			if ( ! chunk_pred && ! Array.isArray(predicate.chunks) )
+				predicate.chunks = [predicate.chunks];
+
+			const chunks = predicate.chunks,
+				names = this._chunk_names;
+
+			ids = [];
+			for(const [cs, modules] of this._original_store) {
+				let matched = false;
+				for(const c of cs) {
+					if ( chunk_pred ? chunks(names[c], c) : (chunks.includes(c) || chunks.includes(String(c)) || (names[c] && chunks.includes(names[c]))) ) {
+						matched = true;
+						break;
+					}
+				}
+
+				if ( matched )
+					ids = [...ids, ...Object.keys(modules)];
+			}
+
+			ids = new Set(ids);
+		}
+
+		let checked = 0;
+		for(const id of ids) {
+			try {
+				checked++;
+				const mod = require(id);
+				if ( mod ) {
+					const ret = predicate(mod);
+					if ( ret ) {
+						this.log.debug(`Located module "${key}" in module ${id}${DEBUG ? ` (${this.chunkNameForModule(id)})` : ''} after ${checked} tries`);
+						const out = predicate.use_result ? ret : mod;
+						if ( key )
+							this._mod_cache[key] = out;
+						return out;
+					}
+				}
+			} catch(err) {
+				this.log.warn('Unexpected error trying to find module', err);
+			}
+		}
+
+		this.log.debug(`Unable to locate module "${key}"`);
+		return null;
 	}
 
 
@@ -256,10 +457,38 @@ export default class WebMunch extends Module {
 				try {
 					modules = JSON.parse(data[1].replace(/(\d+):/g, '"$1":'))
 				} catch(err) { } // eslint-disable-line no-empty
+
+		} else if ( require.u ) {
+			const builder = require.u.toString(),
+				match = /assets\/"\+({\d+:.*?})/.exec(builder),
+				data = match ? match[1].replace(/([\de]+):/g, (_, m) => {
+					if ( /^\d+e\d+$/.test(m) ) {
+						const bits = m.split('e');
+						m = parseInt(bits[0], 10) * (10 ** parseInt(bits[1], 10));
+					}
+
+					return `"${m}":`;
+				}) : null;
+
+			if ( data )
+				try {
+					modules = JSON.parse(data);
+				} catch(err) { console.log(data); console.log(err) /* no-op */ }
 		}
 
 		if ( modules ) {
-			this._module_names = modules;
+			// Ensure that vendor and core have names.
+			if ( this._original_store ) {
+				for(const [pos, name] of HARD_MODULES) {
+					const mods = this._original_store[pos]?.[0];
+					if ( Array.isArray(mods) )
+						for(const id of mods)
+							if ( typeof id !== 'object' && ! modules[id] )
+								modules[id] = name;
+				}
+			}
+
+			this._chunk_names = modules;
 			this.log.info(`Loaded names for ${Object.keys(modules).length} chunks from require().`)
 		} else
 			this.log.warn(`Unable to find chunk names in require().`);
