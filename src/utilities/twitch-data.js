@@ -77,7 +77,6 @@ export default class TwitchData extends Module {
 		this.site = this.parent;
 
 		this.inject('site.apollo');
-		this.inject('site.web_munch');
 
 		this._waiting_stream_ids = new Map;
 		this._waiting_stream_logins = new Map;
@@ -133,14 +132,20 @@ export default class TwitchData extends Module {
 		return session && session.locale || 'en-US'
 	}
 
-	get searchClient() {
+	async searchClient() {
 		if ( this._search )
 			return this._search;
 
 		const apollo = this.apollo.client,
-			core = this.site.getCore();
+			core = this.site.getCore(),
+			web_munch = this.resolve('web_munch');
 
-		const SearchClient = this.web_munch.getModule('algolia-search');
+		if ( ! web_munch )
+			return null;
+
+		await web_munch.enable();
+
+		const SearchClient = await this.web_munch.findModule('algolia-search');
 		if ( ! SearchClient || ! apollo || ! core )
 			return null;
 
@@ -914,12 +919,14 @@ export default class TwitchData extends Module {
 		if ( ! locale )
 			locale = this.locale;
 
+		const client = await this.searchClient();
+
 		locale = getAlgoliaLanguage(locale);
 
 		let nodes;
 
 		if ( category ) {
-			const data = await this.searchClient.queryForType(
+			const data = await client.queryForType(
 				'stream_tag', query, generateUUID(), {
 					hitsPerPage: 100,
 					faceFilters: [
@@ -935,7 +942,7 @@ export default class TwitchData extends Module {
 			nodes = get('streamTags.hits', data);
 
 		} else {
-			const data = await this.searchClient.queryForType(
+			const data = await client.queryForType(
 				'tag', query, generateUUID(), {
 					hitsPerPage: 100,
 					facetFilters: [

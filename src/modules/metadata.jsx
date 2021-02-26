@@ -136,6 +136,7 @@ export default class Metadata extends Module {
 		this.definitions.uptime = {
 			inherit: true,
 			no_arrow: true,
+			player: true,
 
 			refresh() { return this.settings.get('metadata.uptime') > 0 },
 
@@ -147,8 +148,11 @@ export default class Metadata extends Module {
 					if ( ! created_at )
 						return {};
 
-					created = new Date(created_at);
+					created = created_at;
 				}
+
+				if ( !(created instanceof Date) )
+					created = new Date(created);
 
 				const now = Date.now() - socket._time_drift;
 
@@ -292,6 +296,7 @@ export default class Metadata extends Module {
 			button: true,
 			inherit: true,
 			modview: true,
+			player: true,
 
 			refresh() {
 				return this.settings.get('metadata.player-stats')
@@ -417,10 +422,10 @@ export default class Metadata extends Module {
 					return;
 
 				if ( data.delay > (setting * 2) )
-					return '#ec1313';
+					return data.is_player ? '#f9b6b6' : '#ec1313';
 
 				else if ( data.delay > setting )
-					return '#fc7835';
+					return data.is_player ? '#fcb896' : '#fc7835';
 			},
 
 			tooltip(data) {
@@ -553,17 +558,10 @@ export default class Metadata extends Module {
 			for(const el of channel.InfoBar.instances)
 				channel.updateMetadata(el, keys);
 
-		/*const bar = this.resolve('site.channel_bar');
-		if ( bar ) {
-			for(const inst of bar.ChannelBar.instances)
-				bar.updateMetadata(inst, keys);
-		}
-
-		const legacy_bar = this.resolve('site.legacy_channel_bar');
-		if ( legacy_bar ) {
-			for(const inst of legacy_bar.ChannelBar.instances)
-				legacy_bar.updateMetadata(inst, keys);
-		}*/
+		const player = this.resolve('site.player');
+		if ( player )
+			for(const inst of player.Player.instances)
+				player.updateMetadata(inst, keys);
 	}
 
 	async renderLegacy(key, data, container, timers, refresh_fn) {
@@ -596,6 +594,7 @@ export default class Metadata extends Module {
 			const ref_fn = () => refresh_fn(key);
 			data = {
 				...data,
+				is_player: false,
 				refresh: ref_fn
 			};
 
@@ -793,40 +792,7 @@ export default class Metadata extends Module {
 				if ( order != null )
 					el.style.order = order;
 
-				let subcontainer = container;
-
-				/*if ( button )
-					subcontainer = container.querySelector('.tw-flex:last-child') || container;
-				else
-					subcontainer = container.querySelector('.tw-flex:first-child') || container;*/
-
-				subcontainer.appendChild(el);
-
-				/*if ( def.tooltip ) {
-					const parent = document.body.querySelector('#root>div') || document.body;
-					el.tooltip = new Tooltip(parent, el, {
-						logger: this.log,
-						live: false,
-						html: true,
-						content: () => maybe_call(def.tooltip, this, el._ffz_data),
-						onShow: (t, tip) => el.tip = tip,
-						onHide: () => {
-							el.tip = null;
-							el.tip_content = null;
-						},
-						popper: {
-							placement: 'bottom',
-							modifiers: {
-								flip: {
-									behavior: ['bottom', 'top']
-								},
-								preventOverflow: {
-									boundariesElement: parent
-								}
-							}
-						}
-					});
-				}*/
+				container.appendChild(el);
 
 			} else {
 				stat = el.querySelector('.ffz-stat-text');

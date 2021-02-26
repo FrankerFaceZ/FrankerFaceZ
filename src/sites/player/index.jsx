@@ -90,6 +90,42 @@ export default class PlayerSite extends BaseSite {
 		}));
 	}
 
+	awaitTwitchData() {
+		if ( this.twitch_data )
+			return Promise.resolve(this.twitch_data);
+
+		if ( this._loading_td )
+			return new Promise((s,f) => {
+				this._loading_td.push([s,f]);
+			});
+
+		const loads = this._loading_td = [];
+		return new Promise((s,f) => {
+			loads.push([s,f]);
+
+			Promise.all([
+				import(/* webpackChunkName: 'tdata' */ 'utilities/compat/apollo'),
+				import(/* webpackChunkName: 'tdata' */ 'utilities/twitch-data')
+			]).then(modules => {
+				const Apollo = modules[0].default,
+					TwitchData = modules[1].default;
+
+				this.inject('apollo', Apollo);
+				this.inject('twitch_data', TwitchData);
+
+				this.twitch_data.enable().then(() => {
+					this._loading_td = null;
+					for(const pair of loads)
+						pair[0](this.twitch_data);
+				}).catch(err => {
+					this._loading_td = null;
+					for(const pair of loads)
+						pair[1](err);
+				});
+			})
+		})
+	}
+
 	get data() {
 		return this.DataSource.first;
 	}

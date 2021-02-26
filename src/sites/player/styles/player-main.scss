@@ -1,5 +1,12 @@
 @import 'styles/main.scss';
 
+.video-player__inactive,
+.video-player__overlay[data-controls="false"] {
+	.ffz-metadata-balloon {
+		opacity: 0;
+	}
+}
+
 .ffz--player-pip,
 .ffz--player-reset {
 	&:before {
@@ -25,26 +32,4 @@ div[data-a-target="player-settings-menu"] {
 
 .ffz--cc-button {
 	order: 999;
-}
-
-.ffz--player-meta-tray {
-	display: inline-flex;
-	color: var(--color-text-overlay);
-}
-
-.ffz-stat {
-	background-color: var(--color-background-pill);
-	color: var(--color-text-overlay);
-	display: inline-block;
-	position: relative;
-	line-height: 1;
-	text-align: center;
-	white-space: nowrap;
-	border-radius: 1000px;
-	padding: 0.3rem 0.5rem;
-	font-size: 75%;
-}
-
-.ffz-stat-text {
-	font-variant-numeric: tabular-nums;
 }

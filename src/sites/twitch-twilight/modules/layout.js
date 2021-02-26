@@ -312,7 +312,8 @@ export default class Layout extends Module {
 			this._needs_resize = true;
 		else {
 			for(const inst of this.ResizeDetector.instances) {
-				inst?.props?.onResize?.();
+				inst?.onScroll?.();
+				//inst?.props?.onResize?.();
 			}
 
 			this.emit('site.player:fix-player');

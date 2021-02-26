@@ -15,6 +15,35 @@
 	100% { transform: rotateY(90deg) rotateX(0deg) }
 }
 
+
+.ffz--player-meta-tray {
+	position: absolute;
+	bottom: 100%;
+	margin-bottom: 0.5rem;
+
+	display: inline-flex;
+	color: var(--color-text-overlay);
+
+	.ffz-stat {
+		background-color: var(--color-background-pill);
+		color: var(--color-text-overlay);
+		display: inline-block;
+		position: relative;
+		line-height: 1;
+		text-align: center;
+		white-space: nowrap;
+		border-radius: 1000px;
+		padding: 0.3rem 0.5rem;
+		font-size: 75%;
+	}
+
+	.ffz-stat-text {
+		font-family: "Helvetica Neue",sans-serif;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+
 .ffz-i-t-reset.loading,
 .ffz-i-t-reset-clicked.loading,
 .ffz-i-zreknarf.loading {

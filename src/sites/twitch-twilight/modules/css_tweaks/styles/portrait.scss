@@ -16,6 +16,10 @@
 		height: var(--ffz-player-height) !important;
 	}
 
+	.channel-root__player--with-chat {
+		max-height: var(--ffz-player-height) !important;
+	}
+
 	.persistent-player.persistent-player__border--mini {
 		pointer-events: none;
 

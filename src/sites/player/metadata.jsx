@@ -89,6 +89,60 @@ export default class Metadata extends Module {
 						)}
 					</div>
 				];
+			},
+
+			async popup(data, tip) {
+				const [permission, broadcast_id] = await Promise.all([
+					navigator?.permissions?.query?.({name: 'clipboard-write'}).then(perm => perm?.state).catch(() => null),
+					data.getBroadcastID()
+				]);
+				if ( ! broadcast_id )
+					return (<div>
+						{ this.i18n.t('metadata.uptime-no-id', 'Sorry, we couldn\'t find an archived video for the current broadcast.') }
+					</div>);
+
+				const url = `https://www.twitch.tv/videos/${broadcast_id}${data.uptime > 0 ? `?t=${durationForURL(data.uptime)}` : ''}`,
+					can_copy = permission === 'granted' || permission === 'prompt';
+
+				const copy = can_copy ? e => {
+					navigator.clipboard.writeText(url);
+					e.preventDefault();
+					return false;
+				} : null;
+
+				tip.element.classList.add('ffz-balloon--lg');
+
+				return (<div>
+					<div class="tw-pd-b-1 tw-mg-b-1 tw-border-b tw-semibold">
+						{ this.i18n.t('metadata.uptime.link-to', 'Link to {time}', {
+							time: duration_to_string(data.uptime, false, false, false, false)
+						}) }
+					</div>
+					<div class="tw-flex tw-align-items-center">
+						<input
+							class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input tw-full-width"
+							type="text"
+							value={url}
+							onFocus={e => e.target.select()}
+						/>
+						{can_copy && <div class="tw-relative tw-tooltip__container tw-mg-l-1">
+							<button
+								class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+								aria-label={ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
+								onClick={copy}
+							>
+								<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+									<span class="tw-button-icon__icon">
+										<figure class="ffz-i-docs" />
+									</span>
+								</div>
+							</button>
+							<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up">
+								{ this.i18n.t('metadata.uptime.copy', 'Copy to Clipboard') }
+							</div>
+						</div>}
+					</div>
+				</div>);
 			}
 		}
 
@@ -351,7 +405,7 @@ export default class Metadata extends Module {
 				player.updateMetadata(inst, keys);
 	}
 
-	async render(key, data, container, timers, refresh_fn) {
+	async renderPlayer(key, data, container, timers, refresh_fn) {
 		if ( timers[key] )
 			clearTimeout(timers[key]);
 
@@ -428,7 +482,7 @@ export default class Metadata extends Module {
 
 					if ( def.popup && def.click ) {
 						el = (<div
-							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip__container ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-r-1' : 'tw-mg-r-05 ffz-mg-l--05'}`}
+							class={`tw-align-items-center tw-inline-flex tw-relative tw-tooltip__container ffz-stat tw-stat ffz-stat--fix-padding ${border ? 'tw-mg-r-1' : 'tw-mg-r-05'}`}
 							data-key={key}
 							tip_content={null}
 						>
@@ -455,7 +509,7 @@ export default class Metadata extends Module {
 
 					} else
 						btn = popup = el = (<button
-							class={`ffz-stat tw-align-items-center tw-align-middle ${inherit ? 'ffz-c-text-inherit' : ''} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-regular tw-mg-r-05 ffz-mg-l--05'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
+							class={`ffz-stat tw-align-items-center tw-align-middle ${inherit ? 'ffz-c-text-inherit' : ''} tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-stat--fix-padding ${border ? 'tw-border tw-mg-r-1' : 'tw-regular tw-mg-r-05'}${def.tooltip ? ' ffz-tooltip ffz-tooltip--no-mouse' : ''}`}
 							data-tooltip-type="metadata"
 							data-key={key}
 							tip_content={null}
@@ -514,7 +568,7 @@ export default class Metadata extends Module {
 								el._ffz_destroy = el._ffz_outside = null;
 							};
 
-							const parent = document.fullscreenElement || document.body.querySelector('#root>div') || document.body,
+							const parent = el.closest('.video-player__overlay') || document.fullscreenElement || document.body.querySelector('#root>div') || document.body,
 								tt = el._ffz_popup = new Tooltip(parent, el, {
 									logger: this.log,
 									i18n: this.i18n,

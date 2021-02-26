@@ -9,7 +9,7 @@
 				<h3 class="ffz-i-attention">
 					{{ t('setting.dev-warning', "It's dangerous to go at all.") }}
 				</h3>
-				<markdown :source="t('setting.dev-warning.explain', 'Be careful, this is an advanced feature intended for developer use only. Normal users should steer clear. Adjusting your experiments can have unexpected impacts on your Twitch experience. FrankerFaceZ is not responsible for any issues you encounter as a result of tampering with experiments, and we will not provide support.\n\nIf you\'re sure about this, please type `sv_cheats 1` into the box below and hit enter.')" />
+				<markdown :source="t('setting.dev-warning.explain', 'Be careful, this is an advanced feature intended for developer use only. Normal users should steer clear. Adjusting your experiments can have unexpected impacts on your Twitch experience. FrankerFaceZ is not responsible for any issues you encounter as a result of tampering with experiments, and we will not provide support.\n\nIf you\'re sure about this, please type `{code}` into the box below and hit enter.', {code})" />
 			</div>
 
 			<div class="tw-flex tw-align-items-center">
@@ -214,7 +214,7 @@
 
 <script>
 
-import {has} from 'utilities/object';
+import {has, pick_random} from 'utilities/object';
 
 function matches(exp, filter) {
 	return (exp.key && exp.key.toLowerCase().includes(filter)) ||
@@ -224,12 +224,20 @@ function matches(exp, filter) {
 			));
 }
 
+const CODES = [
+	'sv_cheats 1',
+	'idspispopd',
+	'rosebud',
+	'how do you turn this on'
+];
+
 export default {
 	props: ['item', 'filter'],
 
 	data() {
 		return {
-			experiments_locked: this.item.is_locked(),
+			code: pick_random(CODES),
+			experiments_locked: true, //this.item.is_locked(),
 			sort_by: 1,
 			unused: false,
 			unique_id: this.item.unique_id(),
@@ -301,7 +309,7 @@ export default {
 
 	methods: {
 		enterCode() {
-			if ( this.$refs.code.value !== 'sv_cheats 1' )
+			if ( this.$refs.code.value !== this.code )
 				return;
 
 			this.experiments_locked = false;
