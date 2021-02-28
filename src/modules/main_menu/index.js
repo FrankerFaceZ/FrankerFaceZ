@@ -23,20 +23,16 @@ function format_term(term) {
 // separate the concept of navigation from visible pages.
 
 export default class MainMenu extends Module {
+
 	constructor(...args) {
 		super(...args);
 
-		this.inject('settings');
-		this.inject('i18n');
 		this.inject('site');
-		this.inject('vue');
 
-		this.load_requires = ['vue'];
+		this.inject('vue', true);
 
 		this.Mixin = this.SettingMixin = SettingMixin;
 		this.ProviderMixin = ProviderMixin;
-
-		//this.should_enable = true;
 
 		this.exclusive = false;
 		this.new_seen = false;

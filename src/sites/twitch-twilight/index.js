@@ -30,10 +30,10 @@ export default class Twilight extends BaseSite {
 	constructor(...args) {
 		super(...args);
 
-		this.inject(WebMunch);
+		this.inject(WebMunch, true);
 		this.inject(Fine);
 		this.inject(Elemental);
-		this.inject('router', FineRouter);
+		this.inject('router', FineRouter, true);
 		this.inject(Apollo, false);
 		this.inject(TwitchData);
 		this.inject(Switchboard);
@@ -43,7 +43,7 @@ export default class Twilight extends BaseSite {
 	}
 
 	async populateModules() {
-		const ctx = await require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/);
+		const ctx = await require.context('site/modules', true, /^(?:\.\/)?([^/]+)(?:\/index)?\.jsx?$/);
 		const modules = await this.populate(ctx, this.log);
 		this.log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
 	}
@@ -64,8 +64,6 @@ export default class Twilight extends BaseSite {
 	}
 
 	onEnable() {
-		this.settings = this.resolve('settings');
-
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
 
@@ -134,12 +132,13 @@ export default class Twilight extends BaseSite {
 		const params = new URL(window.location).searchParams;
 		if ( params ) {
 			if ( params.has('ffz-settings') )
-				this.resolve('main_menu').openExclusive();
+				this.resolve('main_menu', true).then(mod => mod.openExclusive());
 
 			if ( params.has('ffz-translate') ) {
-				const translation = this.resolve('translation_ui');
-				translation.dialog.exclusive = true;
-				translation.enable();
+				this.resolve('translation_ui', true).then(mod => {
+					mod.dialog.exclusive = true;
+					mod.enable();
+				});
 			}
 		}
 	}

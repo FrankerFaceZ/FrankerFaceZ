@@ -24,18 +24,17 @@ export default class ChatLine extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.inject('settings');
-		this.inject('i18n');
 		this.inject('chat');
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 		this.inject(RichContent);
-		this.inject('experiments');
 
 		this.inject('chat.actions');
 		this.inject('chat.overrides');
+	}
 
+	async onEnable() {
 		this.ChatLine = this.fine.define(
 			'chat-line',
 			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && !has(n.props, 'hasModPermissions'),
@@ -52,9 +51,7 @@ export default class ChatLine extends Module {
 			'whisper-line',
 			n => n.props && n.props.message && has(n.props, 'reportOutgoingWhisperRendered')
 		)
-	}
 
-	async onEnable() {
 		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('i18n:update', this.updateLines, this);

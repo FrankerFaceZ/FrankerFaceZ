@@ -8,13 +8,12 @@ import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
 
 export default class SubButton extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
-		this.inject('i18n');
-		this.inject('settings');
 		this.inject('site.fine');
 
 		this.settings.add('sub-button.prime-notice', {
@@ -29,15 +28,15 @@ export default class SubButton extends Module {
 
 			changed: () => this.SubButton.forceUpdate()
 		});
+	}
 
+	onEnable() {
 		this.SubButton = this.fine.define(
 			'sub-button',
 			n => n.handleSubMenuAction && n.isUserDataReady,
 			['user', 'user-home', 'user-video', 'user-clip', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		);
-	}
 
-	onEnable() {
 		this.settings.on(':changed:layout.swap-sidebars', () => this.SubButton.forceUpdate())
 
 		this.SubButton.ready((cls, instances) => {

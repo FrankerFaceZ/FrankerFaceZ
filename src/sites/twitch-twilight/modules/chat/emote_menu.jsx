@@ -117,8 +117,6 @@ export default class EmoteMenu extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.inject('settings');
-		this.inject('i18n');
 		this.inject('chat');
 		this.inject('chat.badges');
 		this.inject('chat.emotes');
@@ -249,8 +247,9 @@ export default class EmoteMenu extends Module {
 				component: 'setting-check-box'
 			}
 		});
+	}
 
-
+	async onEnable() {
 		this.EmoteMenu = this.fine.define(
 			'chat-emote-menu',
 			n => n.subscriptionProductHasEmotes,
@@ -261,9 +260,8 @@ export default class EmoteMenu extends Module {
 		this.MenuWrapper = this.fine.wrap('ffz-emote-menu');
 		//this.MenuSection = this.fine.wrap('ffz-menu-section');
 		//this.MenuEmote = this.fine.wrap('ffz-menu-emote');
-	}
 
-	async onEnable() {
+
 		this.on('i18n:update', () => this.EmoteMenu.forceUpdate());
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
@@ -1147,15 +1145,16 @@ export default class EmoteMenu extends Module {
 						win.focus();
 
 				} else {
-					const menu = t.resolve('main_menu');
+					t.resolve('main_menu', true).then(menu => {
+						if ( ! menu )
+							return;
 
-					if ( menu ) {
 						menu.requestPage('chat.emote_menu');
 						if ( menu.showing )
 							return;
-					}
 
-					t.emit('site.menu_button:clicked');
+						t.emit('site.menu_button:clicked');
+					});
 				}
 			}
 

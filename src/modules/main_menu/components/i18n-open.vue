@@ -23,6 +23,8 @@
 import I18N_MD from '../i18n.md';
 
 export default {
+	props: ['item', 'context'],
+
 	data() {
 		return {
 			md: I18N_MD
@@ -31,7 +33,7 @@ export default {
 
 	methods: {
 		open() {
-			window.FrankerFaceZ.get().resolve('i18n').openUI();
+			this.context.getFFZ().resolve('i18n').openUI();
 		}
 	}
 }

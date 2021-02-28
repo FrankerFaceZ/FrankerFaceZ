@@ -15,21 +15,17 @@ import FEATURED_UNFOLLOW from './featured_follow_unfollow.gql';
 
 
 export default class FeaturedFollow extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
 
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.apollo');
-		this.inject('i18n');
 		this.inject('metadata');
-		this.inject('settings');
-		this.inject('socket');
 		this.inject('site.router');
-
-		this.inject('chat');
 
 		this.settings.add('metadata.featured-follow', {
 			default: true,
@@ -47,8 +43,10 @@ export default class FeaturedFollow extends Module {
 		});
 
 		this.follow_data = {};
+	}
 
-		this.socket.on(':command:follow_buttons', data => {
+	onEnable() {
+		this.on('socket:command:follow_buttons', data => {
 			for(const channel_login in data)
 				if ( has(data, channel_login) )
 					this.follow_data[channel_login] = data[channel_login];
@@ -58,16 +56,14 @@ export default class FeaturedFollow extends Module {
 
 			this.metadata.updateMetadata('following');
 		});
-	}
 
-	onEnable() {
 		this.metadata.definitions.following = {
 			order: 150,
 			button: true,
 			modview: true,
 
 			popup: async (data, tip, refresh_fn, add_callback) => {
-				const vue = this.resolve('vue'),
+				const vue = await this.resolve('vue', true),
 					_featured_follow_vue = import(/* webpackChunkName: "featured-follow" */ './featured-follow.vue'),
 					_follows = this.getFollowsForLogin(data.channel.login);
 

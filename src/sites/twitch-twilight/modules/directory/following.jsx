@@ -20,9 +20,6 @@ export default class Following extends SiteModule {
 		this.inject('site.apollo');
 		this.inject('site.css_tweaks');
 
-		this.inject('i18n');
-		this.inject('settings');
-
 		this.settings.add('directory.following.group-hosts', {
 			default: true,
 

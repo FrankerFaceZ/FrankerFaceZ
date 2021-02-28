@@ -11,7 +11,6 @@ export default class ViewerCards extends Module {
 		super(...args);
 
 		this.inject('chat');
-		this.inject('settings');
 		this.inject('site.css_tweaks');
 		this.inject('site.fine');
 
@@ -42,14 +41,15 @@ export default class ViewerCards extends Module {
 					return ctx.get('chat.viewer-cards.color');
 			}
 		})
+	}
 
+	onEnable() {
 		this.ViewerCard = this.fine.define(
 			'chat-viewer-card',
 			n => n.trackViewerCardOpen && n.onWhisperButtonClick
 		);
-	}
 
-	onEnable() {
+
 		this.chat.context.on('changed:chat.viewer-cards.highlight-chat', this.refreshStyle, this);
 		this.chat.context.on('changed:chat.viewer-cards.color', this.refreshStyle, this);
 		this.on('..:update-colors', this.refreshStyle, this);

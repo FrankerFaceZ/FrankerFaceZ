@@ -522,7 +522,8 @@ export default class Fine extends Module {
 
 
 	_stopWaiting() {
-		this.log.info('Stopping MutationObserver.');
+		if ( this._waiting_timer )
+			this.log.info('Stopping MutationObserver.');
 
 		if ( this._observer )
 			this._observer.disconnect();

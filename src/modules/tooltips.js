@@ -15,10 +15,6 @@ export default class TooltipProvider extends Module {
 		super(...args);
 		this.types = {};
 
-		this.inject('i18n');
-
-		this.should_enable = true;
-
 		this.types.json = target => {
 			const title = target.dataset.title;
 			return [

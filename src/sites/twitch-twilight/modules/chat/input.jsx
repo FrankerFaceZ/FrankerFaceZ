@@ -19,8 +19,6 @@ export default class Input extends Module {
 		this.inject('chat.actions');
 		this.inject('chat.emotes');
 		this.inject('chat.emoji');
-		this.inject('i18n');
-		this.inject('settings');
 
 		this.inject('site.fine');
 		this.inject('site.web_munch');
@@ -83,34 +81,6 @@ export default class Input extends Module {
 			}
 		});
 
-
-		// Components
-
-		this.ChatInput = this.fine.define(
-			'chat-input',
-			n => n && n.setLocalChatInputRef && n.setLocalAutocompleteInputRef,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.EmoteSuggestions = this.fine.define(
-			'tab-emote-suggestions',
-			n => n && n.getMatchedEmotes,
-			Twilight.CHAT_ROUTES
-		);
-
-
-		this.MentionSuggestions = this.fine.define(
-			'tab-mention-suggestions',
-			n => n && n.getMentions && n.renderMention,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.CommandSuggestions = this.fine.define(
-			'tab-cmd-suggestions',
-			n => n && n.getMatches && n.doesCommandMatchTerm,
-			Twilight.CHAT_ROUTES
-		);
-
 		// Implement Twitch's unfinished emote usage object for prioritizing sorting
 		this.EmoteUsageCount = {
 			TriHard: 196568036,
@@ -140,6 +110,34 @@ export default class Input extends Module {
 	}
 
 	async onEnable() {
+		// Components
+
+		this.ChatInput = this.fine.define(
+			'chat-input',
+			n => n && n.setLocalChatInputRef && n.setLocalAutocompleteInputRef,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.EmoteSuggestions = this.fine.define(
+			'tab-emote-suggestions',
+			n => n && n.getMatchedEmotes,
+			Twilight.CHAT_ROUTES
+		);
+
+
+		this.MentionSuggestions = this.fine.define(
+			'tab-mention-suggestions',
+			n => n && n.getMentions && n.renderMention,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.CommandSuggestions = this.fine.define(
+			'tab-cmd-suggestions',
+			n => n && n.getMatches && n.doesCommandMatchTerm,
+			Twilight.CHAT_ROUTES
+		);
+
+
 		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.actions.room-above', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.tab-complete.emotes-without-colon', enabled => {

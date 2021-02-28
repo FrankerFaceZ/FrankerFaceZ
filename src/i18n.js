@@ -424,11 +424,12 @@ export class TranslationManager extends Module {
 			this.emit(':update');
 		}
 
-		const mod = this.resolve('translation_ui');
-		if ( popout )
-			mod.openPopout();
-		else
-			mod.enable();
+		this.resolve('translation_ui', true).then(mod => {
+			if ( popout )
+				mod.openPopout();
+			else
+				return mod.enable();
+		});
 	}
 
 

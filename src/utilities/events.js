@@ -21,6 +21,10 @@ String.prototype.toSnakeCase = function() {
 		.toLowerCase();
 }
 
+export function nameFromPath(path) {
+	const idx = path.lastIndexOf('.');
+	return idx === -1 ? path : path.slice(idx + 1);
+}
 
 export class EventEmitter {
 	constructor() {
@@ -370,6 +374,9 @@ export class HierarchicalEventEmitter extends EventEmitter {
 		super();
 
 		this.name = name || (this.constructor.name || '').toSnakeCase();
+		if ( this.name.includes('.') )
+			throw new Error('name cannot include path separator (.)');
+
 		this.parent = parent;
 
 		if ( parent ) {
@@ -399,13 +406,21 @@ export class HierarchicalEventEmitter extends EventEmitter {
 	// Public Methods
 	// ========================================================================
 
-	abs_path(path) {
+	abs_path(path, origin) {
 		if ( typeof path !== 'string' || ! path.length )
 			throw new TypeError('path must be a non-empty string');
 
+		let parts;
+		if ( origin ) {
+			if ( Array.isArray(origin) )
+				parts = origin;
+			else
+				parts = origin.split('.');
+		} else
+			parts = this.__path_parts;
+
+		const depth = parts.length;
 		let i = 0, chr;
-		const parts = this.__path_parts,
-			depth = parts.length;
 
 		do {
 			chr = path.charAt(i);
@@ -419,8 +434,19 @@ export class HierarchicalEventEmitter extends EventEmitter {
 		} while ( ++i < path.length );
 
 		const event = chr === ':';
-		if ( i === 0 )
-			return event && this.__path ? `${this.__path}${path}` : path;
+		if ( i === 0 ) {
+			if ( event ) {
+				if ( origin ) {
+					if ( Array.isArray(origin) )
+						return `${origin.join('.')}${path}`;
+					return `${origin}${path}`;
+
+				} else if ( this.__path )
+					return `${this.__path}${path}`;
+			}
+
+			return path;
+		}
 
 		const prefix = parts.slice(0, depth - (i-1)).join('.'),
 			remain = path.slice(i);

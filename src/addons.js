@@ -20,12 +20,7 @@ export default class AddonManager extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
-		this.inject('settings');
-		this.inject('i18n');
-
-		this.load_requires = ['settings'];
+		this.__module_data.addons = this.__data;
 
 		this.has_dev = false;
 		this.reload_required = false;
@@ -257,7 +252,7 @@ export default class AddonManager extends Module {
 
 		await this.loadAddon(id);
 
-		const module = this.resolve(`addon.${id}`);
+		const module = await this.resolve(`addon.${id}`, true);
 		if ( module && ! module.enabled )
 			await module.enable();
 	}
@@ -267,7 +262,7 @@ export default class AddonManager extends Module {
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
 
-		let module = this.resolve(`addon.${id}`);
+		let module = await this.resolve(`addon.${id}`, true);
 		if ( module ) {
 			if ( ! module.loaded )
 				await module.load();
@@ -284,9 +279,9 @@ export default class AddonManager extends Module {
 		}));
 
 		// Error if this takes more than 5 seconds.
-		await timeout(this.waitFor(`addon.${id}:instanced`), 5000);
+		//await timeout(this.waitFor(`addon.${id}:instanced`), 5000);
 
-		module = this.resolve(`addon.${id}`);
+		module = await this.resolve(`addon.${id}`, true);
 		if ( module && ! module.loaded )
 			await module.load();
 

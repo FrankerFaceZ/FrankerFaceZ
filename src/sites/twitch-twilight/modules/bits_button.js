@@ -8,12 +8,11 @@ import Module from 'utilities/module';
 
 
 export default class BitsButton extends Module {
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
-		this.inject('settings');
 		this.inject('site.fine');
 
 		this.settings.add('layout.display-bits-button', {
@@ -35,14 +34,14 @@ export default class BitsButton extends Module {
 
 			changed: () => this.BitsButton.forceUpdate()
 		});
+	}
 
+	onEnable() {
 		this.BitsButton = this.fine.define(
 			'bits-button',
 			n => n.toggleBalloon && n.toggleShowTutorial
 		);
-	}
 
-	onEnable() {
 		this.BitsButton.ready(cls => {
 			const t = this,
 				old_render = cls.prototype.render;

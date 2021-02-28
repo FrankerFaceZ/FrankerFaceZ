@@ -16,15 +16,6 @@ export default class Game extends SiteModule {
 		this.inject('site.fine');
 		this.inject('site.apollo');
 
-		this.inject('i18n');
-		this.inject('settings');
-
-		this.GameHeader = this.fine.define(
-			'game-header',
-			n => n.props && n.props.data && n.getBannerImage && n.getDirectoryCountAndTags,
-			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
-		);
-
 		this.settings.addUI('directory.game.blocked-games', {
 			path: 'Directory > Categories @{"description": "Please note that due to limitations in Twitch\'s website, names here must be formatted exactly as displayed in your client. For best results, you can block or unblock categories directly from directory pages."} >> Blocked',
 			component: 'game-list-editor',
@@ -41,6 +32,12 @@ export default class Game extends SiteModule {
 	}
 
 	onEnable() {
+		this.GameHeader = this.fine.define(
+			'game-header',
+			n => n.props && n.props.data && n.getBannerImage && n.getDirectoryCountAndTags,
+			['dir-game-index', 'dir-community', 'dir-game-videos', 'dir-game-clips', 'dir-game-details']
+		);
+
 		this.GameHeader.on('mount', this.updateGameHeader, this);
 		this.GameHeader.on('update', this.updateGameHeader, this);
 		this.GameHeader.on('unmount', () => {

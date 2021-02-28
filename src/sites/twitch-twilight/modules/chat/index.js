@@ -155,17 +155,13 @@ const MISBEHAVING_EVENTS = [
 
 
 export default class ChatHook extends Module {
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
 		this.colors = new ColorAdjuster;
 		this.inverse_colors = new ColorAdjuster;
-
-		this.inject('settings');
-		this.inject('i18n');
-		this.inject('experiments');
 
 		this.inject('site');
 		this.inject('site.router');
@@ -183,91 +179,9 @@ export default class ChatHook extends Module {
 		this.inject(Input);
 		this.inject(ViewerCards);
 
-		this.ChatService = this.fine.define(
-			'chat-service',
-			n => n.join && n.connectHandlers,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.ChatBuffer = this.fine.define(
-			'chat-buffer',
-			n => n.updateHandlers && n.delayedMessageBuffer && n.handleMessage,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.ChatController = this.fine.define(
-			'chat-controller',
-			n => n.hostingHandler && n.onRoomStateUpdated,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.ChatContainer = this.fine.define(
-			'chat-container',
-			n => n.closeViewersList && n.onChatInputFocus,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.ChatBufferConnector = this.fine.define(
-			'chat-buffer-connector',
-			n => n.clearBufferHandle && n.syncBufferedMessages,
-			Twilight.CHAT_ROUTES
-		);
 
 		this.joined_raids = new Set;
 
-		this.RaidController = this.fine.define(
-			'raid-controller',
-			n => n.handleLeaveRaid && n.handleJoinRaid,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.InlineCallout = this.fine.define(
-			'inline-callout',
-			n => n.showCTA && n.toggleContextMenu && n.actionClick,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.PinnedCallout = this.fine.define(
-			'pinned-callout',
-			n => n.getCalloutTitle && n.buildCalloutProps && n.pin,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.CalloutSelector = this.fine.define(
-			'callout-selector',
-			n => n.selectCalloutComponent && n.props && n.props.callouts,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.PointsButton = this.fine.define(
-			'points-button',
-			n => n.renderIcon && n.renderFlame && n.handleIconAnimationComplete,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.PointsClaimButton = this.fine.define(
-			'points-claim-button',
-			n => n.getClaim && n.onClick && n.props && n.props.claimCommunityPoints,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.CommunityChestBanner = this.fine.define(
-			'community-chest-banner',
-			n => n.getLastGifterText && n.getBannerText && has(n, 'finalCount'),
-			Twilight.CHAT_ROUTES
-		);
-
-		this.PointsInfo = this.fine.define(
-			'points-info',
-			n => n.pointIcon !== undefined && n.pointName !== undefined,
-			Twilight.CHAT_ROUTES
-		);
-
-		this.GiftBanner = this.fine.define(
-			'gift-banner',
-			n => n.getBannerText && n.onGiftMoreClick,
-			Twilight.CHAT_ROUTES
-		);
 
 		// Settings
 
@@ -769,6 +683,90 @@ export default class ChatHook extends Module {
 
 
 	onEnable() {
+		this.ChatService = this.fine.define(
+			'chat-service',
+			n => n.join && n.connectHandlers,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatBuffer = this.fine.define(
+			'chat-buffer',
+			n => n.updateHandlers && n.delayedMessageBuffer && n.handleMessage,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatController = this.fine.define(
+			'chat-controller',
+			n => n.hostingHandler && n.onRoomStateUpdated,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatContainer = this.fine.define(
+			'chat-container',
+			n => n.closeViewersList && n.onChatInputFocus,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatBufferConnector = this.fine.define(
+			'chat-buffer-connector',
+			n => n.clearBufferHandle && n.syncBufferedMessages,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.RaidController = this.fine.define(
+			'raid-controller',
+			n => n.handleLeaveRaid && n.handleJoinRaid,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.InlineCallout = this.fine.define(
+			'inline-callout',
+			n => n.showCTA && n.toggleContextMenu && n.actionClick,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PinnedCallout = this.fine.define(
+			'pinned-callout',
+			n => n.getCalloutTitle && n.buildCalloutProps && n.pin,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.CalloutSelector = this.fine.define(
+			'callout-selector',
+			n => n.selectCalloutComponent && n.props && n.props.callouts,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PointsButton = this.fine.define(
+			'points-button',
+			n => n.renderIcon && n.renderFlame && n.handleIconAnimationComplete,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PointsClaimButton = this.fine.define(
+			'points-claim-button',
+			n => n.getClaim && n.onClick && n.props && n.props.claimCommunityPoints,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.CommunityChestBanner = this.fine.define(
+			'community-chest-banner',
+			n => n.getLastGifterText && n.getBannerText && has(n, 'finalCount'),
+			Twilight.CHAT_ROUTES
+		);
+
+		this.PointsInfo = this.fine.define(
+			'points-info',
+			n => n.pointIcon !== undefined && n.pointName !== undefined,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.GiftBanner = this.fine.define(
+			'gift-banner',
+			n => n.getBannerText && n.onGiftMoreClick,
+			Twilight.CHAT_ROUTES
+		);
+
 		this.on('site.web_munch:loaded', this.grabTypes);
 		this.on('site.web_munch:loaded', this.defineClasses);
 		this.grabTypes();

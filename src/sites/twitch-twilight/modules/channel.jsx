@@ -14,13 +14,11 @@ const USER_PAGES = ['user', 'user-home', 'user-about', 'video', 'user-video', 'u
 
 export default class Channel extends Module {
 
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
-		this.inject('i18n');
-		this.inject('settings');
 		this.inject('site.apollo');
 		this.inject('site.css_tweaks');
 		this.inject('site.elemental');
@@ -30,7 +28,6 @@ export default class Channel extends Module {
 		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
-
 
 		this.settings.add('channel.panel-tips', {
 			default: false,
@@ -88,14 +85,14 @@ export default class Channel extends Module {
 			},
 			changed: val => ! val && this.InfoBar.each(el => this.updateBar(el))
 		});
+	}
 
-
+	onEnable() {
 		this.ChannelPanels = this.fine.define(
 			'channel-panels',
 			n => n.layoutMasonry && n.updatePanelOrder && n.onExtensionPoppedOut,
 			USER_PAGES
 		);
-
 
 		this.ChannelTrailer = this.elemental.define(
 			'channel-trailer', '.channel-trailer-player__wrapper',
@@ -127,9 +124,7 @@ export default class Channel extends Module {
 
 		this.apollo.registerModifier('UseHosting', strip_host, false);
 		this.apollo.registerModifier('PlayerTrackingContextQuery', strip_host, false);
-	}
 
-	onEnable() {
 		this.updateChannelColor();
 
 		this.css_tweaks.toggle('panel-links', this.settings.get('channel.panel-tips'));

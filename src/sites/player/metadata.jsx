@@ -143,7 +143,7 @@ export default class Metadata extends Module {
 
 			setup() {
 				const Player = this.resolve('site.player'),
-					player = Player.current;
+					player = Player?.current;
 
 				let stats;
 
@@ -241,7 +241,7 @@ export default class Metadata extends Module {
 
 			click() {
 				const Player = this.resolve('site.player'),
-					ui = Player.playerUI;
+					ui = Player?.playerUI;
 
 				if ( ! ui )
 					return;
@@ -400,7 +400,7 @@ export default class Metadata extends Module {
 
 	updateMetadata(keys) {
 		const player = this.resolve('site.player');
-		if ( player )
+		if ( player?.Player )
 			for(const inst of player.Player.instances)
 				player.updateMetadata(inst, keys);
 	}

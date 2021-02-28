@@ -9,11 +9,12 @@ import {debounce} from 'utilities/object';
 
 
 export default class ModView extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.inject('i18n');
-		this.inject('settings');
 		this.inject('site.channel');
 		this.inject('site.css_tweaks');
 		this.inject('site.fine');
@@ -23,11 +24,14 @@ export default class ModView extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
-		this.should_enable = true;
-
 		this._cached_channel = null;
 		this._cached_id = null;
 
+		this.checkRoot = debounce(this.checkRoot, 250);
+		this.checkBar = debounce(this.checkBar, 250);
+	}
+
+	onEnable() {
 		this.Root = this.elemental.define(
 			'mod-view-root', '.moderation-view-page',
 			['mod-view'],
@@ -40,11 +44,6 @@ export default class ModView extends Module {
 			{childNodes: true, subtree: true}, 1, 30000, false
 		);
 
-		this.checkRoot = debounce(this.checkRoot, 250);
-		this.checkBar = debounce(this.checkBar, 250);
-	}
-
-	onEnable() {
 		this.Root.on('mount', this.updateRoot, this);
 		this.Root.on('mutate', this.updateRoot, this);
 		this.Root.on('unmount', this.removeRoot, this);

@@ -19,45 +19,15 @@ export const PLAYER_ROUTES = [
 })();*/
 
 export default class Player extends PlayerBase {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
 
 		// Dependency Injection
 		this.inject('site.router');
 		this.inject('metadata');
-
-		// React Components
-
-		/*this.SquadStreamBar = this.fine.define(
-			'squad-stream-bar',
-			n => n.shouldRenderSquadBanner && n.props && n.props.triggerPlayerReposition,
-			PLAYER_ROUTES
-		);*/
-
-		/*this.PersistentPlayer = this.fine.define(
-			'persistent-player',
-			n => n.state && n.state.playerStyles
-		);*/
-
-		this.Player = this.fine.define(
-			'highwind-player',
-			n => n.setPlayerActive && n.props?.playerEvents && n.props?.mediaPlayerInstance,
-			PLAYER_ROUTES
-		);
-
-		this.TheatreHost = this.fine.define(
-			'theatre-host',
-			n => n.toggleTheatreMode && n.props && n.props.onTheatreModeEnabled,
-			['user', 'user-home', 'video', 'user-video', 'user-clip']
-		);
-
-		this.PlayerSource = this.fine.define(
-			'player-source',
-			n => n.setSrc && n.setInitialPlaybackSettings,
-			PLAYER_ROUTES
-		);
 	}
 
 
@@ -157,6 +127,37 @@ export default class Player extends PlayerBase {
 
 
 	async onEnable() {
+		// React Components
+
+		/*this.SquadStreamBar = this.fine.define(
+			'squad-stream-bar',
+			n => n.shouldRenderSquadBanner && n.props && n.props.triggerPlayerReposition,
+			PLAYER_ROUTES
+		);*/
+
+		/*this.PersistentPlayer = this.fine.define(
+			'persistent-player',
+			n => n.state && n.state.playerStyles
+		);*/
+
+		this.Player = this.fine.define(
+			'highwind-player',
+			n => n.setPlayerActive && n.props?.playerEvents && n.props?.mediaPlayerInstance,
+			PLAYER_ROUTES
+		);
+
+		this.TheatreHost = this.fine.define(
+			'theatre-host',
+			n => n.toggleTheatreMode && n.props && n.props.onTheatreModeEnabled,
+			['user', 'user-home', 'video', 'user-video', 'user-clip']
+		);
+
+		this.PlayerSource = this.fine.define(
+			'player-source',
+			n => n.setSrc && n.setInitialPlaybackSettings,
+			PLAYER_ROUTES
+		);
+
 		await super.onEnable();
 
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));

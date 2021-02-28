@@ -33,16 +33,16 @@ const ACCENT_COLORS = {
 
 
 export default class ThemeEngine extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-		this.inject('settings');
 
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.css_tweaks');
 		this.inject('site.router');
-
-		this.should_enable = true;
 
 		// Font
 

@@ -13,13 +13,11 @@ import Module from 'utilities/module';
 
 
 export default class VideoChatHook extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
-
-		this.inject('i18n');
-		this.inject('settings');
 
 		this.inject('site');
 		this.inject('site.router');
@@ -29,24 +27,6 @@ export default class VideoChatHook extends Module {
 		this.inject('chat');
 		this.inject('site.chat', undefined, false, 'site_chat');
 		this.inject('site.chat.chat_line.rich_content');
-
-		this.VideoChatController = this.fine.define(
-			'video-chat-controller',
-			n => n.onMessageScrollAreaMount && n.createReply,
-			['user-video', 'user-clip', 'video']
-		);
-
-		this.VideoChatMenu = this.fine.define(
-			'video-chat-menu',
-			n => n.onToggleMenu && n.getContent && n.props && has(n.props, 'isExpandedLayout'),
-			['user-video', 'user-clip', 'video']
-		);
-
-		this.VideoChatLine = this.fine.define(
-			'video-chat-line',
-			n => n.onReplyClickHandler && n.shouldFocusMessage,
-			['user-video', 'user-clip', 'video']
-		);
 
 		// Settings
 
@@ -72,6 +52,24 @@ export default class VideoChatHook extends Module {
 
 
 	async onEnable() {
+		this.VideoChatController = this.fine.define(
+			'video-chat-controller',
+			n => n.onMessageScrollAreaMount && n.createReply,
+			['user-video', 'user-clip', 'video']
+		);
+
+		this.VideoChatMenu = this.fine.define(
+			'video-chat-menu',
+			n => n.onToggleMenu && n.getContent && n.props && has(n.props, 'isExpandedLayout'),
+			['user-video', 'user-clip', 'video']
+		);
+
+		this.VideoChatLine = this.fine.define(
+			'video-chat-line',
+			n => n.onReplyClickHandler && n.shouldFocusMessage,
+			['user-video', 'user-clip', 'video']
+		);
+
 		this.chat.context.on('changed:chat.video-chat.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.video-chat.timestamps', this.updateLines, this);
 		this.on('chat:updated-lines', this.updateLines, this);

@@ -25,10 +25,11 @@ const DIR_ROUTES = ['front-page', 'dir', 'dir-community', 'dir-community-index',
 
 
 export default class Directory extends SiteModule {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
 
 		this.inject('site.elemental');
 		this.inject('site.fine');
@@ -36,22 +37,8 @@ export default class Directory extends SiteModule {
 		this.inject('site.css_tweaks');
 		this.inject('site.twitch_data');
 
-		this.inject('i18n');
-		this.inject('settings');
-
 		//this.inject(Following);
 		this.inject(Game);
-
-		this.DirectoryCard = this.elemental.define(
-			'directory-card', 'article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article',
-			DIR_ROUTES, null, 0, 0
-		);
-
-		this.DirectoryShelf = this.fine.define(
-			'directory-shelf',
-			n => n.shouldRenderNode && n.props && n.props.shelf,
-			DIR_ROUTES
-		);
 
 		this.settings.add('directory.hidden.style', {
 			default: 2,
@@ -197,6 +184,17 @@ export default class Directory extends SiteModule {
 
 
 	onEnable() {
+		this.DirectoryCard = this.elemental.define(
+			'directory-card', 'article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article',
+			DIR_ROUTES, null, 0, 0
+		);
+
+		this.DirectoryShelf = this.fine.define(
+			'directory-shelf',
+			n => n.shouldRenderNode && n.props && n.props.shelf,
+			DIR_ROUTES
+		);
+
 		this.css_tweaks.toggleHide('profile-hover', this.settings.get('directory.show-channel-avatars') === 2);
 		this.css_tweaks.toggleHide('dir-live-ind', this.settings.get('directory.hide-live'));
 		this.css_tweaks.toggle('dir-reveal', this.settings.get('directory.hidden.reveal'));

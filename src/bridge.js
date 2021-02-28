@@ -21,8 +21,7 @@ class FFZBridge extends Module {
 		FFZBridge.instance = this;
 
 		this.name = 'ffz_bridge';
-		this.__state = 0;
-		this.__modules.core = this;
+		this.__data.state = 0;
 
 		// ========================================================================
 		// Error Reporting and Logging

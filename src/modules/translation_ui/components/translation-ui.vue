@@ -230,7 +230,7 @@ import displace from 'displacejs';
 import Parser from '@ffz/icu-msgparser';
 import { saveAs } from 'file-saver';
 
-import { deep_equals, deep_copy, sleep } from 'utilities/object';
+import { deep_equals, deep_copy } from 'utilities/object';
 
 const parser = new Parser();
 const PER_PAGE = 20;

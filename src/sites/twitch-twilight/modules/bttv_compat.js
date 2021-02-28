@@ -11,11 +11,7 @@ const CHAT_EVENTS = [
 ];
 
 export default class BTTVCompat extends Module {
-	constructor(...args) {
-		super(...args);
-
-		this.should_enable = true;
-	}
+	static should_enable = true;
 
 	onEnable() {
 		this.on('core:dom-update', this.handleDomUpdate, this);

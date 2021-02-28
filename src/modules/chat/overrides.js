@@ -85,7 +85,7 @@ export default class Overrides extends Module {
 			},
 
 			content: async (t, tip) => {
-				const vue = this.resolve('vue'),
+				const vue = await this.resolve('vue', true),
 					_editor = import(/* webpackChunkName: "overrides" */ './override-editor.vue');
 
 				const [, editor] = await Promise.all([vue.enable(), _editor]);

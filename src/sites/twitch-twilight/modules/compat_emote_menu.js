@@ -11,10 +11,11 @@ import Module from 'utilities/module';
 import {has, sleep} from 'utilities/object';
 
 export default class CompatEmoteMenu extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
 
 		this.inject('site.chat');
 		this.inject('chat.emotes');

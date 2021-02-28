@@ -14,7 +14,6 @@ export default class RichContent extends Module {
 		super(...args);
 
 		this.inject('chat');
-		this.inject('i18n');
 		this.inject('site.web_munch');
 
 		this.RichContent = null;

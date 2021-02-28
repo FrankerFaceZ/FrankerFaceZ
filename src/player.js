@@ -25,8 +25,7 @@ class FFZPlayer extends Module {
 		FFZPlayer.instance = this;
 
 		this.name = 'ffz_player';
-		this.__state = 0;
-		this.__modules.core = this;
+		this.__data.state = 0;
 
 		// ========================================================================
 		// Error Reporting and Logging

@@ -10,15 +10,17 @@ import { get, has } from 'utilities/object';
 import Twilight from 'site';
 
 export default class Dashboard extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
-		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.channel');
+	}
 
+	onEnable() {
 		this.SunlightBroadcast = this.fine.define(
 			'sunlight-bcast',
 			n => n.getGame && n.getTitle && n.props?.data,
@@ -30,9 +32,7 @@ export default class Dashboard extends Module {
 			n => n.props?.channelID && n.handleChange && has(n, 'hasVisitedStreamManager'),
 			Twilight.SUNLIGHT_ROUTES
 		);
-	}
 
-	onEnable() {
 		this.SunlightManager.on('mount', this.updateSunlight, this);
 		this.SunlightManager.on('update', this.updateSunlight, this);
 		this.SunlightManager.on('unmount', this.removeSunlight, this);

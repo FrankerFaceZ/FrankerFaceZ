@@ -15,14 +15,14 @@ import Module from 'utilities/module';
 const CLIP_URL = /^https:\/\/[^/]+\.(?:twitch\.tv|twitchcdn\.net)\/.+?\.mp4(?:\?.*)?$/;
 
 export default class Metadata extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.inject('settings');
-		this.inject('i18n');
 		this.inject('tooltips');
 
-		this.should_enable = true;
 		this.definitions = {};
 
 		this.settings.add('metadata.clip-download', {
@@ -154,7 +154,7 @@ export default class Metadata extends Module {
 				if ( !(created instanceof Date) )
 					created = new Date(created);
 
-				const now = Date.now() - socket._time_drift;
+				const now = Date.now() - (socket?._time_drift || 0);
 
 				return {
 					created,
@@ -259,7 +259,7 @@ export default class Metadata extends Module {
 					return;
 
 				const Player = this.resolve('site.player'),
-					player = Player.current;
+					player = Player?.current;
 				if ( ! player )
 					return;
 
@@ -272,7 +272,7 @@ export default class Metadata extends Module {
 				if ( this.settings.get('metadata.clip-download.force') )
 					return src;
 
-				const user = this.resolve('site').getUser?.(),
+				const user = this.resolve('site')?.getUser?.(),
 					is_self = user?.id == data.channel.id;
 
 				if ( is_self || data.getUserSelfImmediate(data.refresh)?.isEditor )
@@ -305,7 +305,7 @@ export default class Metadata extends Module {
 			setup() {
 				const Player = this.resolve('site.player'),
 					socket = this.resolve('socket'),
-					player = Player.current;
+					player = Player?.current;
 
 				let stats;
 
@@ -408,7 +408,7 @@ export default class Metadata extends Module {
 
 			click() {
 				const Player = this.resolve('site.player'),
-					ui = Player.playerUI;
+					ui = Player?.playerUI;
 
 				if ( ! ui )
 					return;
@@ -553,13 +553,15 @@ export default class Metadata extends Module {
 	}
 
 	updateMetadata(keys) {
+		// TODO: Convert to an event. This is exactly
+		// what events were made for.
 		const channel = this.resolve('site.channel');
-		if ( channel )
+		if ( channel?.InfoBar )
 			for(const el of channel.InfoBar.instances)
 				channel.updateMetadata(el, keys);
 
 		const player = this.resolve('site.player');
-		if ( player )
+		if ( player?.Player )
 			for(const inst of player.Player.instances)
 				player.updateMetadata(inst, keys);
 	}

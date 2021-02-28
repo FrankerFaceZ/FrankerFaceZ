@@ -12,13 +12,13 @@ export default class SettingsMenu extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.inject('settings');
-		this.inject('i18n');
 		this.inject('chat');
 		this.inject('chat.badges');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
+	}
 
+	async onEnable() {
 		this.SettingsMenu = this.fine.define(
 			'chat-settings',
 			n => n.renderUniversalOptions && n.onBadgesChanged,
@@ -30,9 +30,7 @@ export default class SettingsMenu extends Module {
 			n => n.hideChatIdentityMenu && n.toggleBalloonRef,
 			Twilight.CHAT_ROUTES
 		);*/
-	}
 
-	async onEnable() {
 		this.on('i18n:update', () => this.SettingsMenu.forceUpdate());
 		this.chat.context.on('changed:chat.scroller.freeze', () => this.SettingsMenu.forceUpdate());
 
@@ -353,17 +351,19 @@ export default class SettingsMenu extends Module {
 
 		} else {
 			const target = event.currentTarget,
-				page = target && target.dataset && target.dataset.page,
-				menu = this.resolve('main_menu');
+				page = target && target.dataset && target.dataset.page;
 
-			if ( menu ) {
+			this.resolve('main_menu', true).then(menu => {
+				if ( ! menu )
+					return;
+
 				if ( page )
 					menu.requestPage(page);
 				if ( menu.showing )
 					return;
-			}
 
-			this.emit('site.menu_button:clicked');
+				this.emit('site.menu_button:clicked');
+			});
 		}
 
 		this.closeMenu(inst);

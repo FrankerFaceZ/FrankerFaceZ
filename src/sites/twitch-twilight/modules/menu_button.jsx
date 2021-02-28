@@ -12,16 +12,16 @@ import Twilight from 'site';
 
 
 export default class MenuButton extends SiteModule {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.inject('i18n');
-		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.elemental');
 		//this.inject('addons');
 
-		this.should_enable = true;
 		this._pill_content = null;
 		this._has_update = false;
 		this._important_update = false;
@@ -38,41 +38,6 @@ export default class MenuButton extends SiteModule {
 			},
 			changed: () => this.update()
 		});
-
-		this.ModBar = this.fine.define(
-			'mod-view-bar',
-			n => n.actions && n.updateRoot && n.childContext,
-			['mod-view']
-		);
-
-		/*this.SunlightDash = this.fine.define(
-			'sunlight-dash',
-			n => n.getIsChannelEditor && n.getIsChannelModerator && n.getIsAdsEnabled && n.getIsSquadStreamsEnabled,
-			Twilight.SUNLIGHT_ROUTES
-		);*/
-
-		this.SunlightNav = this.elemental.define(
-			'sunlight-nav', '.sunlight-top-nav > .tw-flex > .tw-flex > .tw-justify-content-end > .tw-flex',
-			Twilight.SUNLIGHT_ROUTES,
-			{attributes: true}, 1
-		);
-
-		this.NavBar = this.fine.define(
-			'nav-bar',
-			n => n.renderOnsiteNotifications && n.renderTwitchPrimeCrown
-		);
-
-		this.SquadBar = this.fine.define(
-			'squad-nav-bar',
-			n => n.exitSquadMode && n.props && n.props.squadID,
-			['squad']
-		);
-
-		this.MultiController = this.fine.define(
-			'multi-controller',
-			n => n.handleAddStream && n.handleRemoveStream && n.getInitialStreamLayout,
-			['command-center']
-		);
 	}
 
 	get loading() {
@@ -176,11 +141,11 @@ export default class MenuButton extends SiteModule {
 
 		const addons = this.resolve('addons');
 
+		if ( DEBUG && ! addons?.has_dev )
+			return this.i18n.t('site.menu_button.main-dev', 'm-dev');
+
 		if ( DEBUG && addons.has_dev )
 			return this.i18n.t('site.menu_button.dev', 'dev');
-
-		if ( DEBUG && ! addons.has_dev )
-			return this.i18n.t('site.menu_button.main-dev', 'm-dev');
 
 		if ( ! DEBUG && addons.has_dev )
 			return this.i18n.t('site.menu_button.addon-dev', 'a-dev');
@@ -214,6 +179,41 @@ export default class MenuButton extends SiteModule {
 
 
 	onEnable() {
+		this.ModBar = this.fine.define(
+			'mod-view-bar',
+			n => n.actions && n.updateRoot && n.childContext,
+			['mod-view']
+		);
+
+		/*this.SunlightDash = this.fine.define(
+			'sunlight-dash',
+			n => n.getIsChannelEditor && n.getIsChannelModerator && n.getIsAdsEnabled && n.getIsSquadStreamsEnabled,
+			Twilight.SUNLIGHT_ROUTES
+		);*/
+
+		this.SunlightNav = this.elemental.define(
+			'sunlight-nav', '.sunlight-top-nav > .tw-flex > .tw-flex > .tw-justify-content-end > .tw-flex',
+			Twilight.SUNLIGHT_ROUTES,
+			{attributes: true}, 1
+		);
+
+		this.NavBar = this.fine.define(
+			'nav-bar',
+			n => n.renderOnsiteNotifications && n.renderTwitchPrimeCrown
+		);
+
+		this.SquadBar = this.fine.define(
+			'squad-nav-bar',
+			n => n.exitSquadMode && n.props && n.props.squadID,
+			['squad']
+		);
+
+		this.MultiController = this.fine.define(
+			'multi-controller',
+			n => n.handleAddStream && n.handleRemoveStream && n.getInitialStreamLayout,
+			['command-center']
+		);
+
 		this.NavBar.ready(() => this.update());
 		this.NavBar.on('mount', this.updateButton, this);
 		this.NavBar.on('update', this.updateButton, this);
@@ -577,22 +577,20 @@ export default class MenuButton extends SiteModule {
 	}
 
 
-	loadMenu(event, btn, page) {
-		const menu = this.resolve('main_menu');
-		if ( ! menu )
-			return;
-
-		if ( page )
-			menu.requestPage(page);
-		if ( menu.showing )
-			return;
-
+	async loadMenu(event, btn, page) {
 		this.loading = true;
 
-		menu.enable(event).then(() => {
-			this.loading = false;
+		try {
+			const menu = await this.resolve('main_menu', true);
+			if ( menu ) {
+				if ( page )
+					menu.requestPage(page);
 
-		}).catch(err => {
+				if ( ! menu.showing )
+					await menu.enable(event);
+			}
+
+		} catch(err) {
 			this.log.capture(err);
 			this.log.error('Error enabling main menu.', err);
 
@@ -601,9 +599,10 @@ export default class MenuButton extends SiteModule {
 				text: 'There was an error loading the FFZ Control Center. Please refresh and try again.'
 			};
 
-			this.loading = false;
 			this.once(':clicked', this.loadMenu);
-		});
+		}
+
+		this.loading = false;
 	}
 
 	onDisable() {

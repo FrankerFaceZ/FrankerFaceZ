@@ -1,13 +1,6 @@
 import Module from 'utilities/module';
 
 export class Addon extends Module {
-	constructor(...args) {
-		super(...args);
-
-		this.inject('i18n');
-		this.inject('settings');
-	}
-
 	static register(id, info) {
 		if ( typeof id === 'object' ) {
 			info = id;
@@ -30,11 +23,14 @@ export class Addon extends Module {
 			ffz.addons.addAddon(info);
 		}
 
+		const key = `addon.${id}`;
+
 		try {
-			ffz.register(`addon.${id}`, this);
+			ffz.register(key, this);
+
 		} catch(err) {
 			if ( err.message && err.message.includes('Name Collision for Module') ) {
-				const module = ffz.resolve(`addon.${id}`);
+				const module = ffz.resolve(key);
 				if ( module )
 					module.external = true;
 			}

@@ -47,12 +47,11 @@ const CLASSES = {
 
 
 export default class CSSTweaks extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
-
-		this.inject('settings');
 
 		this.style = new ManagedStyle;
 		this.chunks = {};

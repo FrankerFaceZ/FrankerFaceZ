@@ -12,42 +12,15 @@ const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-video
 const MINIMAL_ROUTES = ['popout', 'embed-chat', 'dash-chat'];
 
 export default class Layout extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
 
-		this.should_enable = true;
-
-		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.css_tweaks');
 		this.inject('site.elemental');
-
-		/*this.TopNav = this.fine.define(
-			'top-nav',
-			n => n.computeStyles && n.navigationLinkSize
-		);*/
-
-		/*this.RightColumn = this.fine.define(
-			'tw-rightcolumn',
-			n => n.hideOnBreakpoint && n.handleToggleVisibility
-		);*/
-
-		this.ResizeDetector = this.fine.define(
-			'resize-detector',
-			n => n.maybeDebounceOnScroll && n.setGrowDivRef && n.props.onResize
-		);
-
-		this.SideBar = this.elemental.define(
-			'sidebar',
-			'.side-bar-contents',
-			null,
-			{childNodes: true, subtree: true}, 1
-		);
-
-		/*this.SideBarChannels = this.fine.define(
-			'nav-cards',
-			t => t.getCardSlideInContent && t.props && has(t.props, 'tooltipContent')
-		);*/
 
 		this.settings.add('layout.portrait', {
 			default: false,
@@ -213,6 +186,33 @@ export default class Layout extends Module {
 	}
 
 	onEnable() {
+		/*this.TopNav = this.fine.define(
+			'top-nav',
+			n => n.computeStyles && n.navigationLinkSize
+		);*/
+
+		/*this.RightColumn = this.fine.define(
+			'tw-rightcolumn',
+			n => n.hideOnBreakpoint && n.handleToggleVisibility
+		);*/
+
+		this.ResizeDetector = this.fine.define(
+			'resize-detector',
+			n => n.maybeDebounceOnScroll && n.setGrowDivRef && n.props.onResize
+		);
+
+		this.SideBar = this.elemental.define(
+			'sidebar',
+			'.side-bar-contents',
+			null,
+			{childNodes: true, subtree: true}, 1
+		);
+
+		/*this.SideBarChannels = this.fine.define(
+			'nav-cards',
+			t => t.getCardSlideInContent && t.props && has(t.props, 'tooltipContent')
+		);*/
+
 		document.body.classList.toggle('ffz--portrait-invert', this.settings.get('layout.portrait-invert'));
 
 		this.on(':update-nav', this.updateNavLinks, this);

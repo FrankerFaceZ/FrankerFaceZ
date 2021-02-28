@@ -21,17 +21,9 @@ export default class Scroller extends Module {
 	constructor(...args) {
 		super(...args);
 
-		this.inject('settings');
-		this.inject('i18n');
 		this.inject('chat');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
-
-		this.ChatScroller = this.fine.define(
-			'chat-scroller',
-			n => n.saveScrollRef && n.handleScrollEvent && ! n.renderLines && n.resume,
-			Twilight.CHAT_ROUTES
-		);
 
 		this.settings.add('chat.scroller.freeze', {
 			default: 0,
@@ -116,6 +108,12 @@ export default class Scroller extends Module {
 	}
 
 	async onEnable() {
+		this.ChatScroller = this.fine.define(
+			'chat-scroller',
+			n => n.saveScrollRef && n.handleScrollEvent && ! n.renderLines && n.resume,
+			Twilight.CHAT_ROUTES
+		);
+
 		this.on('i18n:update', () => this.ChatScroller.forceUpdate());
 
 		this.chat.context.on('changed:chat.actions.inline', this.updateUseKeys, this);

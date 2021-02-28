@@ -20,10 +20,11 @@ const HOST_ERRORS = {
 };
 
 export default class HostButton extends Module {
+
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
 
 		this.inject('site');
 		this.inject('site.fine');
@@ -152,7 +153,7 @@ export default class HostButton extends Module {
 			},
 
 			popup: async (data, tip) => {
-				const vue = this.resolve('vue'),
+				const vue = await this.resolve('vue'),
 					_host_options_vue = import(/* webpackChunkName: "host-options" */ './host-options.vue'),
 					_autoHosts = this.fetchAutoHosts(),
 					_autoHostSettings = this.fetchAutoHostSettings();

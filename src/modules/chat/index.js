@@ -28,10 +28,10 @@ const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 const EMOTE_CHARS = /[ .,!]/;
 
 export default class Chat extends Module {
+	static should_enable = true;
+
 	constructor(...args) {
 		super(...args);
-
-		this.should_enable = true;
 
 		this.inject('settings');
 		this.inject('i18n');

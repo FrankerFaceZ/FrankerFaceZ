@@ -28,8 +28,8 @@ class FrankerFaceZ extends Module {
 		FrankerFaceZ.instance = this;
 
 		this.name = 'frankerfacez';
-		this.__state = 0;
-		this.__modules.core = this;
+		this.__data.state = 0;
+		//this.__modules.core = this;
 
 		// Timing
 		//this.inject('timing', Timing);
@@ -59,7 +59,7 @@ class FrankerFaceZ extends Module {
 		this.inject('socket', SocketClient);
 		//this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);
-		this.inject('addons', AddonManager);
+		this.inject('addon', AddonManager);
 
 		this.register('vue', Vue);
 
@@ -134,7 +134,7 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 
 	async discoverModules() {
 		// TODO: Actually do async modules.
-		const ctx = await require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/ /*, 'lazy-once' */);
+		const ctx = await require.context('src/modules', true, /^(?:\.\/)?([^/]+)(?:\/index)?\.jsx?$/ /*, 'lazy-once' */);
 		const modules = this.populate(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
@@ -143,11 +143,12 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 
 	async enableInitialModules() {
 		const promises = [];
-		/* eslint guard-for-in: off */
-		for(const key in this.__modules) {
-			const module = this.__modules[key];
-			if ( module instanceof Module && module.should_enable )
-				promises.push(module.enable());
+
+		for(const [key, data] of Object.entries(this.__module_data)) {
+			if ( data.source?.should_enable )
+				promises.push(this.resolve(key, true).then(module => {
+					return module.enable();
+				}));
 		}
 
 		await Promise.all(promises);
