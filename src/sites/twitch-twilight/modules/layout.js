@@ -49,6 +49,16 @@ export default class Layout extends Module {
 			t => t.getCardSlideInContent && t.props && has(t.props, 'tooltipContent')
 		);*/
 
+		this.settings.add('clips.layout.big', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Clips',
+				title: 'Allow the player to get larger on `clips.twitch.tv` pages.',
+				description: 'This only affects windows at least 1,200 pixels wide and attempts to make the player and chat replay as large as possible.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('layout.portrait', {
 			default: false,
 			ui: {

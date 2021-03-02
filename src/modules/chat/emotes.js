@@ -61,7 +61,6 @@ export default class Emotes extends Module {
 
 		this.EmoteTypes = EmoteTypes;
 
-		this.inject('socket');
 		this.inject('settings');
 		this.inject('experiments');
 
@@ -164,7 +163,7 @@ export default class Emotes extends Module {
 				}
 		}
 
-		this.socket.on(':command:follow_sets', this.updateFollowSets, this);
+		this.on('socket:command:follow_sets', this.updateFollowSets, this);
 
 		this.loadGlobalSets();
 	}

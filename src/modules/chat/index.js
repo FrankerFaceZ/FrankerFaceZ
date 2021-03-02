@@ -36,7 +36,6 @@ export default class Chat extends Module {
 		this.inject('settings');
 		this.inject('i18n');
 		this.inject('tooltips');
-		this.inject('socket');
 		this.inject('experiments');
 
 		this.inject(Badges);
@@ -920,6 +919,8 @@ export default class Chat extends Module {
 
 
 	onEnable() {
+		this.socket = this.resolve('socket');
+
 		if ( this.context.get('chat.filtering.color-mentions') )
 			this.createColorCache().then(() => this.emit(':update-lines'));
 
@@ -1641,6 +1642,9 @@ export default class Chat extends Module {
 			let provider = this.settings.get('debug.link-resolver.source');
 			if ( provider == null )
 				provider = this.experiments.getAssignment('api_links') ? 'test' : 'socket';
+
+			if ( provider === 'socket' && ! this.socket )
+				provider = 'test';
 
 			if ( provider === 'socket' ) {
 				timeout(this.socket.call('get_link', url), 15000)

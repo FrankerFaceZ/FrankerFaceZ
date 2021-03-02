@@ -1,7 +1,6 @@
 'use strict';
 
 import {createElement} from 'utilities/dom';
-import {durationForChat} from 'utilities/time';
 
 
 // ============================================================================
@@ -71,6 +70,8 @@ export const edit_overrides = {
 	title: 'Change Name & Color',
 	description: 'Allows you to set local overrides for a user\'s name and color in chat.',
 
+	can_self: true,
+
 	tooltip() {
 		return this.i18n.t('chat.actions.edit_overrides', 'Change Name & Color')
 	},
@@ -102,6 +103,8 @@ export const open_url = {
 
 	title: 'Open URL',
 	description: '{options.url}',
+
+	can_self: true,
 
 	tooltip(data) {
 		const url = this.replaceVariables(data.options.url, data);
@@ -149,6 +152,8 @@ export const chat = {
 
 	title: 'Chat Command',
 	description: '{options.command}',
+
+	can_self: true,
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-chat.vue'),
 

@@ -41,6 +41,7 @@ export class SettingsProvider extends EventEmitter {
 
 	static supportsBlobs = false;
 	static allowTransfer = true;
+	static shouldUpdate = true;
 
 	awaitReady() {
 		if ( this.ready )
@@ -50,6 +51,7 @@ export class SettingsProvider extends EventEmitter {
 	}
 
 	get allowTransfer() { return this.constructor.allowTransfer; }
+	get shouldUpdate() { return this.constructor.shouldUpdate; }
 
 	broadcastTransfer() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
 	disableEvents() { throw new Error('Not Implemented') } // eslint-disable-line class-methods-use-this
@@ -977,6 +979,7 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 	static description = 'This provider uses an `<iframe>` to synchronize storage across subdomains. Due to the `<iframe>`, this provider takes longer than others to load, but should perform roughly the same once loaded. You should be using this on non-www subdomains of Twitch unless you don\'t want your settings to automatically synchronize for some reason.';
 	static supportsBlobs = true;
 	static allowTransfer = false;
+	static shouldUpdate = false;
 
 	get supportsBlobs() {
 		return this._blobs;
@@ -1153,7 +1156,7 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 			this.onReply(msg);
 
 		else
-			this.log.warn('Unknown Message', msg.ffz_type, msg);
+			this.manager.log.warn('Unknown Message', msg.ffz_type, msg);
 	}
 
 	onChange(msg) {
@@ -1175,7 +1178,7 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 			success = msg.ffz_type === 'reply',
 			cbs = this._rpc.get(id);
 		if ( ! cbs )
-			return this.log.warn('Received reply for unknown ID', id);
+			return this.manager.log.warn('Received reply for unknown ID', id);
 
 		this._rpc.delete(id);
 		cbs[success ? 0 : 1](msg);

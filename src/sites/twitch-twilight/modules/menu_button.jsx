@@ -21,13 +21,16 @@ export default class MenuButton extends SiteModule {
 		this.inject('site.elemental');
 		//this.inject('addons');
 
+		this.pauseToasts = this.pauseToasts.bind(this);
+		this.unpauseToasts = this.unpauseToasts.bind(this);
+
 		this.should_enable = true;
 		this._pill_content = null;
 		this._has_update = false;
 		this._important_update = false;
 		this._new_settings = 0;
-		this._error = null;
 		this._loading = false;
+		this.toasts = [];
 
 		this.settings.add('ffz.show-new-settings', {
 			default: true,
@@ -84,22 +87,6 @@ export default class MenuButton extends SiteModule {
 			return;
 
 		this._loading = val;
-		this.update();
-	}
-
-	get has_error() {
-		return this._error != null;
-	}
-
-	get error() {
-		return this._error;
-	}
-
-	set error(val) {
-		if ( val === this._error )
-			return;
-
-		this._error = val;
 		this.update();
 	}
 
@@ -188,6 +175,30 @@ export default class MenuButton extends SiteModule {
 		return null;
 	}
 
+	updateToasts() {
+		requestAnimationFrame(() => this._updateToasts());
+	}
+
+	_updateToasts() {
+		for(const inst of this.NavBar.instances)
+			this.updateButtonToast(inst);
+
+		for(const inst of this.SquadBar.instances)
+			this.updateButtonToast(inst);
+
+		for(const inst of this.MultiController.instances)
+			this.updateButtonToast(inst);
+
+		//for(const inst of this.SunlightDash.instances)
+		//	this.updateButtonToast(inst);
+
+		for(const el of this.SunlightNav.instances)
+			this.updateButtonToast(null, el, true);
+
+		for(const inst of this.ModBar.instances)
+			this.updateButtonToast(inst);
+	}
+
 	update() {
 		requestAnimationFrame(() => this._update());
 	}
@@ -247,13 +258,204 @@ export default class MenuButton extends SiteModule {
 		this.on('i18n:update', this.update);
 		this.on('addons:data-loaded', this.update);
 		this.on('settings:change-provider', () => {
-			this.error = {
-				i18n: 'site.menu_button.changed',
-				text: 'The FrankerFaceZ settings provider has changed. Please refresh this tab to avoid strange behavior.'
-			};
+			this.addError('site.menu_button.changed',
+				'The FrankerFaceZ settings provider has changed. Please refresh this tab to avoid strange behavior.'
+			);
 			this.update()
 		});
 	}
+
+
+	addError(i18n, text, icon = 'ffz-i-attention') {
+		this.addToast({
+			icon,
+			text_i18n: i18n,
+			text
+		});
+	}
+
+
+	addToast(data) {
+		/*if ( ! data.id )
+			data.id = generateUUID();*/
+
+		this.toasts.push(data);
+		// TODO: Sort by ending time?
+		if ( this.toasts.length > 5 )
+			return;
+
+		this.updateToasts();
+	}
+
+
+	pauseToasts() {
+		const length = Math.min(5, this.toasts.length),
+			now = performance.now();
+
+		this._toasts_paused = true;
+
+		for(let i=0; i < length; i++) {
+			const toast = this.toasts[i];
+			if ( ! toast || ! toast.started )
+				continue;
+
+			if ( toast._timer ) {
+				clearTimeout(toast._timer);
+				toast._timer = null;
+			}
+
+			const elapsed = now - toast.started,
+				remaining = toast.timeout - elapsed;
+
+			toast.remaining = remaining;
+			toast.percentage = 100 * remaining / toast.timeout;
+
+			if ( toast.el )
+				toast.el.replaceWith(this.renderToast(toast));
+		}
+	}
+
+
+	unpauseToasts() {
+		const length = Math.min(5, this.toasts.length),
+			now = performance.now();
+		this._toasts_paused = false;
+
+		for(let i=0; i < length; i++) {
+			const toast = this.toasts[i];
+			if ( ! toast || ! toast.started )
+				continue;
+
+			if ( toast.remaining ) {
+				const elapsed = toast.timeout - toast.remaining;
+				toast.started = now - elapsed;
+			}
+
+			if ( toast.el )
+				toast.el.replaceWith(this.renderToast(toast));
+		}
+	}
+
+
+	renderToasts() {
+		const length = Math.min(5, this.toasts.length);
+		if ( ! length )
+			return null;
+
+		const out = [];
+		for(let i=0; i < length; i++) {
+			out.push(this.renderToast(this.toasts[i]));
+		}
+
+		return out;
+	}
+
+
+	renderToast(data) {
+		if ( ! data._remove )
+			data._remove = () => {
+				if ( data._timer ) {
+					clearTimeout(data._timer);
+					data._timer = null;
+				}
+
+				data.el = null;
+
+				const idx = this.toasts.indexOf(data);
+				if ( idx !== -1 ) {
+					this.toasts.splice(idx, 1);
+					if ( ! this.toasts.length )
+						this._toasts_paused = false;
+
+					this.updateToasts();
+				}
+			}
+
+		let progress_bar = null;
+
+		if ( data.timeout ) {
+			const now = performance.now();
+			if ( ! data.started )
+				data.started = now;
+
+			const elapsed = now - data.started,
+				remaining = data.timeout - elapsed;
+			let percentage;
+
+			if ( this._toasts_paused )
+				percentage = data.percentage;
+
+			else if ( ! data._timer )
+				data._timer = setTimeout(data._remove, remaining);
+
+			if ( percentage == null )
+				percentage = data.percentage = 100 * remaining / data.timeout;
+
+			progress_bar = (<div class="ffz-toast--progress tw-absolute tw-overflow-hidden tw-z-below">
+				<div
+					class="tw-border-radius-rounded tw-progress-bar tw-progress-bar--countdown tw-progress-bar--default tw-progress-bar--mask"
+					role="progressbar"
+					aria-valuenow={percentage}
+					aria-valuemin="0"
+					aria-valuemax="100"
+				>
+					<div
+						class={`tw-block tw-border-bottom-left-radius-rounded tw-border-top-left-radius-rounded tw-progress-bar__fill`}
+						data-a-target="tw-progress-bar-animation"
+						style={{
+							width: `${percentage}%`,
+							'animation-duration': `${remaining / 1000}s`
+						}}
+					></div>
+				</div>
+			</div>);
+		}
+
+		data.el = (<div class={`ffz-toast ffz-balloon ffz-balloon--lg tw-mg-y-1${this._toasts_paused ? ' ffz-toast--paused' : ''}`}>
+			<div class="tw-pd-1 tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4 tw-relative">
+				<div class="tw-flex tw-align-items-start">
+					{data.icon && (
+						typeof data.icon === 'string' ?
+							<figure class={`tw-font-size-3 tw-pd-r-1 ${data.icon}`} /> :
+							data.icon
+					)}
+					{ data.render ? data.render.call(this, data) : null }
+					{ (data.title || data.text) ? (<div class="tw-flex-grow-1">
+						{ data.title ? (<header class="tw-semibold tw-font-size-3 tw-pd-b-05">
+							{ data.title_i18n ? this.i18n.tList(data.title_i18n, data.title, data) : data.title}
+						</header>) : null }
+						{ data.text ? (<span class={`${data.lines ? 'ffz--line-clamp' : ''}`} style={{'--ffz-lines': data.lines}}>
+							{ data.text_i18n ? this.i18n.tList(data.text_i18n, data.text, data) : data.text}
+						</span>) : null }
+					</div>) : null}
+					{ ! data.unclosable && (<button
+						class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip__container"
+						onClick={data._remove}
+					>
+						<span class="tw-button-icon__icon">
+							<figure class="ffz-i-cancel" />
+						</span>
+					</button>)}
+				</div>
+				{progress_bar}
+			</div>
+		</div>);
+
+		return data.el;
+	}
+
+
+	updateButtonToast(inst, container, is_sunlight) {
+		const toast_el = (inst || container)._ffz_toast_el;
+		if ( toast_el ) {
+			toast_el.innerHTML = '';
+			setChildren(toast_el, this.renderToasts(), false, true);
+			return;
+		}
+
+		this.updateButton(inst, container, is_sunlight);
+	}
+
 
 	updateButton(inst, container, is_sunlight) {
 		const root = this.fine.getChildNode(inst);
@@ -312,6 +514,7 @@ export default class MenuButton extends SiteModule {
 			el.remove();
 
 		const addons = this.resolve('addons'),
+			toasts = this.renderToasts(),
 			pill = this.formatPill(),
 			extra_pill = this.formatExtraPill();
 
@@ -347,7 +550,7 @@ export default class MenuButton extends SiteModule {
 						</div>
 					</div>
 				</div>)}
-				{! this.has_error && (<div class={`tw-tooltip ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
+				<div class={`tw-tooltip ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
 					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
@@ -372,8 +575,15 @@ export default class MenuButton extends SiteModule {
 					{addons.has_dev && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.addon-dev-desc', 'You have loaded add-on data from a local development server.')}
 					</div>)}
-				</div>)}
+				</div>
 			</div>
+			{(inst || container)._ffz_toast_el = (<div
+				class={`ffz-toast--container tw-absolute tw-block ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}
+				onmouseenter={this.pauseToasts}
+				onmouseleave={this.unpauseToasts}
+			>
+				{toasts}
+			</div>)}
 			{this.has_update && (<div class="ffz-menu__extra-pill tw-absolute">
 				<div class={`tw-pill ${this.important_update ? 'tw-pill--notification' : ''}`}>
 					<figure class="ffz-i-arrows-cw" />
@@ -487,7 +697,7 @@ export default class MenuButton extends SiteModule {
 
 			const desc_key = profile.desc_i18n_key || profile.i18n_key && `${profile.i18n_key}.description`;
 
-			profiles.push(<div class="tw-relative tw-border-b tw-pd-y-05 tw-pd-l-1 tw-flex">
+			profiles.push(<div class="tw-relative tw-border-b tw-pd-y-05 tw-pd-x-1 tw-flex">
 				{toggle}
 				<div>
 					<h4>{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }</h4>
@@ -596,10 +806,10 @@ export default class MenuButton extends SiteModule {
 			this.log.capture(err);
 			this.log.error('Error enabling main menu.', err);
 
-			this.error = {
-				i18n: 'site.menu_button.error',
-				text: 'There was an error loading the FFZ Control Center. Please refresh and try again.'
-			};
+			this.addError(
+				'site.menu_button.error',
+				'There was an error loading the FFZ Control Center. Please refresh and try again.'
+			);
 
 			this.loading = false;
 			this.once(':clicked', this.loadMenu);

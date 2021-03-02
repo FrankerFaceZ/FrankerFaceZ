@@ -1,10 +1,10 @@
 <template lang="html">
 	<div class="ffz--key-widget">
-		<div class="tw-relative tw-full-width tw-mg-05">
+		<div class="tw-relative tw-full-width">
 			<div
 				ref="input"
 				v-bind="$attrs"
-				class="default-dimmable tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+				class="default-dimmable tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 				tabindex="0"
 				@click="startRecording"
 				@keydown="onKey"

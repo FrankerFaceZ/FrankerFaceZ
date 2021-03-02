@@ -93,7 +93,7 @@ export function generateOverrideCSS(data, style) {
 
 export function generateBadgeCSS(badge, version, data, style, is_dark, badge_version = 2, color_fixer, fg_fixer, scale = 1, clickable = false) {
 	let color = data.color || 'transparent',
-		fore = data.fore || '#fff',
+		fore = data.fore || is_dark ? '#fff' : '#000',
 		base_image = data.image || (data.addon ? null : `${BASE_IMAGE}${badge_version}/${badge}${data.svg ? '.svg' : `/${version}/`}`),
 		trans = false,
 		invert = false,
@@ -176,7 +176,6 @@ export default class Badges extends Module {
 
 		this.inject('i18n');
 		this.inject('settings');
-		this.inject('socket');
 		this.inject('tooltips');
 		this.inject('experiments');
 

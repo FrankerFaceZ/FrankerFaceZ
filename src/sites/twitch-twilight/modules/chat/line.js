@@ -56,6 +56,7 @@ export default class ChatLine extends Module {
 
 	async onEnable() {
 		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
+		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('i18n:update', this.updateLines, this);
 
@@ -998,15 +999,20 @@ other {# messages were deleted by a moderator.}
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.message,
 				user = msg?.user;
-			if ( user && (id && id == user.id) || (login && login == user.login) )
+			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
+				msg.ffz_tokens = null;
+				msg.highlights = msg.mentioned = msg.mention_color = null;
 				inst.forceUpdate();
+			}
 		}
 
 		for(const inst of this.WhisperLine.instances) {
 			const msg = inst.props.message?._ffz_message,
 				user = msg?.user;
-			if ( user && (id && id == user.id) || (login && login == user.login) )
+			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
+				msg._ffz_message = null;
 				inst.forceUpdate();
+			}
 		}
 	}
 

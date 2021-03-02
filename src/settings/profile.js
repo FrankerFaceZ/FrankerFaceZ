@@ -10,6 +10,28 @@ import {createTester} from 'utilities/filtering';
 
 const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
 
+// TODO: Move this into its own file.
+const BAD_SHORTCUTS = [
+	'f',
+	'space',
+	'k',
+	'shift+up',
+	'shift+down',
+	'esc',
+	'm',
+	'?',
+	'alt+t',
+	'alt+x'
+];
+
+function isValidShortcut(key) {
+	if ( ! key )
+		return false;
+
+	key = key.toLowerCase().trim();
+	return ! BAD_SHORTCUTS.includes(key);
+}
+
 /**
  * Instances of SettingsProfile are used for getting and setting raw settings
  * values, enumeration, and emit events when the raw settings are changed.
@@ -18,6 +40,9 @@ const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json(
 export default class SettingsProfile extends EventEmitter {
 	constructor(manager, data) {
 		super();
+
+		this.onShortcut = this.onShortcut.bind(this);
+		this._hotkey_enabled = false;
 
 		this.manager = manager;
 		this.provider = manager.provider;
@@ -34,6 +59,8 @@ export default class SettingsProfile extends EventEmitter {
 
 			name: this.name,
 			i18n_key: this.i18n_key,
+			hotkey: this.hotkey,
+			pause_updates: this.pause_updates,
 
 			description: this.description,
 			desc_i18n_key: this.desc_i18n_key,
@@ -86,14 +113,23 @@ export default class SettingsProfile extends EventEmitter {
 
 
 	async checkUpdate() {
-		if ( ! this.url )
+		if ( ! this.url || this.pause_updates )
 			return false;
 
 		const data = await fetchJSON(this.url);
 		if ( ! data || ! data.type === 'profile' || ! data.profile || ! data.values )
 			return false;
 
+		// We don't want to override general settings.
 		delete data.profile.id;
+		delete data.profile.name;
+		delete data.profile.i18n_key;
+		delete data.profile.hotkey;
+		delete data.profile.description;
+		delete data.profile.desc_i18n_key;
+		delete data.profile.url;
+		delete data.profile.pause_updates;
+
 		this.data = data.profile;
 
 		const old_keys = new Set(this.keys());
@@ -107,6 +143,63 @@ export default class SettingsProfile extends EventEmitter {
 			this.delete(key);
 
 		return true;
+	}
+
+
+	// ========================================================================
+	// Hotkey
+	// ========================================================================
+
+	get hotkey() {
+		return this._hotkey;
+	}
+
+	set hotkey(key) {
+		if ( key === this._hotkey )
+			return;
+
+		this._hotkey = key;
+		if ( this._hotkey_enabled )
+			this._updateHotkey();
+	}
+
+	get hotkey_enabled() {
+		return this._hotkey_enabled;
+	}
+
+	set hotkey_enabled(val) {
+		this._hotkey_enabled = !! val;
+		this._updateHotkey();
+	}
+
+	_updateHotkey() {
+		const Mousetrap = this.Mousetrap = this.Mousetrap || window.Mousetrap;
+		if ( ! Mousetrap )
+			return;
+
+		const key = this._hotkey;
+
+		if ( this._bound_key && (this._bound_key !== key || ! this._hotkey_enabled) ) {
+			Mousetrap.unbind(this._bound_key);
+			this._bound_key = null;
+		}
+
+		if ( ! this._hotkey_enabled )
+			return;
+
+		if ( key && isValidShortcut(key) ) {
+			Mousetrap.bind(key, this.onShortcut);
+			this._bound_key = key;
+		}
+	}
+
+	onShortcut(e) {
+		this.toggled = ! this.toggled;
+
+		if ( e ) {
+			e.stopPropagation();
+			e.preventDefault();
+		}
 	}
 
 

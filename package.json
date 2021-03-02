@@ -1,7 +1,7 @@
 {
   "name": "frankerfacez",
   "author": "Dan Salvato LLC",
-  "version": "4.20.71",
+  "version": "4.20.72",
   "description": "FrankerFaceZ is a Twitch enhancement suite.",
   "license": "Apache-2.0",
   "scripts": {
@@ -46,9 +46,9 @@
     "json-loader": "^0.5.7",
     "jszip": "^3.6.0",
     "node-sass": "^4.14.1",
+    "sass-loader": "^7.1.0",
     "raw-loader": "^3.1.0",
     "rimraf": "^3.0.2",
-    "sass-loader": "^7.1.0",
     "semver": "^7.3.2",
     "terser-webpack-plugin": "^3.0.6",
     "vue": "^2.6.11",

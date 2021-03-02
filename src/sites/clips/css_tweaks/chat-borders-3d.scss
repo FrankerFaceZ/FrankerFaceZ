@@ -1,0 +1,15 @@
+.clips-chat-replay > div {
+	padding-top: calc(.5rem - 1px) !important;
+
+	border-top: 1px solid rgba(255,255,255,0.5);
+	border-bottom-color: #aaa;
+
+	.tw-root--theme-dark & {
+		border-top-color: rgba(255,255,255,0.1);
+		border-bottom-color: #000;
+	}
+
+	&:first-child {
+		border-top-color: transparent !important;
+	}
+}

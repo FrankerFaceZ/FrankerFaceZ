@@ -152,6 +152,12 @@
 .ffz-mod-icon {
 	text-align: center;
 	display: inline-flex;
+	font-size: 1.6rem;
+	font-size: var(--ffz-chat-actions-size);
+
+	&, &.mod-icon {
+		height: unset;
+	}
 
 	&.disabled {
 		cursor: not-allowed;
@@ -182,11 +188,13 @@
 	span {
 		display: inline-block;
 		min-width: 1.6rem;
+		min-width: var(--ffz-chat-actions-size);
 		font-weight: bold;
 	}
 
 	.mod-icon__image img {
 		max-height: 1.6rem;
+		max-height: var(--ffz-chat-actions-size);
 	}
 
 	&.colored,
@@ -209,12 +217,6 @@
 		}
 	}
 }
-
-
-.ffz--inline {
-	display: inline;
-}
-
 
 .ffz--giftee-name {
 	cursor: pointer;

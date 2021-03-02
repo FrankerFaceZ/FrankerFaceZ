@@ -27,4 +27,20 @@
 	.loading .ffz-i-zreknarf {
 		animation: ffz-rotateplane 1.2s infinite linear;
 	}
+
+	.ffz-toast--container {
+		z-index: 1999;
+	}
+
+	.ffz-toast {
+		&.ffz-toast--paused .tw-progress-bar--countdown .tw-progress-bar__fill {
+			animation: none !important;
+		}
+
+		.ffz-toast--progress {
+			left: 0;
+			right: 0;
+			bottom: -.4rem;
+		}
+	}
 }

@@ -661,6 +661,7 @@ export default class ChatHook extends Module {
 		this._update_css_waiter = null;
 
 		const width = this.chat.context.get('chat.width'),
+			action_size = this.chat.context.get('chat.actions.size'),
 			size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
 			lh = Math.round((20/12) * size);
@@ -669,6 +670,7 @@ export default class ChatHook extends Module {
 		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
 			font = `"${font}"`;
 
+		this.css_tweaks.setVariable('chat-actions-size', `${action_size/10}rem`);
 		this.css_tweaks.setVariable('chat-font-size', `${size/10}rem`);
 		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
 		this.css_tweaks.setVariable('chat-font-family', font);
@@ -792,6 +794,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.actions.size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.lines.emote-alignment', this.updateChatCSS, this);

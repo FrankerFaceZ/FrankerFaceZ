@@ -1,0 +1,8 @@
+.clips-chat-replay > div {
+	padding-bottom: calc(.5rem - 1px) !important;
+	border-bottom: 1px solid var(--color-border-base);
+
+	&:last-child:nth-child(odd) {
+		border-bottom-color: transparent !important;
+	}
+}

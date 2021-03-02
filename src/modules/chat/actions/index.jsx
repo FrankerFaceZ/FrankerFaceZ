@@ -26,6 +26,23 @@ export default class Actions extends Module {
 		this.actions = {};
 		this.renderers = {};
 
+		this.settings.add('chat.actions.size', {
+			default: 16,
+			ui: {
+				path: 'Chat > Actions @{"always_list_pages": true} >> Appearance',
+				title: 'Action Size',
+				description: "How tall actions should be, in pixels. This may be affected by your browser's zoom and font size settings.",
+				component: 'setting-text-box',
+				process(val) {
+					val = parseInt(val, 10);
+					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
+						return 16;
+
+					return val;
+				}
+			}
+		});
+
 		this.settings.add('chat.actions.reasons', {
 			default: [
 				{v: {text: 'One-Man Spam', i18n: 'chat.reasons.spam'}},
@@ -444,7 +461,7 @@ export default class Actions extends Module {
 				contents = def.render.call(this, ap, createElement, color);
 
 			actions.push(<button
-				class={`ffz-tooltip tw-pd-x-05 ffz-mod-icon mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}`}
+				class={`ffz-tooltip tw-pd-x-05 mod-icon ffz-mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}`}
 				data-tooltip-type="action"
 				data-action={data.action}
 				data-options={data.options ? JSON.stringify(data.options) : null}
@@ -678,7 +695,7 @@ export default class Actions extends Module {
 
 			had_action = true;
 			list.push(<button
-				class={`ffz-tooltip ffz-mod-icon mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}${hover ? ' ffz-hover' : ''}`}
+				class={`ffz-tooltip mod-icon ffz-mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}${hover ? ' ffz-hover' : ''}`}
 				disabled={disabled}
 				data-tooltip-type="action"
 				data-action={data.action}

@@ -686,13 +686,15 @@ export default class MainMenu extends Module {
 			description: profile.description,
 			desc_i18n_key: profile.desc_i18n_key || profile.i18n_key && `${profile.i18n_key}.description`,
 
+			hotkey: profile.hotkey,
 			url: profile.url,
+			pause_updates: profile.pause_updates,
 
 			move: idx => context.manager.moveProfile(profile.id, idx),
 			save: () => profile.save(),
 			update: data => {
-				profile.data = deep_copy(data)
-				profile.save()
+				profile.data = deep_copy(data);
+				profile.save();
 			},
 
 			toggle: () => profile.toggled = ! profile.toggled,
@@ -717,9 +719,14 @@ export default class MainMenu extends Module {
 			settings = this.settings,
 			provider = settings.provider,
 			context = this.context,
-			[profiles, profile_keys] = this.getProfiles();
+			[profiles, profile_keys] = this.getProfiles(),
+			state = window.history.state,
+			profile_id = state?.ffzccp;
 
 		let currentProfile = profile_keys[0];
+		if ( profile_id != null )
+			currentProfile = profile_keys[profile_id];
+
 		if ( ! currentProfile ) {
 			for(let i=profiles.length - 1; i >= 0; i--) {
 				if ( profiles[i].live ) {
@@ -735,7 +742,7 @@ export default class MainMenu extends Module {
 		const _c = {
 			profiles,
 			profile_keys,
-			currentProfile: profile_keys[0] || profiles[0],
+			currentProfile,
 
 			exclusive: this.exclusive,
 			can_proxy: context._context.can_proxy,

@@ -1,0 +1,9 @@
+@media (min-width: 1200px) {
+	.clips-watch {
+		max-width: #{"min(calc(100vw - 2rem),calc(calc(16 / 9 * calc(100vh - 15rem)) + 36rem))"};
+	}
+
+	.clips-sidebar {
+		height: unset !important;
+	}
+}

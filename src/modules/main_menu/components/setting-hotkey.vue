@@ -13,6 +13,7 @@
 				:id="item.full_key"
 				ref="control"
 				:value="value"
+				class="tw-mg-05"
 				@input="onInput"
 			/>
 

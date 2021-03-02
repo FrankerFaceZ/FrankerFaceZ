@@ -365,24 +365,30 @@ export default class SettingsManager extends Module {
 	}
 
 
-	checkUpdates() {
+	async checkUpdates() {
+		await this.awaitProvider();
+		await this.provider.awaitReady();
+
+		if ( ! this.provider.shouldUpdate )
+			return;
+
 		const promises = [];
 		for(const profile of this.__profiles) {
-			if ( ! profile || ! profile.url )
+			if ( ! profile || ! profile.url || profile.pause_updates )
 				continue;
 
 			const out = profile.checkUpdate();
 			promises.push(out instanceof Promise ? out : Promise.resolve(out));
 		}
 
-		Promise.all(promises).then(data => {
-			let success = 0;
-			for(const thing of data)
-				if ( thing )
-					success++;
+		const data = await Promise.all(promises);
 
-			this.log.info(`Successfully refreshed ${success} of ${data.length} profiles from remote URLs.`);
-		});
+		let success = 0;
+		for(const thing of data)
+			if ( thing )
+				success++;
+
+		this.log.info(`Successfully refreshed ${success} of ${data.length} profiles from remote URLs.`);
 	}
 
 
@@ -619,8 +625,10 @@ export default class SettingsManager extends Module {
 		let reordered = false,
 			changed = false;
 
-		for(const profile of old_profiles)
+		for(const profile of old_profiles) {
 			profile.off('toggled', this._onProfileToggled, this);
+			profile.hotkey_enabled = false;
+		}
 
 		for(const profile_data of raw_profiles) {
 			const id = profile_data.id,
@@ -665,8 +673,10 @@ export default class SettingsManager extends Module {
 			changed = true;
 		}
 
-		for(const profile of profiles)
+		for(const profile of profiles) {
 			profile.on('toggled', this._onProfileToggled, this);
+			profile.hotkey_enabled = true;
+		}
 
 		if ( ! changed && ! old_ids.size || suppress_events )
 			return;
@@ -707,6 +717,7 @@ export default class SettingsManager extends Module {
 		this.__profiles.unshift(profile);
 
 		profile.on('toggled', this._onProfileToggled, this);
+		profile.hotkey_enabled = true;
 
 		this._saveProfiles();
 		this.emit(':profile-created', profile);
@@ -793,6 +804,8 @@ export default class SettingsManager extends Module {
 
 	context(env) { return this.main_context.context(env) }
 	get(key) { return this.main_context.get(key); }
+	getChanges(key, fn, ctx) { return this.main_context.getChanges(key, fn, ctx); }
+	onChange(key, fn, ctx) { return this.main_context.onChange(key, fn, ctx); }
 	uses(key) { return this.main_context.uses(key) }
 	update(key) { return this.main_context.update(key) }
 

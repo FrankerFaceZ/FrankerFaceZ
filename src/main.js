@@ -27,6 +27,7 @@ class FrankerFaceZ extends Module {
 
 		FrankerFaceZ.instance = this;
 
+		this.flavor = 'main';
 		this.name = 'frankerfacez';
 		this.__state = 0;
 		this.__modules.core = this;

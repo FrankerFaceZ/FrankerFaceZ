@@ -5,7 +5,7 @@
 		:data-tip="act.appearance.tooltip"
 		:class="{'ffz-tooltip': tooltip, 'tw-pd-05': pad, 'colored': color && color.length > 0}"
 		data-tooltip-type="action"
-		class="ffz-mod-icon mod-icon tw-c-text-alt-2 tw-font-size-4"
+		class="mod-icon ffz-mod-icon tw-c-text-alt-2 tw-font-size-4"
 	>
 		<component
 			:is="renderer.component"

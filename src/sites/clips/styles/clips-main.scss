@@ -1,0 +1,43 @@
+@import 'styles/main.scss';
+
+.tw-root--theme-dark, html {
+	body {
+		background-color: var(--color-background-body) !important;
+	}
+}
+
+.clips-top-nav-user {
+	background-color: var(--color-background-base) !important;
+}
+
+.chat-line__message--emote {
+	vertical-align: middle;
+	margin: -.5rem 0;
+}
+
+.chat-author__display-name,
+.chat-author__intl-login {
+	cursor: pointer;
+}
+
+.ffz-emoji {
+	width: calc(var(--ffz-chat-font-size) * 1.5);
+	height: calc(var(--ffz-chat-font-size) * 1.5);
+
+	&.preview-image {
+		width: 7.2rem;
+		height: 7.2rem;
+	}
+}
+
+.clips-chat-replay {
+	&.tw-flex {
+		display: block !important;
+	}
+
+	& > div {
+		margin: 0 -1rem !important;
+		padding: 0.5rem;
+		display: block !important;
+	}
+}

@@ -4,7 +4,7 @@
 			ref="button"
 			:class="{active: opened}"
 			tabindex="0"
-			class="tw-c-background-alt tw-block tw-border tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+			class="tw-flex tw-align-items-center tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 			@keyup.up.stop.prevent="focusShow"
 			@keyup.left.stop.prevent="focusShow"
 			@keyup.down.stop.prevent="focusShow"
@@ -51,23 +51,32 @@
 								@keyup.enter="changeProfile(p)"
 								@click="changeProfile(p)"
 							>
-								<div
-									v-if="! p.toggled"
-									class="tw-tooltip__container ffz--profile-row__icon ffz-i-cancel tw-absolute"
-								>
-									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-										{{ t('setting.profiles.disabled', 'This profile is disabled.') }}
+								<div class="ffz--profile-row__icon-tray tw-flex">
+									<div
+										v-if="p.url"
+										:class="`tw-tooltip__container ffz--profile-row__icon ffz-i-download-cloud tw-relative${p.pause_updates ? ' ffz-unmatched-item' : ''}`"
+									>
+										<div v-if="! p.pause_updates" class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+											{{ t('setting.profiles.updates', 'This profile will update automatically.') }}
+										</div>
+									</div>
+									<div
+										v-if="! p.toggled"
+										class="tw-tooltip__container ffz--profile-row__icon ffz-i-cancel tw-relative"
+									>
+										<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+											{{ t('setting.profiles.disabled', 'This profile is disabled.') }}
+										</div>
+									</div>
+									<div
+										v-if="p.live"
+										class="tw-tooltip__container ffz--profile-row__icon ffz-i-ok tw-relative"
+									>
+										<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+											{{ t('setting.profiles.active', 'This profile is enabled and active.') }}
+										</div>
 									</div>
 								</div>
-								<div
-									v-if="p.live"
-									class="tw-tooltip__container ffz--profile-row__icon ffz-i-ok tw-absolute"
-								>
-									<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-										{{ t('setting.profiles.active', 'This profile is enabled and active.') }}
-									</div>
-								</div>
-
 
 								<h4>{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
 								<div v-if="p.description" class="description">
@@ -220,6 +229,17 @@ export default {
 
 		changeProfile(profile) {
 			this.context.currentProfile = profile;
+
+			try {
+				window.history.replaceState({
+					...window.history.state,
+					ffzccp: profile.id
+				}, document.title);
+			} catch(err) {
+				/* no-op */
+				console.error(err);
+			}
+
 			this.focusHide();
 		}
 	}

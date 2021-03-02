@@ -16,6 +16,7 @@
 				:open-up="openUp"
 				:nullable="true"
 				:value="color"
+				class="tw-mg-05"
 				@input="onInput"
 			/>
 

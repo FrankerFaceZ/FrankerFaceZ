@@ -40,6 +40,8 @@
 				{{ t('setting.profiles.drag', 'Drag profiles to change their priority.') }}
 			</div>
 			<button
+				:class="{'tw-button--disabled': importing}"
+				:disabled="importing"
 				class="tw-mg-l-1 tw-button tw-button--text"
 				@click="edit()"
 			>
@@ -47,14 +49,73 @@
 					{{ t('setting.profiles.new', 'New Profile') }}
 				</span>
 			</button>
-			<button
-				class="tw-mg-l-1 tw-button tw-button--text"
-				@click="doImport"
+			<div
+				v-on-clickaway="closeMenu"
+				class="tw-relative"
 			>
-				<span class="tw-button__text ffz-i-upload">
-					{{ t('setting.import', 'Import…') }}
-				</span>
-			</button>
+				<button
+					:class="{'tw-button--disabled': importing}"
+					:disabled="importing"
+					class="tw-mg-l-1 tw-button tw-button--text"
+					@click="toggleMenu"
+				>
+					<span class="tw-button__text ffz-i-upload">
+						{{ t('setting.import', 'Import…') }}
+					</span>
+					<span class="tw-button__icon tw-button__icon--right">
+						<figure class="ffz-i-down-dir" />
+					</span>
+				</button>
+				<balloon
+					v-if="menu_open"
+					color="background-alt-2"
+					dir="down-right"
+					:size="menu_pasting ? 'md' : 'sm'"
+				>
+					<simplebar class="ffz-mh-30">
+						<div v-if="menu_pasting" class="tw-pd-1">
+							<div class="tw-flex tw-align-items-center">
+								<input
+									ref="paste"
+									:placeholder="t('setting.paste-url.url', '[url]')"
+									class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+									@keydown.enter="doImportURL"
+								>
+								<button
+									class="tw-mg-l-05 tw-button"
+									@click="doImportURL"
+								>
+									<span class="tw-button__text ffz-i-plus">
+										{{ t('setting.import.do', 'Import') }}
+									</span>
+								</button>
+							</div>
+						</div>
+						<div v-else class="tw-pd-y-1">
+							<button
+								class="ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-full-width"
+								@click="preparePaste"
+							>
+								<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
+									<div class="tw-flex-grow-1 tw-mg-r-1 ffz-i-download-cloud">
+										{{ t('setting.import.url', 'From URL') }}
+									</div>
+								</div>
+							</button>
+							<button
+								class="ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-full-width"
+								@click="doImport"
+							>
+								<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
+									<div class="tw-flex-grow-1 tw-mg-r-1 ffz-i-upload">
+										{{ t('setting.import.file', 'From File') }}
+									</div>
+								</div>
+							</button>
+						</div>
+					</simplebar>
+				</balloon>
+			</div>
 		</div>
 
 		<div v-if="import_error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
@@ -82,6 +143,7 @@
 				{{ import_message }}
 			</section>
 			<button
+				v-if="import_closable"
 				class="tw-button tw-button--text tw-relative tw-tooltip__container"
 				@click="resetImport"
 			>
@@ -173,9 +235,12 @@
 						<span class="ffz-i-ellipsis-vert" />
 					</div>
 
-					<div v-if="p.url" class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative tw-tooltip__container tw-font-size-4">
-						<span class="ffz-i-download-cloud" />
-						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+					<div
+						v-if="p.url"
+						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative tw-tooltip__container tw-font-size-4"
+					>
+						<span :class="`ffz-i-download-cloud${p.pause_updates ? ' ffz-unmatched-item' : ''}`" />
+						<div v-if="! p.pause_updates" class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
 							<div class="tw-mg-b-05">
 								{{ t('setting.profile.updates', 'This profile will update automatically from the following URL:') }}
 							</div>
@@ -241,7 +306,12 @@ export default {
 
 	data() {
 		return {
+			menu_open: false,
+			menu_pasting: false,
+
+			importing: false,
 			import_error: false,
+			import_closable: true,
 			import_error_message: null,
 			import_message: null,
 			import_profiles: null,
@@ -272,6 +342,24 @@ export default {
 	},
 
 	methods: {
+		closeMenu() {
+			this.menu_open = false;
+			this.menu_pasting = false;
+		},
+
+		toggleMenu() {
+			this.menu_open = ! this.menu_open;
+			this.menu_pasting = false;
+		},
+
+		preparePaste() {
+			this.menu_open = true;
+			this.menu_pasting = true;
+			requestAnimationFrame(() => {
+				this.$refs.paste.focus()
+			});
+		},
+
 		onProxyCheck() {
 			const val = this.$refs.proxied.checked;
 			this.context.setProxied(val);
@@ -304,7 +392,10 @@ export default {
 		},
 
 		resetImport() {
+			this.importing = false;
+			this.import_url = null;
 			this.import_error = false;
+			this.import_closable = true;
 			this.import_error_message = null;
 			this.import_message = null;
 			this.import_profiles = null;
@@ -313,12 +404,48 @@ export default {
 			this.import_data = null;
 		},
 
-		async doImport() {
+		async doImportURL() {
+			const url = this.$refs.paste.value;
+
+			this.closeMenu();
 			this.resetImport();
+			this.import_url = url;
+			this.importing = true;
+			this.import_closable = false;
+
+			this.import_message = this.t('setting.backup-restore.http-loading', 'Loading...');
+
+			let data;
+			try {
+				const response = await fetch(url);
+				if ( ! response.ok )
+					throw new Error;
+
+				data = await response.json();
+
+			} catch(err) {
+				this.import_message = null;
+				this.import_error = true;
+				this.import_error_message = this.t('setting.backup-restore.http-error', 'Unable to read JSON from the provided URL.');
+				return;
+			}
+
+			this.import_message = null;
+			this.importData(data);
+		},
+
+		async doImport() {
+			this.closeMenu();
+			this.resetImport();
+			this.importing = true;
 
 			let file, contents;
 			try {
 				file = await openFile('application/json,application/zip');
+				if ( ! file ) {
+					this.resetImport();
+					return;
+				}
 
 				// We might get a different MIME than expected, roll with it.
 				if ( file.type.toLowerCase().includes('zip') ) {
@@ -345,6 +472,10 @@ export default {
 				return;
 			}
 
+			this.importData(data);
+		},
+
+		importData(data) {
 			if ( data && data.type === 'full' ) {
 				let profiles = data.values && data.values.profiles;
 				if ( profiles === undefined )
@@ -374,6 +505,9 @@ export default {
 		},
 
 		importProfile(profile_data, data) {
+			if ( this.import_url && ! profile_data.url )
+				profile_data.url = this.import_url;
+
 			this.import_profile = profile_data;
 			this.import_profile_data = data;
 

@@ -27,6 +27,8 @@ export default class AddonManager extends Module {
 
 		this.load_requires = ['settings'];
 
+		this.target = this.parent.flavor || 'unknown';
+
 		this.has_dev = false;
 		this.reload_required = false;
 		this.addons = {};
@@ -50,6 +52,7 @@ export default class AddonManager extends Module {
 			getAddons: () => Object.values(this.addons),
 			hasAddon: id => this.hasAddon(id),
 			getVersion: id => this.getVersion(id),
+			doesAddonTarget: id => this.doesAddonTarget(id),
 			isAddonEnabled: id => this.isAddonEnabled(id),
 			isAddonExternal: id => this.isAddonExternal(id),
 			enableAddon: id => this.enableAddon(id),
@@ -81,12 +84,26 @@ export default class AddonManager extends Module {
 			// We do not await enabling add-ons because that would delay the
 			// main script's execution.
 			for(const id of this.enabled_addons)
-				if ( this.hasAddon(id) )
+				if ( this.hasAddon(id) && this.doesAddonTarget(id) )
 					this._enableAddon(id);
 
 			this.emit(':ready');
 		});
 	}
+
+
+	doesAddonTarget(id) {
+		const data = this.addons[id];
+		if ( ! data )
+			return false;
+
+		const targets = data.targets ?? ['main'];
+		if ( ! Array.isArray(targets) )
+			return false;
+
+		return targets.includes(this.target);
+	}
+
 
 	generateLog() {
 		const out = ['Known'];
@@ -323,7 +340,8 @@ export default class AddonManager extends Module {
 			this.settings.provider.set('addons.enabled', this.enabled_addons);
 
 		// Actually load it.
-		this._enableAddon(id);
+		if ( this.doesAddonTarget(id) )
+			this._enableAddon(id);
 	}
 
 	async disableAddon(id, save = true) {

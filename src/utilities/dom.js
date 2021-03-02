@@ -203,9 +203,27 @@ export function openFile(contentType, multiple) {
 		input.accept = contentType;
 		input.multiple = multiple;
 
+		let resolved = false;
+
+		const focuser = () => {
+			off(window, 'focus', focuser);
+			setTimeout(() => {
+				if ( ! resolved ) {
+					resolved = true;
+					resolve(multiple ? [] : null);
+				}
+			}, 500);
+		};
+
+		on(window, 'focus', focuser);
+
 		input.onchange = () => {
-			const files = Array.from(input.files);
-			resolve(multiple ? files : files[0])
+			off(window, 'focus', focuser);
+			if ( ! resolved ) {
+				resolved = true;
+				const files = Array.from(input.files);
+				resolve(multiple ? files : files[0])
+			}
 		}
 
 		input.click();

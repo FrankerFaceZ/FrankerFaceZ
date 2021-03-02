@@ -442,6 +442,16 @@ export default class SettingsContext extends EventEmitter {
 		return this._get(key, key, []);
 	}
 
+	getChanges(key, fn, ctx) {
+		this.onChange(key, fn, ctx);
+		fn.call(ctx, this.get(key));
+	}
+
+	onChange(key, fn, ctx) {
+		this.on(`changed:${key}`, fn, ctx);
+	}
+
+
 	uses(key) {
 		if ( key.startsWith('context.') )
 			return null;

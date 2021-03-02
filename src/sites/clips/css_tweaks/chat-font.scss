@@ -1,0 +1,9 @@
+.clips-chat-replay {
+	a.clip-chat__message-author,
+	.message {
+		font-size: var(--ffz-chat-font-size) !important;
+	}
+
+	line-height: var(--ffz-chat-line-height);
+	font-family: var(--ffz-chat-font-family);
+}

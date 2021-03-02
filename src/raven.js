@@ -151,7 +151,7 @@ export default class RavenLogger extends Module {
 			autoBreadcrumbs: {
 				console: false
 			},
-			release: (window.FrankerFaceZ || window.FFZPlayer || window.FFZBridge).version_info.toString(),
+			release: (window.FrankerFaceZ || window.FFZPlayer || window.FFZBridge || window.FFZClips).version_info.toString(),
 			environment: DEBUG ? 'development' : 'production',
 			captureUnhandledRejections: false,
 			ignoreErrors: [

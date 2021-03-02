@@ -273,6 +273,11 @@ export default {
 			if ( ! item )
 				return;
 
+			if ( this.$refs.page && this.$refs.page.onBeforeChange ) {
+				if ( this.$refs.page.onBeforeChange(this.currentItem, item) === false )
+					return;
+			}
+
 			this.changeItem(item);
 
 			// Asynchronously walk down the tab tree, so that

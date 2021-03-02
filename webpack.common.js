@@ -9,12 +9,15 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const VERSION = semver.parse(require('./package.json').version);
 const PRODUCTION = process.env.NODE_ENV === 'production';
 
+const ENTRY_POINTS = {
+	bridge: './src/bridge.js',
+	player: './src/player.js',
+	avalon: './src/main.js',
+	clips: './src/clips.js'
+};
+
 module.exports = {
-	entry: {
-		bridge: './src/bridge.js',
-		player: './src/player.js',
-		avalon: './src/main.js'
-	},
+	entry: ENTRY_POINTS,
 	resolve: {
 		extensions: ['.js', '.jsx'],
 		alias: {
@@ -41,7 +44,7 @@ module.exports = {
 	optimization: {
 		splitChunks: {
 			chunks(chunk) {
-				return chunk.name !== 'avalon' && chunk.name !== 'bridge' && chunk.name !== 'player'
+				return ! Object.keys(ENTRY_POINTS).includes(chunk.name);
 			},
 			cacheGroups: {
 				vendors: false
