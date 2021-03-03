@@ -91,6 +91,9 @@ export default {
 			let file;
 			try {
 				file = await openFile('application/json,application/zip');
+				if ( ! file )
+					return;
+
 			} catch(err) {
 				this.error_desc = this.t('setting.backup-restore.read-error', 'Unable to read file.');
 				this.error = true;

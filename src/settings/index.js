@@ -522,7 +522,7 @@ export default class SettingsManager extends Module {
 		}
 
 		// Change over.
-		localStorage.ffzProvider = key;
+		localStorage.ffzProviderv2 = key;
 		location.reload();
 	}
 

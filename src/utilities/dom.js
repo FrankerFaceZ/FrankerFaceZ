@@ -205,20 +205,22 @@ export function openFile(contentType, multiple) {
 
 		let resolved = false;
 
-		const focuser = () => {
+		// TODO: Investigate this causing issues
+		// for some users.
+		/*const focuser = () => {
 			off(window, 'focus', focuser);
 			setTimeout(() => {
 				if ( ! resolved ) {
 					resolved = true;
 					resolve(multiple ? [] : null);
 				}
-			}, 500);
+			}, 5000);
 		};
 
-		on(window, 'focus', focuser);
+		on(window, 'focus', focuser);*/
 
 		input.onchange = () => {
-			off(window, 'focus', focuser);
+			//off(window, 'focus', focuser);
 			if ( ! resolved ) {
 				resolved = true;
 				const files = Array.from(input.files);
