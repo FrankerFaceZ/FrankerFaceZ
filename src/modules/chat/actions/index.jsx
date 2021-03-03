@@ -158,7 +158,7 @@ export default class Actions extends Module {
 				path: 'Chat > Actions > Room @{"description": "Here, you can define custom actions that will appear above the chat input box."}',
 				component: 'chat-actions',
 				context: ['room', 'room-mode'],
-				inline: true,
+				inline: false,
 
 				data: () => {
 					const chat = this.resolve('site.chat');
@@ -420,11 +420,38 @@ export default class Actions extends Module {
 
 
 	renderRoom(mod_icons, current_user, current_room, is_above, createElement) {
-		const actions = [],
+		const lines = [],
 			chat = this.resolve('site.chat');
+		let line = null;
 
 		for(const data of this.parent.context.get('chat.actions.room')) {
-			if ( ! data || ! data.action || ! data.appearance )
+			if ( ! data )
+				continue;
+
+			const type = data.type;
+			if ( type ) {
+				if ( type === 'new-line' ) {
+					line = null;
+
+				} else if ( type === 'space' ) {
+					if ( ! line )
+						lines.push(line = []);
+
+					line.push(<div class="tw-flex-grow-1" />);
+
+				} else if ( type === 'space-small' ) {
+					if ( ! line )
+						lines.push(line = []);
+
+					line.push(<div class="tw-mg-x-1" />);
+
+				} else
+					this.log.warn('Unknown action type', type);
+
+				continue;
+			}
+
+			if ( ! data.action || ! data.appearance )
 				continue;
 
 			let ap = data.appearance || {};
@@ -460,7 +487,10 @@ export default class Actions extends Module {
 				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 				contents = def.render.call(this, ap, createElement, color);
 
-			actions.push(<button
+			if ( ! line )
+				lines.push(line = []);
+
+			line.push(<button
 				class={`ffz-tooltip tw-pd-x-05 mod-icon ffz-mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}`}
 				data-tooltip-type="action"
 				data-action={data.action}
@@ -473,13 +503,18 @@ export default class Actions extends Module {
 			</button>);
 		}
 
-		if ( ! actions.length )
+		if ( ! lines.length )
 			return null;
 
-		const room = current_room && JSON.stringify(current_room);
+		const room = current_room && JSON.stringify(current_room),
+			multi_line = lines.length > 1;
+
+		const actions = multi_line ?
+			lines.map((line, idx) => <div key={idx} class="tw-flex tw-full-width tw-flex-row tw-flex-wrap">{line}</div>) :
+			lines[0];
 
 		return (<div
-			class={`ffz--room-actions ffz-action-data tw-flex tw-flex-grow-1 tw-flex-wrap tw-align-items-center ${is_above ? 'tw-pd-y-05 tw-border-t' : 'tw-mg-x-05'}`}
+			class={`ffz--room-actions${multi_line ? ' tw-flex-column' : ''} ffz-action-data tw-flex tw-flex-grow-1 tw-flex-wrap tw-align-items-center ${is_above ? 'tw-pd-y-05 tw-border-t' : 'tw-mg-x-05'}`}
 			data-room={room}
 		>
 			{actions}

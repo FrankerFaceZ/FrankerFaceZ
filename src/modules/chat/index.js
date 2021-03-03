@@ -98,6 +98,23 @@ export default class Chat extends Module {
 			force_seen: true
 		});
 
+		this.settings.add('chat.timestamp-size', {
+			default: null,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Timestamp Font Size',
+				description: 'How large should timestamps be, in pixels. Defaults to Font Size if not set.',
+				component: 'setting-text-box',
+				process(val) {
+					val = parseInt(val, 10);
+					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
+						return null;
+
+					return val;
+				}
+			}
+		});
+
 		this.settings.add('chat.font-size', {
 			default: 13,
 			ui: {
@@ -108,7 +125,7 @@ export default class Chat extends Module {
 				process(val) {
 					val = parseInt(val, 10);
 					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return 12;
+						return 13;
 
 					return val;
 				}

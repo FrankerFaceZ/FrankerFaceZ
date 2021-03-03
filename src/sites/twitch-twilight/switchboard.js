@@ -70,7 +70,12 @@ export default class Switchboard extends Module {
 		this.location = router.props.location.pathname;
 		//const location = router.props.location.pathname;
 
-		this.loadOne();
+		this.web_munch.waitForLoader().then(() => {
+			if ( this.web_munch._require )
+				return;
+
+			this.loadOne();
+		});
 	}
 
 	loadOne() {

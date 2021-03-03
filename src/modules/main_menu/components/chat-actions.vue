@@ -193,15 +193,27 @@
 					:key="idx"
 					class="tw-flex tw-align-items-center tw-justify-content-center"
 				>
-					<action-preview
-						v-for="act in actions"
-						:key="act.id"
-						:act="act.v"
-						:color="color(act.v.appearance.color)"
-						:renderers="data.renderers"
-						tooltip="true"
-						pad="true"
-					/>
+					<template v-for="act in actions">
+						<div
+							v-if="act.type === 'space'"
+							:key="act.id"
+							class="tw-flex-grow-1"
+						/>
+						<div
+							v-else-if="act.type === 'space-small'"
+							:key="act.id"
+							class="tw-mg-x-1"
+						/>
+						<action-preview
+							v-else
+							:key="act.id"
+							:act="act.v"
+							:color="color(act.v.appearance.color)"
+							:renderers="data.renderers"
+							tooltip="true"
+							pad="true"
+						/>
+					</template>
 				</div>
 			</div>
 		</div>
@@ -254,7 +266,7 @@
 						<div v-else class="tw-pd-y-1">
 							<button
 								class="ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-full-width"
-								@click="add_pasting = true"
+								@click="preparePaste"
 							>
 								<div class="tw-flex tw-align-items-center tw-pd-y-05 tw-pd-x-1">
 									<div class="tw-flex-grow-1 tw-mg-r-1">
@@ -532,6 +544,9 @@ export default {
 						out.push(current);
 						current = [];
 
+					} else if ( type === 'space' || type === 'small-space' ) {
+						current.push(val.v);
+
 					} else if ( this.displayAction(val.v) )
 						current.push(val);
 				}
@@ -591,6 +606,14 @@ export default {
 		toggleAdd() {
 			this.add_open = ! this.add_open;
 			this.add_pasting = false;
+		},
+
+		preparePaste() {
+			this.add_open = true;
+			this.add_pasting = true;
+			requestAnimationFrame(() => {
+				this.$refs.paste.focus()
+			});
 		},
 
 		addFromJSON() {

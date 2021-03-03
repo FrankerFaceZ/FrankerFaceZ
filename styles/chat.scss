@@ -315,6 +315,13 @@
 	position: relative;
 }
 
+.ffz--room-actions {
+	.chat-input__buttons-container &.tw-flex-column {
+		margin-top: -1rem;
+		margin-bottom: -1rem;
+	}
+}
+
 
 .ffz--modifier-actions {
 	position: absolute;

@@ -91,3 +91,29 @@ export const image = {
 		return <figure class="mod-icon__image"><img src={data.image} /></figure>;
 	}
 }
+
+
+// ============================================================================
+// Emoji
+// ============================================================================
+
+/*export const emoji = {
+	title: 'Emoji',
+	title_i18n: 'setting.actions.appearance.emoji',
+
+	colored: false,
+	editor: () => import(/* webpackChunkName: 'main-menu' * / './components/edit-emoji.vue'),
+
+	load(data) {
+		if ( data.icon && data.icon.startsWith('ffz-fa') )
+			loadFontAwesome();
+
+		return true;
+	},
+
+	component: () => import(/* webpackChunkName: 'main-menu' * / './components/preview-emoji.vue'),
+
+	render(data, createElement) {
+		return <figure class="mod-icon__image"><img src={data.image} /></figure>;
+	}
+}*/

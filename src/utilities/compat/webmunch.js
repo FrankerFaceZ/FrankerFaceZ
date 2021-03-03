@@ -11,7 +11,8 @@ import { DEBUG } from '../constants';
 
 const NAMES = [
 	'webpackJsonp',
-	'webpackChunktwitch_twilight'
+	'webpackChunktwitch_twilight',
+	'webpackChunktwitch_sunlight'
 ];
 
 const HARD_MODULES = [
@@ -46,6 +47,23 @@ export default class WebMunch extends Module {
 	// Loaded Modules
 	// ========================================================================
 
+	waitForLoader() {
+		if ( this._original_loader )
+			return Promise.resolve();
+
+		const waiters = this._load_waiters = this._load_waiters || [];
+		return new Promise((s,f) => waiters.push([s,f]));
+	}
+
+	_resolveLoadWait(errored) {
+		const waiters = this._load_waiters;
+		this._load_waiters = null;
+
+		if ( waiters )
+			for(const pair of waiters)
+				pair[errored ? 1 : 0]();
+	}
+
 	hookLoader(attempts = 0) {
 		if ( this._original_loader )
 			return this.log.warn('Attempted to call hookLoader twice.');
@@ -58,8 +76,11 @@ export default class WebMunch extends Module {
 			}
 
 		if ( ! name ) {
-			if ( attempts > 500 )
-				return this.log.error("Unable to find webpack's loader after two minutes.");
+			if ( attempts > 240 ) {
+				this.log.error("Unable to find webpack's loader after one minute.");
+				this._resolveLoadWait(true);
+				return;
+			}
 
 			return setTimeout(this.hookLoader.bind(this, attempts + 1), 250);
 		}
@@ -75,6 +96,7 @@ export default class WebMunch extends Module {
 				window[name] = this.webpackJsonpv3.bind(this);
 			} catch(err) {
 				this.log.warn('Unable to wrap webpackJsonp due to write protection.');
+				this._resolveLoadWait(true);
 				return;
 			}
 
@@ -93,14 +115,17 @@ export default class WebMunch extends Module {
 				thing.push = this.webpackJsonpv4.bind(this);
 			} catch(err) {
 				this.log.warn('Unable to wrap webpackJsonp (v4) due to write protection.');
+				this._resolveLoadWait(true);
 				return;
 			}
 
 		} else {
 			this.log.error('webpackJsonp is of an unknown value. Unable to wrap.');
+			this._resolveLoadWait(true);
 			return;
 		}
 
+		this._resolveLoadWait();
 		this.log.info(`Found and wrapped webpack's loader after ${(attempts||0)*250}ms.`);
 	}
 

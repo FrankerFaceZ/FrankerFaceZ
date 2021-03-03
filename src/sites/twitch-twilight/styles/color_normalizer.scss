@@ -10,7 +10,10 @@
 	}
 
 	.clmgr-table__row,
+	.sunlight-expanded-nav-drop-down-menu-layout__scrollable-area,
 	.stream-manager--page-view .mosaic-window-body,
+	.ach-card,
+	.ach-card--expanded .ach-card__inner,
 	.room-upsell,
 	.chat-room,
 	.qa-vod-chat,
@@ -58,6 +61,18 @@
 		&:focus, &:hover {
 			background-color: var(--ffz-color-accent-8) !important;
 		}
+	}
+
+	.ach-q-card {
+		box-shadow: 0 0 0 1px var(--color-border-button) !important;
+	}
+
+	.ach-link:active .ach-card, .ach-link:focus .ach-card {
+		outline: .5rem auto var(--color-border-input-focus) !important;
+	}
+
+	.ach-card--expanded .ach-card__inner {
+		border-color: var(--color-border-brand) !important;
 	}
 }
 
