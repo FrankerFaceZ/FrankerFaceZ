@@ -500,10 +500,28 @@ export function glob_to_regex(input) {
 		if ( CONTROL_CHARS.includes(char) )
 			output += `\\${char}`;
 
-		else if ( char === '?' )
+		else if ( char === '\\' ) {
+			i++;
+			const next = input[i];
+			if ( next ) {
+				if ( CONTROL_CHARS.includes(next) )
+					output += `\\${next}`;
+				else
+					output += next;
+			}
+
+		} else if ( char === '?' )
 			output += '.';
 
-		else if ( char === '[' || char === ']' )
+		else if ( char === '[' ) {
+			output += char;
+			const next = input[i + 1];
+			if ( next === '!' ) {
+				i++;
+				output += '^';
+			}
+
+		} else if ( char === ']' )
 			output += char;
 
 		else if ( char === '{' ) {
@@ -529,16 +547,16 @@ export function glob_to_regex(input) {
 			if ( count > 1 )
 				output += '.*?';
 			else
-				output += '[^ ]*?';
+				output += '[^\\s]*?';
 
 		} else
 			output += char;
 	}
 
-	while(groups > 0) {
+	/*while(groups > 0) {
 		output += ')';
 		groups--;
-	}
+	}*/
 
 	return output;
 }

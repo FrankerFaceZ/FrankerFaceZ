@@ -7,6 +7,29 @@
 	}
 }
 
+div[data-a-target="player-overlay-video-stats"] {
+	.tw-table-cell + .tw-table-cell {
+		font-family: "Helvetica Neue",sans-serif;
+		font-variant-numeric: tabular-nums;
+	}
+
+	&.tw-c-background-base {
+		background-color: rgba(0,0,0,0.5) !important;
+	}
+
+	.tw-table-heading {
+		background-color: rgba(0,0,0,0.6) !important;
+	}
+
+	tbody .tw-table-row:nth-child(2n+0) {
+		background-color: rgba(0,0,0,0.2);
+	}
+}
+
+.tw-root--theme-dark > .tw-absolute.scrollable-area {
+	height: calc(100% - 5rem);
+}
+
 .ffz--player-pip,
 .ffz--player-reset {
 	&:before {

@@ -14,6 +14,7 @@
 			v-for="item in displayed"
 			:key="item.full_key"
 			:class="[currentItem === item ? 'active' : '']"
+			:data-key="item.full_key"
 			role="presentation"
 		>
 			<div

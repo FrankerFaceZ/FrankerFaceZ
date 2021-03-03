@@ -10,18 +10,20 @@ import {DEBUG} from 'utilities/constants';
 import {timeout} from 'utilities/object';
 
 import SettingsManager from './settings/index';
+import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import Site from './sites/player';
 
-class FFZPlayer extends Module {
+class FrankerFaceZ extends Module {
 	constructor() {
 		super();
 		const start_time = performance.now(),
-			VER = FFZPlayer.version_info;
+			VER = FrankerFaceZ.version_info;
 
-		FFZPlayer.instance = this;
+		FrankerFaceZ.instance = this;
 
+		this.flavor = 'player';
 		this.name = 'ffz_player';
 		this.__state = 0;
 		this.__modules.core = this;
@@ -49,6 +51,7 @@ class FFZPlayer extends Module {
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
 		this.inject('site', Site);
+		this.inject('addons', AddonManager);
 
 		// ========================================================================
 		// Startup
@@ -65,7 +68,7 @@ class FFZPlayer extends Module {
 	}
 
 	static get() {
-		return FFZPlayer.instance;
+		return FrankerFaceZ.instance;
 	}
 
 	// ========================================================================
@@ -111,9 +114,9 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 }
 
 
-FFZPlayer.Logger = Logger;
+FrankerFaceZ.Logger = Logger;
 
-const VER = FFZPlayer.version_info = {
+const VER = FrankerFaceZ.version_info = {
 	major: __version_major__,
 	minor: __version_minor__,
 	revision: __version_patch__,
@@ -124,15 +127,16 @@ const VER = FFZPlayer.version_info = {
 		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
 }
 
-// We don't support addons in the player right now, so
-/*FFZPlayer.utilities = {
+// We don't support addons in the player right now, so a few
+// of these are unavailable.
+FrankerFaceZ.utilities = {
 	addon: require('utilities/addon'),
-	color: require('utilities/color'),
+	//color: require('utilities/color'),
 	constants: require('utilities/constants'),
 	dom: require('utilities/dom'),
 	events: require('utilities/events'),
-	fontAwesome: require('utilities/font-awesome'),
-	graphql: require('utilities/graphql'),
+	//fontAwesome: require('utilities/font-awesome'),
+	//graphql: require('utilities/graphql'),
 	logging: require('utilities/logging'),
 	module: require('utilities/module'),
 	object: require('utilities/object'),
@@ -141,8 +145,8 @@ const VER = FFZPlayer.version_info = {
 	i18n: require('utilities/translation-core'),
 	dayjs: require('dayjs'),
 	popper: require('popper.js').default
-}*/
+}
 
 
-window.FFZPlayer = FFZPlayer;
-window.ffz = new FFZPlayer();
+window.FrankerFaceZ = FrankerFaceZ;
+window.ffz = new FrankerFaceZ();

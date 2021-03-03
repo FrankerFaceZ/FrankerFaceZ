@@ -258,8 +258,39 @@ textarea.ffz-input {
 
 
 .ffz--home {
-	h2, p {
+	h2, p, table {
 		margin-bottom: 1rem;
+	}
+
+	table {
+		border: 1px solid var(--color-border-base);
+
+		thead {
+			border-bottom: 1px solid var(--color-border-base);
+		}
+
+		th {
+			font-weight: 700;
+		}
+
+		th,
+		td {
+			padding: 0.5rem;
+
+			&:not(:last-child) {
+				border-right: 1px solid var(--color-border-base);
+			}
+		}
+
+		td {
+			background-color: var(--color-background-alt);
+		}
+
+		th,
+		tr:nth-child(2n + 0) td {
+			background-color: var(--color-background-base);
+		}
+
 	}
 
 	ul {
@@ -343,6 +374,7 @@ textarea.ffz-input {
 	font-size: 1.2em;
 }
 
+.ffz--home,
 .ffz--changelog,
 .ffz--widget {
 	code {
@@ -352,7 +384,7 @@ textarea.ffz-input {
 		background-color: rgba(0,0,0,0.1);
 
 		.tw-root--theme-dark & {
-			background-color: rgba(255,255,255,0.05);
+			background-color: rgba(255,255,255,0.1);
 		}
 	}
 }

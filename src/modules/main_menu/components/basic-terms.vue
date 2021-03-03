@@ -3,6 +3,7 @@
 		<term-editor
 			:term="default_term"
 			:colored="item.colored"
+			:highlight="item.highlight"
 			:words="item.words"
 			:removable="item.removable"
 			:adding="true"
@@ -17,6 +18,7 @@
 				:key="term.id"
 				:term="term.v"
 				:colored="item.colored"
+				:highlight="item.highlight"
 				:words="item.words"
 				:removable="item.removable"
 				@remove="remove(term)"
@@ -29,7 +31,7 @@
 <script>
 
 import SettingMixin from '../setting-mixin';
-import {deep_copy} from 'utilities/object';
+import {deep_copy, has} from 'utilities/object';
 
 let last_id = 0;
 
@@ -43,6 +45,9 @@ export default {
 				v: '',
 				t: 'text',
 				c: '',
+				s: false,
+				h: false,
+				w: true,
 				remove: false
 			}
 		}
@@ -61,9 +66,21 @@ export default {
 			const out = [];
 
 			if ( Array.isArray(this.val) )
-				for(const term of this.val)
+				for(const term of this.val) {
+					if ( term && term.v ) {
+						if ( ! has(term.v, 'w') )
+							term.v.w = term.v.t !== 'raw';
+
+						if ( ! has(term.v, 'h') )
+							term.v.h = true;
+
+						if ( term.v.t === 'raw' )
+							term.v.t = 'regex';
+					}
+
 					if ( term && term.t !== 'inherit' )
 						out.push(term);
+				}
 
 			return out;
 		},

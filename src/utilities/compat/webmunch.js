@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {has, sleep} from 'utilities/object';
 import { DEBUG } from '../constants';
 
 const NAMES = [
@@ -107,9 +107,12 @@ export default class WebMunch extends Module {
 			this._original_loader = thing.push;
 
 			// Wrap all existing modules in case any of them haven't been required yet.
-			for(const chunk of thing)
-				if ( chunk && chunk[1] )
-					this.processModulesV4(chunk[1]);
+			// However, there's an issue with this causing loading issues on the
+			// dashboard. Somehow. Not sure, so just don't do it on that page.
+			if ( ! location.hostname.includes('dashboard') )
+				for(const chunk of thing)
+					if ( chunk && chunk[1] )
+						this.processModulesV4(chunk[1]);
 
 			try {
 				thing.push = this.webpackJsonpv4.bind(this);
@@ -146,29 +149,27 @@ export default class WebMunch extends Module {
 	processModulesV4(modules) {
 		const t = this;
 
-		for(const mod_id in modules)
-			if ( has(modules, mod_id) ) {
-				this._known_ids.add(mod_id);
-				const original_module = modules[mod_id];
-				modules[mod_id] = function(module, exports, require, ...args) {
-					if ( ! t._require && typeof require === 'function' ) {
-						t.log.info(`require() grabbed from invocation of module ${mod_id}`);
-						t._require = require;
-						if ( t._resolve_require ) {
-							try {
-								for(const fn of t._resolve_require)
-									fn(require);
-							} catch(err) {
-								t.log.error('An error occurred running require callbacks.', err);
-							}
-
-							t._resolve_require = null;
+		for(const [mod_id, original_module] of Object.entries(modules)) {
+			this._known_ids.add(mod_id);
+			modules[mod_id] = function(module, exports, require, ...args) {
+				if ( ! t._require && typeof require === 'function' ) {
+					t.log.info(`require() grabbed from invocation of module ${mod_id}`);
+					t._require = require;
+					if ( t._resolve_require ) {
+						try {
+							for(const fn of t._resolve_require)
+								fn(require);
+						} catch(err) {
+							t.log.error('An error occurred running require callbacks.', err);
 						}
-					}
 
-					return original_module.call(this, module, exports, require, ...args);
+						t._resolve_require = null;
+					}
 				}
+
+				return original_module.call(this, module, exports, require, ...args);
 			}
+		}
 	}
 
 

@@ -1,6 +1,6 @@
 <template lang="html">
 	<div class="ffz--term">
-		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
+		<div class="tw-align-items-center tw-flex tw-flex-wrap tw-flex-row tw-full-width">
 			<div v-if="! is_valid" class="tw-relative tw-tooltip__container tw-mg-r-05">
 				<figure class="tw-c-text-error ffz-i-attention" />
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
@@ -48,37 +48,131 @@
 					<option value="glob">
 						{{ t('setting.terms.type.glob', 'Glob') }}
 					</option>
-					<option v-if="words" value="regex">
+					<!--option v-if="words" value="regex">
 						{{ t('setting.terms.type.regex-word', 'Regex (Word)') }}
-					</option>
+					</option-->
 					<option value="raw">
 						{{ t('setting.terms.type.regex', 'Regex') }}
 					</option>
 				</select>
 			</div>
-			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip__container">
-				<button
+			<div
+				v-if="editing || display.s"
+				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
+			>
+				<input
 					v-if="editing"
-					:class="{active: edit_data.remove}"
-					class="tw-button ffz-directory-toggle-block"
-					@click="toggleRemove"
+					:id="'sensitive$' + id"
+					v-model="edit_data.s"
+					type="checkbox"
+					class="ffz-min-width-unset ffz-checkbox__input"
 				>
-					<span
-						:class="edit_data.remove ? 'ffz-i-eye-off' : 'ffz-i-eye'"
-						class="tw-button__text"
+				<label
+					v-if="editing"
+					:for="'sensitive$' + id"
+					class="ffz-min-width-unset ffz-checkbox__label"
+				>
+					<span class="tw-mg-l-05">
+						{{ t('settings.terms.sensitive', 'Aa') }}
+					</span>
+				</label>
+				<div v-else-if="display.s" class="tw-relative tw-tooltip__container">
+					<span class="tw-mg-l-05">
+						{{ t('settings.terms.sensitive', 'Aa') }}
+					</span>
+				</div>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('settings.terms.sensitive.tip', 'Case Sensitive') }}
+				</div>
+			</div>
+			<div
+				v-if="words && (editing || display.w)"
+				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
+			>
+				<input
+					v-if="editing"
+					:id="'word$' + id"
+					v-model="edit_data.w"
+					type="checkbox"
+					class="ffz-min-width-unset ffz-checkbox__input"
+				>
+				<label
+					v-if="editing"
+					:for="'word$' + id"
+					class="ffz-min-width-unset ffz-checkbox__label"
+				>
+					<span class="tw-mg-l-05 ffz--whole-word">
+						{{ t('settings.terms.word', 'Abc') }}
+					</span>
+				</label>
+				<div v-else-if="display.w" class="tw-relative tw-tooltip__container">
+					<span class="tw-mg-l-05 ffz--whole-word">
+						{{ t('settings.terms.word', 'Abc') }}
+					</span>
+				</div>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('settings.terms.word.tip', 'Match Whole Words') }}
+				</div>
+			</div>
+			<div
+				v-if="highlight && (editing || display.h)"
+				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
+			>
+				<input
+					v-if="editing"
+					:id="'highlight$' + id"
+					v-model="edit_data.h"
+					type="checkbox"
+					class="ffz-min-width-unset ffz-checkbox__input"
+				>
+				<label
+					v-if="editing"
+					:for="'highlight$' + id"
+					class="ffz-min-width-unset ffz-checkbox__label"
+				>
+					<span class="tw-mg-l-05 ffz--highlight">
+						{{ t('settings.terms.highlight', 'Hlt') }}
+					</span>
+				</label>
+				<div v-else-if="display.h" class="tw-relative tw-tooltip__container">
+					<span class="tw-mg-l-05 ffz--highlight">
+						{{ t('settings.terms.highlight', 'Hlt') }}
+					</span>
+				</div>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<markdown
+						:source="t(
+							'settings.terms.highlight.tip',
+							'Highlight Matches\n\nThis requires the \'Highlight matched words in chat.\' setting to work.'
+						)"
 					/>
-				</button>
+				</div>
+			</div>
+			<div
+				v-if="removable && (editing || display.remove)"
+				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
+			>
+				<input
+					v-if="editing"
+					:id="'remove$' + id"
+					v-model="edit_data.remove"
+					type="checkbox"
+					class="ffz-min-width-unset ffz-checkbox__input"
+				>
+
+				<label
+					v-if="editing"
+					:for="'remove$' + id"
+					class="ffz-min-width-unset ffz-checkbox__label"
+				>
+					<span class="tw-mg-l-05 ffz-i-trash" />
+				</label>
 				<span
 					v-else-if="term.remove"
-					class="ffz-i-eye-off tw-pd-x-1"
+					class="ffz-i-trash tw-pd-x-1"
 				/>
 				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
-					<span v-if="display.remove">
-						{{ t('setting.terms.remove.on', 'Remove matching messages from chat.') }}
-					</span>
-					<span v-else>
-						{{ t('setting.terms.remove.off', 'Do not remove matching messages from chat.') }}
-					</span>
+					{{ t('setting.terms.remove.on', 'Remove matching messages from chat.') }}
 				</div>
 			</div>
 			<div v-if="adding" class="tw-flex-shrink-0">
@@ -145,6 +239,10 @@ let id = 0;
 export default {
 	props: {
 		term: Object,
+		highlight: {
+			type: Boolean,
+			default: false
+		},
 		words: {
 			type: Boolean,
 			default: true
@@ -166,14 +264,14 @@ export default {
 	data() {
 		if ( this.adding )
 			return {
-				editor_id: id++,
+				id: id++,
 				deleting: false,
 				editing: true,
 				edit_data: deep_copy(this.term)
 			};
 
 		return {
-			editor_id: id++,
+			id: id++,
 			deleting: false,
 			editing: false,
 			edit_data: null

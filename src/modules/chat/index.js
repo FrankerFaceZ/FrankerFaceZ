@@ -24,6 +24,26 @@ import Actions from './actions';
 
 export const SEPARATORS = '[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]';
 
+function addSeparators(str) {
+	return `(^|.*?${SEPARATORS})(?:${str})(?=$|${SEPARATORS})`
+}
+
+const TERM_FLAGS = ['g', 'gi'];
+
+function formatTerms(data) {
+	const out = [];
+
+	for(let i=0; i < data.length; i++) {
+		const list = data[i];
+		if ( list[0].length )
+			list[1].push(addSeparators(list[0].join('|')));
+
+		out.push(list[1].length ? new RegExp(list[1].join('|'), TERM_FLAGS[i] || 'gi') : null);
+	}
+
+	return out;
+}
+
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 const EMOTE_CHARS = /[ .,!]/;
 
@@ -227,7 +247,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.click-to-reveal', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> Behavior',
+				path: 'Chat > Filtering > General @{"sort":-1} >> Behavior',
 				title: 'Click to reveal deleted terms.',
 				component: 'setting-check-box'
 			}
@@ -283,7 +303,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.automod.delete-messages', {
 			default: true,
 			ui: {
-				path: 'Chat > Filtering >> AutoMod Filters @{"description": "Extra configuration for Twitch\'s native `Chat Filters`."}',
+				path: 'Chat > Filtering > General >> AutoMod Filters @{"description": "Extra configuration for Twitch\'s native `Chat Filters`."}',
 				title: 'Mark messages as deleted if they contain filtered phrases.',
 				component: 'setting-check-box'
 			}
@@ -292,7 +312,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.automod.remove-messages', {
 			default: true,
 			ui: {
-				path: 'Chat > Filtering >> AutoMod Filters',
+				path: 'Chat > Filtering > General >> AutoMod Filters',
 				title: 'Remove messages entirely if they contain filtered phrases.',
 				component: 'setting-check-box'
 			}
@@ -301,7 +321,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.automod.run-as-mod', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> AutoMod Filters',
+				path: 'Chat > Filtering > General >> AutoMod Filters',
 				title: 'Use Chat Filters as a moderator.',
 				description: 'By default, Twitch\'s Chat Filters feature does not function for moderators. This overrides that behavior.',
 				component: 'setting-check-box'
@@ -311,7 +331,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.process-own', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> Behavior',
+				path: 'Chat > Filtering > General >> Behavior',
 				title: 'Filter your own messages.',
 				component: 'setting-check-box'
 			}
@@ -372,7 +392,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Highlight Users',
+				path: 'Chat > Filtering > Highlight >> Users',
 				component: 'basic-terms',
 				colored: true,
 				words: false
@@ -431,7 +451,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Blocked Users',
+				path: 'Chat > Filtering > Block >> Users',
 				component: 'basic-terms',
 				removable: true,
 				words: false
@@ -480,7 +500,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Highlight Badges',
+				path: 'Chat > Filtering > Highlight >> Badges',
 				component: 'badge-highlighting',
 				colored: true,
 				data: () => this.badges.getSettingsBadges()
@@ -516,7 +536,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Blocked Badges @{"description": "**Note:** This section is for filtering messages out of chat from users with specific badges. If you wish to hide a badge, go to [Chat > Badges >> Visibility](~chat.badges.tabs.visibility)."}',
+				path: 'Chat > Filtering > Block >> Badges @{"description": "**Note:** This section is for filtering messages out of chat from users with specific badges. If you wish to hide a badge, go to [Chat > Badges >> Visibility](~chat.badges.tabs.visibility)."}',
 				component: 'badge-highlighting',
 				removable: true,
 				data: () => this.badges.getSettingsBadges()
@@ -549,35 +569,39 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Highlight Terms',
+				path: 'Chat > Filtering > Highlight >> Terms @{"description": "Please see [Chat > Filtering > Syntax Help](~) for details on how to use terms."}',
 				component: 'basic-terms',
-				colored: true
+				colored: true,
+				highlight: true
 			}
 		});
 
 		this.settings.add('chat.filtering.highlight-basic-terms--color-regex', {
-			requires: ['chat.filtering.highlight-basic-terms'],
+			requires: ['chat.filtering.highlight-tokens', 'chat.filtering.highlight-basic-terms'],
 			equals: 'requirements',
 			process(ctx) {
+				const can_highlight = ctx.get('chat.filtering.highlight-tokens');
 				const val = ctx.get('chat.filtering.highlight-basic-terms');
 				if ( ! val || ! val.length )
 					return null;
 
 				const colors = new Map;
+				let has_highlight = false,
+					has_non = false;
 
 				for(const item of val) {
 					const c = item.c || null,
-						t = item.t;
+						highlight = can_highlight && (has(item, 'h') ? item.h : true),
+						sensitive = item.s,
+						t = item.t,
+						word = has(item, 'w') ? item.w : t !== 'raw';
 
-					let v = item.v, word = true;
+					let v = item.v;
 
 					if ( t === 'glob' )
 						v = glob_to_regex(v);
 
-					else if ( t === 'raw' )
-						word = false;
-
-					else if ( t !== 'regex' )
+					else if ( t !== 'regex' && t !== 'raw' )
 						v = escape_regex(v);
 
 					if ( ! v || ! v.length )
@@ -589,23 +613,55 @@ export default class Chat extends Module {
 						continue;
 					}
 
-					if ( colors.has(c) )
-						colors.get(c)[word ? 0 : 1].push(v);
-					else {
-						const vals = [[],[]];
-						colors.set(c, vals);
-						vals[word ? 0 : 1].push(v);
-					}
+					if ( highlight )
+						has_highlight = true;
+					else
+						has_non = true;
+
+					let data = colors.get(c);
+					if ( ! data )
+						colors.set(c, data = [
+							[ // highlight
+								[ // sensitive
+									[], [] // word
+								],
+								[
+									[], []
+								]
+							],
+							[
+								[
+									[], []
+								],
+								[
+									[], []
+								]
+							]
+						]);
+
+					data[highlight ? 0 : 1][sensitive ? 0 : 1][word ? 0 : 1].push(v);
 				}
+
+				if ( ! has_highlight && ! has_non )
+					return null;
+
+				const out = {
+					hl: has_highlight ? new Map : null,
+					non: has_non ? new Map : null
+				};
 
 				for(const [key, list] of colors) {
-					if ( list[0].length )
-						list[1].push(`(^|.*?${SEPARATORS})(?:${list[0].join('|')})(?=$|${SEPARATORS})`);
+					const highlights = formatTerms(list[0]),
+						non_highlights = formatTerms(list[1]);
 
-					colors.set(key, new RegExp(list[1].join('|'), 'gi'));
+					if ( highlights[0] || highlights[1] )
+						out.hl.set(key, highlights);
+
+					if ( non_highlights[0] || non_highlights[1] )
+						out.non.set(key, non_highlights);
 				}
 
-				return colors;
+				return out;
 			}
 		});
 
@@ -615,7 +671,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering >> Blocked Terms',
+				path: 'Chat > Filtering > Block >> Terms @{"description": "Please see [Chat > Filtering > Syntax Help](~) for details on how to use terms."}',
 				component: 'basic-terms',
 				removable: true
 			}
@@ -636,16 +692,14 @@ export default class Chat extends Module {
 				];
 
 				for(const item of val) {
-					const t = item.t;
-					let v = item.v, word = true;
+					const t = item.t,
+						word = has(item, 'w') ? item.w : t !== 'raw';
+					let v = item.v;
 
 					if ( t === 'glob' )
 						v = glob_to_regex(v);
 
-					else if ( t === 'raw' )
-						word = false;
-
-					else if ( t !== 'regex' )
+					else if ( t !== 'regex' && t !== 'raw' )
 						v = escape_regex(v);
 
 					if ( ! v || ! v.length )
@@ -677,7 +731,7 @@ export default class Chat extends Module {
 			default: false,
 			ui: {
 				component: 'setting-check-box',
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Display mentions in chat with username colors.',
 				description: '**Note:** Not compatible with color overrides as mentions do not include user IDs.'
 			}
@@ -687,7 +741,7 @@ export default class Chat extends Module {
 			default: true,
 			ui: {
 				component: 'setting-check-box',
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Display mentions in chat with a bold font.'
 			}
 		});
@@ -695,7 +749,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.mention-color', {
 			default: '',
 			ui: {
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Custom Highlight Color',
 				component: 'setting-color-box',
 				description: 'If this is set, highlighted messages with no default color set will use this color rather than red.'
@@ -705,7 +759,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.highlight-mentions', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Highlight messages that mention you.',
 				component: 'setting-check-box'
 			}
@@ -714,7 +768,7 @@ export default class Chat extends Module {
 		this.settings.add('chat.filtering.highlight-tokens', {
 			default: false,
 			ui: {
-				path: 'Chat > Filtering >> Appearance',
+				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Highlight matched words in chat.',
 				component: 'setting-check-box'
 			}

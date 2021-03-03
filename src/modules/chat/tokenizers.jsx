@@ -564,11 +564,35 @@ export const CustomHighlights = {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const colors = this.context.get('chat.filtering.highlight-basic-terms--color-regex');
-		if ( ! colors || ! colors.size )
+		const data = this.context.get('chat.filtering.highlight-basic-terms--color-regex');
+		if ( ! data )
 			return tokens;
 
-		for(const [color, regex] of colors) {
+		if ( data.non ) {
+			for(const [color, regexes] of data.non) {
+				let matched = false;
+				if ( regexes[0] ) {
+					regexes[0].lastIndex = 0;
+					matched = regexes[0].test(msg.message);
+				}
+				if ( ! matched && regexes[1] ) {
+					regexes[1].lastIndex = 0;
+					matched = regexes[1].test(msg.message);
+				}
+
+				if ( matched ) {
+					(msg.highlights = (msg.highlights || new Set())).add('term');
+					msg.mentioned = true;
+					msg.mention_color = color || msg.mention_color;
+					break;
+				}
+			}
+		}
+
+		if ( ! data.hl )
+			return tokens;
+
+		for(const [color, regexes] of data.hl) {
 			const out = [];
 			for(const token of tokens) {
 				if ( token.type !== 'text' ) {
@@ -576,11 +600,23 @@ export const CustomHighlights = {
 					continue;
 				}
 
-				regex.lastIndex = 0;
 				const text = token.text;
 				let idx = 0, match;
 
-				while((match = regex.exec(text))) {
+				while(idx < text.length) {
+					if ( regexes[0] )
+						regexes[0].lastIndex = idx;
+					if ( regexes[1] )
+						regexes[1].lastIndex = idx;
+
+					match = regexes[0] ? regexes[0].exec(text) : null;
+					const second = regexes[1] ? regexes[1].exec(text) : null;
+					if ( second && (! match || match.index > second.index) )
+						match = second;
+
+					if ( ! match )
+						break;
+
 					const raw_nix = match.index,
 						offset = match[1] ? match[1].length : 0,
 						nix = raw_nix + offset;
@@ -590,7 +626,8 @@ export const CustomHighlights = {
 
 					(msg.highlights = (msg.highlights || new Set())).add('term');
 					msg.mentioned = true;
-					msg.mention_color = color || msg.mention_color;
+					if ( ! msg.mention_color )
+						msg.mention_color = color;
 
 					out.push({
 						type: 'highlight',

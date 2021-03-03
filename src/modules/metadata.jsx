@@ -71,7 +71,7 @@ export default class Metadata extends Module {
 		});
 
 		this.settings.add('metadata.uptime', {
-			default: 1,
+			default: 2,
 
 			ui: {
 				path: 'Channel > Metadata >> Player',

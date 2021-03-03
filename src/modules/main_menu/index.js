@@ -85,6 +85,13 @@ export default class MainMenu extends Module {
 			key: 'faq'
 		});
 
+		this.settings.addUI('chat.filtering.syntax-help', {
+			path: 'Chat > Filtering > Syntax Help @{"profile_warning": false}',
+			component: 'md-page',
+			key: 'term-syntax',
+			force_seen: true
+		});
+
 		/*this.settings.addUI('privacy', {
 			path: 'Home > Privacy @{"profile_warning": false}',
 			component: 'md-page',

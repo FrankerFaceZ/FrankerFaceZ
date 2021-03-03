@@ -10,7 +10,7 @@ import BaseSite from '../base';
 
 import Fine from 'utilities/compat/fine';
 import Player from './player';
-import CSSTweaks from './css_tweaks';
+import CSSTweaks from 'utilities/css-tweaks';
 import Tooltips from 'src/modules/tooltips';
 
 import MAIN_URL from './styles/player-main.scss';
@@ -29,6 +29,16 @@ export default class PlayerSite extends BaseSite {
 		this.inject('tooltips', Tooltips);
 		this.inject('css_tweaks', CSSTweaks);
 
+		this.css_tweaks.loader = require.context(
+			'!raw-loader!sass-loader!./css_tweaks', false, /\.s?css$/, 'lazy-once'
+		);
+
+		this.css_tweaks.rules = {
+			'unfollow-button': '.follow-btn--following',
+			'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
+			'player-ext-hover': '.video-player__overlay[data-controls="false"] .extension-taskbar,.video-player__overlay[data-controls="false"] .extension-container,.video-player__overlay[data-controls="false"] .extensions-dock__layout,.video-player__overlay[data-controls="false"] .extensions-notifications,.video-player__overlay[data-controls="false"] .extensions-video-overlay-size-container'
+		};
+
 		this.DataSource = this.fine.define(
 			'data-source',
 			n => n.consentMetadata && n.onPlaying && n.props && n.props.data
@@ -38,10 +48,20 @@ export default class PlayerSite extends BaseSite {
 			'player-menu',
 			n => n.closeSettingsMenu && n.state && n.state.activeMenu && n.getMaxMenuHeight
 		);
+
+		document.head.appendChild(createElement('link', {
+			href: MAIN_URL,
+			rel: 'stylesheet',
+			type: 'text/css',
+			crossOrigin: 'anonymous'
+		}));
 	}
 
 	onEnable() {
 		this.settings = this.resolve('settings');
+
+		this.settings.getChanges('channel.hide-unfollow', val =>
+			this.css_tweaks.toggleHide('unfollow-button', val));
 
 		this.DataSource.on('mount', this.updateData, this);
 		this.DataSource.on('update', this.updateData, this);
@@ -81,13 +101,6 @@ export default class PlayerSite extends BaseSite {
 			},
 			route_data: ['/']
 		});
-
-		document.head.appendChild(createElement('link', {
-			href: MAIN_URL,
-			rel: 'stylesheet',
-			type: 'text/css',
-			crossOrigin: 'anonymous'
-		}));
 	}
 
 	awaitTwitchData() {

@@ -294,6 +294,12 @@ export default {
 
 				this.$nextTick(bits);
 			}
+
+			this.$nextTick(() => {
+				const el = this.$el.querySelector(`.ffz--menu-tree li[data-key="${item.full_key}"]`);
+				if ( el )
+					el.scrollIntoView();
+			});
 		}
 	}
 }

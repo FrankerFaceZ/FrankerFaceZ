@@ -285,7 +285,7 @@ export default class ChatHook extends Module {
 			},
 
 			ui: {
-				path: 'Chat > Filtering >> Blocked Message Types @{"description":"This filter allows you to remove all messages of a certain type from Twitch chat. It can be used to filter system messages, such as Hosts or Raids. Some types, such as moderation actions, cannot be blocked to prevent chat functionality from breaking."}',
+				path: 'Chat > Filtering > Block >> Message Types @{"description":"This filter allows you to remove all messages of a certain type from Twitch chat. It can be used to filter system messages, such as Hosts or Raids. Some types, such as moderation actions, cannot be blocked to prevent chat functionality from breaking."}',
 				component: 'blocked-types',
 				data: () => Object
 					.keys(this.chat_types)
@@ -495,7 +495,7 @@ export default class ChatHook extends Module {
 		this.settings.add('chat.rituals.show', {
 			default: true,
 			ui: {
-				path: 'Chat > Filtering >> Rituals',
+				path: 'Chat > Filtering > General >> Rituals',
 				title: 'Display ritual messages such as "User is new here! Say Hello!".',
 				component: 'setting-check-box'
 			}

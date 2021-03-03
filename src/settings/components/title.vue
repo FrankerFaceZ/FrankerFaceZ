@@ -50,7 +50,7 @@
 					type="checkbox"
 					class="ffz-min-width-unset ffz-checkbox__input"
 				>
-				<label :for="'sensitive$' + id" class="ffz-checkbox__label tw-relative tw-tooltip__container">
+				<label :for="'sensitive$' + id" class="ffz-min-width-unset ffz-checkbox__label tw-relative tw-tooltip__container">
 					<span class="tw-mg-l-05">
 						Aa
 						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
