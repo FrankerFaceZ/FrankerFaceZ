@@ -6,7 +6,9 @@
 }
 
 .user-avatar-card__halo,
-.player-streaminfo__picture img[src] {
+.player-streaminfo__picture img[src],
+.channel-info-content .tw-halo,
+.channel-info-content .tw-halo::before {
 	border-radius: 0 !important;
 }
 
