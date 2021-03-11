@@ -40,7 +40,7 @@ const CLASSES = {
 	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
-	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .user-avatar-animated__live',
+	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',
 	'celebration': 'body .celebration__overlay',
 	'mod-view': '.chat-input__buttons-container .tw-core-button[href*="/moderator"]'
 };
