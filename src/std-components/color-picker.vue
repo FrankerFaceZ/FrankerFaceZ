@@ -47,7 +47,7 @@
 				v-if="open"
 				v-on-clickaway="closePicker"
 				:class="{'ffz-bottom-100': openUp}"
-				class="tw-absolute tw-z-above ffz-balloon--up ffz-balloon--right"
+				class="tw-absolute tw-z-above tw-tooltip--down tw-tooltip--align-right"
 			>
 				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>

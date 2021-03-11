@@ -6,8 +6,20 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has, sleep} from 'utilities/object';
-import { DEBUG } from '../constants';
+import {has} from 'utilities/object';
+import { DEBUG } from 'utilities/constants';
+
+
+const Requires = Symbol('FFZRequires');
+
+const regex_cache = {};
+
+function getRequireRegex(name) {
+	if ( ! regex_cache[name] )
+		regex_cache[name] = new RegExp(`\\b${name}\\(([0-9a-zA-Z_+]+)\\)`, 'g');
+
+	return regex_cache[name];
+}
 
 const NAMES = [
 	'webpackJsonp',
@@ -34,8 +46,11 @@ export default class WebMunch extends Module {
 		this._chunk_names = {};
 		this._mod_cache = {};
 
+		this._checked_module = {};
+		this._required_ids = new Set;
 		this._known_ids = new Set;
 
+		this.Requires = Requires;
 		this.v4 = null;
 
 		this.hookLoader();
@@ -107,12 +122,9 @@ export default class WebMunch extends Module {
 			this._original_loader = thing.push;
 
 			// Wrap all existing modules in case any of them haven't been required yet.
-			// However, there's an issue with this causing loading issues on the
-			// dashboard. Somehow. Not sure, so just don't do it on that page.
-			if ( ! location.hostname.includes('dashboard') )
-				for(const chunk of thing)
-					if ( chunk && chunk[1] )
-						this.processModulesV4(chunk[1]);
+			for(const chunk of thing)
+				if ( chunk && chunk[1] )
+					this.processModulesV4(chunk[1], true);
 
 			try {
 				thing.push = this.webpackJsonpv4.bind(this);
@@ -146,29 +158,40 @@ export default class WebMunch extends Module {
 	}
 
 
+	_resolveRequire(require) {
+		if ( this._require )
+			return;
+
+		this._require = require;
+		if ( this._resolve_require ) {
+			for(const fn of this._resolve_require)
+				fn(require);
+
+			this._resolve_require = null;
+		}
+	}
+
+
 	processModulesV4(modules) {
 		const t = this;
 
 		for(const [mod_id, original_module] of Object.entries(modules)) {
 			this._known_ids.add(mod_id);
+
 			modules[mod_id] = function(module, exports, require, ...args) {
 				if ( ! t._require && typeof require === 'function' ) {
-					t.log.info(`require() grabbed from invocation of module ${mod_id}`);
-					t._require = require;
-					if ( t._resolve_require ) {
-						try {
-							for(const fn of t._resolve_require)
-								fn(require);
-						} catch(err) {
-							t.log.error('An error occurred running require callbacks.', err);
-						}
-
-						t._resolve_require = null;
+					t.log.debug(`require() grabbed from invocation of module ${mod_id}`);
+					try {
+						t._resolveRequire(require);
+					} catch(err) {
+						t.log.error('An error occurred running require callbacks.', err);
 					}
 				}
 
 				return original_module.call(this, module, exports, require, ...args);
 			}
+
+			modules[mod_id].original = original_module;
 		}
 	}
 
@@ -176,14 +199,15 @@ export default class WebMunch extends Module {
 	webpackJsonpv4(data) {
 		const chunk_ids = data[0],
 			modules = data[1],
-			names = Array.isArray(chunk_ids) && chunk_ids.map(x => this._chunk_names[x] || x).join(', ');
+			names = Array.isArray(chunk_ids) && chunk_ids.map(x => this._chunk_names[x] || x);
 
-		this.log.verbose(`Twitch Chunk Loaded: ${chunk_ids} (${names})`);
+		this.log.verbose(`Twitch Chunk Loaded: ${chunk_ids} (${names.join(', ')})`);
 		this.log.verbose(`Modules: ${Object.keys(modules)}`);
 
 		if ( modules )
-			this.processModulesV4(modules);
+			this.processModulesV4(modules, false);
 
+		this._checked_module = {};
 		const res = this._original_loader.apply(this._original_store, arguments); // eslint-disable-line prefer-rest-params
 		this.emit(':loaded', chunk_ids, names, modules);
 		return res;
@@ -296,10 +320,16 @@ export default class WebMunch extends Module {
 		if ( ! this._original_store )
 			return null;
 
+		const out = new Set;
+
 		for(const [chunks, modules] of this._original_store) {
-			if ( modules[id] )
-				return chunks;
+			if ( modules[id] ) {
+				for(const chunk of chunks)
+					out.add(chunk);
+			}
 		}
+
+		return [...out];
 	}
 
 	chunkNameForModule(id) {
@@ -314,6 +344,14 @@ export default class WebMunch extends Module {
 		}
 
 		return null;
+	}
+
+	chunkNamesForModule(id) {
+		const chunks = this._chunksForModule(id);
+		if ( ! chunks )
+			return null;
+
+		return chunks.map(id => this._chunk_names[id] || id);
 	}
 
 
@@ -358,7 +396,7 @@ export default class WebMunch extends Module {
 				if ( mod ) {
 					const ret = predicate(mod);
 					if ( ret ) {
-						this.log.debug(`Located module "${key}" in module ${k}${DEBUG ? ` (${this.chunkNameForModule(k)})` : ''} after ${checked} tries`);
+						this.log.debug(`[Old] Located module "${key}" in module ${k}${DEBUG ? ` (${this.chunkNameForModule(k)})` : ''} after ${checked} tries`);
 						const out = predicate.use_result ? ret : mod;
 						if ( key )
 							this._mod_cache[key] = out;
@@ -367,7 +405,7 @@ export default class WebMunch extends Module {
 				}
 			}
 
-		this.log.debug(`Unable to locate module "${key}"`);
+		this.log.debug(`[Old] Unable to locate module "${key}" despite checking ${checked} modules`);
 		return null;
 	}
 
@@ -405,6 +443,22 @@ export default class WebMunch extends Module {
 		for(const id of ids) {
 			try {
 				checked++;
+
+				// If we have not previously required this module, check to see
+				// if we CAN require this module. We want to avoid requiring a
+				// module that doesn't yet have a constructor because that will
+				// break webpack's internal state.
+				if ( ! this._required_ids.has(id) ) {
+					let check = this._checked_module[id];
+					if ( check == null )
+						check = this._checkModule(id);
+
+					if ( check )
+						continue;
+				}
+
+				this._required_ids.add(id);
+
 				const mod = require(id);
 				if ( mod ) {
 					const ret = predicate(mod);
@@ -421,8 +475,47 @@ export default class WebMunch extends Module {
 			}
 		}
 
-		this.log.debug(`Unable to locate module "${key}"`);
+		this.log.debug(`Unable to locate module "${key}" despite checking ${checked} modules`);
 		return null;
+	}
+
+
+	_checkModule(id) {
+		const fn = this._require?.m?.[id];
+		if ( fn ) {
+			let reqs = fn[Requires],
+				banned = false;
+
+			if ( reqs == null ) {
+				const str = fn.toString(),
+					name_match = /^function\([^,)]+,[^,)]+,([^,)]+)/.exec(str);
+
+				if ( name_match ) {
+					const regex = getRequireRegex(name_match[1]);
+					reqs = fn[Requires] = new Set;
+
+					regex.lastIndex = 0;
+					let match;
+
+					while((match = regex.exec(str))) {
+						const mod_id = match[1];
+						reqs.add(mod_id);
+
+						if ( ! this._require.m[mod_id] )
+							banned = true;
+					}
+
+				} else
+					fn[Requires] = false;
+
+			} else if ( reqs ) {
+				for(const mod_id of reqs)
+					if ( ! this._require.m[mod_id] )
+						banned = true;
+			}
+
+			return this._checked_module[id] = banned;
+		}
 	}
 
 
@@ -515,9 +608,11 @@ export default class WebMunch extends Module {
 			}
 
 			this._chunk_names = modules;
-			this.log.info(`Loaded names for ${Object.keys(modules).length} chunks from require().`)
+			this.log.debug(`Loaded names for ${Object.keys(modules).length} chunks from require().`)
 		} else
 			this.log.warn(`Unable to find chunk names in require().`);
 	}
 
 }
+
+WebMunch.Requires = Requires;

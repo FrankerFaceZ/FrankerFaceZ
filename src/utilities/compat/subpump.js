@@ -55,7 +55,7 @@ export default class Subpump extends Module {
 			return;
 		}
 
-		for(const [key, val] of Object.entries(instances))
+		for(const val of Object.values(instances))
 			if ( val?._client ) {
 				if ( this.instance ) {
 					this.log.warn('Multiple PubSub instances detected. Things might act weird.');

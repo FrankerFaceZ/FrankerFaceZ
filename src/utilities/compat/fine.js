@@ -246,7 +246,7 @@ export default class Fine extends Module {
 		}
 	}
 
-	searchTree(node, criteria, max_depth=15, depth=0, traverse_roots = true) {
+	searchTree(node, criteria, max_depth=15, depth=0, traverse_roots = true, multi = false) {
 		if ( ! node )
 			node = this.react;
 		else if ( node._reactInternalFiber )
@@ -254,8 +254,16 @@ export default class Fine extends Module {
 		else if ( node instanceof Node )
 			node = this.getReactInstance(node);
 
+		if ( multi ) {
+			if ( !(multi instanceof Set) )
+				multi = new Set;
+		}
+
+		if ( multi && ! (multi instanceof Set) )
+			multi = new Set;
+
 		if ( ! node || node._ffz_no_scan || depth > max_depth )
-			return null;
+			return multi ? multi : null;
 
 		if ( typeof criteria === 'string' ) {
 			const wrapper = this._wrappers.get(criteria);
@@ -263,20 +271,24 @@ export default class Fine extends Module {
 				throw new Error('invalid critera');
 
 			if ( ! wrapper._class )
-				return null;
+				return multi ? multi : null;
 
 			criteria = n => n && n.constructor === wrapper._class;
 		}
 
 		const inst = node.stateNode;
-		if ( inst && criteria(inst, node) )
-			return inst;
+		if ( inst && criteria(inst, node) ) {
+			if ( multi )
+				multi.add(inst);
+			else
+				return inst;
+		}
 
 		if ( node.child ) {
 			let child = node.child;
 			while(child) {
-				const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots);
-				if ( result )
+				const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots, multi);
+				if ( result && ! multi )
 					return result;
 				child = child.sibling;
 			}
@@ -287,14 +299,17 @@ export default class Fine extends Module {
 			if ( root ) {
 				let child = root._internalRoot && root._internalRoot.current || root.current;
 				while(child) {
-					const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots);
-					if ( result )
+					const result = this.searchTree(child, criteria, max_depth, depth+1, traverse_roots, multi);
+					if ( result && ! multi )
 						return result;
 
 					child = child.sibling;
 				}
 			}
 		}
+
+		if ( multi )
+			return multi;
 	}
 
 

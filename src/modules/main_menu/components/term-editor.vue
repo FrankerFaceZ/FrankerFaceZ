@@ -28,7 +28,7 @@
 				>
 			</div>
 			<div v-if="colored" class="tw-flex-shrink-0 tw-mg-l-05">
-				<color-picker v-if="editing" v-model="edit_data.c" :nullable="true" :show-input="false" :open-up="true" />
+				<color-picker v-if="editing" v-model="edit_data.c" :nullable="true" :show-input="false" />
 				<div v-else-if="term.c" class="ffz-color-preview">
 					<figure :style="`background-color: ${term.c}`">
 						&nbsp;

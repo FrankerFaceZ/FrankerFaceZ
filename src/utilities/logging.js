@@ -1,5 +1,7 @@
 'use strict';
 
+import { has } from 'utilities/object';
+
 const RAVEN_LEVELS = {
 	1: 'debug',
 	2: 'info',
@@ -14,7 +16,7 @@ function readLSLevel() {
 		return null;
 
 	const upper = level.toUpperCase();
-	if ( Logger[upper] )
+	if ( has(Logger, upper) )
 		return Logger[upper];
 
 	if ( /^\d+$/.test(level) )
