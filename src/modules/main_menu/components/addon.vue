@@ -42,11 +42,18 @@
 					{{ t('addon.version', 'Version {version}', {version}) }}
 				</span>
 				<span
-					v-if="addon.updated"
+					v-if="addon.updated && addon.updated != addon.created"
 					:data-title="tDateTime(addon.updated)"
 					class="tw-c-text-alt ffz-tooltip tw-mg-r-1"
 				>
 					{{ t('addon.updated', 'Updated: {when,humantime}', {when: addon.updated}) }}
+				</span>
+				<span
+					v-if="addon.created"
+					:data-title="tDateTime(addon.created)"
+					class="tw-c-text-alt ffz-tooltip tw-mg-r-1"
+				>
+					{{ t('addon.created', 'Created: {when,date}', {when: addon.created}) }}
 				</span>
 			</div>
 			<markdown :source="show_description" />

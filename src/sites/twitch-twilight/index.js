@@ -62,7 +62,6 @@ export default class Twilight extends BaseSite {
 		this.router.route(Twilight.DASH_ROUTES, 'dashboard.twitch.tv');
 		this.router.route(Twilight.PLAYER_ROUTES, 'player.twitch.tv');
 		this.router.route(Twilight.CLIP_ROUTES, 'clips.twitch.tv');
-
 	}
 
 	onEnable() {

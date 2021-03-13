@@ -18,8 +18,20 @@
 			</button>
 		</div>
 
-		<div class="tw-mg-b-1 tw-flex tw-align-items-center">
-			<div class="tw-flex-grow-1" />
+		<div v-if="ready" class="tw-mg-b-1 tw-flex tw-align-items-center">
+			<div class="ffz-checkbox tw-relative tw-flex-grow-1">
+				<input
+					id="filter_enabled"
+					v-model="filter_enabled"
+					type="checkbox"
+					class="ffz-checkbox__input"
+				>
+				<label for="filter_enabled" class="ffz-checkbox__label">
+					<span class="tw-mg-l-1">
+						{{ t('addon.filter-enabled', 'Only display enabled add-ons.') }}
+					</span>
+				</label>
+			</div>
 			<select
 				v-model="sort_by"
 				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
@@ -29,6 +41,9 @@
 				</option>
 				<option :value="1">
 					{{ t('addon.sort-update', 'Sort By: Updated') }}
+				</option>
+				<option :value="2">
+					{{ t('addon.sort-create', 'Sort By: Created') }}
 				</option>
 			</select>
 		</div>
@@ -106,6 +121,7 @@ export default {
 			ready: this.item.isReady(),
 			reload: this.item.isReloadRequired(),
 			unlisted: [],
+			filter_enabled: false,
 			sort_by: 0,
 			unlisted_open: false
 		}
@@ -123,6 +139,10 @@ export default {
 				if ( this.sort_by === 1 ) {
 					if ( a.updated > b.updated ) return -1;
 					if ( b.updated > a.updated ) return 1;
+
+				} else if ( this.sort_by === 2 ) {
+					if ( a.created > b.created ) return -1;
+					if ( b.created > a.created ) return 1;
 				}
 
 				if ( a.sort < b.sort ) return -1;
@@ -179,7 +199,11 @@ export default {
 
 		shouldShow(addon) {
 			// If an add-on is unlisted, don't list it.
-			if ( addon.unlisted && ! this.item.isAddonEnabled(addon.id) && ! this.unlisted.includes(addon.id) )
+			const enabled = this.item.isAddonEnabled(addon.id);
+			if ( addon.unlisted && ! enabled && ! this.unlisted.includes(addon.id) )
+				return false;
+
+			if ( this.filter_enabled && ! enabled )
 				return false;
 
 			if ( ! this.filter || ! this.filter.length )

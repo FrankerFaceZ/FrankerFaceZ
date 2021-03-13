@@ -173,6 +173,12 @@ export default class AddonManager extends Module {
 		addon.requires = addon.requires || [];
 		addon.required_by = Array.isArray(old) ? old : old && old.required_by || [];
 
+		if ( addon.updated )
+			addon.updated = new Date(addon.updated);
+
+		if ( addon.created )
+			addon.created = new Date(addon.created);
+
 		addon._search = addon.search_terms;
 
 		for(const id of addon.requires) {
