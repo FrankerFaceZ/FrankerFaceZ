@@ -6,7 +6,7 @@
 
 import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
-import {get, has, deep_copy} from 'utilities/object';
+import {get, has, deep_copy, set_equals} from 'utilities/object';
 
 import Dialog from 'utilities/dialog';
 
@@ -18,6 +18,7 @@ import {NO_SYNC_KEYS, parse_path} from 'src/settings';
 function format_term(term) {
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
 }
+
 
 // TODO: Rewrite literally everything about the menu to use a router and further
 // separate the concept of navigation from visible pages.
@@ -76,7 +77,72 @@ export default class MainMenu extends Module {
 
 		this.settings.addUI('home', {
 			path: 'Home @{"sort": -1000, "profile_warning": false}',
-			component: 'home-page'
+			component: 'home-page',
+			requestPage: page => this.requestPage(page),
+			getUnseen: () => {
+				if ( ! this.unseen?.size )
+					return null;
+
+				const categories = {},
+					out = [];
+
+				let i = 0;
+
+				for(const item of this.unseen) {
+					const def = this.settings.definitions.get(item) || this.settings.ui_structures.get(item);
+					if ( ! def || ! def.ui || ! def.ui.path_tokens )
+						continue;
+
+					const path = def.ui.path,
+						title = def.ui.title;
+
+					i++;
+					if ( i > 20 )
+						break;
+
+					if ( ! categories[path] ) {
+						const key = def.ui.path_tokens.map(x => x.key).join('.');
+						const tokens = [];
+
+						let cat = this._settings_tree[key];
+						while ( cat ) {
+							tokens.unshift({
+								i18n: cat.i18n_key,
+								title: cat.title
+							});
+
+							if ( cat.parent ) {
+								if ( cat.page || cat.tab )
+									tokens.unshift({title: '>>'});
+								else
+									tokens.unshift({title: '>'});
+							}
+
+							cat = this._settings_tree[cat.parent];
+						}
+
+						out.push(categories[path] = {
+							key,
+							tokens,
+							entries: []
+						});
+					}
+
+					if ( ! path || ! title )
+						continue;
+
+					categories[path].entries.push({
+						key: item,
+						i18n: def.ui.i18n_key ?? `setting.entry.${item}`,
+						title
+					});
+				}
+
+				if ( ! out.length )
+					return null;
+
+				return out;
+			}
 		});
 
 		this.settings.addUI('faq', {
@@ -484,6 +550,7 @@ export default class MainMenu extends Module {
 
 		const tree = this._settings_tree,
 			settings_seen = this.new_seen ? null : this.settings.provider.get('cfg-seen'),
+			unseen = settings_seen ? new Set : null,
 			new_seen = settings_seen ? null : [],
 
 			collapsed = this.settings.provider.get('cfg-collapsed'),
@@ -569,6 +636,7 @@ export default class MainMenu extends Module {
 
 						if ( settings_seen ) {
 							if ( ! settings_seen.includes(setting_key) && ! tok.force_seen ) {
+								unseen.add(setting_key);
 								let i = tok;
 								while(i) {
 									i.unseen = (i.unseen || 0) + 1;
@@ -658,6 +726,11 @@ export default class MainMenu extends Module {
 			}
 
 			this.settings.provider.set('cfg-collapsed', new_collapsed);
+		}
+
+		if ( ! set_equals(unseen, this.unseen) ) {
+			this.unseen = unseen;
+			this.emit(':update-unseen');
 		}
 
 		this.log.info(`Built Tree in ${(performance.now() - started).toFixed(5)}ms with ${Object.keys(tree).length} structure nodes and ${this._settings_count} settings nodes.`);
@@ -897,7 +970,9 @@ export default class MainMenu extends Module {
 	}
 
 	markSeen(item, seen) {
-		let had_seen = true;
+		let had_seen = true,
+			changed = false;
+
 		if ( ! seen ) {
 			had_seen = false;
 			seen = this.settings.provider.get('cfg-seen', []);
@@ -905,12 +980,15 @@ export default class MainMenu extends Module {
 
 		if ( Array.isArray(item.contents) ) {
 			for(const child of item.contents)
-				child && this.markSeen(child, seen);
-
+				changed = (child && this.markSeen(child, seen)) || changed;
 		}
 
 		if ( item.setting ) {
+			if ( this.unseen )
+				this.unseen.delete(item.setting);
+
 			if ( ! seen.includes(item.setting) ) {
+				changed = true;
 				seen.push(item.setting);
 
 				let i = item.parent;
@@ -921,8 +999,12 @@ export default class MainMenu extends Module {
 			}
 		}
 
-		if ( ! had_seen )
+		if ( ! had_seen && changed ) {
 			this.settings.provider.set('cfg-seen', seen);
+			this.emit(':update-unseen');
+		}
+
+		return changed;
 	}
 
 	markAllSeen(thing, seen) {
@@ -960,8 +1042,11 @@ export default class MainMenu extends Module {
 		if ( thing.unseen )
 			thing.unseen = 0;
 
-		if ( ! had_seen )
+		if ( ! had_seen ) {
 			this.settings.provider.set('cfg-seen', seen);
+			this.unseen = null;
+			this.emit(':update-unseen');
+		}
 	}
 
 	getData() {

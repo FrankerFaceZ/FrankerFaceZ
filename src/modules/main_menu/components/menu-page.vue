@@ -82,6 +82,7 @@
 				ref="children"
 				:context="context"
 				:item="i"
+				:nav_keys="nav_keys"
 				:filter="filter"
 				@change-item="changeItem"
 				@mark-seen="markSeen"
@@ -94,7 +95,7 @@
 <script>
 
 export default {
-	props: ['item', 'context', 'filter'],
+	props: ['item', 'context', 'filter', 'nav_keys'],
 
 	computed: {
 		breadcrumbs() {

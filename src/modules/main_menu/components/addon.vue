@@ -1,37 +1,52 @@
 <template lang="html">
-	<div class="ffz--addon-info tw-elevation-1 tw-c-background-base tw-border tw-pd-1 tw-mg-b-1 tw-flex tw-flex-nowrap">
+	<div class="ffz--addon-info tw-elevation-1 tw-c-background-base tw-border tw-border-radius-large tw-pd-1 tw-mg-b-1 tw-flex tw-flex-nowrap">
 		<div class="tw-flex tw-flex-column tw-align-center tw-flex-shrink-0 tw-mg-r-1">
 			<div class="tw-card-img--size-6 tw-overflow-hidden tw-mg-b-1">
 				<img :src="icon" class="tw-image">
 			</div>
 
-			<div v-if="external" class="tw-mg-b-05 tw-pill">
+			<div v-if="external" class="tw-mg-b-05 ffz-pill">
 				{{ t('addon.external', 'External') }}
 			</div>
 
-			<div v-else-if="enabled" class="tw-mg-b-05 tw-pill ffz--pill-enabled">
+			<div v-else-if="enabled" class="tw-mg-b-05 ffz-pill ffz--pill-enabled">
 				{{ t('addon.enabled', 'Enabled') }}
 			</div>
 
-			<div v-if="addon.dev" class="tw-mg-b-05 tw-pill">
+			<div v-if="addon.dev" class="tw-mg-b-05 ffz-pill">
 				{{ t('addon.dev', 'Developer') }}
 			</div>
 
-			<div v-if="addon.unlisted" class="tw-mg-b-05 tw-pill">
+			<div v-if="addon.unlisted" class="tw-mg-b-05 ffz-pill">
 				{{ t('addon.unlisted', 'Unlisted') }}
 			</div>
 		</div>
 
 		<div class="tw-flex-grow-1">
 			<div class="tw-border-b tw-mg-b-05">
-				<h4>{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }} <span class="tw-c-text-alt-2 tw-font-size-6">({{ addon.id }})</span></h4>
+				<h4>
+					{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }}
+					<span
+						v-if="addon.dev || addon.unlisted"
+						class="tw-c-text-alt-2 tw-font-size-6"
+					>
+						({{ addon.id }})
+					</span>
+				</h4>
 				<span class="tw-c-text-alt tw-mg-r-1">
 					{{ t('addon.author', 'By: {author}', {
 						author: addon.author_i18n ? t(addon.author_i18n, addon.author) : addon.author
 					}) }}
 				</span>
-				<span v-if="version" class="tw-c-text-alt">
+				<span v-if="version" class="tw-c-text-alt tw-mg-r-1">
 					{{ t('addon.version', 'Version {version}', {version}) }}
+				</span>
+				<span
+					v-if="addon.updated"
+					:data-title="tDateTime(addon.updated)"
+					class="tw-c-text-alt ffz-tooltip tw-mg-r-1"
+				>
+					{{ t('addon.updated', 'Updated: {when,humantime}', {when: addon.updated}) }}
 				</span>
 			</div>
 			<markdown :source="show_description" />

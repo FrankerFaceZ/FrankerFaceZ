@@ -46,7 +46,7 @@ export default class AddonManager extends Module {
 			title: 'Add-Ons',
 			no_filter: true,
 
-			getExtraSearch: () => Object.values(this.addons).map(addon => addon.search_terms),
+			getExtraTerms: () => Object.values(this.addons).map(addon => addon.search_terms),
 
 			isReady: () => this.enabled,
 			getAddons: () => Object.values(this.addons),

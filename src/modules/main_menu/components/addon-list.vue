@@ -6,7 +6,7 @@
 			</h4>
 
 			<button
-				class="tw-button ffz-button--hollow tw-c-text-overlay tw-mg-t-05"
+				class="tw-button tw-button--text tw-c-text-overlay tw-mg-t-05"
 				@click="item.refresh()"
 			>
 				<span class="tw-button__icon tw-button__icon--left">
@@ -16,6 +16,21 @@
 					{{ t('addon.refresh', 'Refresh') }}
 				</span>
 			</button>
+		</div>
+
+		<div class="tw-mg-b-1 tw-flex tw-align-items-center">
+			<div class="tw-flex-grow-1" />
+			<select
+				v-model="sort_by"
+				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+			>
+				<option :value="0">
+					{{ t('addon.sort-name', 'Sort By: Name') }}
+				</option>
+				<option :value="1">
+					{{ t('addon.sort-update', 'Sort By: Updated') }}
+				</option>
+			</select>
 		</div>
 
 		<div v-if="! ready" class="tw-align-center tw-pd-1">
@@ -91,6 +106,7 @@ export default {
 			ready: this.item.isReady(),
 			reload: this.item.isReloadRequired(),
 			unlisted: [],
+			sort_by: 0,
 			unlisted_open: false
 		}
 	},
@@ -104,6 +120,11 @@ export default {
 			const addons = this.item.getAddons();
 
 			addons.sort((a, b) => {
+				if ( this.sort_by === 1 ) {
+					if ( a.updated > b.updated ) return -1;
+					if ( b.updated > a.updated ) return 1;
+				}
+
 				if ( a.sort < b.sort ) return -1;
 				if ( b.sort < a.sort ) return 1;
 

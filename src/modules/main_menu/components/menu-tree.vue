@@ -35,10 +35,10 @@
 				<span class="tw-flex-grow-1">
 					{{ t(item.i18n_key, item.title) }}
 				</span>
-				<span v-if="item.pill" class="tw-pill">
+				<span v-if="item.pill" class="ffz-pill ffz-pill--overlay">
 					{{ item.pill_i18n_key ? t(item.pill_i18n_key, item.pill) : item.pill }}
 				</span>
-				<span v-else-if="item.unseen" class="tw-pill">
+				<span v-else-if="item.unseen" class="ffz-pill ffz-pill--overlay">
 					{{ item.unseen }}
 				</span>
 			</div>

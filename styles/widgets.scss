@@ -76,16 +76,41 @@ textarea.ffz-input {
 	height: unset;
 }
 
-.ffz--widget {
-	.tw-pill {
-		border-radius: 1000px;
-		padding: 0.3rem 0.8em;
-		font-size: 75%;
-		background-color: var(--color-background-pill);
-		color: var(--color-text-overlay);
-		white-space: nowrap;
+.ffz-pill,
+.ffz--widget .tw-pill {
+	border-radius: 1000px;
+	padding: 0.3rem 0.8em;
+	font-size: 75%;
+	background-color: var(--color-background-pill);
+	color: var(--color-text-overlay);
+	white-space: nowrap;
+	line-height: 1;
+	text-align: center;
+	display: inline-block;
+
+	&:empty { display: none }
+
+	&--alt { background-color: var(--color-fill-alt) }
+	&--alt-2 { background-color: var(--color-fill-alt-2) }
+	&--brand { background-color: var(--color-fill-brand) }
+	&--notification { background-color: var(--color-background-pill-notification) }
+	&--live { background-color: var(--color-fill-live) }
+	&--warn { background-color: var(--color-fill-warn) }
+	&--alert { background-color: var(--color-fill-alert) }
+	&--success { background-color: var(--color-fill-success) }
+	&--overlay {
+		background-color: var(--color-background-overlay);
+		box-shadow: 0 0 0 1px var(--color-border-overlay);
 	}
 
+	&--warn,
+	&--alert,
+	&--success {
+		color: var(--color-text-pill);
+	}
+}
+
+.ffz--widget {
 	input, select {
 		min-width: 20rem;
 	}
@@ -342,6 +367,20 @@ textarea.ffz-input {
 
 	&:hover, &:focus {
 		background-color: #2b96d9 !important;
+	}
+}
+
+.ffz--github-button {
+	border: 0 !important;
+	background-color: #1e2327 !important;
+	color: #fff !important;
+
+	> * {
+		pointer-events: none;
+	}
+
+	&:hover, &:focus {
+		background-color: #3b454d !important;
 	}
 }
 

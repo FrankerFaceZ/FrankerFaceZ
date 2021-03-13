@@ -9,8 +9,15 @@
 		height: 50vh;
 		width: 50vw;
 
-		min-width: 640px;
-		min-height: 300px;
+		min-width: 64rem;
+		min-height: 30rem;
+
+		--width: #{"min(75vw, 128rem)"};
+		width: 75vw;
+		width: var(--width);
+
+		height: 50vh;
+		height: #{"min(75vh, calc(0.75 * var(--width)))"};
 
 		> header {
 			cursor: move;

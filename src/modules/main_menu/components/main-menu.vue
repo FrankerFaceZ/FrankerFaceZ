@@ -110,6 +110,7 @@
 					:context="context"
 					:item="currentItem"
 					:filter="filter"
+					:nav_keys="nav_keys"
 					@change-item="changeItem"
 					@mark-seen="markSeen"
 					@navigate="navigate"
