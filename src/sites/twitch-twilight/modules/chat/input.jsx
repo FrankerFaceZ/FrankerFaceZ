@@ -237,6 +237,7 @@ export default class Input extends Module {
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 		this.CommandSuggestions.on('mount', this.overrideCommandMatcher, this);
 
+		this.chat.context.on('changed:chat.emotes.animated', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-set-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-favorite', this.uncacheTabCompletion, this);
@@ -741,6 +742,7 @@ export default class Input extends Module {
 			return {emotes: [], length: 0, user_id, user_login, channel_id, channel_login};
 
 		const out = [],
+			anim = this.chat.context.get('chat.emotes.animated') > 0,
 			hidden_sets = this.settings.provider.get('emote-menu.hidden-sets'),
 			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0,
 			added_emotes = new Set;
@@ -771,7 +773,7 @@ export default class Input extends Module {
 					id: `${source}-${emote.id}`,
 					token: emote.name,
 					tokenLower: emote.name.toLowerCase(),
-					srcSet: emote.srcSet,
+					srcSet: anim && emote.animSrcSet || emote.srcSet,
 					favorite: favorites.includes(emote.id)
 				});
 			}
