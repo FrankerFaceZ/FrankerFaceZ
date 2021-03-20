@@ -257,6 +257,16 @@ export default class EmoteMenu extends Module {
 		});
 
 
+		this.settings.add('chat.emote-menu.show-emoji', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Display emoji in the emote menu.',
+				component: 'setting-check-box'
+			}
+		});
+
+
 		this.settings.add('chat.emote-menu.combine-tabs', {
 			default: false,
 			ui: {
@@ -266,6 +276,21 @@ export default class EmoteMenu extends Module {
 			}
 		});
 
+		this.settings.add('chat.emote-menu.stay-loaded', {
+			requires: ['chat.emote-menu.combine-tabs'],
+			default: null,
+			process(ctx, val) {
+				if ( val == null )
+					val = ctx.get('chat.emote-menu.combine-tabs');
+				return val;
+			},
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Stay loaded after opening.',
+				component: 'setting-check-box',
+				description: `This causes the emote menu to stay in the DOM even when it's not visible. Enabling this may help the site perform better when opening the menu if it's slow. By default, this setting is enabled when using \`Display all emotes on one tab.\``
+			}
+		});
 
 		this.settings.add('chat.emote-menu.sort-emotes', {
 			default: 4,
@@ -324,6 +349,7 @@ export default class EmoteMenu extends Module {
 				inst.rebuildData();
 		}
 
+		this.chat.context.on('changed:chat.emote-menu.show-emoji', rebuild);
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
@@ -1026,7 +1052,7 @@ export default class EmoteMenu extends Module {
 					const padding = t.chat.context.get('chat.emote-menu.reduced-padding');
 
 					return (<div
-						class={`ffz-balloon ffz-balloon--md ffz-balloon--up ffz-balloon--right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+						class={`ffz-balloon ffz-balloon--md tw-tooltip--up tw-tooltip--align-right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
 						data-a-target="emote-picker"
 					>
 						<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
@@ -1084,6 +1110,7 @@ export default class EmoteMenu extends Module {
 				this.state = {
 					tab: null,
 					active_nav: null,
+					stayLoaded: t.chat.context.get('chat.emote-menu.stay-loaded'),
 					quickNav: t.chat.context.get('chat.emote-menu.show-quick-nav'),
 					animated: t.chat.context.get('chat.emotes.animated'),
 					showHeading: t.chat.context.get('chat.emote-menu.show-heading'),
@@ -1232,6 +1259,7 @@ export default class EmoteMenu extends Module {
 					this.createObserver();
 
 				t.chat.context.on('changed:chat.emotes.animated', this.updateSettingState, this);
+				t.chat.context.on('changed:chat.emote-menu.stay-loaded', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.show-quick-nav', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.reduced-padding', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.show-heading', this.updateSettingState, this);
@@ -1245,6 +1273,7 @@ export default class EmoteMenu extends Module {
 				this.destroyObserver();
 
 				t.chat.context.off('changed:chat.emotes.animated', this.updateSettingState, this);
+				t.chat.context.off('changed:chat.emote-menu.stay-loaded', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.show-quick-nav', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.show-heading', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.reduced-padding', this.updateSettingState, this);
@@ -1257,6 +1286,7 @@ export default class EmoteMenu extends Module {
 
 			updateSettingState() {
 				this.setState({
+					stayLoaded: t.chat.context.get('chat.emote-menu.stay-loaded'),
 					quickNav: t.chat.context.get('chat.emote-menu.show-quick-nav'),
 					animated: t.chat.context.get('chat.emotes.animated'),
 					showHeading: t.chat.context.get('chat.emote-menu.show-heading'),
@@ -1518,6 +1548,11 @@ export default class EmoteMenu extends Module {
 					tone = state.tone = state.tone || null,
 					tone_choices = state.tone_emoji = [],
 					categories = {};
+
+				if ( ! t.chat.context.get('chat.emote-menu.show-emoji') ) {
+					state.has_emoji_tab = false;
+					return state;
+				}
 
 				let style = t.chat.context.get('chat.emoji.style') || 'twitter';
 				if ( ! IMAGE_PATHS[style] )
@@ -2257,12 +2292,15 @@ export default class EmoteMenu extends Module {
 			}
 
 			render() {
-				if ( ! this.props.visible )
+				if ( ! this.props.visible && (! this.state.stayLoaded || ! this.loadedOnce) )
 					return null;
 
 				const loading = this.state.loading || this.props.loading,
 					padding = this.state.reducedPadding, //t.chat.context.get('chat.emote-menu.reduced-padding'),
 					no_tabs = this.state.combineTabs; //t.chat.context.get('chat.emote-menu.combine-tabs');
+
+				if ( ! loading )
+					this.loadedOnce = true;
 
 				let tab, sets, is_emoji, is_favs;
 
@@ -2301,7 +2339,7 @@ export default class EmoteMenu extends Module {
 
 				const visibility = this.state.visibility_control;
 
-				return (<div class="tw-block">
+				return (<div class={`tw-block${this.props.visible ? '' : ' tw-hide'}`} style={{display: this.props.visible ? null : 'none !important'}}>
 					<div class="tw-absolute tw-attached tw-attached--right tw-attached--up">
 						<div
 							class={`ffz-balloon ffz-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
