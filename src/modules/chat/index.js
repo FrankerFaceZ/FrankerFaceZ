@@ -918,8 +918,49 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.emotes.animated', {
+			default: null,
+			process(ctx, val) {
+				if ( val == null )
+					val = ctx.get('ffzap.betterttv.gif_emoticons_mode') === 2 ? 1 : 0;
+				return val;
+			},
+			ui: {
+				path: 'Chat > Appearance >> Emotes',
+				title: 'Animated Emotes',
+				description: 'This controls whether or not animated emotes are allowed to play in chat. When this is `Disabled`, emotes will appear as static images. Setting this to `Enable on Hover` may cause performance issues.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Enabled'},
+					{value: 2, title: 'Enable on Hover'}
+				]
+			}
+		});
+
+		this.settings.add('tooltip.emote-images.animated', {
+			requires: ['chat.emotes.animated'],
+			default: null,
+			process(ctx, val) {
+				if ( val == null )
+					val = ctx.get('chat.emotes.animated') ? true : false;
+				return val;
+			},
+			ui: {
+				path: 'Chat > Tooltips >> Emotes',
+				title: 'Display animated images of emotes.',
+				description: 'If this is not overridden, animated images are only shown in emote tool-tips if [Chat > Appearance >> Emotes > Animated Emotes](~chat.appearance.emotes) is not disabled.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.bits.animated', {
-			default: true,
+			requires: ['chat.emotes.animated'],
+			default: null,
+			process(ctx, val) {
+				if ( val == null )
+					val = ctx.get('chat.emotes.animated') ? true : false
+			},
 
 			ui: {
 				path: 'Chat > Bits and Cheering >> Appearance',

@@ -221,12 +221,20 @@
 		max-width: 100%;
 		width: auto;
 	}
-}
 
-.ffz-textarea--error:focus {
-	box-shadow: var(--shadow-input-error-focus);
-}
+	&--error {
+		box-shadow: var(--shadow-input-error);
 
-.ffz-textarea--no-resize {
-	resize: none;
+		&,&:focus {
+			border: var(--border-width-input) solid var(--color-border-input-error);
+		}
+
+		&:focus {
+			box-shadow: var(--shadow-input-error-focus);
+		}
+	}
+
+	&--no-resize {
+		resize: none;
+	}
 }

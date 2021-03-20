@@ -6,18 +6,20 @@
 
 		z-index: 99999999;
 
-		height: 50vh;
-		width: 50vw;
+		--width: #{"min(75vw, 128rem)"};
+		--height: #{"min(75vh, calc(0.75 * var(--width)))"};
+
+		top: #{"calc(calc(100vh - var(--height)) / 2)"};
+		left: #{"calc(calc(100vw - var(--width)) / 2)"};
 
 		min-width: 64rem;
 		min-height: 30rem;
 
-		--width: #{"min(75vw, 128rem)"};
 		width: 75vw;
 		width: var(--width);
 
 		height: 50vh;
-		height: #{"min(75vh, calc(0.75 * var(--width)))"};
+		height: var(--height);
 
 		> header {
 			cursor: move;

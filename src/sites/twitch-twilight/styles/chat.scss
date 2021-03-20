@@ -269,6 +269,25 @@
 	}
 }
 
+.ffz-emote-picker--nav-icon {
+	font-size: 2rem;
+	line-height: 1em;
+
+	position: relative;
+	height: 2rem;
+
+	&:before {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+
+		width: unset !important;
+		font-size: unset !important;
+		margin: 0 !important;
+	}
+}
+
 .ffz--emote-picker {
 	section:not(.filtered) heading {
 		cursor: pointer;
@@ -311,6 +330,11 @@
 	}
 
 	@media only screen and (max-height: 750px) {
+		.emote-picker__nav-content-overflow {
+			height: 100% !important;
+		}
+
+		.emote-picker__nav-content-overflow,
 		.emote-picker__tab-content {
 			#root & {
 				max-height: calc(100vh - 31rem);

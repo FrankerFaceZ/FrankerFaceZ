@@ -1091,12 +1091,30 @@ export const CheerEmotes = {
 // ============================================================================
 
 const render_emote = (token, createElement, wrapped) => {
+	const hover = token.anim === 2;
+	let src, srcSet, hoverSrc, hoverSrcSet, normalSrc, normalSrcSet;
+
+	if ( token.anim === 1 && token.animSrc ) {
+		src = token.big ? token.animSrc2 : token.animSrc;
+		srcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+	} else {
+		src = token.big ? token.src2 : token.src;
+		srcSet = token.big ? token.srcSet2 : token.srcSet;
+	}
+
+	if ( hover && token.animSrc ) {
+		normalSrc = src;
+		normalSrcSet = srcSet;
+		hoverSrc = token.big ? token.animSrc2 : token.animSrc;
+		hoverSrcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+	}
+
 	const mods = token.modifiers || [], ml = mods.length,
 		emote = createElement('img', {
-			class: `${EMOTE_CLASS} ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
+			class: `${EMOTE_CLASS} ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
 			attrs: {
-				src: token.big && token.src2 || token.src,
-				srcSet: token.big && token.srcSet2 || token.srcSet,
+				src,
+				srcSet,
 				alt: token.text,
 				height: (token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined,
 				'data-tooltip-type': 'emote',
@@ -1105,6 +1123,10 @@ const render_emote = (token, createElement, wrapped) => {
 				'data-set': token.set,
 				'data-code': token.code,
 				'data-variant': token.variant,
+				'data-normal-src': normalSrc,
+				'data-normal-src-set': normalSrcSet,
+				'data-hover-src': hoverSrc,
+				'data-hover-src-set': hoverSrcSet,
 				'data-modifiers': ml ? mods.map(x => x.id).join(' ') : null,
 				'data-modifier-info': ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null
 			}
@@ -1147,11 +1169,29 @@ export const AddonEmotes = {
 	},
 
 	render(token, createElement, wrapped) {
+		const hover = token.anim === 2;
+		let src, srcSet, hoverSrc, hoverSrcSet, normalSrc, normalSrcSet;
+
+		if ( token.anim === 1 && token.animSrc ) {
+			src = token.big ? token.animSrc2 : token.animSrc;
+			srcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+		} else {
+			src = token.big ? token.src2 : token.src;
+			srcSet = token.big ? token.srcSet2 : token.srcSet;
+		}
+
+		if ( hover && token.animSrc ) {
+			normalSrc = src;
+			normalSrcSet = srcSet;
+			hoverSrc = token.big ? token.animSrc2 : token.animSrc;
+			hoverSrcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+		}
+
 		const mods = token.modifiers || [], ml = mods.length,
 			emote = (<img
-				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
-				src={token.big && token.src2 || token.src}
-				srcSet={token.big && token.srcSet2 || token.srcSet}
+				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
+				src={src}
+				srcSet={srcSet}
 				height={(token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined}
 				alt={token.text}
 				data-tooltip-type="emote"
@@ -1160,6 +1200,10 @@ export const AddonEmotes = {
 				data-set={token.set}
 				data-code={token.code}
 				data-variant={token.variant}
+				data-normal-src={normalSrc}
+				data-normal-src-set={normalSrcSet}
+				data-hover-src={hoverSrc}
+				data-hover-src-set={hoverSrcSet}
 				data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
 				data-modifier-info={ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null}
 				onClick={this.emotes.handleClick}
@@ -1265,10 +1309,19 @@ export const AddonEmotes = {
 						'emote.owner', 'By: {owner}',
 						{owner: emote.owner.display_name});
 
-				if ( emote.urls[4] )
-					preview = emote.urls[4];
-				else if ( emote.urls[2] )
-					preview = emote.urls[2];
+				const anim = this.context.get('tooltip.emote-images.animated');
+				if ( anim && emote.animated?.[1] ) {
+					if ( emote.animated[4] )
+						preview = emote.animated[4];
+					else if ( emote.animated[2] )
+						preview = emote.animated[2];
+
+				} else {
+					if ( emote.urls[4] )
+						preview = emote.urls[4];
+					else if ( emote.urls[2] )
+						preview = emote.urls[2];
+				}
 			}
 
 		} else if ( provider === 'emoji' ) {
@@ -1341,6 +1394,7 @@ export const AddonEmotes = {
 			return tokens;
 
 		const big = this.context.get('chat.emotes.2x'),
+			anim = this.context.get('chat.emotes.animated'),
 			out = [];
 
 		let last_token, emote;
@@ -1391,7 +1445,8 @@ export const AddonEmotes = {
 
 					const t = Object.assign({
 						modifiers: [],
-						big
+						big,
+						anim
 					}, emote.token);
 					out.push(t);
 					last_token = t;

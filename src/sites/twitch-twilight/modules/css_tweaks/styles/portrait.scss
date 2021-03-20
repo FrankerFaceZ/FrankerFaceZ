@@ -117,8 +117,13 @@
 			transform: rotate(90deg);
 		}
 
+		.emote-picker__nav-content-overflow,
 		.emote-picker__tab-content {
 			max-height: calc(var(--ffz-chat-height) - 26rem);
+		}
+
+		.emote-picker__nav-content-overflow {
+			height: 100% !important;
 		}
 
 		&.right-column--theatre {
@@ -132,6 +137,7 @@
 
 			height: calc(100vh - var(--ffz-theater-height)) !important;
 
+			.emote-picker__nav-content-overflow,
 			.emote-picker__tab-content {
 				max-height: calc(calc(100vh - var(--ffz-theater-height)) - 26rem);
 			}

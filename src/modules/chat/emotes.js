@@ -12,6 +12,9 @@ import {NEW_API, API_SERVER, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POIN
 import GET_EMOTE from './emote_info.gql';
 import GET_EMOTE_SET from './emote_set_info.gql';
 
+const HoverRAF = Symbol('FFZ:Hover:RAF');
+const HoverState = Symbol('FFZ:Hover:State');
+
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
 
 const MODIFIERS = {
@@ -133,6 +136,8 @@ export default class Emotes extends Module {
 
 		// Because this may be used elsewhere.
 		this.handleClick = this.handleClick.bind(this);
+		this.animHover = this.animHover.bind(this);
+		this.animLeave = this.animLeave.bind(this);
 	}
 
 	onEnable() {
@@ -246,6 +251,68 @@ export default class Emotes extends Module {
 			this.settings.provider.delete(key);
 		else
 			this.settings.provider.set(key, list);
+	}
+
+
+	// ========================================================================
+	// Animation Hover
+	// ========================================================================
+
+	animHover(event) { // eslint-disable-line class-methods-use-this
+		const target = event.currentTarget;
+		if ( target[HoverState] )
+			return;
+
+		if ( target[HoverRAF] )
+			cancelAnimationFrame(target[HoverRAF]);
+
+		target[HoverRAF] = requestAnimationFrame(() => {
+			target[HoverRAF] = null;
+			if ( target[HoverState] )
+				return;
+
+			if ( ! target.matches(':hover') )
+				return;
+
+			target[HoverState] = true;
+			const emotes = target.querySelectorAll('.ffz-hover-emote');
+			for(const em of emotes) {
+				const ds = em.dataset;
+				if ( ds.normalSrc && ds.hoverSrc ) {
+					em.src = ds.hoverSrc;
+					em.srcset = ds.hoverSrcSet;
+				}
+			}
+		});
+	}
+
+
+	animLeave(event) { // eslint-disable-line class-methods-use-this
+		const target = event.currentTarget;
+		if ( ! target[HoverState] )
+			return;
+
+		if ( target[HoverRAF] )
+			cancelAnimationFrame(target[HoverRAF]);
+
+		target[HoverRAF] = requestAnimationFrame(() => {
+			target[HoverRAF] = null;
+			if ( ! target[HoverState] )
+				return;
+
+			if ( target.matches(':hover') )
+				return;
+
+			target[HoverState] = false;
+			const emotes = target.querySelectorAll('.ffz-hover-emote');
+			for(const em of emotes) {
+				const ds = em.dataset;
+				if ( ds.normalSrc ) {
+					em.src = ds.normalSrc;
+					em.srcset = ds.normalSrcSet;
+				}
+			}
+		});
 	}
 
 
@@ -724,6 +791,7 @@ export default class Emotes extends Module {
 			}
 
 			emote.set_id = set_id;
+			emote.src = emote.urls[1];
 			emote.srcSet = `${emote.urls[1]} 1x`;
 			if ( emote.urls[2] )
 				emote.srcSet += `, ${emote.urls[2]} 2x`;
@@ -738,16 +806,35 @@ export default class Emotes extends Module {
 					emote.srcSet2 += `, ${emote.urls[4]} 2x`;
 			}
 
+			if ( emote.animated?.[1] ) {
+				emote.animSrc = emote.animated[1];
+				emote.animSrcSet = `${emote.animated[1]} 1x`;
+				if ( emote.animated[2] ) {
+					emote.animSrcSet += `, ${emote.animated[2]} 2x`;
+					emote.animSrc2 = emote.animated[2];
+					emote.animSrcSet2 = `${emote.animated[2]} 1x`;
+
+					if ( emote.animated[4] ) {
+						emote.animSrcSet += `, ${emote.animated[4]} 4x`;
+						emote.animSrcSet2 += `, ${emote.animated[4]} 2x`;
+					}
+				}
+			}
+
 			emote.token = {
 				type: 'emote',
 				id: emote.id,
 				set: set_id,
 				provider: 'ffz',
-				src: emote.urls[1],
+				src: emote.src,
 				srcSet: emote.srcSet,
 				can_big: !! emote.urls[2],
 				src2: emote.src2,
 				srcSet2: emote.srcSet2,
+				animSrc: emote.animSrc,
+				animSrcSet: emote.animSrcSet,
+				animSrc2: emote.animSrc2,
+				animSrcSet2: emote.animSrcSet2,
 				text: emote.hidden ? '???' : emote.name,
 				length: emote.name.length,
 				height: emote.height

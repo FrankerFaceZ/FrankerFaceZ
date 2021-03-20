@@ -61,6 +61,7 @@ export default class ChatLine extends Module {
 		this.on('i18n:update', this.updateLines, this);
 
 		this.chat.context.on('changed:chat.emotes.2x', this.updateLines, this);
+		this.chat.context.on('changed:chat.emotes.animated', this.updateLines, this);
 		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
 		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
 		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
@@ -337,6 +338,7 @@ export default class ChatLine extends Module {
 				const types = t.parent.message_types || {},
 					deleted_count = this.props.deletedCount,
 					reply_mode = t.chat.context.get('chat.replies.style'),
+					anim_hover = t.chat.context.get('chat.emotes.animated') === 2,
 					override_mode = t.chat.context.get('chat.filtering.display-deleted'),
 
 					msg = t.chat.standardizeMessage(this.props.message),
@@ -892,6 +894,8 @@ other {# messages were deleted by a moderator.}
 					'data-room': room,
 					'data-user-id': user.userID,
 					'data-user': user.userLogin && user.userLogin.toLowerCase(),
+					onMouseOver: anim_hover ? t.chat.emotes.animHover : null,
+					onMouseOut: anim_hover ? t.chat.emotes.animLeave : null
 				}, out);
 
 			} catch(err) {
