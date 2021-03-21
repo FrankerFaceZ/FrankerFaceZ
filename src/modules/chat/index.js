@@ -46,6 +46,7 @@ function formatTerms(data) {
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
 const EMOTE_CHARS = /[ .,!]/;
+const GIF_TERMS = ['gif emotes', 'gif emoticons', 'gifs'];
 
 export default class Chat extends Module {
 	constructor(...args) {
@@ -919,15 +920,24 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.emotes.animated', {
+			requires: ['context.bttv.gifs'],
 			default: null,
 			process(ctx, val) {
-				if ( val == null )
-					val = ctx.get('ffzap.betterttv.gif_emoticons_mode') === 2 ? 1 : 0;
+				if ( val == null ) {
+					const temp = ctx.get('ffzap.betterttv.gif_emoticons_mode');
+					if ( temp == null )
+						val = ctx.get('context.bttv.gifs');
+					else
+						val = temp === 2 ? 1 : 0;
+				}
 				return val;
 			},
 			ui: {
 				path: 'Chat > Appearance >> Emotes',
 				title: 'Animated Emotes',
+
+				getExtraTerms: () => GIF_TERMS,
+
 				description: 'This controls whether or not animated emotes are allowed to play in chat. When this is `Disabled`, emotes will appear as static images. Setting this to `Enable on Hover` may cause performance issues.',
 				component: 'setting-select-box',
 				data: [
@@ -949,6 +959,7 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Tooltips >> Emotes',
 				title: 'Display animated images of emotes.',
+				getExtraTerms: () => GIF_TERMS,
 				description: 'If this is not overridden, animated images are only shown in emote tool-tips if [Chat > Appearance >> Emotes > Animated Emotes](~chat.appearance.emotes) is not disabled.',
 				component: 'setting-check-box'
 			}

@@ -16,6 +16,7 @@ export default class CompatEmoteMenu extends Module {
 
 		this.should_enable = true;
 
+		this.inject('settings');
 		this.inject('site.chat');
 		this.inject('chat.emotes');
 	}
@@ -39,6 +40,8 @@ export default class CompatEmoteMenu extends Module {
 				return;
 
 			const sets = this.emotes.getSets(props.userID, props.currentUserLogin, props.channelID, props.channelLogin),
+				chat = this.resolve('chat'),
+				anim = (chat?.context || this.settings)?.get?.('chat.emotes.animated') > 0,
 				emotes = [];
 
 			for(const set of sets) {
@@ -53,7 +56,7 @@ export default class CompatEmoteMenu extends Module {
 
 						emotes.push({
 							text: emote.name,
-							url: emote.urls[1],
+							url: anim && emote.animated?.[1] || emote.urls[1],
 							channel: `${set.source || 'FrankerFaceZ'} ${set.title}`,
 							badge: set.icon || '//cdn.frankerfacez.com/script/devicon.png'
 						});
