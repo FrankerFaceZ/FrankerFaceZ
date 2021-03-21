@@ -926,7 +926,7 @@ export default class Chat extends Module {
 				if ( val == null ) {
 					const temp = ctx.get('ffzap.betterttv.gif_emoticons_mode');
 					if ( temp == null )
-						val = ctx.get('context.bttv.gifs');
+						val = ctx.get('context.bttv.gifs') ? 1 : 0;
 					else
 						val = temp === 2 ? 1 : 0;
 				}
