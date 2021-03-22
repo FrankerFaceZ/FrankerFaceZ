@@ -504,7 +504,7 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > Highlight >> Badges',
 				component: 'badge-highlighting',
 				colored: true,
-				data: () => this.badges.getSettingsBadges()
+				data: () => this.badges.getSettingsBadges(true)
 			}
 		});
 
@@ -540,7 +540,7 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > Block >> Badges @{"description": "**Note:** This section is for filtering messages out of chat from users with specific badges. If you wish to hide a badge, go to [Chat > Badges >> Visibility](~chat.badges.tabs.visibility)."}',
 				component: 'badge-highlighting',
 				removable: true,
-				data: () => this.badges.getSettingsBadges()
+				data: () => this.badges.getSettingsBadges(true)
 			}
 		});
 
@@ -687,13 +687,31 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
-				const out = [
-					[[], []],
-					[[], []]
+				const data = [
+					[ // no-remove
+						[ // sensitive
+							[], [] // word
+						],
+						[ // intensitive
+							[], []
+						]
+					],
+					[ // remove
+						[ // sensitive
+							[], [] // word
+						],
+						[ // intensiitve
+							[], []
+						]
+					]
 				];
+
+				let had_remove = false,
+					had_non = false;
 
 				for(const item of val) {
 					const t = item.t,
+						sensitive = item.s,
 						word = has(item, 'w') ? item.w : t !== 'raw';
 					let v = item.v;
 
@@ -706,15 +724,21 @@ export default class Chat extends Module {
 					if ( ! v || ! v.length )
 						continue;
 
-					out[item.remove ? 1 : 0][word ? 0 : 1].push(v);
+					if ( item.remove )
+						had_remove = true;
+					else
+						had_non = true;
+
+					data[item.remove ? 1 : 0][sensitive ? 0 : 1][word ? 0 : 1].push(v);
 				}
 
-				return out.map(data => {
-					if ( data[0].length )
-						data[1].push(`(^|.*?${SEPARATORS})(?:${data[0].join('|')})(?=$|${SEPARATORS})`);
+				if ( ! had_remove && ! had_non )
+					return null;
 
-					return data[1].length ? new RegExp(data[1].join('|'), 'gi') : null;
-				});
+				return {
+					remove: had_remove ? formatTerms(data[1]) : null,
+					non: had_non ? formatTerms(data[0]) : null
+				};
 			}
 		});
 
@@ -936,6 +960,13 @@ export default class Chat extends Module {
 				path: 'Chat > Appearance >> Emotes',
 				title: 'Animated Emotes',
 
+				default(ctx) {
+					const temp = ctx.get('ffzap.betterttv.gif_emoticons_mode');
+					if ( temp == null )
+						return ctx.get('context.bttv.gifs') ? 1 : 0;
+					return temp === 2 ? 1 : 0;
+				},
+
 				getExtraTerms: () => GIF_TERMS,
 
 				description: 'This controls whether or not animated emotes are allowed to play in chat. When this is `Disabled`, emotes will appear as static images. Setting this to `Enable on Hover` may cause performance issues.',
@@ -966,13 +997,7 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.bits.animated', {
-			requires: ['chat.emotes.animated'],
-			default: null,
-			process(ctx, val) {
-				if ( val == null )
-					val = ctx.get('chat.emotes.animated') ? true : false
-			},
-
+			default: true,
 			ui: {
 				path: 'Chat > Bits and Cheering >> Appearance',
 				title: 'Display animated cheers.',
@@ -1395,6 +1420,9 @@ export default class Chat extends Module {
 		if ( msg.deletedAt !== undefined )
 			msg.deleted = !!msg.deletedAt;
 
+		// Addon Badges
+		msg.ffz_badges = this.badges.getBadges(user.id, user.login, msg.roomID, msg.roomLogin);
+
 		return msg;
 	}
 
@@ -1634,7 +1662,7 @@ export default class Chat extends Module {
 	}
 
 
-	tokenizeMessage(msg, user) {
+	tokenizeMessage(msg, user, haltable = false) {
 		if ( msg.content && ! msg.message )
 			msg.message = msg.content.text;
 
@@ -1646,8 +1674,13 @@ export default class Chat extends Module {
 
 		let tokens = [{type: 'text', text: msg.message}];
 
-		for(const tokenizer of this.__tokenizers)
-			tokens = tokenizer.process.call(this, tokens, msg, user);
+		for(const tokenizer of this.__tokenizers) {
+			tokens = tokenizer.process.call(this, tokens, msg, user, haltable);
+			if ( haltable && msg.ffz_halt_tokens ) {
+				msg.ffz_halt_tokens = undefined;
+				break;
+			}
+		}
 
 		return tokens;
 	}

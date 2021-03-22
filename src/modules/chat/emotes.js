@@ -506,9 +506,9 @@ export default class Emotes extends Module {
 			room_user = room && room.getUser(user_id, user_login, true),
 			user = this.parent.getUser(user_id, user_login, true);
 
-		return (user ? user.emote_sets._cache : []).concat(
-			room_user ? room_user.emote_sets._cache : [],
-			room ? room.emote_sets._cache : [],
+		return (user?.emote_sets ? user.emote_sets._cache : []).concat(
+			room_user?.emote_sets ? room_user.emote_sets._cache : [],
+			room?.emote_sets ? room.emote_sets._cache : [],
 			this.default_sets._cache
 		);
 	}
@@ -519,7 +519,7 @@ export default class Emotes extends Module {
 	}
 
 	_withSources(out, seen, emote_sets) { // eslint-disable-line class-methods-use-this
-		if ( ! emote_sets._sources )
+		if ( ! emote_sets?._sources )
 			return;
 
 		for(const [provider, data] of emote_sets._sources)
@@ -560,8 +560,11 @@ export default class Emotes extends Module {
 		if ( ! room )
 			return [];
 
-		if ( ! room_user )
-			return room.emote_sets._cache;
+		if ( ! room_user?.emote_sets )
+			return room.emote_sets ? room.emote_sets._cache : [];
+
+		else if ( ! room.emote_sets )
+			return room_user.emote_sets._cache;
 
 		return room_user.emote_sets._cache.concat(room.emote_sets._cache);
 	}
@@ -589,7 +592,7 @@ export default class Emotes extends Module {
 
 	getGlobalSetIDs(user_id, user_login) {
 		const user = this.parent.getUser(user_id, user_login, true);
-		if ( ! user )
+		if ( ! user?.emote_sets )
 			return this.default_sets._cache;
 
 		return user.emote_sets._cache.concat(this.default_sets._cache);

@@ -1238,7 +1238,7 @@ export default class ChatHook extends Module {
 				service.postMessageToCurrentChannel({}, msg);
 			}
 
-			event.preventDefault();
+			//event.preventDefault();
 		});
 	}
 
@@ -1445,6 +1445,9 @@ export default class ChatHook extends Module {
 						if ( blocked_types.has(types[msg.type]) )
 							return;
 
+						if ( msg.type === types.ChannelPointsReward )
+							return;
+
 						if ( msg.type === types.RewardGift && ! t.chat.context.get('chat.bits.show-rewards') )
 							return;
 
@@ -1470,6 +1473,8 @@ export default class ChatHook extends Module {
 							}
 
 							m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, r);
+							if ( m.ffz_removed )
+								return;
 
 							const event = new FFZEvent({
 								message: m,
@@ -2487,6 +2492,11 @@ export default class ChatHook extends Module {
 	// Chat Containers
 	// ========================================================================
 
+	get shouldUpdateChannel() {
+		const route = this.router.current_name;
+		return Twilight.POPOUT_ROUTES.includes(route) || Twilight.SUNLIGHT_ROUTES.includes(route);
+	}
+
 	containerMounted(cont, props) {
 		if ( ! props )
 			props = cont.props;
@@ -2497,7 +2507,7 @@ export default class ChatHook extends Module {
 		this.updateRoomBitsConfig(cont, props.bitsConfig);
 
 		if ( props.data ) {
-			if ( Twilight.POPOUT_ROUTES.includes(this.router.current_name) ) {
+			if ( this.shouldUpdateChannel ){
 				const color = props.data.user?.primaryColorHex;
 				this.resolve('site.channel').updateChannelColor(color);
 
@@ -2516,7 +2526,7 @@ export default class ChatHook extends Module {
 
 
 	containerUnmounted(cont) {
-		if ( Twilight.POPOUT_ROUTES.includes(this.router.current_name) ) {
+		if ( this.shouldUpdateChannel ) {
 			this.resolve('site.channel').updateChannelColor();
 
 			this.settings.updateContext({

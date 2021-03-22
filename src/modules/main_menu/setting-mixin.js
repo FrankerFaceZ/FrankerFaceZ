@@ -166,24 +166,33 @@ export default {
 		},
 
 		_uses_changed(uses) {
-			if ( this.source )
-				this.source.off('changed', this._source_setting_changed, this);
+			if ( this._uses_cb )
+				clearTimeout(this._uses_cb);
 
-			// We primarily only care about the main source.
-			uses = uses ? uses[0] : null;
+			// We don't do this immediately because this code will be
+			// running inside a "changed" event handler and unregistering
+			// our listener will throw a concurrent modification exception.
+			this._uses_cb = setTimeout(() => {
+				if ( this.source )
+					this.source.off('changed', this._source_setting_changed, this);
 
-			const source = this.source = this.context.profile_keys[uses],
-				setting = this.item.setting;
+				// We primarily only care about the main source.
+				uses = uses ? uses[0] : null;
 
-			if ( source ) {
-				source.on('changed', this._source_setting_changed, this);
-				this.source_value = deep_copy(source.get(setting));
+				const source = this.source = uses == null ? null : this.context.profile_keys[uses],
+					setting = this.item.setting;
 
-			} else
-				this.source_value = undefined;
+				if ( source ) {
+					source.on('changed', this._source_setting_changed, this);
+					this.source_value = deep_copy(source.get(setting));
 
-			if ( ! this.has_value )
-				this.value = this.isInherited ? this.source_value : this.default_value;
+				} else
+					this.source_value = undefined;
+
+				this.has_value = this.profile.has(this.item.setting);
+				if ( ! this.has_value )
+					this.value = this.isInherited ? this.source_value : this.default_value;
+			}, 0);
 		},
 
 		set(value) {

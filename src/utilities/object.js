@@ -620,18 +620,22 @@ export function generateHex(length = 40) {
 
 
 export class SourcedSet {
-	constructor() {
-		this._cache = [];
+	constructor(use_set = false) {
+		this._use_set = use_set;
+		this._cache = use_set ? new Set : [];
 	}
 
 	_rebuild() {
 		if ( ! this._sources )
 			return;
 
-		this._cache = [];
+		const use_set = this._use_set,
+			cache = this._cache = use_set ? new Set : [];
 		for(const items of this._sources.values())
 			for(const i of items)
-				if ( ! this._cache.includes(i) )
+				if ( use_set )
+					cache.add(i);
+				else if ( ! cache.includes(i) )
 					this._cache.push(i);
 	}
 
@@ -644,7 +648,7 @@ export class SourcedSet {
 	}
 
 	includes(val) {
-		return this._cache.includes(val);
+		return this._use_set ? this._cache.has(val) : this._cache.includes(val);
 	}
 
 	delete(key) {
@@ -659,12 +663,17 @@ export class SourcedSet {
 			this._sources = new Map;
 
 		const had = this.has(key);
-		this._sources.set(key, [false, items]);
+		if ( had )
+			items = [...this._sources.get(key), ...items];
+
+		this._sources.set(key, items);
 		if ( had )
 			this._rebuild();
 		else
 			for(const i of items)
-				if ( ! this._cache.includes(i) )
+				if ( this._use_set )
+					this._cache.add(i);
+				else if ( ! this._cache.includes(i) )
 					this._cache.push(i);
 	}
 
@@ -673,13 +682,18 @@ export class SourcedSet {
 			this._sources = new Map;
 
 		const had = this.has(key);
-		this._sources.set(key, [val]);
+		if ( ! Array.isArray(val) )
+			val = [val];
 
+		this._sources.set(key, val);
 		if ( had )
 			this._rebuild();
-
-		else if ( ! this._cache.includes(val) )
-			this._cache.push(val);
+		else
+			for(const i of val)
+				if ( this._use_set )
+					this._cache.add(i);
+				else if ( ! this._cache.includes(i) )
+					this._cache.push(i);
 	}
 
 	push(key, val) {
@@ -694,7 +708,9 @@ export class SourcedSet {
 			return;
 
 		old_val.push(val);
-		if ( ! this._cache.includes(val) )
+		if ( this._use_set )
+			this._cache.add(val);
+		else if ( ! this._cache.includes(val) )
 			this._cache.push(val);
 	}
 

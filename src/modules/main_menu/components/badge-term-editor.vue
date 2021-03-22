@@ -3,8 +3,9 @@
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
 			<div class="tw-mg-r-1">
 				<img
-					v-if="current"
+					v-if="current && current.image"
 					:src="current.image"
+					:style="{backgroundColor: current.color || null}"
 					class="ffz--badge-term-image"
 				>
 				<div
@@ -50,7 +51,34 @@
 					</figure>
 				</div>
 			</div>
-			<div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip__container">
+			<div
+				v-if="removable && (editing || display.remove)"
+				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
+			>
+				<input
+					v-if="editing"
+					:id="'remove$' + id"
+					v-model="edit_data.remove"
+					type="checkbox"
+					class="ffz-min-width-unset ffz-checkbox__input"
+				>
+
+				<label
+					v-if="editing"
+					:for="'remove$' + id"
+					class="ffz-min-width-unset ffz-checkbox__label"
+				>
+					<span class="tw-mg-l-05 ffz-i-trash" />
+				</label>
+				<span
+					v-else-if="term.remove"
+					class="ffz-i-trash tw-pd-x-1"
+				/>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('setting.terms.remove.on', 'Remove matching messages from chat.') }}
+				</div>
+			</div>
+			<!--div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip__container">
 				<button
 					v-if="editing"
 					:class="{active: edit_data.remove}"
@@ -74,7 +102,7 @@
 						{{ t('setting.terms.remove.off', 'Do not remove matching messages from chat.') }}
 					</span>
 				</div>
-			</div>
+			</div-->
 			<div v-if="adding" class="tw-flex-shrink-0">
 				<button
 					class="tw-button"
@@ -165,14 +193,14 @@ export default {
 	data() {
 		if ( this.adding )
 			return {
-				editor_id: id++,
+				id: id++,
 				deleting: false,
 				editing: true,
 				edit_data: deep_copy(this.term)
 			};
 
 		return {
-			editor_id: id++,
+			id: id++,
 			deleting: false,
 			editing: false,
 			edit_data: null

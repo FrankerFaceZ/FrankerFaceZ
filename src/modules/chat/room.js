@@ -20,7 +20,7 @@ export default class Room {
 		this.refs = new Set;
 		this.style = new ManagedStyle(`room--${login}`);
 
-		this.emote_sets = new SourcedSet;
+		this.emote_sets = null; // new SourcedSet;
 		this.badges = null;
 		this.users = {};
 		this.user_ids = {};
@@ -305,9 +305,11 @@ export default class Room {
 
 		this.data = d;
 
-		if ( d.set )
+		if ( d.set ) {
+			if ( ! this.emote_sets )
+				this.emote_sets = new SourcedSet;
 			this.emote_sets.set('main', d.set);
-		else
+		} else if ( this.emote_sets )
 			this.emote_sets.delete('main');
 
 
@@ -342,6 +344,9 @@ export default class Room {
 		if ( this.destroyed )
 			return;
 
+		if ( ! this.emote_sets )
+			this.emote_sets = new SourcedSet;
+
 		let changed = false;
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
@@ -357,7 +362,7 @@ export default class Room {
 	}
 
 	removeSet(provider, set_id) {
-		if ( this.destroyed )
+		if ( this.destroyed || ! this.emote_sets )
 			return;
 
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {

@@ -7,7 +7,7 @@
 import {NEW_API, SERVER, API_SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {has, maybe_call} from 'utilities/object';
+import {has, maybe_call, SourcedSet} from 'utilities/object';
 import Module from 'utilities/module';
 import { ColorAdjuster } from 'src/utilities/color';
 
@@ -181,11 +181,16 @@ export default class Badges extends Module {
 
 		this.style = new ManagedStyle('badges');
 
+		// Bulk data structure for badges applied to a lot of users.
+		// This lets us avoid allocating lots of individual user
+		// objects when we don't need to do so.
+		this.bulk = new Map;
+
 		// Special data structure for supporters to greatly reduce
 		// memory usage and speed things up for people who only have
 		// a supporter badge.
-		this.supporter_id = null;
-		this.supporters = new Set;
+		//this.supporter_id = null;
+		//this.supporters = new Set;
 
 		this.badges = {};
 		this.twitch_badges = {};
@@ -340,17 +345,23 @@ export default class Badges extends Module {
 		if ( include_addons )
 			for(const key in this.badges)
 				if ( has(this.badges, key) ) {
-					const badge = this.badges[key],
-						image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image;
-
+					const badge = this.badges[key];
 					if ( badge.no_visibility )
 						continue;
+
+					let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
+						color = badge.color || 'transparent';
+
+					if ( ! badge.addon ) {
+						image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
+						color = 'transparent';
+					}
 
 					(badge.addon ? addon : ffz).push({
 						id: key,
 						provider: 'ffz',
 						name: badge.title,
-						color: badge.color || 'transparent',
+						color,
 						image,
 						styleImage: `url("${image}")`
 					});
@@ -539,6 +550,11 @@ export default class Badges extends Module {
 
 
 	render(msg, createElement, skip_hide = false) { // eslint-disable-line class-methods-use-this
+		if ( ! msg.badges && ! msg.ffz_badges )
+			return null;
+
+		// TODO: A lot of this can be cached
+
 		const hidden_badges = skip_hide ? {} : (this.parent.context.get('chat.badges.hidden') || {}),
 			badge_style = this.parent.context.get('chat.badges.style'),
 			custom_mod = this.parent.context.get('chat.badges.custom-mod'),
@@ -556,14 +572,14 @@ export default class Badges extends Module {
 			twitch_badges = msg.badges || {},
 			dynamic_data = msg.badgeDynamicData || {},
 
-			user = msg.user || {},
-			user_id = user.id,
-			user_login = user.login,
+			//user = msg.user || {},
+			//user_id = user.id,
+			//user_login = user.login,
 			room_id = msg.roomID,
 			room_login = msg.roomLogin,
 
 			room = this.parent.getRoom(room_id, room_login, true),
-			badges = this.getBadges(user_id, user_login, room_id, room_login);
+			badges = msg.ffz_badges; // this.getBadges(user_id, user_login, room_id, room_login);
 
 		let last_slot = 50, slot;
 
@@ -616,105 +632,107 @@ export default class Badges extends Module {
 				};
 			}
 
-		const handled_ids = new Set;
+		if ( Array.isArray(badges) ) {
+			const handled_ids = new Set;
 
-		for(const badge of badges)
-			if ( badge && badge.id != null ) {
-				if ( handled_ids.has(badge.id) )
-					continue;
-
-				handled_ids.add(badge.id);
-
-				const full_badge = this.badges[badge.id] || {},
-					is_hidden = hidden_badges[badge.id];
-
-				if ( is_hidden || (is_hidden == null && (full_badge.addon ? addon_hidden : ffz_hidden)) )
-					continue;
-
-				const slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
-					old_badge = slotted[slot],
-					urls = badge.urls || (badge.image ? {1: badge.image} : null),
-					color = badge.color || full_badge.color || 'transparent',
-					no_invert = badge.no_invert,
-					masked = color !== 'transparent' && is_mask,
-
-					bu = (urls || full_badge.urls || {1: full_badge.image}),
-					bd = {
-						provider: 'ffz',
-						image: bu[4] || bu[2] || bu[1],
-						color: badge.color || full_badge.color,
-						title: badge.title || full_badge.title,
-					};
-
-				// Hacky nonsense.
-				if ( ! full_badge.addon ) {
-					bd.image = `//cdn.frankerfacez.com/badge/${badge.id}/4/rounded`;
-					bd.color = null;
-				}
-
-				let style;
-
-				if ( old_badge ) {
-					old_badge.badges.push(bd);
-
-					const replaces = has(badge, 'replaces') ? badge.replaces : full_badge.replaces,
-						replaces_type = badge.replaces_type || full_badge.replaces_type;
-					if ( replaces && (!replaces_type || replaces_type === old_badge.id) ) {
-						old_badge.replaced = badge.id;
-						old_badge.content = badge.content || full_badge.content || old_badge.content;
-					} else
+			for(const badge of badges)
+				if ( badge && badge.id != null ) {
+					if ( handled_ids.has(badge.id) )
 						continue;
 
-					style = old_badge.props.style;
+					handled_ids.add(badge.id);
 
-				} else if ( slot == null )
-					continue;
+					const full_badge = this.badges[badge.id] || {},
+						is_hidden = hidden_badges[badge.id];
 
-				else {
-					style = {};
-					const props = {
-						className: 'ffz-tooltip ffz-badge',
-						'data-tooltip-type': 'badge',
-						'data-provider': 'ffz',
-						'data-badge': badge.id,
-						style
-					};
+					if ( is_hidden || (is_hidden == null && (full_badge.addon ? addon_hidden : ffz_hidden)) )
+						continue;
 
-					slotted[slot] = {
-						id: badge.id,
-						props,
-						badges: [bd],
-						content: badge.content || full_badge.content
+					const slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
+						old_badge = slotted[slot],
+						urls = badge.urls || (badge.image ? {1: badge.image} : null),
+						color = badge.color || full_badge.color || 'transparent',
+						no_invert = badge.no_invert,
+						masked = color !== 'transparent' && is_mask,
+
+						bu = (urls || full_badge.urls || {1: full_badge.image}),
+						bd = {
+							provider: 'ffz',
+							image: bu[4] || bu[2] || bu[1],
+							color: badge.color || full_badge.color,
+							title: badge.title || full_badge.title,
+						};
+
+					// Hacky nonsense.
+					if ( ! full_badge.addon ) {
+						bd.image = `//cdn.frankerfacez.com/badge/${badge.id}/4/rounded`;
+						bd.color = null;
+					}
+
+					let style;
+
+					if ( old_badge ) {
+						old_badge.badges.push(bd);
+
+						const replaces = has(badge, 'replaces') ? badge.replaces : full_badge.replaces,
+							replaces_type = badge.replaces_type || full_badge.replaces_type;
+						if ( replaces && (!replaces_type || replaces_type === old_badge.id) ) {
+							old_badge.replaced = badge.id;
+							old_badge.content = badge.content || full_badge.content || old_badge.content;
+						} else
+							continue;
+
+						style = old_badge.props.style;
+
+					} else if ( slot == null )
+						continue;
+
+					else {
+						style = {};
+						const props = {
+							className: 'ffz-tooltip ffz-badge',
+							'data-tooltip-type': 'badge',
+							'data-provider': 'ffz',
+							'data-badge': badge.id,
+							style
+						};
+
+						slotted[slot] = {
+							id: badge.id,
+							props,
+							badges: [bd],
+							content: badge.content || full_badge.content
+						}
+					}
+
+					if (no_invert) {
+						slotted[slot].full_size = true;
+						slotted[slot].no_invert = true;
+
+						style.background = 'unset';
+						style.backgroundSize = 'unset';
+						style[CSS_MASK_IMAGE] = 'unset';
+					}
+
+					if ( (has_image || color === 'transparent') && urls ) {
+						const image = `url("${urls[1]}")`;
+						let image_set;
+						if ( urls[2] || urls[4] )
+							image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
+
+						style[masked && !no_invert ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
+						if ( image_set )
+							style[masked && !no_invert ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
+					}
+
+					if ( is_colored && badge.color ) {
+						if ( masked && !no_invert )
+							style.backgroundImage = `linear-gradient(${badge.color},${badge.color})`;
+						else
+							style.backgroundColor = badge.color;
 					}
 				}
-
-				if (no_invert) {
-					slotted[slot].full_size = true;
-					slotted[slot].no_invert = true;
-
-					style.background = 'unset';
-					style.backgroundSize = 'unset';
-					style[CSS_MASK_IMAGE] = 'unset';
-				}
-
-				if ( (has_image || color === 'transparent') && urls ) {
-					const image = `url("${urls[1]}")`;
-					let image_set;
-					if ( urls[2] || urls[4] )
-						image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
-
-					style[masked && !no_invert ? CSS_MASK_IMAGE : 'backgroundImage'] = image;
-					if ( image_set )
-						style[masked && !no_invert ? CSS_MASK_IMAGE : 'backgroundImage'] = image_set;
-				}
-
-				if ( is_colored && badge.color ) {
-					if ( masked && !no_invert )
-						style.backgroundImage = `linear-gradient(${badge.color},${badge.color})`;
-					else
-						style.backgroundColor = badge.color;
-				}
-			}
+		}
 
 		for(const slot in slotted)
 			if ( has(slotted, slot) ) {
@@ -785,16 +803,53 @@ export default class Badges extends Module {
 
 	getBadges(user_id, user_login, room_id, room_login) {
 		const room = this.parent.getRoom(room_id, room_login, true),
-			global_user = this.parent.getUser(user_id, user_login, true),
-			room_user = room && room.getUser(user_id, user_login, true);
+			global_user = this.parent.getUser(user_id, user_login, true);
 
-		const out = (global_user ? global_user.badges._cache : []).concat(
-			room_user ? room_user.badges._cache : []);
+		if ( global_user ) {
+			user_id = user_id ?? global_user.id;
+			user_login = user_login ?? global_user.login;
+		}
 
-		if ( this.supporter_id && this.supporters.has(`${user_id}`) )
-			out.push({id: this.supporter_id});
+		const room_user = room && room.getUser(user_id, user_login, true);
+
+		const out = (global_user?.badges ? global_user.badges._cache : []).concat(
+			room_user?.badges ? room_user.badges._cache : []);
+
+		if ( this.bulk.size ) {
+			const str_user = String(user_id);
+			for(const [badge_id, users] of this.bulk) {
+				if ( users?._cache.has(str_user) )
+					out.push({id: badge_id});
+			}
+		}
 
 		return out;
+	}
+
+
+	setBulk(source, badge_id, entries) {
+		let set = this.bulk.get(badge_id);
+		if ( ! set )
+			this.bulk.set(badge_id, set = new SourcedSet(true));
+
+		set.set(source, entries);
+	}
+
+	deleteBulk(source, badge_id) {
+		const set = this.bulk.get(badge_id);
+		if ( set )
+			set.delete(source);
+	}
+
+	extendBulk(source, badge_id, entries) {
+		let set = this.bulk.get(badge_id);
+		if ( ! set )
+			this.bulk.set(badge_id, set = new SourcedSet(true));
+
+		if ( ! Array.isArray(entries) )
+			entries = [entries];
+
+		set.extend(source, ...entries);
 	}
 
 
@@ -839,15 +894,17 @@ export default class Badges extends Module {
 		if ( data.users )
 			for(const badge_id in data.users)
 				if ( has(data.users, badge_id) ) {
-					const badge = this.badges[badge_id];
+					const badge = this.badges[badge_id],
+						name = badge?.name;
 					let c = 0;
 
-					if ( badge?.name === 'supporter' ) {
-						this.supporter_id = badge_id;
+					if ( name === 'supporter' || name === 'bot' ) {
+						this.setBulk('ffz-global', badge_id, data.users[badge_id].map(x => String(x)));
+						/*this.supporter_id = badge_id;
 						for(const user_id of data.users[badge_id])
-							this.supporters.add(`${user_id}`);
+							this.supporters.add(`${user_id}`);*/
 
-						c = this.supporters.size;
+						c = data.users[badge_id].length; // this.supporters.size;
 					} else
 						for(const user_id of data.users[badge_id]) {
 							const user = this.parent.getUser(user_id, undefined);

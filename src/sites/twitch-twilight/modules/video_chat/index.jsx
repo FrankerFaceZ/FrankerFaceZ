@@ -74,7 +74,10 @@ export default class VideoChatHook extends Module {
 	async onEnable() {
 		this.chat.context.on('changed:chat.video-chat.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.video-chat.timestamps', this.updateLines, this);
-		this.on('chat:updated-lines', this.updateLines, this);
+		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
+		this.on('chat:update-lines', this.updateLines, this);
+		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
+		this.on('i18n:update', this.updateLines, this);
 
 		this.VideoChatController.on('mount', this.chatMounted, this);
 		this.VideoChatController.on('unmount', this.chatUnmounted, this);
@@ -365,6 +368,21 @@ export default class VideoChatHook extends Module {
 	}
 
 
+	updateLinesByUser(id, login) {
+		for(const inst of this.VideoChatLine.instances) {
+			const context = inst.props.messageContext;
+			if ( ! context.comment )
+				continue;
+
+			const author = context.author;
+			if ( author && ((id && id == author.id) || (login && login == author.name))) {
+				context.comment._ffz_message = null;
+				inst.forceUpdate();
+			}
+		}
+	}
+
+
 	// ========================================================================
 	// Message Standardization
 	// ========================================================================
@@ -388,6 +406,7 @@ export default class VideoChatHook extends Module {
 			},
 			roomLogin: room && room.login,
 			roomID: room && room.id,
+			ffz_badges: this.chat.badges.getBadges(author.id, author.login, room?.id, room?.login),
 			badges: comment.userBadges,
 			messageParts: comment.message.tokens,
 			is_action: comment.message.isAction,

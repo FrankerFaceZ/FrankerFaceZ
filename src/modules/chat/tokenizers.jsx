@@ -464,7 +464,7 @@ export const BlockedUsers = {
 	type: 'user_block',
 	priority: 100,
 
-	process(tokens, msg, user) {
+	process(tokens, msg, user, haltable) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
@@ -476,39 +476,69 @@ export const BlockedUsers = {
 		if ( regexes[1] && (regexes[1].test(u.login) || regexes[1].test(u.displayName)) ) {
 			msg.deleted = true;
 			msg.ffz_removed = true;
-		}
+			if ( haltable )
+				msg.ffz_halt_tokens = true;
 
-		if ( ! msg.deleted && regexes[0] && (regexes[0].test(u.login) || regexes[0].test(u.displayName)) )
+		} else if ( ! msg.deleted && regexes[0] && (regexes[0].test(u.login) || regexes[0].test(u.displayName)) )
 			msg.deleted = true;
 
 		return tokens;
 	}
 }
 
-export const BadgeHighlights = {
-	type: 'badge_highlight',
+function getBadgeIDs(msg) {
+	let keys = msg.badges ? Object.keys(msg.badges) : null;
+	if ( ! msg.ffz_badges )
+		return keys;
+
+	if ( ! keys )
+		keys = [];
+
+	for(const badge of msg.ffz_badges)
+		if ( badge?.id )
+			keys.push(badge.id);
+
+	return keys;
+}
+
+export const BadgeStuff = {
+	type: 'badge_stuff',
 	priority: 80,
 
-	process(tokens, msg, user) {
+	process(tokens, msg, user, haltable) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const badges = msg.badges;
-		if ( ! badges )
+		const colors = this.context.get('chat.filtering.highlight-basic-badges--colors'),
+			list = this.context.get('chat.filtering.highlight-basic-badges-blocked--list');
+
+		if ( ! colors && ! list )
 			return tokens;
 
-		const colors = this.context.get('chat.filtering.highlight-basic-badges--colors');
-		if ( ! colors || ! colors.size )
+		const keys = getBadgeIDs(msg);
+		if ( ! keys || ! keys.length )
 			return tokens;
 
-		for(const badge of Object.keys(badges)) {
-			if ( colors.has(badge) ) {
+		for(const badge of keys) {
+			if ( list && list[1].includes(badge) ) {
+				msg.deleted = true;
+				msg.ffz_removed = true;
+				if ( haltable )
+					msg.ffz_halt_tokens = true;
+				return tokens;
+			}
+
+			if ( list && ! msg.deleted && list[0].includes(badge) )
+				msg.deleted = true;
+
+			if ( colors && colors.has(badge) ) {
 				const color = colors.get(badge);
 				(msg.highlights = (msg.highlights || new Set())).add('badge');
 				msg.mentioned = true;
 				if ( color ) {
 					msg.mention_color = color;
-					return tokens;
+					if ( ! list )
+						return tokens;
 				}
 			}
 		}
@@ -517,25 +547,27 @@ export const BadgeHighlights = {
 	}
 }
 
-export const BlockedBadges = {
+/*export const BlockedBadges = {
 	type: 'badge_block',
 	priority: 100,
-	process(tokens, msg, user) {
+	process(tokens, msg, user, haltable) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
-
-		const badges = msg.badges;
-		if ( ! badges )
 			return tokens;
 
 		const list = this.context.get('chat.filtering.highlight-basic-badges-blocked--list');
 		if ( ! list || (! list[0].length && ! list[1].length) )
 			return tokens;
 
-		for(const badge of Object.keys(badges)) {
+		const keys = getBadgeIDs(msg);
+		if ( ! keys || ! keys.length )
+			return tokens;
+
+		for(const badge of keys) {
 			if ( list[1].includes(badge) ) {
 				msg.deleted = true;
 				msg.ffz_removed = true;
+				if ( haltable )
+					msg.ffz_halt_tokens = true;
 				return tokens;
 			}
 
@@ -545,7 +577,7 @@ export const BlockedBadges = {
 
 		return tokens;
 	}
-}
+}*/
 
 export const CustomHighlights = {
 	type: 'highlight',
@@ -649,7 +681,7 @@ export const CustomHighlights = {
 }
 
 
-function blocked_process(tokens, msg, regex, do_remove) {
+function blocked_process(tokens, msg, regexes, do_remove, haltable) {
 	const out = [];
 	for(const token of tokens) {
 		if ( token.type !== 'text' ) {
@@ -657,11 +689,23 @@ function blocked_process(tokens, msg, regex, do_remove) {
 			continue;
 		}
 
-		regex.lastIndex = 0;
 		const text = token.text;
 		let idx = 0, match;
 
-		while((match = regex.exec(text))) {
+		while(idx < text.length) {
+			if ( regexes[0] )
+				regexes[0].lastIndex = idx;
+			if ( regexes[1] )
+				regexes[1].lastIndex = idx;
+
+			match = regexes[0] ? regexes[0].exec(text) : null;
+			const second = regexes[1] ? regexes[1].exec(text) : null;
+			if ( second && (! match || match.index > second.index) )
+				match = second;
+
+			if ( ! match )
+				break;
+
 			const raw_nix = match.index,
 				offset = match[1] ? match[1].length : 0,
 				nix = raw_nix + offset;
@@ -669,15 +713,18 @@ function blocked_process(tokens, msg, regex, do_remove) {
 			if ( idx !== nix )
 				out.push({type: 'text', text: text.slice(idx, nix)});
 
+			if ( do_remove ) {
+				msg.ffz_removed = true;
+				if ( haltable )
+					return tokens;
+			}
+
 			out.push({
 				type: 'blocked',
 				text: match[0].slice(offset)
 			});
 
-			if ( do_remove )
-				msg.ffz_removed = true;
-
-			idx = raw_nix + match[0].length;
+			idx = raw_nix + match[0].length
 		}
 
 		if ( idx < text.length )
@@ -715,7 +762,7 @@ export const BlockedTerms = {
 		]
 	},
 
-	process(tokens, msg, user) {
+	process(tokens, msg, user, haltable) {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
@@ -726,11 +773,16 @@ export const BlockedTerms = {
 		if ( ! regexes )
 			return tokens;
 
-		if ( regexes[0] )
-			tokens = blocked_process(tokens, msg, regexes[0], false);
+		if ( regexes.remove ) {
+			tokens = blocked_process(tokens, msg, regexes.remove, true, haltable);
+			if ( haltable && msg.ffz_removed ) {
+				msg.ffz_halt_tokens = true;
+				return tokens;
+			}
+		}
 
-		if ( regexes[1] )
-			tokens = blocked_process(tokens, msg, regexes[1], true);
+		if ( regexes.non )
+			tokens = blocked_process(tokens, msg, regexes.non, false, haltable);
 
 		return tokens;
 	}
@@ -792,7 +844,7 @@ export const AutomoddedTerms = {
 		];
 	},
 
-	process(tokens, msg) {
+	process(tokens, msg, user, haltable) {
 		if ( ! tokens || ! tokens.length || ! msg.flags || ! Array.isArray(msg.flags.list) )
 			return tokens;
 
@@ -827,6 +879,8 @@ export const AutomoddedTerms = {
 
 		if ( remove ) {
 			msg.ffz_removed = true;
+			if ( haltable )
+				msg.ffz_halt_tokens = true;
 			return tokens;
 		}
 

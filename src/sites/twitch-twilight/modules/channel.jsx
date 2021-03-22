@@ -123,6 +123,10 @@ export default class Channel extends Module {
 			const user = resp?.data?.user;
 			if ( user )
 				user.hosting = null;
+
+			const userOrError = resp?.data?.userOrError;
+			if ( userOrError )
+				userOrError.hosting = null;
 		};
 
 		this.apollo.registerModifier('UseHosting', strip_host, false);
@@ -505,11 +509,17 @@ export default class Channel extends Module {
 	updateRoot(el) {
 		const root = this.fine.getReactInstance(el);
 
-		let channel = null, state = root?.return?.return?.return?.memoizedState, i = 0;
-		while(state != null && channel == null && i < 50 ) {
-			state = state?.next;
-			channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
-			i++;
+		let channel = null, node = root, j=0, i=0;
+		while(node != null && channel == null && j < 10) {
+			let state = node?.memoizedState;
+			i=0;
+			while(state != null && channel == null && i < 25) {
+				state = state?.next;
+				channel = state?.memoizedState?.current?.previousData?.result?.data?.userOrError;
+				i++;
+			}
+			node = node?.return;
+			j++;
 		}
 
 		if ( channel && channel.id ) {

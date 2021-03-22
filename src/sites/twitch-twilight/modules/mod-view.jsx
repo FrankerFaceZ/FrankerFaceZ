@@ -25,6 +25,7 @@ export default class ModView extends Module {
 
 		this.should_enable = true;
 
+		this._cached_color = null;
 		this._cached_channel = null;
 		this._cached_id = null;
 
@@ -76,7 +77,7 @@ export default class ModView extends Module {
 
 	checkNavigation() {
 		if ( this.router.current_name === 'mod-view' ) {
-			this.channel.updateChannelColor();
+			this.channel.updateChannelColor(this._cached_color);
 			this.checkRoot();
 		}
 	}
@@ -92,35 +93,52 @@ export default class ModView extends Module {
 	updateRoot(el) {
 		const root = this.fine.getReactInstance(el);
 
-		let channel = null, state = root?.child?.memoizedState, i = 0;
-		while(state != null && channel == null && i < 50 ) {
-			state = state?.next;
-			channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
-			i++;
+		let channel = null, node = root, j = 0, i;
+		while(node != null && channel == null && j < 10) {
+			let state = node.memoizedState;
+			i = 0;
+			while(state != null && channel == null && i < 50) {
+				state = state?.next;
+				channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
+				i++;
+			}
+			node = node?.child;
+			j++;
 		}
 
-		if ( channel?.id && this._cached_id != channel.id ) {
-			this._cached_id = channel.id;
-			this._cached_channel = channel;
-			this.updateSubscription(channel.login);
+		if ( channel?.id ) {
+			if ( this._cached_id != channel.id ) {
+				this._cached_id = channel.id;
+				this._cached_channel = channel;
+				this._cached_color = null;
+				this.updateSubscription(channel.login);
 
-			this.getChannelColor(el, channel.id).then(color => {
-				this.channel.updateChannelColor(color);
-				this.settings.updateContext({
-					channelColor: color
+				this.getChannelColor(el, channel.id).then(color => {
+					if ( this._cached_id != channel.id )
+						return;
+
+					this._cached_color = color;
+					this.channel.updateChannelColor(color);
+					this.settings.updateContext({
+						channelColor: color
+					});
+
+				}).catch(() => {
+					if ( this._cached_id != channel.id )
+						return;
+
+					this._cached_color = null;
+					this.channel.updateChannelColor();
+					this.settings.updateContext({
+						channelColor: null
+					});
 				});
-			}).catch(() => {
-				this.channel.updateChannelColor();
+
 				this.settings.updateContext({
-					channelColor: null
+					channel: channel.login,
+					channelID: channel.id
 				});
-			});
-
-			this.settings.updateContext({
-				channel: channel.login,
-				channelID: channel.id
-			});
-
+			}
 		} else
 			this.removeRoot();
 
@@ -178,6 +196,7 @@ export default class ModView extends Module {
 	removeRoot() {
 		this._cached_id = null;
 		this._cached_channel = null;
+		this._cached_color = null;
 		this.updateSubscription();
 		this.channel.updateChannelColor();
 		this.settings.updateContext({
@@ -202,8 +221,9 @@ export default class ModView extends Module {
 			title = bcast?.title,
 			game = bcast?.game;
 
-		if ( channel?.id && channel.id != this._cached_id )
-			this.checkRoot();
+		// This doesn't work because hosting in mod view.
+		//if ( channel?.id && channel.id != this._cached_id )
+		//	this.checkRoot();
 
 		if ( title != el._cached_title || game?.id != el._cached_game ) {
 			el._cached_title = title;

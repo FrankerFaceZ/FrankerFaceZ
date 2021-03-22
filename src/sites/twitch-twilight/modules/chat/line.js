@@ -1005,6 +1005,7 @@ other {# messages were deleted by a moderator.}
 				user = msg?.user;
 			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
 				msg.ffz_tokens = null;
+				msg.ffz_badges = null;
 				msg.highlights = msg.mentioned = msg.mention_color = null;
 				inst.forceUpdate();
 			}
@@ -1031,6 +1032,7 @@ other {# messages were deleted by a moderator.}
 			const msg = inst.props.message;
 			if ( msg ) {
 				msg.ffz_tokens = null;
+				msg.ffz_badges = null;
 				msg.highlights = msg.mentioned = msg.mention_color = null;
 			}
 		}
@@ -1039,6 +1041,7 @@ other {# messages were deleted by a moderator.}
 			const msg = inst.props.message;
 			if ( msg ) {
 				msg.ffz_tokens = null;
+				msg.ffz_badges = null;
 				msg.highlights = msg.mentioned = msg.mention_color = null;
 			}
 		}

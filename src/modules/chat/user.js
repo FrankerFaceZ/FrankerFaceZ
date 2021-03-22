@@ -11,8 +11,8 @@ export default class User {
 		this.manager = manager;
 		this.room = room;
 
-		this.emote_sets = new SourcedSet;
-		this.badges = new SourcedSet;
+		this.emote_sets = null; //new SourcedSet;
+		this.badges = null; // new SourcedSet;
 
 		this._id = id;
 		this.login = login;
@@ -30,6 +30,9 @@ export default class User {
 
 			this.emote_sets = null;
 		}
+
+		if ( this.badges )
+			this.badges = null;
 
 		const parent = this.room || this.manager;
 
@@ -100,10 +103,16 @@ export default class User {
 	// ========================================================================
 
 	addBadge(provider, badge_id, data) {
+		if ( this.destroyed )
+			return;
+
 		if ( data )
 			data.id = badge_id;
 		else
 			data = {id: badge_id};
+
+		if ( ! this.badges )
+			this.badges = new SourcedSet;
 
 		if ( this.badges.has(provider) )
 			for(const old_b of this.badges.get(provider))
@@ -119,6 +128,9 @@ export default class User {
 
 
 	getBadge(badge_id) {
+		if ( ! this.badges )
+			return null;
+
 		for(const badge of this.badges._cache)
 			if ( badge.id ==  badge_id )
 				return badge;
@@ -126,7 +138,7 @@ export default class User {
 
 
 	removeBadge(provider, badge_id) {
-		if ( ! this.badges.has(provider) )
+		if ( ! this.badges || ! this.badges.has(provider) )
 			return false;
 
 		for(const old_b of this.badges.get(provider))
@@ -147,6 +159,9 @@ export default class User {
 		if ( this.destroyed )
 			return;
 
+		if ( ! this.emote_sets )
+			this.emote_sets = new SourcedSet;
+
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.push(provider, set_id);
 			this.manager.emotes.refSet(set_id);
@@ -156,7 +171,7 @@ export default class User {
 	}
 
 	removeSet(provider, set_id) {
-		if ( this.destroyed )
+		if ( this.destroyed || ! this.emote_sets )
 			return;
 
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {

@@ -27,7 +27,7 @@ export default class Dashboard extends Module {
 
 		this.SunlightManager = this.fine.define(
 			'sunlight-manager',
-			n => n.props?.channelID && n.handleChange && has(n, 'hasVisitedStreamManager'),
+			n => n.props?.channelID && n.props.channelLogin && has(n.props, 'hostedChannel'),
 			Twilight.SUNLIGHT_ROUTES
 		);
 	}

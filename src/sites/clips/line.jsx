@@ -175,6 +175,7 @@ export default class Line extends Module {
 			roomLogin: room && room.login,
 			roomID: room && room.id,
 			badges,
+			ffz_badges: this.chat.badges.getBadges(author.id, author.login, room?.id, room?.login),
 			messageParts: msg.message.fragments
 		};
 
