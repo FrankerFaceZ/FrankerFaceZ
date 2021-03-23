@@ -44,9 +44,14 @@
 			display: inline-block;
 			line-height: 3rem;
 			margin-right: .5rem;
+			border-top: 1px solid transparent;
 
-			&:hover, &.active {
-				border-top: 1px solid #6441a4;
+			&.active {
+				border-top-color: var(--color-border-tab-active);
+			}
+
+			&:hover,&:focus {
+				border-top-color: var(--color-border-top-hover)
 			}
 		}
 	}

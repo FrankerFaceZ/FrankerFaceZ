@@ -162,40 +162,38 @@ export const Links = {
 			const text = token.text;
 			let idx = 0, match;
 
-			//if ( use_new ) {
 			while((match = NEW_LINK_REGEX.exec(text))) {
 				const nix = match.index;
 				if ( idx !== nix )
 					out.push({type: 'text', text: text.slice(idx, nix)});
 
+				let url = match[0];
+				if ( url.endsWith(')') ) {
+					let open = 1, i = url.length - 1;
+					while(i--) {
+						const chr = url[i];
+						if ( chr === ')' )
+							open++;
+						else if ( chr === '(' )
+							open--;
+
+						if ( ! open )
+							break;
+					}
+
+					if ( open )
+						url = url.slice(0, url.length - 1);
+				}
+
 				out.push({
 					type: 'link',
-					url: `${match[1] ? '' : 'https://'}${match[0]}`,
+					url: `${match[1] ? '' : 'https://'}${url}`,
 					is_mail: false,
-					text: match[0]
+					text: url
 				});
 
-				idx = nix + match[0].length;
+				idx = nix + url.length;
 			}
-
-			/*} else {
-				while((match = LINK_REGEX.exec(text))) {
-					const nix = match.index + (match[1] ? match[1].length : 0);
-					if ( idx !== nix )
-						out.push({type: 'text', text: text.slice(idx, nix)});
-
-					const is_mail = ! match[3] && match[2].indexOf('/') === -1 && match[2].indexOf('@') !== -1;
-
-					out.push({
-						type: 'link',
-						url: (match[3] ? '' : is_mail ? 'mailto:' : 'https://') + match[2],
-						is_mail,
-						text: match[2]
-					});
-
-					idx = nix + match[2].length;
-				}
-			}*/
 
 			if ( idx < text.length )
 				out.push({type: 'text', text: text.slice(idx)});
@@ -1520,6 +1518,16 @@ export const AddonEmotes = {
 		return out;
 	}
 }
+
+/*AddonEmotes.tooltip.interactive = function(target) {
+	const mods = target.dataset.modifiers;
+	return mods && mods.length > 0;
+}
+
+AddonEmotes.tooltip.delayHide = function(target) {
+	const mods = target.dataset.modifiers;
+	return mods && mods.length > 0 ? 100 : 0;
+}*/
 
 
 // ============================================================================

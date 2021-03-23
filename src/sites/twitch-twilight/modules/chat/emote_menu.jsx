@@ -13,6 +13,7 @@ import Twilight from 'site';
 import Module from 'utilities/module';
 
 import SUB_STATUS from './sub_status.gql';
+import Tooltip from 'src/utilities/tooltip';
 
 const TIERS = {
 	1000: 'Tier 1',
@@ -95,9 +96,9 @@ const EMOTE_SORTERS = [
 		return 0;
 	},
 	function native_asc(a, b) {
-		if ( a.order || b.order ) {
-			if ( a.order && ! b.order ) return -1;
-			if ( b.order && ! a.order ) return 1;
+		if ( a.order != null || b.order != null ) {
+			if ( a.order && b.order == null ) return -1;
+			if ( b.order && a.order == null ) return 1;
 
 			if ( a.order < b.order ) return -1;
 			if ( a.order > b.order ) return 1;
@@ -111,9 +112,9 @@ const EMOTE_SORTERS = [
 		return 0;
 	},
 	function native_desc(a, b) {
-		if ( a.order || b.order ) {
-			if ( a.order && ! b.order ) return 1;
-			if ( b.order && ! a.order ) return -1;
+		if ( a.order != null || b.order != null ) {
+			if ( a.order && b.order == null ) return 1;
+			if ( b.order && a.order == null ) return -1;
 
 			if ( a.order < b.order ) return 1;
 			if ( a.order > b.order ) return -1;
@@ -171,6 +172,19 @@ export default class EmoteMenu extends Module {
 				title: 'Use Ctrl+E to open the Emote Menu.',
 				description: 'When enabled and you press Ctrl+E with the chat input focused, the emote menu will open.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.emote-menu.modifiers', {
+			default: 0,
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Emote Modifiers',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'In-Line'}
+				]
 			}
 		});
 
@@ -349,6 +363,7 @@ export default class EmoteMenu extends Module {
 				inst.rebuildData();
 		}
 
+		this.chat.context.on('changed:chat.emote-menu.modifiers', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.show-emoji', rebuild);
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
@@ -394,6 +409,7 @@ export default class EmoteMenu extends Module {
 
 				return (<t.MenuErrorWrapper visible={this.props.visible}>
 					<t.MenuComponent
+						source={this.props.emotePickerSource}
 						visible={this.props.visible}
 						toggleVisibility={this.props.toggleVisibility}
 						channel_data={this.props.channelData}
@@ -448,40 +464,6 @@ export default class EmoteMenu extends Module {
 			storage = this.settings.provider,
 			React = this.web_munch.getModule('react'),
 			createElement = React && React.createElement;
-
-		this.EmoteModifierPicker = class FFZEmoteModifierPicker extends React.Component {
-			constructor(props) {
-				super(props);
-
-				this.onClickOutside = () => this.props.close();
-
-				this.element = null;
-				this.saveRef = element => this.element = element;
-
-				this.state = {
-
-				};
-			}
-
-			componentDidMount() {
-				if ( this.element )
-					this._clicker = new ClickOutside(this.element, this.onClickOutside);
-			}
-
-			componentWillUnmount() {
-				if ( this._clicker ) {
-					this._clicker.destroy();
-					this._clicker = null;
-				}
-			}
-
-			render() {
-				return (<div ref={this.saveRef} class="ffz--modifier-picker tw-absolute ffz-balloon tw-tooltip-down tw-tooltip--align-center ffz-balloon tw-block">
-					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background-base tw-elevation-1">
-					</div>
-				</div>)
-			}
-		}
 
 		this.EmojiTonePicker = class FFZEmojiTonePicker extends React.Component {
 			constructor(props) {
@@ -617,7 +599,6 @@ export default class EmoteMenu extends Module {
 
 				this.state = {
 					active: false,
-					open_menu: null,
 					activeEmote: -1,
 					hidden: hidden && props.data && hidden.includes(props.data.hide_key || props.data.key),
 					collapsed: collapsed && props.data && collapsed.includes(props.data.key),
@@ -627,8 +608,6 @@ export default class EmoteMenu extends Module {
 				this.keyHeading = this.keyHeading.bind(this);
 				this.clickHeading = this.clickHeading.bind(this);
 				this.clickEmote = this.clickEmote.bind(this);
-				this.contextEmote = this.contextEmote.bind(this);
-				this.closeEmoteModMenu = this.closeEmoteModMenu.bind(this);
 
 				this.mouseEnter = () => this.state.intersecting || this.setState({intersecting: true});
 
@@ -682,29 +661,6 @@ export default class EmoteMenu extends Module {
 					return;
 
 				this.props.onClickToken(event.currentTarget.dataset.name)
-			}
-
-			contextEmote(event) {
-				if ( event.ctrlKey || event.shiftKey )
-					return;
-
-				event.preventDefault();
-
-				const ds = event.currentTarget.dataset;
-				if ( ds.provider !== 'twitch' )
-					return;
-
-				const modifiers = this.props.emote_modifiers[ds.id];
-				if ( Array.isArray(modifiers) && modifiers.length )
-					this.setState({
-						open_menu: ds.id
-					});
-			}
-
-			closeEmoteModMenu() {
-				this.setState({
-					open_menu: null
-				});
 			}
 
 			keyHeading(event) {
@@ -889,7 +845,7 @@ export default class EmoteMenu extends Module {
 				const visibility = this.props.visibility_control,
 					modifiers = this.props.emote_modifiers[emote.id],
 					has_modifiers = Array.isArray(modifiers) && modifiers.length > 0,
-					has_menu = has_modifiers && this.state.open_menu == emote.id,
+					//has_menu = has_modifiers && this.state.open_menu == emote.id,
 					animated = this.props.animated,
 					hidden = visibility && emote.hidden;
 
@@ -910,6 +866,7 @@ export default class EmoteMenu extends Module {
 					data-id={emote.id}
 					data-set={emote.set_id}
 					data-code={emote.code}
+					data-modifiers={modifiers}
 					data-variant={emote.variant}
 					data-no-source={source}
 					data-name={emote.name}
@@ -917,7 +874,6 @@ export default class EmoteMenu extends Module {
 					data-locked={emote.locked}
 					data-sellout={sellout}
 					onClick={(this.props.visibility_control || !emote.locked) && this.clickEmote}
-					onContextMenu={this.contextEmote}
 				>
 					<figure class="emote-picker__emote-figure">
 						<img
@@ -933,11 +889,6 @@ export default class EmoteMenu extends Module {
 					{! visibility && emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
 					{! visibility && locked && <figure class="ffz-i-lock" />}
 					{hidden && <figure class="ffz-i-eye-off" />}
-					{has_menu && <t.EmoteModifierPicker
-						emote={emote}
-						modifiers={modifiers}
-						close={this.closeEmoteModMenu}
-					/>}
 				</button>)
 			}
 
@@ -1549,78 +1500,75 @@ export default class EmoteMenu extends Module {
 					tone_choices = state.tone_emoji = [],
 					categories = {};
 
-				if ( ! t.chat.context.get('chat.emote-menu.show-emoji') ) {
-					state.has_emoji_tab = false;
-					return state;
-				}
+				if ( t.chat.context.get('chat.emote-menu.show-emoji') ) {
+					let style = t.chat.context.get('chat.emoji.style') || 'twitter';
+					if ( ! IMAGE_PATHS[style] )
+						style = 'twitter';
 
-				let style = t.chat.context.get('chat.emoji.style') || 'twitter';
-				if ( ! IMAGE_PATHS[style] )
-					style = 'twitter';
+					for(const emoji of Object.values(t.emoji.emoji)) {
+						if ( ! emoji || ! emoji.has[style] || HIDDEN_CATEGORIES.includes(emoji.category) )
+							continue;
 
-				for(const emoji of Object.values(t.emoji.emoji)) {
-					if ( ! emoji || ! emoji.has[style] || HIDDEN_CATEGORIES.includes(emoji.category) )
-						continue;
+						if ( emoji.variants ) {
+							for(const name of emoji.names)
+								if ( TONE_EMOJI.includes(name) ) {
+									tone_choices.push(emoji);
+									break;
+								}
+						}
 
-					if ( emoji.variants ) {
-						for(const name of emoji.names)
-							if ( TONE_EMOJI.includes(name) ) {
-								tone_choices.push(emoji);
-								break;
-							}
-					}
+						const is_fav = emoji_favorites.includes(emoji.code),
+							toned = emoji.variants && emoji.variants[tone],
+							has_tone = toned && toned.has[style],
+							source = has_tone ? toned : emoji;
 
-					const is_fav = emoji_favorites.includes(emoji.code),
-						toned = emoji.variants && emoji.variants[tone],
-						has_tone = toned && toned.has[style],
-						source = has_tone ? toned : emoji;
+						let cat = categories[emoji.category];
+						if ( ! cat ) {
+							cat = categories[emoji.category] = [];
 
-					let cat = categories[emoji.category];
-					if ( ! cat ) {
-						cat = categories[emoji.category] = [];
+							sets.push({
+								key: `emoji-${emoji.category}`,
+								sort_key: CATEGORY_SORT.indexOf(emoji.category),
+								emoji: true,
+								image: t.emoji.getFullImage(source.image),
+								i18n: `emoji.category.${emoji.category.toSnakeCase()}`,
+								title: CATEGORIES[emoji.category] || emoji.category,
+								src: 'emoji',
+								source: 'Emoji',
+								source_i18n: 'emote-menu.emoji',
+								emotes: cat
+							});
+						}
 
-						sets.push({
-							key: `emoji-${emoji.category}`,
-							sort_key: CATEGORY_SORT.indexOf(emoji.category),
+						const em = {
+							provider: 'emoji',
+							id: emoji.sort,
 							emoji: true,
-							image: t.emoji.getFullImage(source.image),
-							i18n: `emoji.category.${emoji.category.toSnakeCase()}`,
-							title: CATEGORIES[emoji.category] || emoji.category,
-							src: 'emoji',
-							source: 'Emoji',
-							source_i18n: 'emote-menu.emoji',
-							emotes: cat
-						});
+							code: emoji.code,
+							name: source.raw,
+							variant: has_tone && tone,
+							hidden: emoji.hidden,
+
+							search: emoji.names[0],
+							extra: emoji.names.length > 1 ? emoji.names.map(x => x.toLowerCase()) : null,
+
+							height: 18,
+							width: 18,
+
+							x: source.sheet_x,
+							y: source.sheet_y,
+
+							favorite: is_fav,
+
+							src: t.emoji.getFullImage(source.image),
+							srcSet: t.emoji.getFullImageSet(source.image)
+						};
+
+						cat.push(em);
+
+						if ( is_fav )
+							favorites.push(em);
 					}
-
-					const em = {
-						provider: 'emoji',
-						id: emoji.sort,
-						emoji: true,
-						code: emoji.code,
-						name: source.raw,
-						variant: has_tone && tone,
-						hidden: emoji.hidden,
-
-						search: emoji.names[0],
-						extra: emoji.names.length > 1 ? emoji.names.map(x => x.toLowerCase()) : null,
-
-						height: 18,
-						width: 18,
-
-						x: source.sheet_x,
-						y: source.sheet_y,
-
-						favorite: is_fav,
-
-						src: t.emoji.getFullImage(source.image),
-						srcSet: t.emoji.getFullImageSet(source.image)
-					};
-
-					cat.push(em);
-
-					if ( is_fav )
-						favorites.push(em);
 				}
 
 				state.has_emoji_tab = sets.length > 0;
@@ -1871,51 +1819,63 @@ export default class EmoteMenu extends Module {
 
 							const id = emote.id,
 								name = KNOWN_CODES[emote.token] || emote.token,
-								mapped = emote_map && emote_map[name],
-								overridden = mapped && mapped.id != id,
-								replacement = REPLACEMENTS[id],
-								is_fav = twitch_favorites.includes(id);
-
-							let src, srcSet;
-
-							if ( replacement && t.chat.context.get('chat.fix-bad-emotes') )
-								src = `${REPLACEMENT_BASE}${replacement}`;
-							else {
-								const base = `${TWITCH_EMOTE_BASE}${id}`;
-								src = `${base}/1.0`;
-								srcSet = `${src} 1x, ${base}/2.0 2x`
-							}
-
-							/*if ( Array.isArray(emote.modifiers) && emote.modifiers.length )
-								modifiers[id] = emote.modifiers;*/
-
-							const em = {
-								provider: 'twitch',
-								id,
-								set_id,
-								name,
-								src,
-								srcSet,
-								order: order++,
-								overridden: overridden ? mapped.id : null,
-								misc: ! chan,
-								bits: is_bits,
-								hidden: twitch_hidden.includes(id),
-								favorite: is_fav
-							};
+								mapped = emote_map && emote_map[name];
 
 							if ( ! is_points )
 								t.emotes.setTwitchEmoteSet(id, set_id);
 
-							emotes.push(em);
+							//if ( Array.isArray(emote.modifiers) && emote.modifiers.length )
+							//	modifiers[id] = emote.modifiers.map(x => x.code);
 
-							if ( is_current_bits )
-								bits_unlocked.push(em);
+							const modes = [''];
+							if ( Array.isArray(emote.modifiers) && emote.modifiers.length ) {
+								if ( t.chat.context.get('chat.emote-menu.modifiers') === 1 )
+									for(const mod of emote.modifiers)
+										modes.push(`_${mod.code}`);
+							}
 
-							if ( is_fav && ! twitch_seen.has(id) )
-								favorites.push(em);
+							for(const mode of modes) {
+								const new_id = `${id}${mode}`,
+									new_name = `${name}${mode}`,
+									is_fav = twitch_favorites.includes(new_id),
+									overridden = mapped && mapped.id != new_id,
+									replacement = REPLACEMENTS[new_id];
 
-							twitch_seen.add(id);
+								let src, srcSet;
+
+								if ( replacement && t.chat.context.get('chat.fix-bad-emotes') )
+									src = `${REPLACEMENT_BASE}${replacement}`;
+								else {
+									const base = `${TWITCH_EMOTE_BASE}${new_id}`;
+									src = `${base}/1.0`;
+									srcSet = `${src} 1x, ${base}/2.0 2x`
+								}
+
+								const em = {
+									provider: 'twitch',
+									id: new_id,
+									set_id,
+									name: new_name,
+									src,
+									srcSet,
+									order: order++,
+									overridden: overridden ? mapped.id : null,
+									misc: ! chan,
+									bits: is_bits,
+									hidden: twitch_hidden.includes(new_id),
+									favorite: is_fav
+								};
+
+								emotes.push(em);
+
+								if ( is_current_bits )
+									bits_unlocked.push(em);
+
+								if ( is_fav && ! twitch_seen.has(new_id) )
+									favorites.push(em);
+
+								twitch_seen.add(new_id);
+							}
 						}
 
 						if ( emotes.length ) {
@@ -1997,9 +1957,6 @@ export default class EmoteMenu extends Module {
 									name = KNOWN_CODES[emote.token] || emote.token,
 									seen = twitch_seen.has(id),
 									is_fav = twitch_favorites.includes(id);
-
-								/*if ( Array.isArray(emote.modifiers) && emote.modifiers.length )
-									modifiers[id] = emote.modifiers;*/
 
 								const em = {
 									provider: 'twitch',
@@ -2337,7 +2294,8 @@ export default class EmoteMenu extends Module {
 					}
 				}
 
-				const visibility = this.state.visibility_control;
+				const visibility = this.state.visibility_control,
+					whisper = this.props.source === 'whisper';
 
 				return (<div class={`tw-block${this.props.visible ? '' : ' tw-hide'}`} style={{display: this.props.visible ? null : 'none !important'}}>
 					<div class="tw-absolute tw-attached tw-attached--right tw-attached--up">
@@ -2346,10 +2304,10 @@ export default class EmoteMenu extends Module {
 							data-a-target="emote-picker"
 							role="dialog"
 						>
-							<div class="emote-picker">
+							<div class={`emote-picker${whisper ? '__whisper' : ''}`}>
 								<div class="tw-flex">
 									<div
-										class="emote-picker__tab-content tw-full-width scrollable-area scrollable-area--suppress-scroll-x"
+										class={`emote-picker__tab-content${whisper ? '-whisper' : ''} tw-full-width scrollable-area scrollable-area--suppress-scroll-x`}
 										data-test-selector="scrollable-area-wrapper"
 										data-simplebar
 									>
@@ -2379,9 +2337,9 @@ export default class EmoteMenu extends Module {
 											</div>
 										</div>
 									</div>
-									{(! loading && this.state.quickNav && ! is_favs) && (<div class="emote-picker__nav_content tw-block tw-border-radius-none tw-c-background-alt-2">
+									{(! loading && this.state.quickNav && ! is_favs) && (<div class={`emote-picker__nav_content${whisper ? '-whisper' : ''} tw-block tw-border-radius-none tw-c-background-alt-2`}>
 										<div
-											class="emote-picker__nav-content-overflow scrollable-area scrollable-area--suppress-scroll-x"
+											class={`emote-picker__nav-content-overflow${whisper ? '-whisper' : ''} scrollable-area scrollable-area--suppress-scroll-x`}
 											data-test-selector="scrollable-area-wrapper"
 											data-simplebar
 										>
