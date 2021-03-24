@@ -1143,22 +1143,23 @@ export const CheerEmotes = {
 // ============================================================================
 
 const render_emote = (token, createElement, wrapped) => {
-	const hover = token.anim === 2;
+	const hover = token.anim === 2,
+		big = token.big && token.can_big;
 	let src, srcSet, hoverSrc, hoverSrcSet, normalSrc, normalSrcSet;
 
 	if ( token.anim === 1 && token.animSrc ) {
-		src = token.big ? token.animSrc2 : token.animSrc;
-		srcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+		src = big ? token.animSrc2 : token.animSrc;
+		srcSet = big ? token.animSrcSet2 : token.animSrcSet;
 	} else {
-		src = token.big ? token.src2 : token.src;
-		srcSet = token.big ? token.srcSet2 : token.srcSet;
+		src = big ? token.src2 : token.src;
+		srcSet = big ? token.srcSet2 : token.srcSet;
 	}
 
 	if ( hover && token.animSrc ) {
 		normalSrc = src;
 		normalSrcSet = srcSet;
-		hoverSrc = token.big ? token.animSrc2 : token.animSrc;
-		hoverSrcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+		hoverSrc = big ? token.animSrc2 : token.animSrc;
+		hoverSrcSet = big ? token.animSrcSet2 : token.animSrcSet;
 	}
 
 	const mods = token.modifiers || [], ml = mods.length,
@@ -1221,22 +1222,23 @@ export const AddonEmotes = {
 	},
 
 	render(token, createElement, wrapped) {
-		const hover = token.anim === 2;
+		const hover = token.anim === 2,
+			big = token.big && token.can_big;
 		let src, srcSet, hoverSrc, hoverSrcSet, normalSrc, normalSrcSet;
 
 		if ( token.anim === 1 && token.animSrc ) {
-			src = token.big ? token.animSrc2 : token.animSrc;
-			srcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+			src = big ? token.animSrc2 : token.animSrc;
+			srcSet = big ? token.animSrcSet2 : token.animSrcSet;
 		} else {
-			src = token.big ? token.src2 : token.src;
-			srcSet = token.big ? token.srcSet2 : token.srcSet;
+			src = big ? token.src2 : token.src;
+			srcSet = big ? token.srcSet2 : token.srcSet;
 		}
 
 		if ( hover && token.animSrc ) {
 			normalSrc = src;
 			normalSrcSet = srcSet;
-			hoverSrc = token.big ? token.animSrc2 : token.animSrc;
-			hoverSrcSet = token.big ? token.animSrcSet2 : token.animSrcSet;
+			hoverSrc = big ? token.animSrc2 : token.animSrc;
+			hoverSrcSet = big ? token.animSrcSet2 : token.animSrcSet;
 		}
 
 		const mods = token.modifiers || [], ml = mods.length,
@@ -1716,6 +1718,7 @@ export const TwitchEmotes = {
 					src2,
 					srcSet2,
 					big,
+					can_big: true,
 					text: text.slice(e_start - t_start, e_end - t_start).join(''),
 					modifiers: []
 				});

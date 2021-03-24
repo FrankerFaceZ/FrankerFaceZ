@@ -420,6 +420,16 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.points.auto-rewards', {
+			default: false,
+			ui: {
+				path: 'Chat > Channel Points >> Behavior',
+				title: 'Automatically claim bonus rewards.',
+				component: 'setting-check-box',
+				force_seen: true
+			}
+		});
+
 		this.settings.add('chat.pin-resubs', {
 			default: false,
 			ui: {
