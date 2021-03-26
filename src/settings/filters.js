@@ -6,6 +6,7 @@
 
 import {glob_to_regex, escape_regex} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
+import { DEBUG } from 'utilities/constants';
 
 let safety = null;
 
@@ -178,6 +179,30 @@ export const Moderator = {
 	default: true,
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
 };
+
+export const Debug = {
+	createTest(config) {
+		return () => DEBUG === config;
+	},
+
+	title: 'Is Developer Mode',
+	i18n: 'settings.filter.dev',
+
+	default: true,
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+};
+
+export const AddonDebug = {
+	createTest(config) {
+		return ctx => ctx.addonDev == config
+	},
+
+	title: 'Is Addon Developer Mode',
+	i18n: 'settings.filter.addon-dev',
+
+	default: true,
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+}
 
 export const SquadMode = {
 	createTest(config) {

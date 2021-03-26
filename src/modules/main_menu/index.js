@@ -16,6 +16,9 @@ import ProviderMixin from './provider-mixin';
 import {NO_SYNC_KEYS, parse_path} from 'src/settings';
 
 function format_term(term) {
+	if ( typeof term !== 'string' )
+		return term;
+
 	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
 }
 

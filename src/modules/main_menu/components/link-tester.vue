@@ -10,31 +10,49 @@
 					<select
 						id="selector"
 						ref="selector"
-						class="tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+						class="tw-full-width tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 						@change="onSelectChange"
 					>
-						<option
-							v-for="i in stock_urls"
-							:key="i"
-							:selected="i === raw_url"
-						>
-							{{ i }}
-						</option>
-						<option :selected="isCustomURL">
+						<option :selected="is_custom" value="custom">
 							{{ t('setting.combo-box.custom', 'Custom') }}
 						</option>
+						<optgroup
+							v-for="prov in examples"
+							:key="prov.key"
+							:label="prov.key"
+						>
+							<option
+								v-for="i in prov.items"
+								:key="i.url"
+								:selected="i.url === raw_url"
+								:value="i.url"
+							>
+								{{ i.title ? `${i.title} (${i.url})` : i.url }}
+							</option>
+						</optgroup>
 					</select>
 					<input
 						ref="text"
-						:disabled="! isCustomURL"
 						class="ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 						@blur="updateText"
 						@input="onTextChange"
 					>
 				</div>
+
+				<button
+					class="tw-mg-05 tw-button tw-button--text tw-tooltip__container"
+					:class="examples_loading && 'tw-button--disabled'"
+					:disabled="examples_loading"
+					@click="updateExamples"
+				>
+					<span class="tw-button__text ffz-i-arrows-cw" />
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('debug.link-provider.refresh', 'Refresh') }}
+					</div>
+				</button>
 			</div>
 		</div>
-		<div class="tw-flex tw-mg-b-1">
+		<div class="tw-flex tw-mg-b-1 tw-align-items-center">
 			<div class="tw-flex-grow-1" />
 
 			<div class="tw-pd-x-1 ffz-checkbox">
@@ -81,9 +99,28 @@
 			</button>
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
-			<label>
-				{{ t('debug.link-provider.link', 'Chat Link') }}
-			</label>
+			<div class="tw-flex tw-flex-column">
+				<label>
+					{{ t('debug.link-provider.link', 'Chat Link') }}
+				</label>
+
+				<div class="tw-pd-t-05 ffz-checkbox">
+					<input
+						id="force_tooltip"
+						ref="force_tooltip"
+						:checked="force_tooltip"
+						type="checkbox"
+						class="ffz-checkbox__input"
+						@change="onTooltip"
+					>
+
+					<label for="force_tooltip" class="ffz-checkbox__label">
+						<span class="tw-mg-l-1">
+							{{ t('debug.link-provider.force-tooltip', 'Force Tooltip') }}
+						</span>
+					</label>
+				</div>
+			</div>
 			<div class="tw-full-width tw-overflow-hidden">
 				<a
 					v-if="url"
@@ -100,25 +137,8 @@
 					rel="noopener noreferrer"
 					target="_blank"
 				>
-					{{ url }}
+					{{ decodeURI(url) }}
 				</a>
-			</div>
-
-			<div class="tw-pd-x-1 ffz-checkbox">
-				<input
-					id="force_tooltip"
-					ref="force_tooltip"
-					:checked="force_tooltip"
-					type="checkbox"
-					class="ffz-checkbox__input"
-					@change="onTooltip"
-				>
-
-				<label for="force_tooltip" class="ffz-checkbox__label">
-					<span class="tw-mg-l-1">
-						{{ t('debug.link-provider.force-tooltip', 'Force Tooltip') }}
-					</span>
-				</label>
 			</div>
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
@@ -169,8 +189,7 @@
 </template>
 
 <script>
-import { deep_copy } from 'utilities/object'
-import { debounce } from '../../../utilities/object';
+import { debounce, timeout, pick_random } from 'utilities/object'
 
 const STOCK_URLS = [
 	'https://www.twitch.tv/sirstendec',
@@ -201,17 +220,17 @@ export default {
 
 	data() {
 		const state = window.history.state;
-		let url = state?.ffz_lt_url,
-			is_custom = false;
-		if ( url )
-			is_custom = ! STOCK_URLS.includes(url);
-		else
-			url = STOCK_URLS[Math.floor(Math.random() * STOCK_URLS.length)];
+		let url = state?.ffz_lt_url;
+		if ( ! url )
+			url = pick_random(STOCK_URLS);
+
+		const stuff = this.formatExamples(STOCK_URLS.map(x => ({url: x})), url);
 
 		return {
-			stock_urls: deep_copy(STOCK_URLS),
 			raw_url: url,
-			isCustomURL: is_custom,
+			examples: stuff[0],
+			examples_loading: false,
+			is_custom: stuff[1],
 			rich_data: null,
 			raw_loading: false,
 			raw_data: null,
@@ -239,7 +258,7 @@ export default {
 
 	watch: {
 		raw_url() {
-			if ( ! this.isCustomURL )
+			if ( ! this.is_custom )
 				this.$refs.text.value = this.raw_url;
 		},
 
@@ -283,14 +302,20 @@ export default {
 	},
 
 	created() {
+		this.chat = this.item.getChat();
+		this.settings = this.chat.resolve('settings');
+
+		this.chat.on('chat:update-link-resolver', this.checkRefreshRaw, this);
+		this.settings.on(':changed:debug.link-resolver.source', this.updateExamples, this);
+		this.updateExamples();
+
 		this.rebuildData = debounce(this.rebuildData, 250);
 		this.refreshRaw = debounce(this.refreshRaw, 250);
 		this.onTextChange = debounce(this.onTextChange, 500);
+		this.updateExamples = debounce(this.updateExamples, 500);
 	},
 
 	mounted() {
-		this.chat = this.item.getChat();
-		this.chat.on('chat:update-link-resolver', this.checkRefreshRaw, this);
 		this.rebuildData();
 
 		this.$refs.text.value = this.raw_url;
@@ -311,7 +336,9 @@ export default {
 
 	beforeDestroy() {
 		this.chat.off('chat:update-link-resolver', this.checkRefreshRaw, this);
+		this.settings.off(':changed:debug.link-resolver.source', this.updateExamples, this);
 		this.chat = null;
+		this.settings = null;
 	},
 
 	methods: {
@@ -328,6 +355,71 @@ export default {
 			} catch(err) {
 				/* no-op */
 			}
+		},
+
+		formatExamples(examples, url) {
+			const out = [],
+				resolvers = {};
+
+			if ( url === undefined )
+				url = this.raw_url;
+
+			let is_custom = true;
+
+			for(const example of examples) {
+				const resolver = example.resolver || 'Unknown';
+				let prov = resolvers[resolver];
+				if ( ! prov ) {
+					prov = resolvers[resolver] = [];
+					out.push({
+						key: resolver,
+						items: prov
+					});
+				}
+
+				if ( url === example.url )
+					is_custom = false;
+
+				prov.push(example);
+			}
+
+			out.sort((a,b) => a.key.localeCompare(b.key));
+
+			return [out, is_custom];
+		},
+
+		async updateExamples() {
+			console.log('update-examples', this.examples_loading);
+			if ( this.examples_loading )
+				return;
+
+			this.examples_loading = true;
+			const provider = this.settings.get('debug.link-resolver.source');
+			let examples;
+			if ( provider === 'dev' ) {
+				try {
+					examples = (await timeout(fetch('https://localhost:8002/examples'), 15000).then(resp => resp.ok ? resp.json() : null)).examples;
+				} catch(err) {
+					console.error(err);
+				}
+			}
+
+			if ( ! examples )
+				examples = [];
+
+			const urls = examples.map(x => x.url);
+			for(const url of STOCK_URLS)
+				if ( ! urls.includes(url) )
+					examples.push({
+						url,
+						resolver: ' Stock'
+					});
+
+			const out = this.formatExamples(examples);
+
+			this.examples = out[0];
+			this.is_custom = out[1];
+			this.examples_loading = false;
 		},
 
 		checkRefreshRaw(url) {
@@ -371,18 +463,32 @@ export default {
 		},
 
 		onSelectChange() {
-			const idx = this.$refs.selector.selectedIndex,
-				raw_value = this.stock_urls[idx];
+			const raw_value = this.$refs.selector.value;
 
-			if ( raw_value ) {
+			if ( raw_value && raw_value !== 'custom' ) {
 				this.raw_url = raw_value;
-				this.isCustomURL = false;
+				this.is_custom = false;
 			} else
-				this.isCustomURL = true;
+				this.is_custom = true;
 		},
 
 		updateText() {
-			if ( this.isCustomURL )
+			const value = this.$refs.text.value;
+			let custom = true;
+			for(const provider of this.examples) {
+				for(const url of provider.items) {
+					if ( url === value ) {
+						custom = false;
+						break;
+					}
+				}
+
+				if ( ! custom )
+					break;
+			}
+
+			this.is_custom = custom;
+			if ( this.is_custom )
 				this.raw_url = this.$refs.text.value;
 		},
 

@@ -157,6 +157,10 @@ export default class AddonManager extends Module {
 				this.addAddon(addon, true);
 		}
 
+		this.settings.updateContext({
+			addonDev: this.has_dev
+		});
+
 		this.rebuildAddonSearch();
 		this.emit(':data-loaded');
 	}
