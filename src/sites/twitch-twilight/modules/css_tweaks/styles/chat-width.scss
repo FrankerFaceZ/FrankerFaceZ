@@ -6,6 +6,10 @@
 	width: calc(var(--ffz-chat-width) - 2rem) !important;
 }
 
+.channel-root {
+	width: unset !important;
+}
+
 body .whispers--theatre-mode.whispers--right-column-expanded-beside {
 	right: var(--ffz-chat-width);
 }

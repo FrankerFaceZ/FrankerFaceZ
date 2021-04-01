@@ -298,7 +298,7 @@ export default class SettingsMenu extends Module {
 					title: <span class="tw-strong">{this.i18n.t('chat.ffz-badge.title', 'FrankerFaceZ Badge')}</span>
 				})}{' '}
 				{this.i18n.tList('chat.ffz-badge.site', 'Please visit the {website} to change this badge.', {
-					website: (<a href="https://www.frankerfacez.com/donate" class="tw-link" rel="noopener noreferrer" target="_blank">
+					website: (<a href="https://www.frankerfacez.com/donate" class="ffz-link" rel="noopener noreferrer" target="_blank">
 						{this.i18n.t('chat.ffz-badge.site-link', 'FrankerFaceZ website')}
 					</a>)
 				})}

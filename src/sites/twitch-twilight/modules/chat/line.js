@@ -527,7 +527,8 @@ other {# messages were deleted by a moderator.}
 					] : user_block)
 				];
 
-				let cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`,
+				let extra_ts,
+					cls = `chat-line__message${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`,
 					out = (tokens.length || ! msg.ffz_type) ? [
 						(this.props.showTimestamps || this.props.isHistorical) && e('span', {
 							className: 'chat-line__timestamp'
@@ -569,6 +570,9 @@ other {# messages were deleted by a moderator.}
 							}
 						}, JSON.stringify([tokens, msg.emotes], null, 2))*/
 					] : null;
+
+				if ( out == null )
+					extra_ts = t.chat.context.get('chat.extra-timestamps');
 
 				if ( msg.ffz_type === 'sub_mystery' ) {
 					const mystery = msg.mystery;
@@ -640,6 +644,9 @@ other {# messages were deleted by a moderator.}
 									className: `ffz-i-star${msg.sub_anon ? '-empty' : ''} tw-mg-r-05`
 								}),
 							e('div', null, [
+								out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
+									className: 'chat-line__timestamp'
+								}, t.chat.formatTime(msg.timestamp)),
 								(out || msg.sub_anon) ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
 								sub_msg
 							]),
@@ -710,6 +717,9 @@ other {# messages were deleted by a moderator.}
 									className: 'ffz-i-star tw-mg-r-05'
 								}),
 							e('div', null, [
+								out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
+									className: 'chat-line__timestamp'
+								}, t.chat.formatTime(msg.timestamp)),
 								(out || msg.sub_anon) ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
 								sub_msg
 							])
@@ -772,6 +782,9 @@ other {# messages were deleted by a moderator.}
 										className: `ffz-i-${plan.prime ? 'crown' : 'star'} tw-mg-r-05`
 									}),
 								e('div', null, [
+									out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
+										className: 'chat-line__timestamp'
+									}, t.chat.formatTime(msg.timestamp)),
 									out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
 									sub_msg
 								])
@@ -804,6 +817,9 @@ other {# messages were deleted by a moderator.}
 					if ( system_msg ) {
 						cls = `ffz-notice-line user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`;
 						out = [
+							out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
+								className: 'chat-line__timestamp'
+							}, t.chat.formatTime(msg.timestamp)),
 							system_msg,
 							out && e('div', {
 								className: 'chat-line--inline chat-line__message',
@@ -825,6 +841,9 @@ other {# messages were deleted by a moderator.}
 					cls = `ffz-notice-line ffz--points-line tw-pd-l-1 tw-pd-y-05 tw-pd-r-2${ffz_highlight ? ' ffz-custom-color ffz--points-highlight' : ''}${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`;
 					out = [
 						e('div', {className: 'tw-c-text-alt-2'}, [
+							out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
+								className: 'chat-line__timestamp'
+							}, t.chat.formatTime(msg.timestamp)),
 							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
 							out ?
 								t.i18n.tList('chat.points.redeemed', 'Redeemed {reward} {cost}', {reward, cost}) :

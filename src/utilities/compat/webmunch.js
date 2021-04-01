@@ -93,6 +93,20 @@ export default class WebMunch extends Module {
 		if ( ! name ) {
 			if ( attempts > 240 ) {
 				this.log.error("Unable to find webpack's loader after one minute.");
+
+				try {
+					const possibilities = [];
+					for(const key of Object.keys(window))
+						if ( has(window, key) && typeof key === 'string' && /webpack/i.test(key) && ! /ffz/i.test(key) )
+							possibilities.push(key);
+
+					if ( possibilities.length )
+						this.log.info('Possible Matches: ', possibilities.join(', '));
+					else
+						this.log.info('No possible matches found.');
+
+				} catch(err) { /* no-op */ }
+
 				this._resolveLoadWait(true);
 				return;
 			}

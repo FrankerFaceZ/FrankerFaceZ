@@ -4,6 +4,14 @@
 .right-column {
 	order: 1;
 	z-index: 2;
+
+	#root &:not(.right-column--collapsed) {
+		width: var(--ffz-chat-width);
+	}
+}
+
+.channel-root {
+	width: unset !important;
 }
 
 #sideNav .collapse-toggle {

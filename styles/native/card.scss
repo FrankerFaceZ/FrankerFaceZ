@@ -1,0 +1,15 @@
+.ffz-card-img {
+	background-color: var(--color-background-placeholder);;
+	flex-shrink: 0;
+	width: 100%;
+
+	&--size-2 { width: 2rem }
+	&--size-3 { width: 3rem }
+	&--size-4 { width: 4rem }
+	&--size-6 { width: 6rem }
+	&--size-8 { width: 8rem }
+	&--size-12 { width: 12rem }
+	&--size-16 { width: 16rem }
+	&--size-24 { width: 24rem }
+	&--size-32 { width: 32rem }
+}

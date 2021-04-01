@@ -29,7 +29,7 @@
 									:href="`/${login}`"
 									target="_blank"
 									rel="noopener noreferrer"
-									class="tw-interactive tw-link tw-link--hover-color-inherit tw-link--inherit"
+									class="tw-interactive ffz-link ffz-link--hover-color-inherit ffz-link--inherit"
 								>
 									{{ displayName }}
 								</a>

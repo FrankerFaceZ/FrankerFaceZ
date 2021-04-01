@@ -89,7 +89,7 @@ export default class Line extends Module {
 								t.chat.badges.render(msg, createElement)
 							}</span>
 							<a
-								class="clip-chat__message-author tw-font-size-5 tw-link notranslate"
+								class="clip-chat__message-author tw-font-size-5 ffz-link notranslate"
 								href={`https://www.twitch.tv/${user.login}/clips`}
 								style={{color}}
 							>

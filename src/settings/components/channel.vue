@@ -31,7 +31,7 @@
 				<div class="tw-pd-x-1 tw-pd-y-05">
 					<div class="tw-card tw-relative">
 						<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row">
-							<div class="tw-card-img tw-card-img--size-3 tw-flex-shrink-0 tw-overflow-hidden">
+							<div class="ffz-card-img ffz-card-img--size-3 tw-flex-shrink-0 tw-overflow-hidden">
 								<aspect :ratio="1">
 									<img
 										:alt="slot.item.displayName"

@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--addon-info tw-elevation-1 tw-c-background-base tw-border tw-border-radius-large tw-pd-1 tw-mg-b-1 tw-flex tw-flex-nowrap">
 		<div class="tw-flex tw-flex-column tw-align-center tw-flex-shrink-0 tw-mg-r-1">
-			<div class="tw-card-img--size-6 tw-overflow-hidden tw-mg-b-1">
+			<div class="ffz-card-img--size-6 tw-overflow-hidden tw-mg-b-1">
 				<img :src="icon" class="tw-image">
 			</div>
 

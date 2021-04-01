@@ -6,64 +6,9 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {get, debounce, generateUUID} from 'utilities/object';
+import {get, debounce} from 'utilities/object';
 
 const LANGUAGE_MATCHER = /^auto___lang_(\w+)$/;
-
-const ALGOLIA_LANGUAGES = {
-	bg: 'bg-bg',
-	cs: 'cs-cz',
-	da: 'da-dk',
-	de: 'de-de',
-	el: 'el-gr',
-	en: 'en-us',
-	es: 'es-es',
-	'es-mx': 'es-mx',
-	fi: 'fi-fi',
-	fr: 'fr-fr',
-	hu: 'hu-hu',
-	it: 'it-it',
-	ja: 'ja-jp',
-	ko: 'ko-kr',
-	nl: 'nl-nl',
-	no: 'no-no',
-	pl: 'pl-pl',
-	'pt-br': 'pt-br',
-	pt: 'pt-pt',
-	ro: 'ro-ro',
-	ru: 'ru-ru',
-	sk: 'sk-sk',
-	sv: 'sv-se',
-	th: 'th-th',
-	tr: 'tr-tr',
-	vi: 'vi-vn',
-	'zh-cn': 'zh-cn',
-	'zh-tw': 'zh-tw'
-};
-
-/**
- * Returns the Algolia Language code for a given locale
- * @function getAlgoliaLanguage
- *
- * @param {string} locale - a string representation of a locale
- * @returns {string} the Algolia Language code for the given locale
- *
- * @example
- *
- *		console.log(getAlgoliaLanguage('en'));
- */
-function getAlgoliaLanguage(locale) {
-	if ( ! locale )
-		return ALGOLIA_LANGUAGES.en;
-
-	locale = locale.toLowerCase();
-	if ( ALGOLIA_LANGUAGES[locale] )
-		return ALGOLIA_LANGUAGES[locale];
-
-	locale = locale.split('-')[0];
-	return ALGOLIA_LANGUAGES[locale] || ALGOLIA_LANGUAGES.en;
-}
-
 
 /**
  * TwitchData is a container for getting different types of Twitch data
@@ -132,34 +77,6 @@ export default class TwitchData extends Module {
 		return session && session.locale || 'en-US'
 	}
 
-	async searchClient() {
-		if ( this._search )
-			return this._search;
-
-		const apollo = this.apollo.client,
-			core = this.site.getCore(),
-			web_munch = this.resolve('web_munch');
-
-		if ( ! web_munch )
-			return null;
-
-		await web_munch.enable();
-
-		const SearchClient = await this.web_munch.findModule('algolia-search');
-		if ( ! SearchClient || ! apollo || ! core )
-			return null;
-
-		this._search = new SearchClient({
-			appId: core.config.algoliaApplicationID,
-			apiKey: core.config.algoliaAPIKey,
-			apolloClient: apollo,
-			logger: core.logger,
-			config: core.config,
-			stats: core.stats
-		});
-
-		return this._search;
-	}
 
 	// ========================================================================
 	// Badges
@@ -349,6 +266,7 @@ export default class TwitchData extends Module {
 
 		return get('data.user.lastBroadcast', data);
 	}
+
 
 	// ========================================================================
 	// Broadcast ID
@@ -665,27 +583,28 @@ export default class TwitchData extends Module {
 		if ( ! node || ! node.id || ! node.tagName || ! node.localizedName )
 			return;
 
-		let old = null;
-		if ( this.tag_cache.has(node.id) )
-			old = this.tag_cache.get(old);
+		let tag = this.tag_cache.get(node.id);
+		if ( ! tag ) {
+			const match = node.isLanguageTag && LANGUAGE_MATCHER.exec(node.tagName),
+				lang = match && match[1] || null;
 
-		const match = node.isLanguageTag && LANGUAGE_MATCHER.exec(node.tagName),
-			lang = match && match[1] || null;
+			tag = {
+				id: node.id,
+				value: node.id,
+				is_auto: node.isAutomated,
+				is_language: node.isLanguageTag,
+				language: lang,
+				name: node.tagName,
+				scope: node.scope
+			};
 
-		const new_tag = {
-			id: node.id,
-			value: node.id,
-			is_language: node.isLanguageTag,
-			language: lang,
-			name: node.tagName,
-			label: node.localizedName
-		};
+			this.tag_cache.set(node.id, tag);
+		}
 
+		if ( node.localizedName )
+			tag.label = node.localizedName;
 		if ( node.localizedDescription )
-			new_tag.description = node.localizedDescription;
-
-		const tag = old ? Object.assign(old, new_tag) : new_tag;
-		this.tag_cache.set(tag.id, tag);
+			tag.description = node.localizedDescription;
 
 		if ( dispatch && tag.description && this._waiting_tags.has(tag.id) ) {
 			const promises = this._waiting_tags.get(tag.id);
@@ -907,100 +826,36 @@ export default class TwitchData extends Module {
 	 * @async
 	 *
 	 * @param {string} query - the search string
-	 * @param {string} [locale] - the locale to return tags from
+	 * @param {string} [locale] - UNUSED. the locale to return tags from
 	 * @param {string} [category=null] - the category to return tags from
 	 * @returns {string[]} an array containing tags that match the query string
 	 *
 	 * @example
 	 *
-	 *  console.log(this.twitch_data.getMatchingTags("Rainbo"));
+	 *  console.log(await this.twitch_data.getMatchingTags("Rainbo"));
 	 */
 	async getMatchingTags(query, locale, category = null) {
-		if ( ! locale )
-			locale = this.locale;
+		/*if ( ! locale )
+			locale = this.locale;*/
 
-		const client = await this.searchClient();
+		const data = await this.queryApollo({
+			query: await import(/* webpackChunkName: 'queries' */ './data/search-tags.gql'),
+			variables: {
+				query,
+				categoryID: category || null,
+				limit: 100
+			}
+		});
 
-		locale = getAlgoliaLanguage(locale);
-
-		let nodes;
-
-		if ( category ) {
-			const data = await client.queryForType(
-				'stream_tag', query, generateUUID(), {
-					hitsPerPage: 100,
-					faceFilters: [
-						`category_id:${category}`
-					],
-					restrictSearchableAttributes: [
-						`localizations.${locale}`,
-						'tag_name'
-					]
-				}
-			);
-
-			nodes = get('streamTags.hits', data);
-
-		} else {
-			const data = await client.queryForType(
-				'tag', query, generateUUID(), {
-					hitsPerPage: 100,
-					facetFilters: [
-						['tag_scope:SCOPE_ALL', 'tag_scope:SCOPE_CATEGORY']
-					],
-					restrictSearchableAttributes: [
-						`localizations.${locale}`,
-						'tag_name'
-					]
-				}
-			);
-
-			nodes = get('tags.hits', data);
-		}
-
-		if ( ! Array.isArray(nodes) )
+		const nodes = data?.data?.searchLiveTags;
+		if ( ! Array.isArray(nodes) || ! nodes.length )
 			return [];
 
-		const out = [], seen = new Set;
+		const out = [];
 		for(const node of nodes) {
-			const tag_id = node.tag_id || node.objectID;
-			if ( ! node || seen.has(tag_id) )
-				continue;
-
-			seen.add(tag_id);
-			if ( ! this.tag_cache.has(tag_id) ) {
-				const match = node.tag_name && LANGUAGE_MATCHER.exec(node.tag_name),
-					lang = match && match[1] || null;
-
-				const tag = {
-					id: tag_id,
-					value: tag_id,
-					is_language: lang != null,
-					language: lang,
-					label: node.localizations && (node.localizations[locale] || node.localizations['en-us']) || node.tag_name
-				};
-
-				if ( node.description_localizations ) {
-					const desc = node.description_localizations[locale] || node.description_localizations['en-us'];
-					if ( desc )
-						tag.description = desc;
-				}
-
-				this.tag_cache.set(tag.id, tag);
+			const tag = this.memorizeTag(node);
+			if ( tag )
 				out.push(tag);
-
-			} else {
-				const tag = this.tag_cache.get(tag_id);
-				if ( ! tag.description && node.description_localizations ) {
-					const desc = node.description_localizations[locale] || node.description_localizations['en-us'];
-					if ( desc ) {
-						tag.description = desc;
-						this.tag_cache.set(tag.id, tag);
-					}
-				}
-
-				out.push(tag);
-			}
 		}
 
 		return out;

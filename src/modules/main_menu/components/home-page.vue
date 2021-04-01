@@ -70,14 +70,14 @@
 					:key="addon.key"
 					class="tw-mg-b-05 tw-flex tw-align-items-center"
 				>
-					<div class="tw-card-img--size-4 tw-overflow-hidden tw-mg-r-1">
+					<div class="ffz-card-img--size-4 tw-overflow-hidden tw-mg-r-1">
 						<img :src="addon.icon" class="tw-image">
 					</div>
 					<div>
 						<a
 							v-if="addon.enabled && addon.settings"
 							href="#"
-							class="tw-strong tw-link--inherit"
+							class="tw-strong ffz-link--inherit"
 							@click.prevent="item.requestPage(addon.settings)"
 						>
 							{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }}
@@ -114,14 +114,14 @@
 					:key="addon.key"
 					class="tw-mg-b-05 tw-flex tw-align-items-center"
 				>
-					<div class="tw-card-img--size-4 tw-overflow-hidden tw-mg-r-1">
+					<div class="ffz-card-img--size-4 tw-overflow-hidden tw-mg-r-1">
 						<img :src="addon.icon" class="tw-image">
 					</div>
 					<div>
 						<a
 							v-if="addon.enabled && addon.settings"
 							href="#"
-							class="tw-strong tw-link--inherit"
+							class="tw-strong ffz-link--inherit"
 							@click.prevent="item.requestPage(addon.settings)"
 						>
 							{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }}

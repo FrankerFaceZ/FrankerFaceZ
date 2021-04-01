@@ -1,9 +1,11 @@
 query FFZ_TopTags($limit: Int) {
 	topTags(limit: $limit) {
 		id
+		isAutomated
 		isLanguageTag
-		tagName
-		localizedName
 		localizedDescription
+		localizedName
+		scope
+		tagName
 	}
 }

@@ -440,7 +440,7 @@ export default class ChatHook extends Module {
 		});
 
 		this.settings.add('chat.width', {
-			default: 340,
+			default: null,
 			ui: {
 				path: 'Chat > Appearance >> General @{"sort": -1}',
 				title: 'Width',
@@ -449,10 +449,18 @@ export default class ChatHook extends Module {
 				process(val) {
 					val = parseInt(val, 10);
 					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return 340;
+						return null;
 
 					return val;
 				}
+			}
+		});
+
+		this.settings.add('chat.effective-width', {
+			requires: ['chat.width', 'context.ui.rightColumnWidth'],
+			process(ctx) {
+				const val = ctx.get('chat.width');
+				return val == null ? (ctx.get('context.ui.rightColumnWidth') || 340) : val;
 			}
 		});
 
@@ -462,7 +470,7 @@ export default class ChatHook extends Module {
 				if ( ! ctx.get('context.ui.rightColumnExpanded') || ctx.get('context.isWatchParty') )
 					return false;
 
-				return ctx.get('chat.width') != 340;
+				return ctx.get('chat.width') != null;
 			}
 		});
 
@@ -507,6 +515,16 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering > General >> Rituals',
 				title: 'Display ritual messages such as "User is new here! Say Hello!".',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.extra-timestamps', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Display timestamps on notices.',
+				description: 'When enabled, timestamps will be displayed on point redemptions, subscriptions, etc.',
 				component: 'setting-check-box'
 			}
 		});
@@ -670,7 +688,7 @@ export default class ChatHook extends Module {
 		cancelAnimationFrame(this._update_css_waiter);
 		this._update_css_waiter = null;
 
-		const width = this.chat.context.get('chat.width'),
+		const width = this.chat.context.get('chat.effective-width'),
 			action_size = this.chat.context.get('chat.actions.size'),
 			ts_size = this.chat.context.get('chat.timestamp-size'),
 			size = this.chat.context.get('chat.font-size'),
@@ -808,7 +826,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
-		this.chat.context.on('changed:chat.width', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.effective-width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.actions.size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);

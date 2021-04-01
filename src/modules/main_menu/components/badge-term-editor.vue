@@ -191,16 +191,18 @@ export default {
 	},
 
 	data() {
+		const this_id = `badge-term$${id++}`;
+
 		if ( this.adding )
 			return {
-				id: id++,
+				id: this_id,
 				deleting: false,
 				editing: true,
 				edit_data: deep_copy(this.term)
 			};
 
 		return {
-			id: id++,
+			id: this_id,
 			deleting: false,
 			editing: false,
 			edit_data: null

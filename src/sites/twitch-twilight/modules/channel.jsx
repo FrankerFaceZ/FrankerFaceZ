@@ -199,7 +199,7 @@ export default class Channel extends Module {
 		if ( ! inst._ffz_tips ) {
 			const tt = this.resolve('tooltips');
 			if ( tt ) {
-				inst._ffz_tips = tt._createInstance(el, 'tw-link', 'link', tt.getRoot());
+				inst._ffz_tips = tt._createInstance(el, 'ffz-link', 'link', tt.getRoot());
 				inst._ffz_tip_el = el;
 			}
 		}

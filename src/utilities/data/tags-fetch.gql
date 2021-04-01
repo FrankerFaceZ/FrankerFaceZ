@@ -1,9 +1,11 @@
 query FFZ_FetchTags($ids: [ID!]) {
 	contentTags(ids: $ids) {
 		id
+		isAutomated
 		isLanguageTag
-		tagName
-		localizedName
 		localizedDescription
+		localizedName
+		scope
+		tagName
 	}
 }

@@ -1,0 +1,11 @@
+query FFZ_SearchLiveTags($query: String!, $categoryID: ID, $limit: Int) {
+	searchLiveTags(userQuery: $query, categoryID: $categoryID, limit: $limit) {
+		id
+		isAutomated
+		isLanguageTag
+		localizedDescription
+		localizedName
+		scope
+		tagName
+	}
+}

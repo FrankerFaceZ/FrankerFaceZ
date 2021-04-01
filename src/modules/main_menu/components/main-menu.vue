@@ -91,7 +91,7 @@
 						<a
 							v-if="version.commit"
 							:href="`https://www.github.com/FrankerFaceZ/FrankerFaceZ/commit/${version.commit}`"
-							class="tw-link tw-link--inherit"
+							class="ffz-link ffz-link--inherit"
 							target="_blank"
 							rel="noopener noreferrer"
 						>

@@ -189,7 +189,7 @@ export default {
 				} else
 					this.source_value = undefined;
 
-				this.has_value = this.profile.has(this.item.setting);
+				this.has_value = this.profile && this.profile.has(this.item.setting);
 				if ( ! this.has_value )
 					this.value = this.isInherited ? this.source_value : this.default_value;
 			}, 0);

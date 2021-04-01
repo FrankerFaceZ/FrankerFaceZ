@@ -825,7 +825,7 @@ TOKEN_TYPES.link = function(token, createElement, ctx) {
 		klass.push(`tw-block tw-border tw-border-radius-large tw-mg-y-05 tw-pd-05`);
 
 	if ( token.no_color )
-		klass.push(`tw-link--inherit`);
+		klass.push(`ffz-link--inherit`);
 
 	if ( ctx.vue )
 		return createElement('a', {

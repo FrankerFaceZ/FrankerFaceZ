@@ -1,0 +1,67 @@
+.ffz-link {
+	color: var(--color-text-link);
+	text-decoration: none;
+
+	.tw-root--hover &:hover {
+		color: var(--color-text-link-hover);
+		text-decoration: underline;
+	}
+
+	&:active { color: var(--color-text-link-active); }
+	&[data-focus-visible-added], &:focus { color: var(--color-text-link-focus); }
+	&:visited { color: var(--color-text-link-visited); }
+
+	&--overlay {
+		color: var(--color-text-overlay-link);
+		text-decoration: underline;
+
+		&:hover {
+			text-decoration: none;
+		}
+
+		.tw-root--hover &:hover {
+			color: var(--color-text-overlay-link-hover);
+		}
+
+		&:active { color: var(--color-text-overlay-link-active) }
+		&:focus, &[data-focus-visible-added] { color: var(--color-text-overlay-link-focus) }
+		&:visited { color: var(--color-text-overlay-link-visited) }
+	}
+
+	&--underline { text-decoration: underline; }
+
+	&--inherit {
+		&, &:visited, &:focus, &[data-focus-visible-added], &:active {
+			color: inherit;
+		}
+
+		.tw-root--hover &:hover {
+			color: var(--color-text-link-hover);
+		}
+	}
+
+	.tw-root--hover &--hover-color-inherit:hover {
+		color: inherit;
+	}
+
+	.tw-root--hover &--hover-underline-none {
+		&, &:hover {
+			text-decoration: none;
+		}
+	}
+
+	&--button {
+		&:active {
+			outline: none
+		}
+	}
+
+	&--disabled {
+		opacity: .5;
+
+		.tw-root--hover &:hover {
+			cursor: not-allowed;
+			text-decoration: none;
+		}
+	}
+}
