@@ -597,16 +597,31 @@ export default class PlayerBase extends Module {
 
 		cls.prototype.ffzUpdateState = function() {
 			this._ffz_state_raf = null;
-			const cont = this.props.containerRef,
-				player = this.props.mediaPlayerInstance;
+			const cont = this.props.containerRef;
 			if ( ! cont )
 				return;
 
 			const ds = cont.dataset;
 			ds.controls = this.state?.active || false;
 
-			ds.ended = player?.state?.playerState === 'Ended';
-			ds.paused = player?.state?.playerState === 'Idle';
+			let player = this.props.mediaPlayerInstance;
+			if ( ! player )
+				return;
+
+			if ( player.core )
+				player = player.core;
+
+			const state = player.state?.state;
+			if ( state === 'Playing' ) {
+				const video = player.mediaSinkManager?.video;
+				if ( video?._ffz_maybe_compress ) {
+					video._ffz_maybe_compress = false;
+					t.compressPlayer(this);
+				}
+			}
+
+			ds.ended = state === 'Ended';
+			ds.paused = state === 'Idle';
 		}
 
 		cls.prototype.ffzAttachListeners = function() {
@@ -780,7 +795,7 @@ export default class PlayerBase extends Module {
 	}
 
 	stopPlayer(player, events, inst) {
-		if ( player && player.pause && (player.getPlayerState?.() || player.core?.getPlayerState?.()) === 'Playing' )
+		if ( player && player.pause && (player.getState?.() || player.core?.getState?.()) === 'Playing' )
 			player.pause();
 		else if ( events && ! events._ffz_stopping ) {
 			events._ffz_stopping = true;
@@ -978,12 +993,14 @@ export default class PlayerBase extends Module {
 		if ( ! video || ! HAS_COMPRESSOR )
 			return;
 
+		video._ffz_maybe_compress = false;
 		const compressed = video._ffz_compressed || false;
-		let wanted = this.settings.get('player.compressor.default');
+		let wanted = video._ffz_toggled ? video._ffz_state : this.settings.get('player.compressor.default');
 		if ( e != null ) {
 			e.preventDefault();
 			video._ffz_toggled = true;
 			wanted = ! video._ffz_compressed;
+			video._ffz_state = wanted;
 		}
 
 		if ( ! video._ffz_compressor ) {
@@ -1406,6 +1423,10 @@ export default class PlayerBase extends Module {
 			const new_vid = createElement('video'),
 				vol = video?.volume ?? player.getVolume(),
 				muted = player.isMuted();
+
+			new_vid._ffz_state = video._ffz_state;
+			new_vid._ffz_toggled = video._ffz_toggled;
+			new_vid._ffz_maybe_compress = true;
 			new_vid.volume = muted ? 0 : vol;
 			new_vid.playsInline = true;
 			this.installPlaybackRate(new_vid);

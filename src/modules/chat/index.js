@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
+import {timeout, has, glob_to_regex, escape_regex, split_chars, deep_copy} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -88,10 +88,27 @@ export default class Chat extends Module {
 		this.rich_providers = {};
 		this.__rich_providers = [];
 
+		this._hl_reasons = {};
+		this.addHighlightReason('mention', 'Mentioned');
+		this.addHighlightReason('user', 'Highlight User');
+		this.addHighlightReason('badge', 'Highlight Badge');
+		this.addHighlightReason('term', 'Highlight Term');
 
 		// ========================================================================
 		// Settings
 		// ========================================================================
+
+		/*this.settings.add('debug.highlight-reason', {
+			default: [],
+			type: 'basic_array_merge',
+			ui: {
+				path: 'Chat > Debugging >> General',
+				title: 'Test',
+				component: 'setting-select-box',
+				multiple: true,
+				data: () => this.getHighlightReasons()
+			}
+		});*/
 
 		this.settings.add('debug.link-resolver.source', {
 			default: null,
@@ -1597,6 +1614,28 @@ export default class Chat extends Module {
 		}
 	}
 
+
+	addHighlightReason(key, data) {
+		if ( typeof key === 'object' && key.key ) {
+			data = key;
+			key = data.key;
+
+		} else if ( typeof data === 'string' )
+			data = {title: data};
+
+		data.value = data.key = key;
+		if ( ! data.i18n_key )
+			data.i18n_key = `hl-reason.${key}`;
+
+		if ( this._hl_reasons[key] )
+			throw new Error(`Highlight Reason already exists with key ${key}`);
+
+		this._hl_reasons[key] = data;
+	}
+
+	getHighlightReasons() {
+		return Object.values(this._hl_reasons);
+	}
 
 	addTokenizer(tokenizer) {
 		const type = tokenizer.type;

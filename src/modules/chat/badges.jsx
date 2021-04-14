@@ -257,7 +257,16 @@ export default class Badges extends Module {
 				title: 'Use custom moderator badges where available.',
 				component: 'setting-check-box'
 			}
-		})
+		});
+
+		this.settings.add('chat.badges.custom-vip', {
+			default: true,
+			ui: {
+				path: 'Chat > Badges >> tabs ~> Appearance',
+				title: 'Use custom VIP badges where available.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.badges.style', {
 			default: 1,
@@ -558,6 +567,7 @@ export default class Badges extends Module {
 		const hidden_badges = skip_hide ? {} : (this.parent.context.get('chat.badges.hidden') || {}),
 			badge_style = this.parent.context.get('chat.badges.style'),
 			custom_mod = this.parent.context.get('chat.badges.custom-mod'),
+			custom_vip = this.parent.context.get('chat.badges.custom-vip'),
 			is_mask = badge_style > 5,
 			is_colored = badge_style !== 5,
 			has_image = badge_style !== 3 && badge_style !== 4,
@@ -599,16 +609,27 @@ export default class Badges extends Module {
 					slot = last_slot++;
 
 				const data = dynamic_data[badge_id] || (badge_id === 'founder' && dynamic_data['subscriber']),
-					urls = badge_id === 'moderator' && custom_mod && room && room.data && room.data.mod_urls,
+					mod_urls = badge_id === 'moderator' && custom_mod && room && room.data && room.data.mod_urls,
+					vip_urls = badge_id === 'vip' && custom_vip && room && room.data && room.data.vip_badge,
 					badges = [];
 
-				if ( urls ) {
+				if ( mod_urls ) {
 					const bd = this.getTwitchBadge(badge_id, version, room_id, room_login);
 					badges.push({
 						provider: 'ffz',
-						image: urls[4] || urls[2] || urls[1],
+						image: mod_urls[4] || mod_urls[2] || mod_urls[1],
 						color: '#34ae0a',
 						title: bd ? bd.title : 'Moderator',
+						data
+					});
+
+				} else if ( vip_urls ) {
+					const bd = this.getTwitchBadge(badge_id, version, room_id, room_login);
+					badges.push({
+						provider: 'ffz',
+						image: vip_urls[4] || vip_urls[2] || vip_urls[1],
+						color: 'transparent',
+						title: bd ? bd.title : 'VIP',
 						data
 					});
 

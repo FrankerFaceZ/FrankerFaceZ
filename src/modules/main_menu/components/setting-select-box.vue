@@ -3,8 +3,8 @@
 		:class="{inherits: isInherited, default: isDefault}"
 		class="ffz--widget ffz--select-box"
 	>
-		<div class="tw-flex tw-align-items-center">
-			<label :for="item.full_key">
+		<div class="tw-flex tw-align-items-start">
+			<label :for="item.full_key" class="tw-mg-y-05">
 				{{ t(item.i18n_key, item.title) }}
 				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
 			</label>
@@ -12,6 +12,8 @@
 			<select
 				:id="item.full_key"
 				ref="control"
+				:multiple="item.multiple || false"
+				:size="item.size || 0"
 				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-05"
 				@change="onChange"
 			>
@@ -25,7 +27,7 @@
 						<option
 							v-for="j in i.entries"
 							:key="j.value"
-							:selected="j.value === value"
+							:selected="item.multiple ? (Array.isArray(value) && value.includes(j.value)) : j.value === value"
 							:value="j.v"
 						>
 							{{ j.i18n_key ? t(j.i18n_key, j.title, j) : j.title }}
@@ -34,7 +36,7 @@
 					<option
 						v-else
 						:key="i.value"
-						:selected="i.value === value"
+						:selected="item.multiple ? (Array.isArray(value) && value.includes(i.value)) : i.value === value"
 						:value="i.v"
 					>
 						{{ i.i18n_key ? t(i.i18n_key, i.title, i) : i.title }}
@@ -119,6 +121,20 @@ export default {
 
 	methods: {
 		onChange() {
+			if ( this.item.multiple ) {
+				const items = this.$refs.control.selectedOptions,
+					out = [];
+
+				for(let i=0; i < items.length; i++) {
+					const raw = this.data[items[i].index];
+					if ( raw )
+						out.push(raw.value);
+				}
+
+				this.set(out)
+				return;
+			}
+
 			const idx = this.$refs.control.value,
 				raw_value = this.data[idx];
 

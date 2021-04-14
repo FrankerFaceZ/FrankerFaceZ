@@ -1693,11 +1693,13 @@ export const TwitchEmotes = {
 
 				let src, srcSet;
 				let src2, srcSet2;
+				let can_big = true;
 
 				const replacement = REPLACEMENTS[e_id];
 				if ( replacement && use_replacements ) {
 					src = `${REPLACEMENT_BASE}${replacement}`;
 					srcSet = '';
+					can_big = false;
 
 				} else {
 					src = `${TWITCH_EMOTE_BASE}${e_id}/1.0`;
@@ -1718,7 +1720,8 @@ export const TwitchEmotes = {
 					src2,
 					srcSet2,
 					big,
-					can_big: true,
+					can_big,
+					height: 28, // Not always accurate but close enough.
 					text: text.slice(e_start - t_start, e_end - t_start).join(''),
 					modifiers: []
 				});

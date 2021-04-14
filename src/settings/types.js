@@ -44,6 +44,33 @@ export const object_merge = {
 }
 
 
+export const basic_array_merge = {
+	get(key, profiles, log) {
+		const values = [],
+			sources = [];
+
+		for(const profile of profiles)
+			if ( profile.has(key) ) {
+				const val = profile.get(key);
+				if ( ! Array.isArray(val) ) {
+					log.warn(`Profile #${profile.id} has an invalid value for "${key}"`);
+					continue;
+				}
+
+				sources.push(profile.id);
+				for(const v of val)
+					values.push(v);
+			}
+
+		if ( sources.length )
+			return [
+				values,
+				sources
+			]
+	}
+}
+
+
 export const array_merge = {
 	default(val) {
 		const values = [];

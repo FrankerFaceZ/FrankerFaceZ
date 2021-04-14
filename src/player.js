@@ -40,7 +40,7 @@ class FrankerFaceZ extends Module {
 
 		this.core_log = this.log.get('core');
 
-		this.log.info(`FrankerFaceZ Standalone Player v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''})`);
+		this.log.info(`FrankerFaceZ Standalone Player v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''}) (initial ${location})`);
 
 
 		// ========================================================================

@@ -144,7 +144,7 @@
 	padding: .2rem 0
 }
 
-.ffz-input, .ffz-select {
+.ffz-input, .ffz-select:not([multiple]) {
 	height: 3rem;
 }
 
@@ -160,22 +160,26 @@
 	-moz-appearance: none;
 	-webkit-appearance: none;
 	appearance: none;
-	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%230e0e10' d='M10.5 13.683l2.85-2.442 1.3 1.518-3.337 2.86a1.25 1.25 0 01-1.626 0l-3.338-2.86 1.302-1.518 2.849 2.442zm0-7.366L7.65 8.76l-1.3-1.518 3.337-2.86a1.25 1.25 0 011.627 0l3.337 2.86-1.302 1.518L10.5 6.317z'/%3E%3C/svg%3E");
-	background-position: right .8rem center;
-	background-repeat: no-repeat;
-	background-size: 2rem;
+
+	&:not([multiple]) {
+		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%230e0e10' d='M10.5 13.683l2.85-2.442 1.3 1.518-3.337 2.86a1.25 1.25 0 01-1.626 0l-3.338-2.86 1.302-1.518 2.849 2.442zm0-7.366L7.65 8.76l-1.3-1.518 3.337-2.86a1.25 1.25 0 011.627 0l3.337 2.86-1.302 1.518L10.5 6.317z'/%3E%3C/svg%3E");
+		background-position: right .8rem center;
+		background-repeat: no-repeat;
+		background-size: 2rem;
+	}
+
 	border: var(--border-width-input) solid var(--color-border-input);
 	color: var(--color-text-input);
 	cursor: pointer;
 	line-height: 1.5;
 	line-height: normal;
 
-	.tw-root--theme-dark & {
+	.tw-root--theme-dark &:not([multiple]) {
 		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23efeff1' d='M10.5 13.683l2.85-2.442 1.3 1.518-3.337 2.86a1.25 1.25 0 01-1.626 0l-3.338-2.86 1.302-1.518 2.849 2.442zm0-7.366L7.65 8.76l-1.3-1.518 3.337-2.86a1.25 1.25 0 011.627 0l3.337 2.86-1.302 1.518L10.5 6.317z'/%3E%3C/svg%3E");
 	}
 
 	// option isn't scoped, unlike default Twitch, to avoid flicker
-	&[data-focus-visible-added], option {
+	&[data-focus-visible-added], &:not([multiple]) option {
 		background-color: var(--color-background-input-focus);
 		border-color: var(--color-border-input-focus)
 	}
