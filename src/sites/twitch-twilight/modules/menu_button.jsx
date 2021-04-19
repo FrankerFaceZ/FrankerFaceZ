@@ -9,6 +9,7 @@ import {SiteModule} from 'utilities/module';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 
 import Twilight from 'site';
+import getMD from 'src/utilities/markdown';
 
 
 export default class MenuButton extends SiteModule {
@@ -257,6 +258,17 @@ export default class MenuButton extends SiteModule {
 		this.on('i18n:changed-strings', this.update);
 		this.on('i18n:update', this.update);
 		this.on('addons:data-loaded', this.update);
+
+		this.once('settings:quota-exceeded', () => {
+			this.addError(
+				'site.menu_button.quota-exceeded',
+				'Your local storage space for this website is full, and settings cannot be saved. Please backup your settings and switch to a higher capacity provider in [Data Management > Storage >> Provider](~data_management.storage.tabs.provider).',
+				'ffz-i-attention',
+				true
+			);
+			this.update();
+		});
+
 		this.on('settings:change-provider', () => {
 			this.addError('site.menu_button.changed',
 				'The FrankerFaceZ settings provider has changed. Please refresh this tab to avoid strange behavior.'
@@ -266,11 +278,12 @@ export default class MenuButton extends SiteModule {
 	}
 
 
-	addError(i18n, text, icon = 'ffz-i-attention') {
+	addError(i18n, text, icon = 'ffz-i-attention', use_markdown = false) {
 		this.addToast({
 			icon,
 			text_i18n: i18n,
-			text
+			text,
+			markdown: use_markdown
 		});
 	}
 
@@ -425,7 +438,8 @@ export default class MenuButton extends SiteModule {
 							{ data.title_i18n ? this.i18n.tList(data.title_i18n, data.title, data) : data.title}
 						</header>) : null }
 						{ data.text ? (<span class={`${data.lines ? 'ffz--line-clamp' : ''}`} style={{'--ffz-lines': data.lines}}>
-							{ data.text_i18n ? this.i18n.tList(data.text_i18n, data.text, data) : data.text}
+							{ data.markdown ? <span dangerouslySetInnerHTML={{__html: getMD().render(data.text_i18n ? this.i18n.t(data.text_i18n, data.text, data) : data.text) }} /> : null}
+							{ data.markdown ? null : (data.text_i18n ? this.i18n.tList(data.text_i18n, data.text, data) : data.text)}
 						</span>) : null }
 					</div>) : null}
 					{ ! data.unclosable && (<button

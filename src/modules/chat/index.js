@@ -206,7 +206,7 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.rich.hide-tokens', {
-			default: true,
+			default: false,
 			ui: {
 				path: 'Chat > Appearance >> Rich Content',
 				title: 'Hide matching links for rich content.',
@@ -260,6 +260,13 @@ export default class Chat extends Module {
 					return val;
 				}
 			}
+		});
+
+		this.settings.addUI('chat.filtering.pad-bottom', {
+			path: 'Chat > Filtering > Highlight',
+			sort: 1000,
+			component: 'setting-spacer',
+			top: '30rem'
 		});
 
 		this.settings.add('chat.filtering.click-to-reveal', {
@@ -1694,7 +1701,7 @@ export default class Chat extends Module {
 		for(const token of tokens) {
 			for(const provider of providers)
 				if ( provider.test.call(this, token, msg) ) {
-					token.hidden = this.context.get('chat.rich.hide-tokens') && provider.hide_token;
+					token.hidden = provider.can_hide_token && (this.context.get('chat.rich.hide-tokens') || provider.hide_token);
 					return provider.process.call(this, token);
 				}
 		}

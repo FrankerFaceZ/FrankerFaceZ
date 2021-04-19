@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg xmlns="http://www.w3.org/2000/svg">
-<metadata>Copyright (C) 2020 by original authors @ fontello.com</metadata>
+<metadata>Copyright (C) 2021 by original authors @ fontello.com</metadata>
 <defs>
 <font id="ffz-fontello" horiz-adv-x="1000" >
 <font-face font-family="ffz-fontello" font-weight="400" font-stretch="normal" units-per-em="1000" ascent="850" descent="-150" />
@@ -145,6 +145,8 @@
 <glyph glyph-name="threads" unicode="&#xe844;" d="M550 450h100v-100h-100v100z m-100 0h-100v-100h100v100z m50-500l-150 150h-100a100 100 0 0 0-100 100v400a100 100 0 0 0 100 100h500a100 100 0 0 0 100-100v-400a100 100 0 0 0-100-100h-100l-150-150z m-109 250l109-109 109 109h141v400h-500v-400h141z" horiz-adv-x="1000" />
 
 <glyph glyph-name="volume-off" unicode="&#xe845;" d="M0 551l305 0 345 282 0-965-345 279-229 0z m713-283q0 4 2 6l76 76-76 76q-2 2-2 6t2 6l53 53q2 2 5 2t6-2l76-76 77 76q4 2 6 2t5-2l55-53q2-2 2-6t-2-6l-76-76 76-76q2-4 2-7t-2-5l-55-54q-2-2-5-2t-6 2l-77 78-76-78q-2-2-5-2t-6 2l-53 54q-2 2-2 6z" horiz-adv-x="1000" />
+
+<glyph glyph-name="right-open" unicode="&#xe846;" d="M618 361l-414-415q-11-10-25-10t-25 10l-93 93q-11 11-11 25t11 25l296 297-296 296q-11 11-11 25t11 25l93 93q10 11 25 11t25-11l414-414q10-11 10-25t-10-25z" horiz-adv-x="714.3" />
 
 <glyph glyph-name="move" unicode="&#xf047;" d="M1000 350q0-14-11-25l-142-143q-11-11-26-11t-25 11-10 25v72h-215v-215h72q14 0 25-10t11-25-11-25l-143-143q-10-11-25-11t-25 11l-143 143q-11 10-11 25t11 25 25 10h72v215h-215v-72q0-14-10-25t-25-11-25 11l-143 143q-11 11-11 25t11 25l143 143q10 11 25 11t25-11 10-25v-72h215v215h-72q-14 0-25 10t-11 25 11 26l143 142q11 11 25 11t25-11l143-142q11-11 11-26t-11-25-25-10h-72v-215h215v72q0 14 10 25t25 11 26-11l142-143q11-10 11-25z" horiz-adv-x="1000" />
 

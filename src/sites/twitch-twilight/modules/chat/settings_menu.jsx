@@ -18,6 +18,16 @@ export default class SettingsMenu extends Module {
 		this.inject('chat.badges');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
+		this.inject('site.css_tweaks');
+
+		this.settings.add('chat.input.hide-identity', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Display "Chat Identity" in the chat settings menu rather than the input box.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.SettingsMenu = this.fine.define(
 			'chat-settings',
@@ -35,6 +45,12 @@ export default class SettingsMenu extends Module {
 	async onEnable() {
 		this.on('i18n:update', () => this.SettingsMenu.forceUpdate());
 		this.chat.context.on('changed:chat.scroller.freeze', () => this.SettingsMenu.forceUpdate());
+		this.chat.context.on('changed:chat.input.hide-identity', val => {
+			this.css_tweaks.toggle('hide-chat-identity', val);
+			this.SettingsMenu.forceUpdate();
+		});
+
+		this.css_tweaks.toggle('hide-chat-identity', this.chat.context.get('chat.input.hide-identity'));
 
 		const t = this,
 			React = await this.web_munch.findModule('react');
@@ -101,71 +117,87 @@ export default class SettingsMenu extends Module {
 				return val;
 			}
 
-			cls.prototype.render = function() {
-				try {
-					if ( this.state.ffzPauseMenu ) {
-						if ( ! this.ffzSettingsClick )
-							this.ffzSettingsClick = e => t.click(this, e);
+			cls.prototype.ffzRenderIdentity = function() {
+				if ( ! this.state || ! this.props || this.state.moderatorMode || this.state.chatAppearance || this.state.chatPause || this.state.followerMode || this.state.recentRaids || this.state.repliesAppearance || this.state.slowMode || this.props.isShowingChatFilterSettings || this.props.isShowingDeletedMessageDisplaySettings || ! this.props.isLoggedIn || ! this.props.onClickEditAppearance )
+					return null;
 
-						if ( ! this.ffzPauseClick )
-							this.ffzPauseClick = () => this.setState({ffzPauseMenu: ! this.state.ffzPauseMenu});
+				if ( ! t.chat.context.get('chat.input.hide-identity') )
+					return null;
 
-						return (<div class="tw-absolute ffz-balloon ffz-balloon--auto ffz-balloon--right ffz-balloon--up tw-block" data-a-target="chat-settings-balloon" style={{marginRight: '-5.3rem'}}>
-							<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
-								<div class="chat-settings__popover">
-									<div class="chat-settings__header tw-align-items-center tw-c-background-base tw-flex tw-pd-x-1 tw-relative">
-										<div class="chat-settings__back-icon-container tw-left-0 tw-mg-r-05">
-											<button
-												class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-												data-test-selector="chat-settings-back-button"
-												aria-label={t.i18n.t('chat.settings.back', 'Back')}
-												onClick={this.ffzPauseClick}
-											>
-												<div class="tw-align-items-center tw-flex tw-flex-grow-0">
-													<span class="tw-button-icon__icon">
-														<figure class="ffz-i-left-open" />
-													</span>
-												</div>
-											</button>
-										</div>
-										<div class="tw-align-center tw-align-items-center tw-flex tw-flex-grow-1 tw-justify-content-center">
-											<p class="tw-c-text-alt tw-font-size-5 tw-semibold">
-												{ t.i18n.t('chat.settings.pause', 'Pause Chat') }
-											</p>
-										</div>
-									</div>
-									<div class="chat-settings scrollable-area scrollable-area--suppress-scroll-x" data-simplebar>
-										<div class="chat-settings__content tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-c-background-base tw-c-text-base tw-pd-1">
-											<div class="tw-pd-x-05">
-												<div class="tw-border-b tw-mg-b-1 tw-pd-b-1">
-													<p class="tw-c-text-alt-2">
-														{ t.i18n.t('chat.settings.pause-explain', 'FrankerFaceZ overrides the behavior of Pause Chat entirely. Please use FFZ\'s Scrolling settings within the FFZ Control Center under Chat > Behavior.') }
-													</p>
-												</div>
-												<button
-													class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
-													data-page="chat.behavior"
-													onClick={this.ffzSettingsClick}
-												>
-													<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
-														<div class="tw-flex-grow-1">
-															{t.i18n.t('chat.settings.open-settings', 'Open Control Center')}
-														</div>
-													</div>
-												</button>
-											</div>
-										</div>
-									</div>
+				const user = this.props.data?.currentUser,
+					raw_badges = this.props.data?.user?.self?.displayBadges;
+
+				if ( ! user || ! user.login || ! Array.isArray(raw_badges) )
+					return null;
+
+				const is_intl = user.login && user.displayName && user.displayName.trim().toLowerCase() !== user.login,
+					color = t.parent.colors.process(user.chatColor),
+					badges = {};
+
+				for(const badge of raw_badges) {
+					if ( badge?.setID && badge.version )
+						badges[badge.setID] = badge.version;
+				}
+
+				return (<div class="ffz-identity">
+					<div class="tw-mg-y-05 tw-pd-x-05">
+						<p class="tw-c-text-alt-2 tw-font-size-6 tw-strong tw-upcase">
+							{ t.i18n.t('chat.identity-menu', 'Chat Identity') }
+						</p>
+					</div>
+					<div class="tw-full-width tw-relative">
+						<button
+							class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
+							onClick={this.props.onClickEditAppearance}
+						>
+							<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
+								<div class="tw-flex-grow-1">
+									<span class="ffz--editor-name">
+										<span
+											class="ffz--editor-badges"
+											data-room-id={this.props.channelID}
+											data-room-login={this.props.channelLogin}
+										>
+											{t.badges.render({
+												user,
+												badges,
+												ffz_badges: t.badges.getBadges(user.id, user.login, this.props.channelID, this.props.channelLogin),
+												roomID: this.props.channelID,
+												roomLogin: this.props.channelLogin
+											}, createElement, true, true)}
+										</span>
+
+										<span class="tw-strong notranslate" style={{color}}>
+											<span class="name-display__name">{ user.displayName || user.login}</span>
+											{is_intl && <span class="intl-name"> ({user.login}) </span>}
+										</span>
+									</span>
+								</div>
+								<div class="tw-align-items-center tw-flex tw-flex-shrink-0 tw-mg-l-05">
+									<figure class="ffz-i-right-open" />
 								</div>
 							</div>
-						</div>)
+						</button>
+					</div>
+				</div>);
+			}
+
+			cls.prototype.render = function() {
+				const out = old_render.call(this);
+
+				try {
+					const children = out?.props?.children?.props?.children?.[1]?.props?.children?.props?.children;
+					if ( Array.isArray(children) ) {
+						const extra = this.ffzRenderIdentity();
+						if ( extra )
+							children.unshift(extra);
 					}
 
 				} catch(err) {
 					t.log.error('Error rendering chat settings menu.', err);
 				}
 
-				return old_render.call(this);
+				return out;
 			}
 
 			this.SettingsMenu.forceUpdate();
@@ -228,9 +260,10 @@ export default class SettingsMenu extends Module {
 			}, this.badges.render({
 				user,
 				badges,
+				ffz_badges: this.badges.getBadges(user.id, user.login, inst.props.channelID, inst.props.channelLogin),
 				roomID: inst.props.channelID,
 				roomLogin: inst.props.channelLogin
-			}, createElement, true)),
+			}, createElement, true, true)),
 
 			<span class="tw-strong notranslate" style={{color}}>
 				<span class="name-display__name">{user.displayName || user.login}</span>
@@ -292,17 +325,25 @@ export default class SettingsMenu extends Module {
 		} else if ( ! badge )
 			return;
 
-		cont.appendChild(<div class="ffz--badge-selector">
-			<p class="tw-pd-x-05">
-				{this.i18n.tList('chat.ffz-badge.about', '{title}: This badge appears globally for users with FrankerFaceZ.', {
-					title: <span class="tw-strong">{this.i18n.t('chat.ffz-badge.title', 'FrankerFaceZ Badge')}</span>
-				})}{' '}
-				{this.i18n.tList('chat.ffz-badge.site', 'Please visit the {website} to change this badge.', {
-					website: (<a href="https://www.frankerfacez.com/donate" class="ffz-link" rel="noopener noreferrer" target="_blank">
-						{this.i18n.t('chat.ffz-badge.site-link', 'FrankerFaceZ website')}
-					</a>)
-				})}
-			</p>
+		const out = (<div class="ffz--badge-selector tw-border-b tw-mg-b-1">
+			<div class="tw-mg-y-05 tw-pd-x-05">
+				<p class="tw-c-text-alt-2 tw-font-size-6 tw-strong tw-upcase">
+					{ this.i18n.t('chat.ffz-badge.title', 'FrankerFaceZ Badge') }
+				</p>
+			</div>
+			<div>
+				<p class="tw-mg-b-05 tw-pd-x-05">
+					{ this.i18n.tList(
+						'chat.ffz-badge.about',
+						'This badge appears globally for users with FrankerFaceZ. Please visit the {website} to change this badge.',
+						{
+							website: (<a href="https://www.frankerfacez.com/donate" class="ffz-link" rel="noopener noreferrer" target="_blank">
+								{this.i18n.t('chat.ffz-badge.site-link', 'FrankerFaceZ website')}
+							</a>)
+						}
+					) }
+				</p>
+			</div>
 			<div role="radiogroup" class="tw-align-items-center tw-flex tw-flex-wrap tw-mg-b-05 tw-mg-t-05 tw-pd-x-05">
 				<div class="tw-mg-r-1 tw-mg-y-05">
 					<div class="tw-inline-flex">
@@ -321,6 +362,12 @@ export default class SettingsMenu extends Module {
 				</div>
 			</div>
 		</div>);
+
+		const after = cont.querySelector('[data-test-selector="global-badges-test-selector"]')?.nextElementSibling;
+		if ( after )
+			cont.insertBefore(out, after);
+		else
+			cont.appendChild(out);
 	}
 
 

@@ -298,6 +298,9 @@ export default class MainMenu extends Module {
 			return;
 
 		this.requestPage(path);
+
+		if ( ! this.showing )
+			this.emit('site.menu_button:clicked');
 	}
 
 

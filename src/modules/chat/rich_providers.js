@@ -28,7 +28,7 @@ import {truncate} from 'utilities/object';
 
 export const Links = {
 	type: 'link',
-	hide_token: false,
+	can_hide_token: true,
 	priority: -10,
 
 	test(token) {
@@ -77,7 +77,7 @@ export const Links = {
 
 export const Users = {
 	type: 'user',
-	hide_token: false,
+	can_hide_token: true,
 
 	test(token) {
 		if ( token.type !== 'link' || (! this.context.get('chat.rich.all-links') && ! token.force_rich) )
@@ -190,7 +190,7 @@ export const Users = {
 
 export const Clips = {
 	type: 'clip',
-	hide_token: false,
+	can_hide_token: true,
 
 	test(token) {
 		if ( token.type !== 'link' )
@@ -278,7 +278,7 @@ export const Clips = {
 
 export const Videos = {
 	type: 'video',
-	hide_token: false,
+	can_hide_token: true,
 
 	test(token) {
 		return token.type === 'link' && VIDEO_URL.test(token.url)

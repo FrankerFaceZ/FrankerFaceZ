@@ -558,7 +558,7 @@ export default class Badges extends Module {
 	}
 
 
-	render(msg, createElement, skip_hide = false) { // eslint-disable-line class-methods-use-this
+	render(msg, createElement, skip_hide = false, skip_click = false) { // eslint-disable-line class-methods-use-this
 		if ( ! msg.badges && ! msg.ffz_badges )
 			return null;
 
@@ -769,7 +769,8 @@ export default class Badges extends Module {
 				props['data-tooltip-type'] = 'badge';
 				props['data-badge-data'] = JSON.stringify(data.badges);
 
-				props.onClick = this.handleClick;
+				if ( ! skip_click )
+					props.onClick = this.handleClick;
 
 				if ( data.replaced )
 					props['data-replaced'] = data.replaced;

@@ -99,6 +99,9 @@ export default class SettingsManager extends Module {
 			this.provider = provider;
 			this.log.info(`Using Provider: ${provider.constructor.name}`);
 			provider.on('changed', this._onProviderChange, this);
+			provider.on('quota-exceeded', err => {
+				this.emit(':quota-exceeded', err);
+			});
 			provider.on('change-provider', () => {
 				this.emit(':change-provider');
 			});

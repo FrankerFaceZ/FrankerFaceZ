@@ -102,5 +102,6 @@ export default [
 	"link",
 	"volume-off",
 	"reply",
-	"threads"
+	"threads",
+	"right-open"
 ];

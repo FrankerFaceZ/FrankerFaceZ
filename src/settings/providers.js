@@ -262,7 +262,18 @@ export class LocalStorageProvider extends SettingsProvider {
 		}
 
 		this._cached.set(key, value);
-		localStorage.setItem(this.prefix + key, JSON.stringify(value));
+		try {
+			localStorage.setItem(this.prefix + key, JSON.stringify(value));
+		} catch(err) {
+			if ( this.manager )
+				this.manager.log.error(`An error occurred while trying to save a value to localStorage for key "${this.prefix + key}"`);
+
+			if ( /quota/i.test(err.toString()) )
+				this.emit('quota-exceeded', err);
+
+			throw err;
+		}
+
 		this.broadcast({type: 'set', key});
 		this.emit('set', key, value, false);
 	}
