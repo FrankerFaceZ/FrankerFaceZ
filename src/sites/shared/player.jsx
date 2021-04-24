@@ -7,12 +7,46 @@
 import Module from 'utilities/module';
 
 import {createElement, on, off} from 'utilities/dom';
-import {debounce} from 'utilities/object';
+import {isValidShortcut, debounce} from 'utilities/object';
 import { IS_FIREFOX } from 'src/utilities/constants';
 
 const STYLE_VALIDATOR = createElement('span');
 
-const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null;
+const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null,
+	HAS_GAIN = HAS_COMPRESSOR && window.GainNode != null;
+
+const SCROLL_I18N = 'setting.entry.player.volume-scroll.values',
+	SCROLL_OPTIONS = [
+		{value: false, title: 'Disabled', i18n_key: `${SCROLL_I18N}.false`},
+		{value: true, title: 'Enabled', i18n_key: `${SCROLL_I18N}.true`},
+		{value: 2, title: 'Enabled with Right-Click', i18n_key: `${SCROLL_I18N}.2`},
+		{value: 3, title: 'Enabled with Alt', i18n_key: `${SCROLL_I18N}.3`},
+		{value: 4, title: 'Enabled with Alt + Right-Click', i18n_key: `${SCROLL_I18N}.4`},
+		{value: 5, title: 'Enabled with Shift', i18n_key: `${SCROLL_I18N}.5`},
+		{value: 6, title: 'Enabled with Shift + Right-Click', i18n_key: `${SCROLL_I18N}.6`},
+		{value: 7, title: 'Enabled with Ctrl', i18n_key: `${SCROLL_I18N}.7`},
+		{value: 8, title: 'Enabled with Ctrl + Right-Click', i18n_key: `${SCROLL_I18N}.8`}
+	];
+
+function wantsRMB(setting) {
+	return setting === 2 || setting === 4 || setting === 6 || setting === 8;
+}
+
+function matchesEvent(setting, event, has_rmb) {
+	if ( wantsRMB(setting) && event.button !== 2 && ! has_rmb )
+		return false;
+
+	if ( ! event.altKey && (setting === 3 || setting === 4) )
+		return false;
+
+	if ( ! event.shiftKey && (setting === 5 || setting === 6) )
+		return false;
+
+	if ( ! event.ctrlKey && (setting === 7 || setting === 8) )
+		return false;
+
+	return true;
+}
 
 function rotateButton(event) {
 	const target = event.currentTarget,
@@ -37,6 +71,8 @@ export default class PlayerBase extends Module {
 		this.inject('settings');
 		this.inject('site.fine');
 		this.inject('site.css_tweaks');
+
+		this.onShortcut = this.onShortcut.bind(this);
 
 		this.registerSettings();
 	}
@@ -81,6 +117,136 @@ export default class PlayerBase extends Module {
 				}
 			});
 
+			this.settings.add('player.compressor.shortcut', {
+				default: null,
+				requires: ['player.compressor.enable'],
+				process(ctx, val) {
+					if ( ! ctx.get('player.compressor.enable') )
+						return null;
+					return val;
+				},
+				ui: {
+					path: 'Player > Compressor >> General',
+					title: 'Shortcut Key',
+					description: 'This key sequence can be used to toggle the compressor.',
+					component: 'setting-hotkey'
+				},
+				changed: () => {
+					this.updateShortcut();
+					for(const inst of this.Player.instances)
+						this.addCompressorButton(inst);
+				}
+			});
+
+			if ( HAS_GAIN ) {
+				this.settings.add('player.gain.enable', {
+					default: false,
+					ui: {
+						sort: -1,
+						path: 'Player > Compressor >> Gain Control @{"sort": 50, "description": "Gain Control gives you extra control over the output volume when using the Compressor by letting you adjust the volume after the compressor runs, while the built-in volume slider takes affect before the compressor. This uses a simple [GainNode](https://developer.mozilla.org/en-US/docs/Web/API/GainNode) from the Web Audio API, connected in sequence after the DynamicsCompressorNode the Compressor uses."}',
+						title: 'Enable gain control when the audio compressor is enabled.',
+						component: 'setting-check-box'
+					},
+
+					changed: () => {
+						for(const inst of this.Player.instances)
+							this.compressPlayer(inst);
+					}
+				});
+
+				this.settings.add('player.gain.no-volume', {
+					default: false,
+					requires: ['player.gain.enable'],
+					process(ctx, val) {
+						if ( ! ctx.get('player.gain.enable') )
+							return false;
+						return val;
+					},
+
+					ui: {
+						path: 'Player > Compressor >> Gain Control',
+						title: 'Force built-in volume to 100% when the audio compressor is enabled.',
+						description: 'With this enabled, the built-in volume will be hidden and the Gain Control will be the only way to change volume.',
+						component: 'setting-check-box'
+					},
+
+					changed: val => {
+						this.css_tweaks.toggleHide('player-gain-volume', val);
+						for(const inst of this.Player.instances)
+							this.updateGainVolume(inst);
+					}
+				});
+
+				this.settings.add('player.gain.scroll', {
+					default: false,
+					ui: {
+						path: 'Player > Compressor >> Gain Control',
+						title: 'Scroll Adjust',
+						description: 'Adjust the gain by scrolling with the mouse wheel. This setting takes precedence over adjusting the volume by scrolling. *This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.*',
+						component: 'setting-select-box',
+						data: SCROLL_OPTIONS
+					}
+				});
+
+				this.settings.add('player.gain.default', {
+					default: 100,
+					requires: ['player.gain.min', 'player.gain.max'],
+					process(ctx, val) {
+						const min = ctx.get('player.gain.min'),
+							max = ctx.get('player.gain.max');
+
+						val /= 100;
+
+						if ( val < min )
+							val = min;
+						if ( val > max )
+							val = max;
+
+						return val;
+					},
+					ui: {
+						path: 'Player > Compressor >> Gain Control',
+						title: 'Default Value',
+						component: 'setting-text-box',
+						description: 'The default value for gain control, when gain control is enabled. 100% means no change in volume.',
+						process: 'to_int',
+						bounds: [0, true]
+					},
+
+					changed: () => this.updateGains()
+				});
+
+				this.settings.add('player.gain.min', {
+					default: 0,
+					process: (ctx, val) => val / 100,
+					ui: {
+						path: 'Player > Compressor >> Gain Control',
+						title: 'Minimum',
+						component: 'setting-text-box',
+						description: '**Range:** 0 ~ 100\n\nThe minimum allowed value for gain control. 0% is effectively muted.',
+						process: 'to_int',
+						bounds: [0, true, 100, true]
+					},
+
+					changed: () => this.updateGains()
+				});
+
+				this.settings.add('player.gain.max', {
+					default: 200,
+					process: (ctx, val) => val / 100,
+					ui: {
+						path: 'Player > Compressor >> Gain Control',
+						title: 'Maximum',
+						component: 'setting-text-box',
+						description: '**Range:** 100 ~ 1000\n\nThe maximum allowed value for gain control. 100% is no change. 200% is double the volume.',
+						process: 'to_int',
+						bounds: [100, true, 1000, true]
+					},
+
+					changed: () => this.updateGains()
+				});
+			}
+
 			this.settings.add('player.compressor.threshold', {
 				default: -50,
 				ui: {
@@ -89,13 +255,8 @@ export default class PlayerBase extends Module {
 					sort: 0,
 					description: '**Range:** -100 ~ 0\n\nThe decibel value above which the compression will start taking effect.',
 					component: 'setting-text-box',
-					process(val) {
-						val = parseInt(val, 10);
-						if ( isNaN(val) || ! isFinite(val) || val > 0 || val < -100 )
-							return -50;
-
-						return val;
-					}
+					process: 'to_int',
+					bounds: [-100, true, 0, true]
 				},
 
 				changed: () => this.updateCompressors()
@@ -109,13 +270,8 @@ export default class PlayerBase extends Module {
 					sort: 5,
 					description: '**Range:** 0 ~ 40\n\nA decibel value representing the range above the threshold where the curve smoothly transitions to the compressed portion.',
 					component: 'setting-text-box',
-					process(val) {
-						val = parseInt(val, 10);
-						if ( isNaN(val) || ! isFinite(val) || val < 0 || val > 40 )
-							return 40;
-
-						return val;
-					}
+					process: 'to_int',
+					bounds: [0, true, 40, true]
 				},
 
 				changed: () => this.updateCompressors()
@@ -129,13 +285,8 @@ export default class PlayerBase extends Module {
 					sort: 10,
 					description: '**Range:** 0 ~ 20\n\nThe amount of change, in dB, needed in the input for a 1 dB change in the output.',
 					component: 'setting-text-box',
-					process(val) {
-						val = parseInt(val, 10);
-						if ( isNaN(val) || ! isFinite(val) || val < 1 || val > 20 )
-							return 12;
-
-						return val;
-					}
+					process: 'to_int',
+					bounds: [0, true, 20, true]
 				},
 
 				changed: () => this.updateCompressors()
@@ -149,13 +300,8 @@ export default class PlayerBase extends Module {
 					sort: 15,
 					description: '**Range:** 0 ~ 1\n\nThe amount of time, in seconds, required to reduce the gain by 10 dB.',
 					component: 'setting-text-box',
-					process(val) {
-						val = parseFloat(val);
-						if ( isNaN(val) || ! isFinite(val) || val < 0 || val > 1 )
-							return 0;
-
-						return val;
-					}
+					process: 'to_float',
+					bounds: [0, true, 1, true]
 				},
 
 				changed: () => this.updateCompressors()
@@ -169,13 +315,8 @@ export default class PlayerBase extends Module {
 					sort: 20,
 					description: '**Range:** 0 ~ 1\nThe amount of time, in seconds, required to increase the gain by 10 dB.',
 					component: 'setting-text-box',
-					process(val) {
-						val = parseFloat(val);
-						if ( isNaN(val) || ! isFinite(val) || val < 0 || val > 1 )
-							return 0.25;
-
-						return val;
-					}
+					process: 'to_float',
+					bounds: [0, true, 1, true]
 				},
 
 				changed: () => this.updateCompressors()
@@ -210,11 +351,7 @@ export default class PlayerBase extends Module {
 				title: 'Adjust volume by scrolling with the mouse wheel.',
 				description: '*This setting will not work properly on streams with visible extensions when mouse interaction with extensions is allowed.*',
 				component: 'setting-select-box',
-				data: [
-					{value: false, title: 'Disabled'},
-					{value: true, title: 'Enabled'},
-					{value: 2, title: 'Enabled with Right-Click'}
-				]
+				data: SCROLL_OPTIONS
 			}
 		});
 
@@ -408,6 +545,7 @@ export default class PlayerBase extends Module {
 		await this.settings.awaitProvider();
 		await this.settings.provider.awaitReady();
 
+		this.css_tweaks.toggleHide('player-gain-volume', this.settings.get('player.gain.no-volume'));
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
@@ -415,6 +553,7 @@ export default class PlayerBase extends Module {
 		this.installVisibilityHook();
 		this.updateHideExtensions();
 		this.updateCaptionsCSS();
+		this.updateShortcut();
 
 		this.on(':reset', this.resetAllPlayers, this);
 
@@ -464,6 +603,32 @@ export default class PlayerBase extends Module {
 			}
 		});
 	}
+
+	updateShortcut() {
+		const Mousetrap = this.Mousetrap = this.Mousetrap || this.resolve('site.web_munch')?.getModule?.('mousetrap') || window.Mousetrap;
+		if ( ! Mousetrap || ! Mousetrap.bind )
+			return;
+
+		if ( this._shortcut_bound ) {
+			Mousetrap.unbind(this._shortcut_bound);
+			this._shortcut_bound = null;
+		}
+
+		const key = this.settings.get('player.compressor.shortcut');
+		if ( HAS_COMPRESSOR && key && isValidShortcut(key) ) {
+			Mousetrap.bind(key, this.onShortcut);
+			this._shortcut_bound = key;
+		}
+	}
+
+
+	onShortcut(e) {
+		this.log.info('Compressor Hotkey', e);
+
+		for(const inst of this.Player.instances)
+			this.compressPlayer(inst, e);
+	}
+
 
 	modifyPlayerClass(cls) {
 		const t = this,
@@ -611,14 +776,18 @@ export default class PlayerBase extends Module {
 			if ( player.core )
 				player = player.core;
 
-			const state = player.state?.state;
+			const state = player.state?.state,
+				video = player.mediaSinkManager?.video;
+
 			if ( state === 'Playing' ) {
-				const video = player.mediaSinkManager?.video;
 				if ( video?._ffz_maybe_compress ) {
 					video._ffz_maybe_compress = false;
 					t.compressPlayer(this);
 				}
 			}
+
+			if ( video && video._ffz_compressed != null )
+				ds.compressed = video._ffz_compressed;
 
 			ds.ended = state === 'Ended';
 			ds.paused = state === 'Idle';
@@ -671,7 +840,12 @@ export default class PlayerBase extends Module {
 			if ( ! event )
 				return;
 
-			if ( t.settings.get('player.volume-scroll') === 2 && event.button === 2 ) {
+			const vol_scroll = t.settings.get('player.volume-scroll'),
+				gain_scroll = t.settings.get('player.gain.scroll'),
+
+				wants_rmb = wantsRMB(vol_scroll) || wantsRMB(gain_scroll);
+
+			if ( wants_rmb && event.button === 2 ) {
 				this.ffz_rmb = true;
 				this.ffz_scrolled = false;
 			}
@@ -699,33 +873,59 @@ export default class PlayerBase extends Module {
 		}
 
 		cls.prototype.ffzScrollHandler = function(event) {
-			const setting = t.settings.get('player.volume-scroll');
-			if ( ! setting )
-				return;
+			const vol_scroll = t.settings.get('player.volume-scroll'),
+				gain_scroll = t.settings.get('player.gain.scroll'),
 
-			if ( setting === 2 && ! this.ffz_rmb )
+				matches_gain = gain_scroll && matchesEvent(gain_scroll, event, this.ffz_rmb),
+				matches_vol = ! matches_gain && vol_scroll && matchesEvent(vol_scroll, event, this.ffz_rmb);
+
+			if ( ! matches_gain && ! matches_vol )
 				return;
 
 			const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
 				player = this.props?.mediaPlayerInstance,
 				video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video;
 
-			if ( ! player?.getVolume )
+			if ( ! player?.getVolume || (matches_gain && ! video) )
 				return;
 
-			if ( setting === 2 )
+			if ( matches_gain ? wantsRMB(gain_scroll) : wantsRMB(vol_scroll) )
 				this.ffz_scrolled = true;
 
-			const amount = t.settings.get('player.volume-scroll-steps'),
-				old_volume = video?.volume ?? player.getVolume(),
-				volume = Math.max(0, Math.min(1, old_volume + (delta > 0 ? amount : -amount)));
+			const amount = t.settings.get('player.volume-scroll-steps');
 
-			player.setVolume(volume);
-			localStorage.volume = volume;
+			if ( matches_vol && ! (video._ffz_compressed && t.settings.get('player.gain.no-volume')) ) {
+				const old_volume = video?.volume ?? player.getVolume(),
+					volume = Math.max(0, Math.min(1, old_volume + (delta > 0 ? amount : -amount)));
 
-			if ( volume !== 0 ) {
-				player.setMuted(false);
-				localStorage.setItem('video-muted', JSON.stringify({default: false}));
+				player.setVolume(volume);
+				localStorage.volume = volume;
+
+				if ( volume !== 0 ) {
+					player.setMuted(false);
+					localStorage.setItem('video-muted', JSON.stringify({default: false}));
+				}
+
+			} else if ( matches_gain ) {
+				let value = video._ffz_gain_value;
+				if ( value == null )
+					value = t.settings.get('player.gain.default');
+
+				const min = t.settings.get('player.gain.min'),
+					max = t.settings.get('player.gain.max');
+
+				if ( delta > 0 )
+					value += amount;
+				else
+					value -= amount;
+
+				if ( value < min )
+					value = min;
+				if ( value > max )
+					value = max;
+
+				video._ffz_gain_value = value;
+				t.updateGain(this);
 			}
 
 			event.preventDefault();
@@ -902,12 +1102,129 @@ export default class PlayerBase extends Module {
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
 		this.addCompressorButton(inst, false);
+		this.addGainSlider(inst, false);
 		this.addMetadata(inst);
 
 		if ( inst._ffzUpdateVolume )
 			inst._ffzUpdateVolume();
 
 		this.emit(':update-gui', inst);
+	}
+
+	addGainSlider(inst, visible_only, tries = 0) {
+		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
+			container = outer && outer.querySelector('.player-controls__left-control-group');
+		let gain = video != null && video._ffz_compressed && video._ffz_gain;
+
+		if ( ! container ) {
+			if ( video && ! gain )
+				return;
+
+			if ( tries < 5 )
+				return setTimeout(this.addGainSlider.bind(this, inst, visible_only, (tries || 0) + 1), 250);
+
+			return;
+		}
+
+		const min = this.settings.get('player.gain.min'),
+			max = this.settings.get('player.gain.max');
+
+		if ( min >= max || max <= min )
+			gain = null;
+
+		let tip, input, extra, fill, cont = container.querySelector('.ffz--player-gain');
+		if ( ! gain ) {
+			if ( cont )
+				cont.remove();
+			return;
+		}
+
+		if ( ! cont ) {
+			const on_change = () => {
+				let value = input.value / 100;
+
+				const min = this.settings.get('player.gain.min'),
+					max = this.settings.get('player.gain.max');
+
+				if ( value < min )
+					value = min;
+				if ( value > max )
+					value = max;
+
+				video._ffz_gain_value = value;
+				gain.gain.value = value;
+
+				const range = max - min,
+					width = (value - min) / range;
+
+				fill.style.width = `${width * 100}%`;
+				extra.textContent = `${Math.round(value * 100)}%`;
+			};
+
+			cont = (<div class="ffz--player-gain volume-slider__slider-container tw-relative tw-tooltip__container">
+				<div class="tw-align-items-center tw-flex tw-full-height">
+					<label class="tw-hide-accessible">{this.i18n.t('player.gain.label','Gain Control')}</label>
+					<div class="tw-flex tw-full-width tw-relative tw-z-above">
+						{input = (<input
+							class="tw-range tw-range--overlay"
+							type="range"
+							min="0"
+							max="100"
+							step="1"
+							data-a-target="player-gain-slider"
+							value="100"
+						/>)}
+						<div class="tw-absolute tw-border-radius-large tw-bottom-0 tw-flex tw-flex-column tw-full-width tw-justify-content-center tw-range__fill tw-range__fill--overlay tw-top-0 tw-z-below">
+							<div class="tw-border-radius-large tw-range__fill-container">
+								{fill = (<div
+									class="tw-border-radius-large tw-range__fill-value ffz--gain-value"
+									data-test-selector="tw-range__fill-value-selector"
+								/>)}
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" role="tooltip">
+					<div>
+						{tip = (<div class="ffz--p-tip" />)}
+						{extra = (<div class="tw-regular ffz--p-value" />)}
+					</div>
+				</div>
+			</div>);
+
+			/*input.addEventListener('contextmenu', e => {
+				video._ffz_gain_value = null;
+				this.updateGain(inst);
+				e.preventDefault();
+			});*/
+			input.addEventListener('input', on_change);
+			container.appendChild(cont);
+
+		} else if ( visible_only )
+			return;
+		else {
+			input = cont.querySelector('input');
+			fill = cont.querySelector('.ffz--gain-value');
+			tip = cont.querySelector('.tw-tooltip .ffz--p-tip');
+			extra = cont.querySelector('.tw-tooltip .ffz--p-value');
+		}
+
+		let value = video._ffz_gain_value;
+		if ( value == null )
+			value = this.settings.get('player.gain.default');
+
+		input.min = min * 100;
+		input.max = max * 100;
+		input.value = value * 100;
+
+		const range = max - min,
+			width = (value - min) / range;
+
+		fill.style.width = `${width * 100}%`;
+
+		tip.textContent = this.i18n.t('player.gain.label', 'Gain Control');
+		extra.textContent = `${Math.round(value * 100)}%`;
 	}
 
 	addCompressorButton(inst, visible_only, tries = 0) {
@@ -967,14 +1284,17 @@ export default class PlayerBase extends Module {
 		}
 
 		const comp_active = video._ffz_compressed,
-			can_apply = this.canCompress(inst),
-			label = can_apply ?
-				comp_active ?
-					this.i18n.t('player.comp_button.off', 'Disable Audio Compressor') :
-					this.i18n.t('player.comp_button.on', 'Audio Compressor')
-				: this.i18n.t('player.comp_button.disabled', 'Audio Compressor cannot be enabled when viewing Clips.');
+			can_apply = this.canCompress(inst);
+		let label = can_apply ?
+			comp_active ?
+				this.i18n.t('player.comp_button.off', 'Disable Audio Compressor') :
+				this.i18n.t('player.comp_button.on', 'Audio Compressor')
+			: this.i18n.t('player.comp_button.disabled', 'Audio Compressor cannot be enabled when viewing Clips.');
 
 		extra.textContent = this.i18n.t('player.comp_button.help', 'See the FFZ Control Center for details. If audio breaks, please reset the player.');
+
+		if ( can_apply && this._shortcut_bound )
+			label = `${label} (${this._shortcut_bound})`;
 
 		if ( ff_el )
 			ff_el.textContent += `\n${this.i18n.t('player.comp_button.firefox', 'Playback Speed controls will not function for Firefox users when the Compressor has been enabled.')}`;
@@ -988,10 +1308,18 @@ export default class PlayerBase extends Module {
 	}
 
 	compressPlayer(inst, e) {
-		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
-			inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+		const player = inst.props.mediaPlayerInstance,
+			core = player.core || player,
+			video = core?.mediaSinkManager?.video;
+
 		if ( ! video || ! HAS_COMPRESSOR )
 			return;
+
+		// Backup the setVolume method.
+		if ( ! core._ffz_setVolume ) {
+			core._ffz_setVolume = core.setVolume;
+			core._ffz_fakeVolume = () => {};
+		}
 
 		video._ffz_maybe_compress = false;
 		const compressed = video._ffz_compressed || false;
@@ -1015,7 +1343,11 @@ export default class PlayerBase extends Module {
 			return;
 		}
 
-		if ( wanted == compressed || (e == null && video._ffz_toggled) )
+		let gain = video._ffz_gain;
+		const want_gain = HAS_GAIN && this.settings.get('player.gain.enable'),
+			has_gain = gain != null;
+
+		if ( ((wanted == compressed) || (e == null && video._ffz_toggled)) && has_gain == want_gain )
 			return;
 
 		const ctx = video._ffz_context,
@@ -1025,18 +1357,88 @@ export default class PlayerBase extends Module {
 		if ( ! ctx || ! comp || ! src )
 			return;
 
-		if ( wanted ) {
-			src.disconnect(ctx.destination);
-			src.connect(comp);
-			comp.connect(ctx.destination);
-		} else {
-			src.disconnect(comp);
-			comp.disconnect(ctx.destination);
-			src.connect(ctx.destination);
+		if ( want_gain && ! gain ) {
+			gain = video._ffz_gain = ctx.createGain();
+			let value = video._ffz_gain_value;
+			if ( value == null )
+				value = this.settings.get('player.gain.default');
+
+			gain.gain.value = value;
+			comp.connect(gain);
+
+			if ( compressed ) {
+				comp.disconnect(ctx.destination);
+				gain.connect(ctx.destination);
+			}
+
+		} else if ( ! want_gain && gain ) {
+			comp.disconnect(gain);
+			if ( compressed ) {
+				gain.disconnect(ctx.destination);
+				comp.connect(ctx.destination);
+			}
+
+			gain = video._ffz_gain = null;
 		}
+
+		if ( wanted != compressed ) {
+			if ( wanted ) {
+				src.disconnect(ctx.destination);
+				src.connect(comp);
+				if ( gain ) {
+					gain.connect(ctx.destination);
+					if ( this.settings.get('player.gain.no-volume') ) {
+						video._ffz_pregain_volume = core.getVolume();
+						core._ffz_setVolume(1);
+						core.setVolume = core._ffz_fakeVolume;
+					}
+
+				} else
+					comp.connect(ctx.destination);
+			} else {
+				src.disconnect(comp);
+				if ( gain ) {
+					gain.disconnect(ctx.destination);
+					if ( video._ffz_pregain_volume != null ) {
+						core._ffz_setVolume(video._ffz_pregain_volume);
+						core.setVolume = core._ffz_setVolume;
+						video._ffz_pregain_volume = null;
+					}
+
+				} else
+					comp.disconnect(ctx.destination);
+				src.connect(ctx.destination);
+			}
+		}
+
+		if ( inst.props.containerRef )
+			inst.props.containerRef.dataset.compressed = wanted;
 
 		video._ffz_compressed = wanted;
 		this.addCompressorButton(inst);
+		this.addGainSlider(inst);
+	}
+
+	updateGainVolume(inst) {
+		const player = inst.props.mediaPlayerInstance,
+			core = player.core || player,
+			video = core?.mediaSinkManager?.video;
+
+		if ( ! video || ! video._ffz_compressed )
+			return;
+
+		const setting = this.settings.get('player.gain.no-volume');
+
+		if ( setting && video._ffz_pregain_volume == null ) {
+			video._ffz_pregain_volume = core.getVolume();
+			core._ffz_setVolume(1);
+			core.setVolume = core._ffz_fakeVolume;
+
+		} else if ( ! setting && video._ffz_pregain_volume != null ) {
+			core._ffz_setVolume(video._ffz_pregain_volume);
+			core.setVolume = core._ffz_setVolume;
+			video._ffz_pregain_volume = null;
+		}
 	}
 
 	canCompress(inst) { // eslint-disable-line class-methods-use-this
@@ -1079,10 +1481,45 @@ export default class PlayerBase extends Module {
 			src.connect(ctx.destination);
 
 			comp = video._ffz_compressor = ctx.createDynamicsCompressor();
+
+			if ( this.settings.get('player.gain.enable') ) {
+				const gain = video._ffz_gain = ctx.createGain();
+				let value = video._ffz_gain_value;
+				if ( value == null )
+					value = this.settings.get('player.gain.default');
+				gain.gain.value = value;
+				comp.connect(gain);
+			}
+
 			video._ffz_compressed = false;
 		}
 
 		this.updateCompressor(null, comp);
+	}
+
+	updateGains() {
+		for(const inst of this.Player.instances)
+			this.updateGain(inst);
+	}
+
+	updateGain(inst, gain, video, update_gui = true) {
+		if ( ! video )
+			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
+				inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+
+		if ( gain == null )
+			gain = video?._ffz_gain;
+
+		if ( ! video || ! gain )
+			return;
+
+		let value = video._ffz_gain_value;
+		if ( value == null )
+			value = this.settings.get('player.gain.default');
+
+		gain.gain.value = value;
+		if ( update_gui )
+			this.addGainSlider(inst);
 	}
 
 	updateCompressors() {
@@ -1415,20 +1852,26 @@ export default class PlayerBase extends Module {
 		const duration = player.getDuration?.() ?? Infinity;
 		let position = -1;
 
+		const core = player.core || player;
+		if ( core._ffz_setVolume )
+			core.setVolume = core._ffz_setVolume;
+
 		if ( isFinite(duration) && ! isNaN(duration) && duration > 0 )
 			position = player.getPosition();
 
 		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
 			const new_vid = createElement('video'),
-				vol = video?.volume ?? player.getVolume(),
+				vol = video?._ffz_pregain_volume ?? video?.volume ?? player.getVolume(),
 				muted = player.isMuted();
 
+			new_vid._ffz_gain_value = video._ffz_gain_value;
 			new_vid._ffz_state = video._ffz_state;
 			new_vid._ffz_toggled = video._ffz_toggled;
 			new_vid._ffz_maybe_compress = true;
 			new_vid.volume = muted ? 0 : vol;
 			new_vid.playsInline = true;
+
 			this.installPlaybackRate(new_vid);
 			video.replaceWith(new_vid);
 			player.attachHTMLVideoElement(new_vid);

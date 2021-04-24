@@ -848,6 +848,9 @@ export default class MainMenu extends Module {
 
 			deleteProfile: profile => settings.deleteProfile(profile),
 
+			getProcessor: key => settings.getProcessor(key),
+			getValidator: key => settings.getValidator(key),
+
 			getFFZ: () => t.resolve('core'),
 
 			provider: {
@@ -927,7 +930,7 @@ export default class MainMenu extends Module {
 				},
 
 				_context_changed() {
-					this.context = deep_copy(context._context);
+					this.context = deep_copy(context.__context);
 					const profiles = context.manager.__profiles,
 						ids = this.profiles = context.__profiles.map(profile => profile.id);
 

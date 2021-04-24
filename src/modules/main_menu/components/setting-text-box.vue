@@ -15,6 +15,7 @@
 				:type="type"
 				:placeholder="placeholder"
 				:value="value"
+				:class="{'ffz-input--error': ! isValid}"
 				class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 tw-mg-05 ffz-input"
 				@change="onChange"
 			>

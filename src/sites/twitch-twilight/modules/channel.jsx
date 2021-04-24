@@ -513,7 +513,7 @@ export default class Channel extends Module {
 		while(node != null && channel == null && j < 10) {
 			let state = node?.memoizedState;
 			i=0;
-			while(state != null && channel == null && i < 25) {
+			while(state != null && channel == null && i < 50) {
 				state = state?.next;
 				channel = state?.memoizedState?.current?.previousData?.result?.data?.userOrError;
 				i++;

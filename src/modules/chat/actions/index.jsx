@@ -33,13 +33,8 @@ export default class Actions extends Module {
 				title: 'Action Size',
 				description: "How tall actions should be, in pixels. This may be affected by your browser's zoom and font size settings.",
 				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return 16;
-
-					return val;
-				}
+				process: 'to_int',
+				bounds: [1]
 			}
 		});
 

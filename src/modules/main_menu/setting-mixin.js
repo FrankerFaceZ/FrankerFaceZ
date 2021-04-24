@@ -93,10 +93,7 @@ export default {
 		},
 
 		isValid() {
-			if ( typeof this.item.validator === 'function' )
-				return this.item.validator(this.value, this);
-
-			return true;
+			return this.isDefault || this.validate(this.value);
 		},
 
 		sourceOrder() {
@@ -195,9 +192,34 @@ export default {
 			}, 0);
 		},
 
+		validate(value) {
+			let validate = this.item.validator;
+			if ( ! validate && typeof this.item.process === 'string' )
+				validate = this.context.getValidator(`process_${this.item.process}`);
+			if ( validate ) {
+				if ( typeof validate !== 'function' )
+					validate = this.context.getValidator(validate);
+				if ( typeof validate === 'function' )
+					return validate(value, this.item, this);
+				else
+					throw new Error(`Invalid Validator for ${this.item.setting}`);
+			}
+
+			return true;
+		},
+
 		set(value) {
-			if ( this.item.process )
-				value = this.item.process(value);
+			// TODO: Run validation.
+
+			let process = this.item.process;
+			if ( process ) {
+				if ( typeof process !== 'function' )
+					process = this.context.getProcessor(process);
+				if ( typeof process === 'function' )
+					value = process(value, this.default_value, this.item, this);
+				else
+					throw new Error(`Invalid processor for ${this.item.setting}`);
+			}
 
 			this.profile.set(this.item.setting, value);
 

@@ -60,13 +60,8 @@ export default class Metadata extends Module {
 				description: 'When the current stream delay exceeds this number of seconds, display the stream delay in a warning color to draw attention to the large delay. Set to zero to disable.',
 
 				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val < 0 )
-						return 0;
-
-					return val;
-				},
+				process: 'to_float',
+				bounds: [0, true]
 			}
 		});
 

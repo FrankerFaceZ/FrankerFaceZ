@@ -5,32 +5,10 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import {has} from 'utilities/object';
+import {isValidShortcut, has} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
 
 const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
-
-// TODO: Move this into its own file.
-const BAD_SHORTCUTS = [
-	'f',
-	'space',
-	'k',
-	'shift+up',
-	'shift+down',
-	'esc',
-	'm',
-	'?',
-	'alt+t',
-	'alt+x'
-];
-
-function isValidShortcut(key) {
-	if ( ! key )
-		return false;
-
-	key = key.toLowerCase().trim();
-	return ! BAD_SHORTCUTS.includes(key);
-}
 
 /**
  * Instances of SettingsProfile are used for getting and setting raw settings

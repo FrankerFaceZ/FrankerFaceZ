@@ -19,6 +19,20 @@ export const LV_SERVER = 'https://cbenni.com/api';
 export const LV_SOCKET_SERVER = 'wss://cbenni.com/socket.io/';
 
 
+export const BAD_HOTKEYS = [
+	'f',
+	'space',
+	'k',
+	'shift+up',
+	'shift+down',
+	'esc',
+	'm',
+	'?',
+	'alt+t',
+	'alt+x'
+];
+
+
 export const KEYS = {
 	Tab: 9,
 	Enter: 13,

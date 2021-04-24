@@ -143,13 +143,8 @@ export default class Chat extends Module {
 				title: 'Timestamp Font Size',
 				description: 'How large should timestamps be, in pixels. Defaults to Font Size if not set.',
 				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return null;
-
-					return val;
-				}
+				process: 'to_int',
+				bounds: [1]
 			}
 		});
 
@@ -160,13 +155,8 @@ export default class Chat extends Module {
 				title: 'Font Size',
 				description: "How large should text in chat be, in pixels. This may be affected by your browser's zoom and font size settings.",
 				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val <= 0 )
-						return 13;
-
-					return val;
-				}
+				process: 'to_int',
+				bounds: [1]
 			}
 		});
 
@@ -252,13 +242,8 @@ export default class Chat extends Module {
 				title: 'Scrollback Length',
 				description: 'Keep up to this many lines in chat. Setting this too high will create lag.',
 				component: 'setting-text-box',
-				process(val) {
-					val = parseInt(val, 10);
-					if ( isNaN(val) || ! isFinite(val) || val < 1 )
-						val = 150;
-
-					return val;
-				}
+				process: 'to_int',
+				bounds: [1]
 			}
 		});
 
@@ -944,10 +929,7 @@ export default class Chat extends Module {
 				description: 'Set the minimum contrast ratio used by Luma adjustments when determining readability.',
 
 				component: 'setting-text-box',
-
-				process(val) {
-					return parseFloat(val)
-				}
+				process: 'to_float'
 			}
 		});
 

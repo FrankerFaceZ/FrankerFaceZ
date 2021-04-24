@@ -1,6 +1,16 @@
 'use strict';
 
+import {BAD_HOTKEYS} from 'utilities/constants';
+
 const HOP = Object.prototype.hasOwnProperty;
+
+export function isValidShortcut(key) {
+	if ( ! key )
+		return false;
+
+	key = key.toLowerCase().trim();
+	return ! BAD_HOTKEYS.includes(key);
+}
 
 // Source: https://gist.github.com/jed/982883 (WTFPL)
 export function generateUUID(input) {
