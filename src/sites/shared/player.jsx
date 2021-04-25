@@ -877,36 +877,26 @@ export default class PlayerBase extends Module {
 				gain_scroll = t.settings.get('player.gain.scroll'),
 
 				matches_gain = gain_scroll && matchesEvent(gain_scroll, event, this.ffz_rmb),
-				matches_vol = ! matches_gain && vol_scroll && matchesEvent(vol_scroll, event, this.ffz_rmb);
+				matches_vol = vol_scroll && matchesEvent(vol_scroll, event, this.ffz_rmb);
 
 			if ( ! matches_gain && ! matches_vol )
 				return;
 
 			const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
 				player = this.props?.mediaPlayerInstance,
-				video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video;
+				video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video,
+				has_gain = video?._ffz_compressed && video?._ffz_gain != null,
+				doing_gain = has_gain && matches_gain;
 
-			if ( ! player?.getVolume || (matches_gain && ! video) )
+			if ( ! player?.getVolume )
 				return;
 
-			if ( matches_gain ? wantsRMB(gain_scroll) : wantsRMB(vol_scroll) )
+			if ( doing_gain ? wantsRMB(gain_scroll) : wantsRMB(vol_scroll) )
 				this.ffz_scrolled = true;
 
 			const amount = t.settings.get('player.volume-scroll-steps');
 
-			if ( matches_vol && ! (video._ffz_compressed && t.settings.get('player.gain.no-volume')) ) {
-				const old_volume = video?.volume ?? player.getVolume(),
-					volume = Math.max(0, Math.min(1, old_volume + (delta > 0 ? amount : -amount)));
-
-				player.setVolume(volume);
-				localStorage.volume = volume;
-
-				if ( volume !== 0 ) {
-					player.setMuted(false);
-					localStorage.setItem('video-muted', JSON.stringify({default: false}));
-				}
-
-			} else if ( matches_gain ) {
+			if ( doing_gain ) {
 				let value = video._ffz_gain_value;
 				if ( value == null )
 					value = t.settings.get('player.gain.default');
@@ -926,6 +916,18 @@ export default class PlayerBase extends Module {
 
 				video._ffz_gain_value = value;
 				t.updateGain(this);
+
+			} else if ( matches_vol && ! (video._ffz_compressed && t.settings.get('player.gain.no-volume')) ) {
+				const old_volume = video?.volume ?? player.getVolume(),
+					volume = Math.max(0, Math.min(1, old_volume + (delta > 0 ? amount : -amount)));
+
+				player.setVolume(volume);
+				localStorage.volume = volume;
+
+				if ( volume !== 0 ) {
+					player.setMuted(false);
+					localStorage.setItem('video-muted', JSON.stringify({default: false}));
+				}
 			}
 
 			event.preventDefault();

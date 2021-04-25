@@ -133,6 +133,9 @@ export function generateBadgeCSS(badge, version, data, style, is_dark, badge_ver
 		if ( data.urls && scale === 1 ) {
 			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[2] ? `, url("${data.urls[2]}") 2x` : ''}${data.urls[4] ? `, url("${data.urls[4]}") 4x` : ''})`
 
+		} else if ( data.urls && scale === 2 ) {
+			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[4] ? `, url("${data.urls[4]}") 2x` : ''})`;
+
 		} else if ( ! svg && scale < 4 ) {
 			if ( scale === 1 )
 				image_set = `${WEBKIT}image-set(${image} 1x, url("${base_image}2${trans ? '_trans' : ''}.png") 2x, url("${base_image}4${trans ? '_trans' : ''}.png") 4x)`;
