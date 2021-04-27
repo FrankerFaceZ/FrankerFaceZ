@@ -238,6 +238,7 @@ export default class Input extends Module {
 		this.CommandSuggestions.on('mount', this.overrideCommandMatcher, this);
 
 		this.chat.context.on('changed:chat.emotes.animated', this.uncacheTabCompletion, this);
+		this.chat.context.on('changed:chat.emotes.enabled', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-set-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-favorite', this.uncacheTabCompletion, this);
@@ -500,10 +501,11 @@ export default class Input extends Module {
 		}
 
 		inst.getMatchedEmotes = function(input) {
+			const setting = t.chat.context.get('chat.emotes.enabled');
 			const limitResults = t.chat.context.get('chat.tab-complete.limit-results');
-			let results = t.getTwitchEmoteSuggestions(input, this);
+			let results = setting ? t.getTwitchEmoteSuggestions(input, this) : [];
 
-			if ( t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
+			if ( setting > 1 && t.chat.context.get('chat.tab-complete.ffz-emotes') ) {
 				const ffz_emotes = t.getEmoteSuggestions(input, this);
 				if ( Array.isArray(ffz_emotes) && ffz_emotes.length )
 					results = results.concat(ffz_emotes);

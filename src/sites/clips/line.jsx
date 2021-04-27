@@ -33,6 +33,7 @@ export default class Line extends Module {
 	}
 
 	onEnable() {
+		this.chat.context.on('changed:chat.emotes.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.2x', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.animated', this.updateLines, this);
 		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);

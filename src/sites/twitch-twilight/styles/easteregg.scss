@@ -1,0 +1,26 @@
+.tw-animated-glitch-logo {
+	&:hover {
+		animation: ffz-spinlogo 0.75s ease-in 2s 1 forwards;
+	}
+}
+
+@keyframes ffz-spinlogo {
+	0% {
+		transform: none;
+	}
+	70% {
+		transform: rotate(200deg);
+	}
+	85% {
+		transform: rotate(160deg);
+	}
+	95% {
+		transform: rotate(185deg);
+	}
+	97% {
+		transform: rotate(175deg);
+	}
+	100% {
+		transform: rotate(180deg);
+	}
+}

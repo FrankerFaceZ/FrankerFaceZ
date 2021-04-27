@@ -13,7 +13,7 @@ import Twilight from 'site';
 import Module from 'utilities/module';
 
 import SUB_STATUS from './sub_status.gql';
-import Tooltip from 'src/utilities/tooltip';
+//import Tooltip from 'src/utilities/tooltip';
 
 const TIERS = {
 	1000: 'Tier 1',
@@ -363,6 +363,7 @@ export default class EmoteMenu extends Module {
 				inst.rebuildData();
 		}
 
+		this.chat.context.on('changed:chat.emotes.enabled', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.modifiers', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.show-emoji', rebuild);
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
@@ -2058,36 +2059,38 @@ export default class EmoteMenu extends Module {
 
 
 				// Finally, emotes added by FrankerFaceZ.
-				const me = t.site.getUser();
-				if ( me ) {
-					const ffz_room = t.emotes.getRoomSetsWithSources(me.id, me.login, props.channel_id, null),
-						ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login),
-						seen_favorites = {};
+				if ( t.chat.context.get('chat.emotes.enabled') > 1 ) {
+					const me = t.site.getUser();
+					if ( me ) {
+						const ffz_room = t.emotes.getRoomSetsWithSources(me.id, me.login, props.channel_id, null),
+							ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login),
+							seen_favorites = {};
 
-					let grouped_sets = {};
+						let grouped_sets = {};
 
-					for(const [emote_set, provider] of ffz_room) {
-						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
-						if ( section ) {
-							section.emotes.sort(sort_emotes);
+						for(const [emote_set, provider] of ffz_room) {
+							const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
+							if ( section ) {
+								section.emotes.sort(sort_emotes);
 
-							if ( ! channel.includes(section) )
-								channel.push(section);
+								if ( ! channel.includes(section) )
+									channel.push(section);
+							}
 						}
-					}
 
-					grouped_sets = {};
+						grouped_sets = {};
 
-					for(const [emote_set, provider] of ffz_global) {
-						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
-						if ( section ) {
-							section.emotes.sort(sort_emotes);
+						for(const [emote_set, provider] of ffz_global) {
+							const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
+							if ( section ) {
+								section.emotes.sort(sort_emotes);
 
-							if ( ! all.includes(section) )
-								all.push(section);
+								if ( ! all.includes(section) )
+									all.push(section);
 
-							if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
-								channel.push(section);
+								if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
+									channel.push(section);
+							}
 						}
 					}
 				}

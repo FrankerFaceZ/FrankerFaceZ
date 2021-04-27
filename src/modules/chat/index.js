@@ -964,6 +964,7 @@ export default class Chat extends Module {
 			},
 			ui: {
 				path: 'Chat > Appearance >> Emotes',
+				sort: -50,
 				title: 'Animated Emotes',
 
 				default(ctx) {

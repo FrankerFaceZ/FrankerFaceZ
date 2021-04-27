@@ -86,6 +86,23 @@ export default class Emotes extends Module {
 		this._set_refs = {};
 		this._set_timers = {};
 
+		this.settings.add('chat.emotes.enabled', {
+			default: 2,
+			ui: {
+				path: 'Chat > Appearance >> Emotes',
+				title: 'Display Emotes',
+				sort: -100,
+				force_seen: true,
+				description: 'If you do not wish to see emotes, you can disable them here.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Twitch Only'},
+					{value: 2, title: 'Enabled'}
+				]
+			}
+		});
+
 		this.settings.add('chat.emotes.2x', {
 			default: false,
 			ui: {

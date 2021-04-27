@@ -331,7 +331,7 @@ export default class Directory extends SiteModule {
 		if ( ! props?.channelLogin )
 			return;
 
-		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category,
+		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,
 			tags = props.tagListProps?.tags;
 
 		let bad_tag = false;

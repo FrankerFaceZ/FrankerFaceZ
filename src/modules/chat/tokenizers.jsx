@@ -1437,6 +1437,9 @@ export const AddonEmotes = {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
+		if ( this.context.get('chat.emotes.enabled') !== 2 )
+			return tokens;
+
 		const emotes = this.emotes.getEmotes(
 			msg.user.id,
 			msg.user.login,
@@ -1616,6 +1619,9 @@ export const TwitchEmotes = {
 
 	process(tokens, msg) {
 		if ( ! msg.ffz_emotes )
+			return tokens;
+
+		if ( this.context.get('chat.emotes.enabled') < 1 )
 			return tokens;
 
 		const data = msg.ffz_emotes,
