@@ -875,6 +875,7 @@ export default class PlayerBase extends Module {
 		cls.prototype.ffzScrollHandler = function(event) {
 			const vol_scroll = t.settings.get('player.volume-scroll'),
 				gain_scroll = t.settings.get('player.gain.scroll'),
+				no_vol = t.settings.get('player.gain.no-volume'),
 
 				matches_gain = gain_scroll && matchesEvent(gain_scroll, event, this.ffz_rmb),
 				matches_vol = vol_scroll && matchesEvent(vol_scroll, event, this.ffz_rmb);
@@ -915,9 +916,15 @@ export default class PlayerBase extends Module {
 					value = max;
 
 				video._ffz_gain_value = value;
+
+				if ( no_vol && value !== 0 ) {
+					player.setMuted(false);
+					localStorage.setItem('video-muted', JSON.stringify({default: false}));
+				}
+
 				t.updateGain(this);
 
-			} else if ( matches_vol && ! (video._ffz_compressed && t.settings.get('player.gain.no-volume')) ) {
+			} else if ( matches_vol && ! (video._ffz_compressed && no_vol) ) {
 				const old_volume = video?.volume ?? player.getVolume(),
 					volume = Math.max(0, Math.min(1, old_volume + (delta > 0 ? amount : -amount)));
 
@@ -1135,7 +1142,7 @@ export default class PlayerBase extends Module {
 		if ( min >= max || max <= min )
 			gain = null;
 
-		let tip, input, extra, fill, cont = container.querySelector('.ffz--player-gain');
+		let tip, tipcont, input, extra, fill, cont = container.querySelector('.ffz--player-gain');
 		if ( ! gain ) {
 			if ( cont )
 				cont.remove();
@@ -1153,6 +1160,17 @@ export default class PlayerBase extends Module {
 					value = min;
 				if ( value > max )
 					value = max;
+
+				if ( value == video._ffz_gain_value )
+					return;
+
+				const player = inst.props.mediaPlayerInstance,
+					core = player.core || player;
+
+				if ( value > 0 && this.settings.get('player.gain.no-volume') && core?.isMuted?.() ) {
+					core.setMuted(false);
+					localStorage.setItem('video-muted', JSON.stringify({default: false}));
+				}
 
 				video._ffz_gain_value = value;
 				gain.gain.value = value;
@@ -1187,12 +1205,12 @@ export default class PlayerBase extends Module {
 						</div>
 					</div>
 				</div>
-				<div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" role="tooltip">
+				{tipcont = (<div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" role="tooltip">
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="tw-regular ffz--p-value" />)}
 					</div>
-				</div>
+				</div>)}
 			</div>);
 
 			/*input.addEventListener('contextmenu', e => {
@@ -1208,6 +1226,7 @@ export default class PlayerBase extends Module {
 		else {
 			input = cont.querySelector('input');
 			fill = cont.querySelector('.ffz--gain-value');
+			tipcont = cont.querySelector('.tw-tooltip');
 			tip = cont.querySelector('.tw-tooltip .ffz--p-tip');
 			extra = cont.querySelector('.tw-tooltip .ffz--p-value');
 		}
