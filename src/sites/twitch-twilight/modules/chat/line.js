@@ -60,6 +60,7 @@ export default class ChatLine extends Module {
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('i18n:update', this.updateLines, this);
 
+		this.chat.context.on('changed:chat.me-style', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.2x', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.animated', this.updateLines, this);
@@ -189,6 +190,9 @@ export default class ChatLine extends Module {
 					const msg = t.chat.standardizeWhisper(this.props.message),
 
 						is_action = msg.is_action,
+						action_style = is_action ? t.chat.context.get('chat.me-style') : 0,
+						action_italic = action_style >= 2,
+						action_color = action_style === 1 || action_style === 3,
 						user = msg.user,
 						raw_color = t.overrides.getColor(user.id) || user.color,
 						color = t.parent.colors.process(raw_color),
@@ -208,9 +212,9 @@ export default class ChatLine extends Module {
 							}, override_name || user.displayName),
 							e('span', null, is_action ? ' ' : ': '),
 							e('span', {
-								className: 'message',
+								className: `message${action_italic ? ' chat-line__message-body--italicized' : ''}`,
 								style: {
-									color: is_action && color
+									color: action_color && color
 								}
 							}, contents)
 						])
@@ -345,6 +349,9 @@ export default class ChatLine extends Module {
 					msg = t.chat.standardizeMessage(this.props.message),
 					reply_tokens = (reply_mode === 2 || (reply_mode === 1 && this.props.repliesAppearancePreference && this.props.repliesAppearancePreference !== 'expanded')) ? ( msg.ffz_reply = msg.ffz_reply || t.chat.tokenizeReply(this.props.reply) ) : null,
 					is_action = msg.messageType === types.Action,
+					action_style = is_action ? t.chat.context.get('chat.me-style') : 0,
+					action_italic = action_style >= 2,
+					action_color = action_style === 1 || action_style === 3,
 
 					user = msg.user,
 					raw_color = t.overrides.getColor(user.id) || user.color,
@@ -543,8 +550,8 @@ other {# messages were deleted by a moderator.}
 							: null,
 						show ?
 							e('span', {
-								className:`message ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
-								style: is_action ? { color } : null
+								className:`message ${action_italic ? 'chat-line__message-body--italicized' : ''} ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
+								style: action_color ? { color } : null
 							}, t.chat.renderTokens(tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null))
 							:
 							e('span', {

@@ -933,6 +933,23 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.me-style', {
+			default: 2,
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Action Style',
+				description: 'When someone uses `/me`, the message will be rendered in this style.',
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'No Style'},
+					{value: 1, title: 'Colorized (Old Style)'},
+					{value: 2, title: 'Italic (New Style)'},
+					{value: 3, title: 'Colorized Italic'}
+				]
+			}
+		});
+
 		this.settings.add('chat.bits.stack', {
 			default: 0,
 			ui: {
