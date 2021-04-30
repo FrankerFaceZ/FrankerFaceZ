@@ -4,6 +4,7 @@
 			:term="default_term"
 			:badges="data"
 			:colored="item.colored"
+			:priority="item.priority"
 			:removable="item.removable"
 			:adding="true"
 			@save="new_term"
@@ -18,6 +19,7 @@
 				:term="term.v"
 				:badges="data"
 				:colored="item.colored"
+				:priority="item.priority"
 				:removable="item.removable"
 				@remove="remove(term)"
 				@save="save(term, $event)"
@@ -29,7 +31,7 @@
 <script>
 
 import SettingMixin from '../setting-mixin';
-import {deep_copy} from 'utilities/object';
+import {deep_copy, has} from 'utilities/object';
 
 let last_id = 0;
 
@@ -42,6 +44,7 @@ export default {
 			default_term: {
 				v: '',
 				c: '',
+				p: 0,
 				remove: false
 			}
 		}
@@ -60,9 +63,31 @@ export default {
 			const out = [];
 
 			if ( Array.isArray(this.val) )
-				for(const term of this.val)
+				for(const term of this.val) {
+					if ( term && term.v ) {
+						if ( ! has(term.v, 'p') )
+							term.v.p = 0;
+					}
+
 					if ( term && term.t !== 'inherit' )
 						out.push(term);
+				}
+
+			if ( this.item.priority || this.item.colored ) {
+				out.sort((a,b) => {
+					if ( a.v && b.v ) {
+						if ( this.item.priority ) {
+							if ( a.v.p < b.v.p ) return 1;
+							if ( a.v.p > b.v.p ) return -1;
+						}
+						if ( this.item.colored ) {
+							if ( ! a.v.c && b.v.c ) return 1;
+							if ( a.v.c && ! b.v.c ) return -1;
+						}
+					}
+					return 0;
+				});
+			}
 
 			return out;
 		},

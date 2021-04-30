@@ -6,6 +6,7 @@
 			:highlight="item.highlight"
 			:words="item.words"
 			:removable="item.removable"
+			:priority="item.priority"
 			:adding="true"
 			@save="new_term"
 		/>
@@ -21,6 +22,7 @@
 				:highlight="item.highlight"
 				:words="item.words"
 				:removable="item.removable"
+				:priority="item.priority"
 				@remove="remove(term)"
 				@save="save(term, $event)"
 			/>
@@ -48,6 +50,7 @@ export default {
 				s: false,
 				h: false,
 				w: true,
+				p: 0,
 				remove: false
 			}
 		}
@@ -74,6 +77,9 @@ export default {
 						if ( ! has(term.v, 'h') )
 							term.v.h = true;
 
+						if ( ! has(term.v, 'p') )
+							term.v.p = 0;
+
 						if ( term.v.t === 'raw' )
 							term.v.t = 'regex';
 					}
@@ -81,6 +87,32 @@ export default {
 					if ( term && term.t !== 'inherit' )
 						out.push(term);
 				}
+
+			out.sort((a,b) => {
+				if ( a.v && b.v ) {
+					if ( this.item.removable ) {
+						if ( ! a.v.remove && b.v.remove ) return 1;
+						if ( a.v.remove && ! b.v.remove ) return -1;
+					}
+					if ( this.item.priority ) {
+						if ( a.v.p < b.v.p ) return 1;
+						if ( a.v.p > b.v.p ) return -1;
+					}
+					if ( this.item.colored ) {
+						if ( ! a.v.c && b.v.c ) return 1;
+						if ( a.v.c && ! b.v.c ) return -1;
+					}
+					if ( this.item.highlight ) {
+						if ( ! a.v.h && b.v.h ) return -1;
+						if ( a.v.h && ! b.v.h ) return 1;
+					}
+					if ( this.item.words ?? true ) {
+						if ( ! a.v.w && b.v.w ) return -1;
+						if ( a.v.w && ! b.v.w ) return 1;
+					}
+				}
+				return 0;
+			});
 
 			return out;
 		},

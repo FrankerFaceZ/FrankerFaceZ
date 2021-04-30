@@ -57,6 +57,24 @@
 				</select>
 			</div>
 			<div
+				v-if="priority"
+				:class="editing ? 'tw-mg-r-05' : 'tw-mg-x-05'"
+				class="tw-flex-shrink-0 tw-relative tw-tooltip__container"
+			>
+				<span v-if="! editing">{{ term.p }}</span>
+				<input
+					v-else
+					v-model.number="edit_data.p"
+					type="number"
+					step="1"
+					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-min-width-unset ffz-input tw-pd-x-1 tw-pd-y-05"
+					style="width: 5rem"
+				>
+				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					{{ t('settings.terms.priority.tip', 'Priority') }}
+				</div>
+			</div>
+			<div
 				v-if="editing || display.s"
 				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
 			>
@@ -243,6 +261,10 @@ export default {
 			type: Boolean,
 			default: false
 		},
+		priority: {
+			type: Boolean,
+			default: false
+		},
 		words: {
 			type: Boolean,
 			default: true
@@ -360,6 +382,13 @@ export default {
 		},
 
 		save() {
+			if ( this.priority && this.edit_data.p ) {
+				if ( typeof this.edit_data.p === 'number' )
+					this.edit_data.p = Math.floor(this.edit_data.p);
+				else
+					this.edit_data.p = 0;
+			}
+
 			this.$emit('save', this.edit_data);
 			this.cancel();
 		}

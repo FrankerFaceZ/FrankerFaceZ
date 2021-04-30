@@ -82,12 +82,13 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
 		this.chat.context.on('changed:chat.timestamp-format', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.highlight-basic-terms--color-regex', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.highlight-basic-users--color-regex', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.highlight-basic-badges--colors', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.highlight-basic-blocked--regex', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.highlight-basic-users-blocked--regex', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.highlight-basic-badges-blocked--list', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.mention-priority', this.updateLines, this);
+		this.chat.context.on('changed:__filter:highlight-terms', this.updateLines, this);
+		this.chat.context.on('changed:__filter:highlight-users', this.updateLines, this);
+		this.chat.context.on('changed:__filter:highlight-badges', this.updateLines, this);
+		this.chat.context.on('changed:__filter:block-terms', this.updateLines, this);
+		this.chat.context.on('changed:__filter:block-users', this.updateLines, this);
+		this.chat.context.on('changed:__filter:block-badges', this.updateLines, this);
 
 		this.on('chat:get-tab-commands', e => {
 			if ( this.experiments.getTwitchAssignmentByName('chat_replies') === 'control' )
@@ -197,7 +198,7 @@ export default class ChatLine extends Module {
 						raw_color = t.overrides.getColor(user.id) || user.color,
 						color = t.parent.colors.process(raw_color),
 
-						tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null, null),
+						tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, null),
 						contents = t.chat.renderTokens(tokens, e),
 
 						override_name = t.overrides.getName(user.id);
@@ -438,7 +439,7 @@ other {# messages were deleted by a moderator.}
 				}
 
 				if ( ! room_id && room ) {
-					const r = t.chat.getRoom(null, room_id, true);
+					const r = t.chat.getRoom(null, room, true);
 					if ( r && r.id )
 						room_id = msg.roomId = r.id;
 				}
@@ -460,7 +461,7 @@ other {# messages were deleted by a moderator.}
 					u.can_reply = reply_mode === 2 && can_reply;
 				}
 
-				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
+				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
@@ -973,7 +974,7 @@ other {# messages were deleted by a moderator.}
 				const u = t.site.getUser(),
 					r = {id: this.props.channelID, login: room},
 
-					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u, r),
+					tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
 					bg_css = msg.mentioned && msg.mention_color ? t.parent.inverse_colors.process(msg.mention_color) : null;
 
@@ -1033,7 +1034,7 @@ other {# messages were deleted by a moderator.}
 			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
 				msg.ffz_tokens = null;
 				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = null;
+				msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
 				inst.forceUpdate();
 			}
 		}
@@ -1060,7 +1061,7 @@ other {# messages were deleted by a moderator.}
 			if ( msg ) {
 				msg.ffz_tokens = null;
 				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = null;
+				msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
 			}
 		}
 
@@ -1069,7 +1070,7 @@ other {# messages were deleted by a moderator.}
 			if ( msg ) {
 				msg.ffz_tokens = null;
 				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = null;
+				msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
 			}
 		}
 

@@ -346,7 +346,8 @@ export const Mentions = {
 		if ( ! tokens || ! tokens.length )
 			return tokens;
 
-		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own');
+		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
+			priority = this.context.get('chat.filtering.mention-priority');
 
 		let regex, login, display, mentionable = false;
 		if ( user && user.login && ! can_highlight_user ) {
@@ -408,6 +409,10 @@ export const Mentions = {
 					if ( mentioned ) {
 						(msg.highlights = (msg.highlights || new Set())).add('mention');
 						msg.mentioned = true;
+						if ( msg.color_priority == null || priority > msg.color_priority ) {
+							msg.mention_color = null;
+							msg.color_priority = priority;
+						}
 					}
 
 					// Push the remaining text from the token.
@@ -438,17 +443,20 @@ export const UserHighlights = {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const colors = this.context.get('chat.filtering.highlight-basic-users--color-regex');
-		if ( ! colors || ! colors.size )
+		const list = this.context.get('__filter:highlight-users');
+		if ( ! list || ! list.length )
 			return tokens;
 
 		const u = msg.user;
-		for(const [color, regex] of colors) {
+		for(const [priority, color, regex] of list) {
 			if ( regex.test(u.login) || regex.test(u.displayName) ) {
 				(msg.highlights = (msg.highlights || new Set())).add('user');
 				msg.mentioned = true;
 				if ( color ) {
-					msg.mention_color = color;
+					if ( msg.color_priority == null || priority > msg.color_priority ) {
+						msg.mention_color = color;
+						msg.color_priority = priority;
+					}
 					return tokens;
 				}
 			}
@@ -467,7 +475,7 @@ export const BlockedUsers = {
 			return tokens;
 
 		const u = msg.user,
-			regexes = this.context.get('chat.filtering.highlight-basic-users-blocked--regex');
+			regexes = this.context.get('__filter:block-users');
 		if ( ! regexes )
 			return tokens;
 
@@ -501,16 +509,16 @@ function getBadgeIDs(msg) {
 
 export const BadgeStuff = {
 	type: 'badge_stuff',
-	priority: 80,
+	priority: 97,
 
 	process(tokens, msg, user, haltable) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const colors = this.context.get('chat.filtering.highlight-basic-badges--colors'),
-			list = this.context.get('chat.filtering.highlight-basic-badges-blocked--list');
+		const highlights = this.context.get('__filter:highlight-badges'),
+			list = this.context.get('__filter:block-badges');
 
-		if ( ! colors && ! list )
+		if ( ! highlights && ! list )
 			return tokens;
 
 		const keys = getBadgeIDs(msg);
@@ -529,12 +537,15 @@ export const BadgeStuff = {
 			if ( list && ! msg.deleted && list[0].includes(badge) )
 				msg.deleted = true;
 
-			if ( colors && colors.has(badge) ) {
-				const color = colors.get(badge);
+			if ( highlights && highlights.has(badge) ) {
+				const details = highlights.get(badge);
 				(msg.highlights = (msg.highlights || new Set())).add('badge');
 				msg.mentioned = true;
-				if ( color ) {
-					msg.mention_color = color;
+				if ( details[1] ) {
+					if ( msg.color_priority == null || details[0] > msg.color_priority ) {
+						msg.mention_color = details[1];
+						msg.color_priority = details[0];
+					}
 					if ( ! list )
 						return tokens;
 				}
@@ -552,7 +563,7 @@ export const BadgeStuff = {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const list = this.context.get('chat.filtering.highlight-basic-badges-blocked--list');
+		const list = this.context.get('__filter:block-badges');
 		if ( ! list || (! list[0].length && ! list[1].length) )
 			return tokens;
 
@@ -594,12 +605,16 @@ export const CustomHighlights = {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const data = this.context.get('chat.filtering.highlight-basic-terms--color-regex');
+		const data = this.context.get('__filter:highlight-terms');
 		if ( ! data )
 			return tokens;
 
+		let had_match = false;
 		if ( data.non ) {
-			for(const [color, regexes] of data.non) {
+			for(const [priority, color, regexes] of data.non) {
+				if ( had_match && msg.color_priority != null && msg.color_priority > priority )
+					break;
+
 				let matched = false;
 				if ( regexes[0] ) {
 					regexes[0].lastIndex = 0;
@@ -613,8 +628,15 @@ export const CustomHighlights = {
 				if ( matched ) {
 					(msg.highlights = (msg.highlights || new Set())).add('term');
 					msg.mentioned = true;
-					msg.mention_color = color || msg.mention_color;
-					break;
+					had_match = true;
+					if ( color ) {
+						if ( msg.color_priority == null || priority > msg.color_priority ) {
+							msg.mention_color = color;
+							msg.color_priority = priority;
+						}
+
+						break;
+					}
 				}
 			}
 		}
@@ -622,7 +644,7 @@ export const CustomHighlights = {
 		if ( ! data.hl )
 			return tokens;
 
-		for(const [color, regexes] of data.hl) {
+		for(const [priority, color, regexes] of data.hl) {
 			const out = [];
 			for(const token of tokens) {
 				if ( token.type !== 'text' ) {
@@ -656,8 +678,10 @@ export const CustomHighlights = {
 
 					(msg.highlights = (msg.highlights || new Set())).add('term');
 					msg.mentioned = true;
-					if ( ! msg.mention_color )
+					if ( color && (msg.color_priority == null || priority > msg.color_priority) ) {
 						msg.mention_color = color;
+						msg.color_priority = priority;
+					}
 
 					out.push({
 						type: 'highlight',
@@ -767,7 +791,7 @@ export const BlockedTerms = {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
 			return tokens;
 
-		const regexes = this.context.get('chat.filtering.highlight-basic-blocked--regex');
+		const regexes = this.context.get('__filter:block-terms');
 		if ( ! regexes )
 			return tokens;
 
@@ -800,7 +824,7 @@ const AM_DESCRIPTIONS = {
 
 export const AutomoddedTerms = {
 	type: 'amterm',
-	priority: 99,
+	priority: 95,
 
 	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-automod-blocked.vue'),
 

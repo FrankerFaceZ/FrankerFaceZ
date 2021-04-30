@@ -354,6 +354,11 @@ export class FFZEvent {
 		Object.assign(this, data);
 	}
 
+	_reset() {
+		this.defaultPrevented = false;
+		this.propagationStopped = false;
+	}
+
 	stopPropagation() {
 		this.propagationStopped = true;
 	}

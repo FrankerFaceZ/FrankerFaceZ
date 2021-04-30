@@ -11,6 +11,25 @@ import {formatBitsConfig} from '../chat';
 
 import Module from 'utilities/module';
 
+const SUB_REGEX = /^([^\s]+) subscribed ([^.]+)\. They've subscribed for (\d+) months(?:[^!]+streak)?!/;
+const SUB_TIERS = {
+	1000: 1,
+	2000: 2,
+	3000: 3
+};
+
+function parseParamInt(param) {
+	try {
+		if ( /^[\d-]+$/.test(param) )
+			param = parseInt(param, 10);
+	} catch(err) { /* no-op */ }
+
+	if ( typeof param !== 'number' || isNaN(param) || ! isFinite(param) )
+		param = 0;
+
+	return param;
+}
+
 
 export default class VideoChatHook extends Module {
 	constructor(...args) {
@@ -212,6 +231,9 @@ export default class VideoChatHook extends Module {
 
 			cls.prototype.ffzRenderMessage = function(msg, reply) {
 				const is_action = msg.is_action,
+					action_style = is_action ? t.chat.context.get('chat.me-style') : 0,
+					action_italic = action_style >= 2,
+					action_color = action_style === 1 || action_style === 3,
 					user = msg.user,
 					color = t.site_chat.colors.process(user.color),
 
@@ -222,31 +244,99 @@ export default class VideoChatHook extends Module {
 					u.staff = u.roles && u.roles.isStaff;
 				}
 
+				let system_msg;
+
+				if ( msg.system_msg === true ) {
+					const params = msg.params || {},
+						msg_id = params['msg-id'];
+					if ( msg_id === 'resub' ) {
+						const setting = t.chat.context.get('chat.subs.show'),
+
+							raw_months = parseParamInt(params['msg-param-months']),
+							cumulative_months = parseParamInt(params['msg-param-cumulative-months']),
+							months = cumulative_months || raw_months;
+
+						t.log.info('resub-notice setting:', setting, 'months:', months, 'cumulative:', cumulative_months, 'raw:', raw_months);
+						t.log.info('-> params:', params);
+
+						if ( setting === 3 || (months > 1 && setting > 0) ) {
+							const share = parseParamInt(params['msg-param-should-share-streak']) === 1,
+								plan = params['msg-param-sub-plan'],
+								prime = plan === 'Prime',
+								tier = SUB_TIERS[plan] || 1;
+
+							t.log.info('-> share:', share, 'plan:', plan, 'tier:', tier);
+
+							system_msg = t.i18n.tList('chat.sub.main', '{user} subscribed {plan}. ', {
+								user: <span class="tw-c-text-base tw-strong">{user.displayName}</span>,
+								plan: prime ?
+									t.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
+									t.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier})
+							});
+
+							if ( share && raw_months > 1 )
+								system_msg.push(t.i18n.t(
+									'chat.sub.cumulative-months',
+									"They've subscribed for {cumulative,number} months, currently on a {streak,number} month streak!",
+									{
+										cumulative: cumulative_months,
+										streak: raw_months
+									}
+								));
+							else if ( months > 1 )
+								system_msg.push(t.i18n.t(
+									'chat.sub.months',
+									"They've subscribed for {count,number} months!",
+									{
+										count: months
+									}
+								));
+						}
+					}
+
+				} else if ( msg.system_msg )
+					system_msg = msg.system_msg;
+
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
-				return (<div class="tw-align-items-start tw-flex tw-flex-nowrap tw-c-text-base">
-					<div class="tw-flex-grow-1" data-room-id={msg.roomID} data-room={msg.roomLogin} data-user-id={user.id} data-user={user.login}>
-						<span class="chat-line__message--badges">{
-							t.chat.badges.render(msg, createElement)
-						}</span>
-						<a
-							class="video-chat__message-author notranslate"
-							data-test-selector="comment-author-selector"
-							href={`/${user.login}`}
-							rel="noopener noreferrer"
-							target="_blank"
-							style={{color}}
+				let out = (<div class="tw-flex-grow-1" data-room-id={msg.roomID} data-room={msg.roomLogin} data-user-id={user.id} data-user={user.login}>
+					<span class="chat-line__message--badges">{
+						t.chat.badges.render(msg, createElement)
+					}</span>
+					<a
+						class="video-chat__message-author notranslate"
+						data-test-selector="comment-author-selector"
+						href={`/${user.login}`}
+						rel="noopener noreferrer"
+						target="_blank"
+						style={{color}}
+					>
+						<span class="chat-author__display-name" data-a-target="chat-message-username" data-a-user={user.login} data-test-selector="message-username">{ user.displayName }</span>
+						{user.isIntl && <span class="chat-author__intl-login" data-test-selector="message-username-canonical"> ({ user.login})</span>}
+					</a>
+					<div data-test-selector="comment-message-selector" class="tw-inline video-chat__message">
+						<span>{is_action ? ' ' : ': '}</span>
+						<span
+							class={`message ${action_italic ? 'chat-line__message-body--italicized' : ''}`}
+							style={{color: action_color ? color : null}}
 						>
-							<span class="chat-author__display-name" data-a-target="chat-message-username" data-a-user={user.login} data-test-selector="message-username">{ user.displayName }</span>
-							{user.isIntl && <span class="chat-author__intl-login" data-test-selector="message-username-canonical"> ({ user.login})</span>}
-						</a>
-						<div data-test-selector="comment-message-selector" class="tw-inline video-chat__message">
-							<span>{is_action ? ' ' : ': '}</span>
-							<span class="message" style={{color: is_action ? color : null}}>{ t.chat.renderTokens(tokens, createElement) }</span>
-							{rich_content && createElement(FFZRichContent, rich_content)}
-						</div>
+							{ t.chat.renderTokens(tokens, createElement) }
+						</span>
+						{rich_content && createElement(FFZRichContent, rich_content)}
 					</div>
+				</div>);
+
+				if ( system_msg )
+					out = (<div class="tw-flex-grow-1">
+						<div class="tw-flex tw-c-text-alt-2">
+							<div>{system_msg}</div>
+						</div>
+						{out}
+					</div>);
+
+				return (<div class="tw-align-items-start tw-flex tw-flex-nowrap tw-c-text-base">
+					{ out }
 					{ reply ? (<t.MenuContainer
 						context={reply}
 						isCurrentUserModerator={this.props.isCurrentUserModerator}
@@ -412,12 +502,29 @@ export default class VideoChatHook extends Module {
 			is_action: comment.message.isAction,
 			more_replies: comment.moreReplies,
 			timestamp: comment.createdAt,
+			ffz_context: 'video',
 			is_sub: msg_id === 'sub' || msg_id === 'resub',
-			highlight: msg_id === 'highlighted-message'
+			highlight: msg_id === 'highlighted-message',
+			params
 		};
 
-		// TODO: We need to strip the sub message from chat messages
-		// because Twitch is dumb.
+		// We need to strip the sub message from chat messages
+		// because Twitch is dumb. This might need updating to
+		// handle system messages with different syntax.
+		if ( Array.isArray(out.messageParts) && out.messageParts.length && msg_id === 'resub' ) {
+			let content = out.messageParts[0].content;
+			if ( typeof content === 'string' ) {
+				const match = SUB_REGEX.exec(content);
+				if ( match ) {
+					content = content.slice(match[0].length).trimLeft();
+					if ( content.length ) {
+						out.messageParts[0].ffz_content = content;
+						out.system_msg = true;
+					}
+				}
+			}
+		}
+
 
 		this.chat.detokenizeMessage(out);
 

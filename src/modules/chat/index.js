@@ -24,6 +24,17 @@ import Actions from './actions';
 
 export const SEPARATORS = '[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]';
 
+function sortPriorityColorTerms(list) {
+	list.sort((a,b) => {
+		if ( a[0] < b[0] ) return 1;
+		if ( a[0] > b[0] ) return -1;
+		if ( ! a[1] && b[1] ) return 1;
+		if ( a[1] && ! b[1] ) return -1;
+		return 0;
+	});
+	return list;
+}
+
 function addSeparators(str) {
 	return `(^|.*?${SEPARATORS})(?:${str})(?=$|${SEPARATORS})`
 }
@@ -251,7 +262,8 @@ export default class Chat extends Module {
 			path: 'Chat > Filtering > Highlight',
 			sort: 1000,
 			component: 'setting-spacer',
-			top: '30rem'
+			top: '30rem',
+			force_seen: true
 		});
 
 		this.settings.add('chat.filtering.click-to-reveal', {
@@ -402,14 +414,15 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering > Highlight >> Users',
+				path: 'Chat > Filtering > Highlight @{"description": "These settings allow you to highlight messages in chat based on their contents. Setting priorities on rules allows you to determine which highlight color should be applied if a message matches multiple rules. Rules with a higher priority take priority over rules with lower priorities."} >> Users',
 				component: 'basic-terms',
 				colored: true,
-				words: false
+				words: false,
+				priority: true
 			}
 		});
 
-		this.settings.add('chat.filtering.highlight-basic-users--color-regex', {
+		this.settings.add('__filter:highlight-users', {
 			requires: ['chat.filtering.highlight-basic-users'],
 			equals: 'requirements',
 			process(ctx) {
@@ -417,10 +430,11 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
-				const colors = new Map;
+				const temp = new Map;
 
 				for(const item of val) {
 					const c = item.c || null,
+						p = item.p || 0,
 						t = item.t;
 
 					let v = item.v;
@@ -440,6 +454,12 @@ export default class Chat extends Module {
 						continue;
 					}
 
+					let colors = temp.get(p);
+					if ( ! colors ) {
+						colors = new Map;
+						temp.set(p, colors);
+					}
+
 					if ( colors.has(c) )
 						colors.get(c).push(v);
 					else {
@@ -447,11 +467,19 @@ export default class Chat extends Module {
 					}
 				}
 
-				for(const [key, list] of colors) {
-					colors.set(key, new RegExp(`^(?:${list.join('|')})$`, 'gi'));
+				const out = [];
+				for(const [priority, list] of temp) {
+					for(const [color, entries] of list) {
+						out.push([
+							priority,
+							color,
+							new RegExp(`^(?:${entries.join('|')})$`, 'gi')
+						]);
+						//list.set(k, new RegExp(`^(?:${entries.join('|')})$`, 'gi'));
+					}
 				}
 
-				return colors;
+				return sortPriorityColorTerms(out);
 			}
 		});
 
@@ -469,7 +497,7 @@ export default class Chat extends Module {
 		});
 
 
-		this.settings.add('chat.filtering.highlight-basic-users-blocked--regex', {
+		this.settings.add('__filter:block-users', {
 			requires: ['chat.filtering.highlight-basic-users-blocked'],
 			equals: 'requirements',
 			process(ctx) {
@@ -513,12 +541,13 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > Highlight >> Badges',
 				component: 'badge-highlighting',
 				colored: true,
+				priority: true,
 				data: () => this.badges.getSettingsBadges(true)
 			}
 		});
 
 
-		this.settings.add('chat.filtering.highlight-basic-badges--colors', {
+		this.settings.add('__filter:highlight-badges', {
 			requires: ['chat.filtering.highlight-basic-badges'],
 			equals: 'requirements',
 			process(ctx) {
@@ -526,17 +555,19 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
-				const colors = new Map;
+				const badges = new Map;
 
 				for(const item of val) {
 					const c = item.c || null,
+						p = item.p || 0,
 						v = item.v;
 
-					if ( ! colors.has(v) )
-						colors.set(v, c);
+					const existing = badges.get(v);
+					if ( ! existing || existing[0] < p || (c && ! existing[1] && existing[0] <= p) )
+						badges.set(v, [p, c]);
 				}
 
-				return colors;
+				return badges;
 			}
 		});
 
@@ -553,7 +584,7 @@ export default class Chat extends Module {
 			}
 		});
 
-		this.settings.add('chat.filtering.highlight-basic-badges-blocked--list', {
+		this.settings.add('__filter:block-badges', {
 			requires: ['chat.filtering.highlight-basic-badges-blocked'],
 			equals: 'requirements',
 			process(ctx) {
@@ -582,11 +613,12 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > Highlight >> Terms @{"description": "Please see [Chat > Filtering > Syntax Help](~) for details on how to use terms."}',
 				component: 'basic-terms',
 				colored: true,
+				priority: true,
 				highlight: true
 			}
 		});
 
-		this.settings.add('chat.filtering.highlight-basic-terms--color-regex', {
+		this.settings.add('__filter:highlight-terms', {
 			requires: ['chat.filtering.highlight-tokens', 'chat.filtering.highlight-basic-terms'],
 			equals: 'requirements',
 			process(ctx) {
@@ -595,12 +627,14 @@ export default class Chat extends Module {
 				if ( ! val || ! val.length )
 					return null;
 
-				const colors = new Map;
+				const temp = new Map;
+				//const colors = new Map;
 				let has_highlight = false,
 					has_non = false;
 
 				for(const item of val) {
 					const c = item.c || null,
+						p = item.p || 0,
 						highlight = can_highlight && (has(item, 'h') ? item.h : true),
 						sensitive = item.s,
 						t = item.t,
@@ -627,6 +661,12 @@ export default class Chat extends Module {
 						has_highlight = true;
 					else
 						has_non = true;
+
+					let colors = temp.get(p);
+					if ( ! colors ) {
+						colors = new Map;
+						temp.set(p, colors);
+					}
 
 					let data = colors.get(c);
 					if ( ! data )
@@ -656,20 +696,36 @@ export default class Chat extends Module {
 					return null;
 
 				const out = {
-					hl: has_highlight ? new Map : null,
-					non: has_non ? new Map : null
+					hl: has_highlight ? [] : null,
+					non: has_non ? [] : null
 				};
 
-				for(const [key, list] of colors) {
-					const highlights = formatTerms(list[0]),
-						non_highlights = formatTerms(list[1]);
+				for(const [priority, colors] of temp) {
+					for(const [color, list] of colors) {
+						const highlights = formatTerms(list[0]),
+							non_highlights = formatTerms(list[1]);
 
-					if ( highlights[0] || highlights[1] )
-						out.hl.set(key, highlights);
+						if ( highlights[0] || highlights[1] )
+							out.hl.push([
+								priority,
+								color,
+								highlights
+							]);
 
-					if ( non_highlights[0] || non_highlights[1] )
-						out.non.set(key, non_highlights);
+						if ( non_highlights[0] || non_highlights[1] )
+							out.non.push([
+								priority,
+								color,
+								non_highlights
+							]);
+					}
 				}
+
+				if ( has_highlight )
+					sortPriorityColorTerms(out.hl);
+
+				if ( has_non )
+					sortPriorityColorTerms(out.non);
 
 				return out;
 			}
@@ -688,7 +744,7 @@ export default class Chat extends Module {
 		});
 
 
-		this.settings.add('chat.filtering.highlight-basic-blocked--regex', {
+		this.settings.add('__filter:block-terms', {
 			requires: ['chat.filtering.highlight-basic-blocked'],
 			equals: 'requirements',
 			process(ctx) {
@@ -777,6 +833,18 @@ export default class Chat extends Module {
 				component: 'setting-check-box',
 				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Display mentions in chat with a bold font.'
+			}
+		});
+
+		this.settings.add('chat.filtering.mention-priority', {
+			default: 0,
+			ui: {
+				path: 'Chat > Filtering > General >> Appearance',
+				title: 'Mention Priority',
+				component: 'setting-text-box',
+				type: 'number',
+				process: 'to_int',
+				description: 'Mentions of your name have this priority for the purpose of highlighting. See [Chat > Filtering > Highlight](~) for more details.'
 			}
 		});
 
@@ -1546,7 +1614,7 @@ export default class Chat extends Module {
 
 		for(let i=0; i < l; i++) {
 			const part = parts[i],
-				content = part.content;
+				content = part.ffz_content ?? part.content;
 
 			if ( ! content )
 				continue;
@@ -1696,6 +1764,9 @@ export default class Chat extends Module {
 		if ( ! this.context.get('chat.rich.enabled') || this.context.get('chat.rich.minimum-level') > this.getUserLevel(msg) )
 			return;
 
+		if ( ! Array.isArray(tokens) )
+			return;
+
 		const providers = this.__rich_providers;
 
 		for(const token of tokens) {
@@ -1728,7 +1799,7 @@ export default class Chat extends Module {
 			}
 		}
 
-		return tokens;
+		return tokens || [];
 	}
 
 

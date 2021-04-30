@@ -1492,27 +1492,27 @@ export default class ChatHook extends Module {
 									room = m.roomLogin = r.login;
 							}
 
-							const u = t.site.getUser(),
-								r = {id: room_id, login: room};
-
+							const u = t.site.getUser();
 							if ( u && cont ) {
 								u.moderator = cont.props.isCurrentUserModerator;
 								u.staff = cont.props.isStaff;
 							}
 
-							m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, r);
+							m.ffz_tokens = m.ffz_tokens || t.chat.tokenizeMessage(m, u, true);
 							if ( m.ffz_removed )
 								return;
 
-							const event = new FFZEvent({
-								message: m,
-								channel: room,
-								channelID: room_id
-							});
+							if ( t.hasListeners('chat:receive-message') ) {
+								const event = new FFZEvent({
+									message: m,
+									channel: room,
+									channelID: room_id
+								});
 
-							t.emit('chat:receive-message', event);
-							if ( event.defaultPrevented || m.ffz_removed )
-								return;
+								t.emit('chat:receive-message', event);
+								if ( event.defaultPrevented || m.ffz_removed )
+									return;
+							}
 
 						} else if ( msg.type === types.ModerationAction && false && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							if ( !((! msg.level || ! msg.level.length) && msg.targetUserLogin && msg.targetUserLogin === inst.props.currentUserLogin) ) {
@@ -1793,7 +1793,9 @@ export default class ChatHook extends Module {
 					has_newer = this.hasNewerLeft(),
 					paused = this.isPaused(),
 					max_size = t.chat.context.get('chat.scrollback-length'),
-					do_remove = t.chat.context.get('chat.filtering.remove-deleted');
+					do_remove = t.chat.context.get('chat.filtering.remove-deleted'),
+
+					event = t.hasListeners('chat:buffer-message') ? new FFZEvent() : null;
 
 				let added = 0,
 					buffered = this.slidingWindowEnd,
@@ -1804,17 +1806,38 @@ export default class ChatHook extends Module {
 						if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
 							continue;
 
+						if ( event ) {
+							event._reset();
+							event.message = msg.event;
+
+							t.emit('chat:buffer-message', event);
+							if ( event.defaultPrevented || msg.event.ffz_removed )
+								continue;
+						}
+
 						const last = this.buffer[this.buffer.length - 1],
 							type = last?.type;
 
-						if ( type === ct.Connected ) {
+						if ( !(
+							! this.props.isLoadingHistoricalMessages &&
+								! this.props.historicalMessages ||
+								type !== ct.Connected ||
+								msg.event.type === ct.Connected ||
+								this.buffer.find(e => e.type === ct.LiveMessageSeparator)
+						) )
+							this.buffer.push({
+								type: ct.LiveMessageSeparator,
+								id: 'live-message-separator'
+							});
+
+						/*if ( type === ct.Connected ) {
 							const non_null = this.buffer.filter(x => x && ct[x.type] && ! NULL_TYPES.includes(ct[x.type]));
 							if ( non_null.length > 1 )
 								this.buffer.push({
 									type: ct.LiveMessageSeparator,
 									id: 'live-message-separator'
 								});
-						}
+						}*/
 
 						this.buffer.push(msg.event);
 						changed = true;
