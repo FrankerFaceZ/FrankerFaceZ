@@ -1481,15 +1481,21 @@ export default class ChatHook extends Module {
 
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
-								cont = inst._ffz_connector,
-								room_id = cont && cont.props.channelID;
+								cont = inst._ffz_connector ?? inst.ffzGetConnector();
 
-							let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont && cont.props.channelLogin;
+							let room_id = m.roomID = m.roomID ? m.roomID : cont?.props?.channelID;
+							let room = m.roomLogin = m.roomLogin ? m.roomLogin : m.channel ? m.channel.slice(1) : cont?.props?.channelLogin;
 
 							if ( ! room && room_id ) {
 								const r = t.chat.getRoom(room_id, null, true);
 								if ( r && r.login )
 									room = m.roomLogin = r.login;
+							}
+
+							if ( ! room_id && room ) {
+								const r = t.chat.getRoom(null, room, true);
+								if ( r && r.id )
+									room_id = m.roomID = r.id;
 							}
 
 							const u = t.site.getUser();
@@ -1505,6 +1511,7 @@ export default class ChatHook extends Module {
 							if ( t.hasListeners('chat:receive-message') ) {
 								const event = new FFZEvent({
 									message: m,
+									inst,
 									channel: room,
 									channelID: room_id
 								});
@@ -1781,6 +1788,19 @@ export default class ChatHook extends Module {
 			}
 		}
 
+		cls.prototype.ffzGetConnector = function() {
+			if ( this._ffz_connector )
+				return this._ffz_connector;
+
+			const now = Date.now();
+			if ( now - (this._ffz_connect_tried || 0) > 5000 ) {
+				this._ffz_connect_tried = now;
+				const thing = t.ChatBufferConnector.first;
+				if ( thing?.props?.messageBufferAPI?._ffz_inst === this )
+					return this._ffz_connector = thing;
+			}
+		}
+
 		cls.prototype.flushRawMessages = function() {
 			try {
 				const out = [],
@@ -1795,21 +1815,38 @@ export default class ChatHook extends Module {
 					max_size = t.chat.context.get('chat.scrollback-length'),
 					do_remove = t.chat.context.get('chat.filtering.remove-deleted'),
 
-					event = t.hasListeners('chat:buffer-message') ? new FFZEvent() : null;
+					want_event = t.hasListeners('chat:buffer-message');
 
 				let added = 0,
 					buffered = this.slidingWindowEnd,
-					changed = false;
+					changed = false,
+					event;
 
 				for(const msg of this.delayedMessageBuffer) {
 					if ( msg.time <= first || ! msg.shouldDelay ) {
 						if ( do_remove !== 0 && (do_remove > 1 || ! see_deleted) && this.isDeletable(msg.event) && msg.event.deleted )
 							continue;
 
-						if ( event ) {
-							event._reset();
-							event.message = msg.event;
+						if ( want_event ) {
+							if ( ! event ) {
+								event = new FFZEvent();
 
+								const cont = this._ffz_connector ?? this.ffzGetConnector(),
+									room_id = cont && cont.props.channelID;
+
+								event.inst = this;
+								event.channelID = room_id;
+
+								if ( room_id ) {
+									const r = t.chat.getRoom(room_id, null, true);
+									if ( r && r.login )
+										event.channel = r.login;
+								}
+
+							} else
+								event._reset();
+
+							event.message = msg.event;
 							t.emit('chat:buffer-message', event);
 							if ( event.defaultPrevented || msg.event.ffz_removed )
 								continue;

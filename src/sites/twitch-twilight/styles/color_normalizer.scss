@@ -27,16 +27,25 @@
 	.top-stats-tab:hover,
 	.whispers-list-item--selected,
 	.side-nav__overlay-wrapper,
-	.thread-header__title-bar-container--focused {
+	.thread-header__title-bar-container {
 		background-color: var(--color-background-alt) !important;
 	}
 
 	.whispers-list-item:hover .whispers-list-item__archive-button:hover,
 	.clmgr-table__row:hover,
-	.thread-header__title-bar-container,
+	.thread-header__title-bar-container.thread-header__title-bar-container--focused,
 	.whispers-list-item:hover,
 	.side-nav-card__link:hover {
 		background-color: var(--color-background-alt-2) !important;
+	}
+
+	.thread-header__title-bar-container--highlighted,
+	.thread-header__title-bar-container--highlighted {
+		background-color: var(--color-background-button) !important;
+
+		&:hover {
+			background-color: var(--color-background-button-hover) !important;
+		}
 	}
 
 	.top-stats-tab,
