@@ -382,8 +382,14 @@ export class IndexedDBProvider extends SettingsProvider {
 				const db = request.result;
 
 				// We have a database, but does it contain anything?
-				const trx = db.transaction(['settings'], 'readonly'),
+				let store;
+				try {
+					const trx = db.transaction(['settings'], 'readonly');
 					store = trx.objectStore('settings');
+				} catch(err) {
+					// This indicates a bad database.
+					s(false);
+				}
 
 				const r2 = store.getAllKeys();
 
@@ -610,7 +616,7 @@ export class IndexedDBProvider extends SettingsProvider {
 
 	// IDB Interaction
 
-	getDB() {
+	getDB(second = false) {
 		if ( this.db )
 			return Promise.resolve(this.db);
 
@@ -651,6 +657,57 @@ export class IndexedDBProvider extends SettingsProvider {
 				if ( this.manager )
 					this.manager.log.info(`Database opened. (After: ${(performance.now() - this._start_time).toFixed(5)}ms)`);
 				this.db = request.result;
+
+				try {
+					const trx = this.db.transaction(['settings', 'blobs'], 'readonly');
+					trx.objectStore('settings');
+					trx.objectStore('blobs');
+				} catch(err) {
+					// If this is an error, the database is in an invalid state.
+					if ( this.manager )
+						this.manager.log.error(`Database in invalid state.`, err);
+
+					try {
+						this.db.close();
+					} catch(e) { /* no-op */ }
+
+					this._onFinish(request);
+					this.db = null;
+
+					if ( second )
+						done(false, err);
+
+					else {
+						// Try deleting the database and making a new one.
+						const delreq = window.indexedDB.deleteDatabase('FFZ');
+						this._onStart(delreq);
+
+						delreq.onerror = e => {
+							if ( this.manager )
+								this.manager.log.error('Error deleting invalid database.', e);
+							done(false, e);
+							this._onFinish(delreq);
+						}
+
+						delreq.onsuccess = () => {
+							if ( this.manager )
+								this.manager.log.info('Deleted invalid database.');
+
+							this._onFinish(delreq);
+							this._listeners = null;
+							this.getDB(true).then(result => {
+								for(const pair of listeners)
+									pair[0](result);
+							}).catch(err => {
+								for(const pair of listeners)
+									pair[1](err);
+							});
+						}
+					}
+
+					return;
+				}
+
 				done(true, this.db);
 				this._onFinish(request);
 			}

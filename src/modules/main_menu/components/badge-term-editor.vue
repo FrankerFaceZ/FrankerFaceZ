@@ -44,11 +44,20 @@
 				</select>
 			</div>
 			<div v-if="colored" class="tw-flex-shrink-0 tw-mg-r-05">
-				<color-picker v-if="editing" v-model="edit_data.c" :nullable="true" :show-input="false" />
-				<div v-else-if="term.c" class="ffz-color-preview">
+				<color-picker
+					v-if="editing"
+					v-model="edit_data.c"
+					:nullable="true"
+					:show-input="false"
+					:tooltip="t('settings.term.color.tip', 'Color')"
+				/>
+				<div v-else-if="term.c" class="ffz-color-preview tw-relative tw-tooltip__container">
 					<figure :style="`background-color: ${term.c}`">
 						&nbsp;
 					</figure>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('settings.term.color.tip', 'Color') }}
+					</div>
 				</div>
 			</div>
 			<div

@@ -8,7 +8,8 @@ import dayjs from 'dayjs';
 
 import Module from 'utilities/module';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, glob_to_regex, escape_regex, split_chars, deep_copy} from 'utilities/object';
+import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
+import {Color} from 'utilities/color';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -258,6 +259,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.debug', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering > General >> Behavior',
+				title: 'Display a list of highlight reasons on every chat message for debugging.',
+				component: 'setting-check-box',
+				force_seen: true
+			}
+		});
+
 		this.settings.addUI('chat.filtering.pad-bottom', {
 			path: 'Chat > Filtering > Highlight',
 			sort: 1000,
@@ -414,7 +425,7 @@ export default class Chat extends Module {
 			type: 'array_merge',
 			always_inherit: true,
 			ui: {
-				path: 'Chat > Filtering > Highlight @{"description": "These settings allow you to highlight messages in chat based on their contents. Setting priorities on rules allows you to determine which highlight color should be applied if a message matches multiple rules. Rules with a higher priority take priority over rules with lower priorities."} >> Users',
+				path: 'Chat > Filtering > Highlight @{"description": "These settings allow you to highlight messages in chat based on their contents. Setting priorities on rules allows you to determine which highlight color should be applied if a message matches multiple rules. Rules with a higher priority take priority over rules with lower priorities.\\n\\nYou can also create a rule that removes highlights from messages, preventing lower priority rules from highlighting them, by setting a color with an alpha value of zero. Example: `#00000000`"} >> Users',
 				component: 'basic-terms',
 				colored: true,
 				words: false,
@@ -433,10 +444,10 @@ export default class Chat extends Module {
 				const temp = new Map;
 
 				for(const item of val) {
-					const c = item.c || null,
-						p = item.p || 0,
+					const p = item.p || 0,
 						t = item.t;
 
+					let c = item.c || null;
 					let v = item.v;
 
 					if ( t === 'glob' )
@@ -458,6 +469,12 @@ export default class Chat extends Module {
 					if ( ! colors ) {
 						colors = new Map;
 						temp.set(p, colors);
+					}
+
+					if ( c ) {
+						const test = Color.RGBA.fromCSS(c);
+						if ( ! test || ! test.a )
+							c = false;
 					}
 
 					if ( colors.has(c) )
@@ -558,9 +575,15 @@ export default class Chat extends Module {
 				const badges = new Map;
 
 				for(const item of val) {
-					const c = item.c || null,
-						p = item.p || 0,
+					let c = item.c || null;
+					const p = item.p || 0,
 						v = item.v;
+
+					if ( c ) {
+						const test = Color.RGBA.fromCSS(c);
+						if ( ! test || ! test.a )
+							c = false;
+					}
 
 					const existing = badges.get(v);
 					if ( ! existing || existing[0] < p || (c && ! existing[1] && existing[0] <= p) )
@@ -633,13 +656,13 @@ export default class Chat extends Module {
 					has_non = false;
 
 				for(const item of val) {
-					const c = item.c || null,
-						p = item.p || 0,
+					const p = item.p || 0,
 						highlight = can_highlight && (has(item, 'h') ? item.h : true),
 						sensitive = item.s,
 						t = item.t,
 						word = has(item, 'w') ? item.w : t !== 'raw';
 
+					let c = item.c || null;
 					let v = item.v;
 
 					if ( t === 'glob' )
@@ -666,6 +689,12 @@ export default class Chat extends Module {
 					if ( ! colors ) {
 						colors = new Map;
 						temp.set(p, colors);
+					}
+
+					if ( c ) {
+						const test = Color.RGBA.fromCSS(c);
+						if ( ! test || ! test.a )
+							c = false;
 					}
 
 					let data = colors.get(c);
@@ -1446,6 +1475,43 @@ export default class Chat extends Module {
 				text: ' '
 			}
 		];
+	}
+
+
+	applyHighlight(msg, priority, color, reason, use_null_color = false) { // eslint-disable-line class-methods-use-this
+		if ( ! msg )
+			return msg;
+
+		const is_null = msg.mention_priority == null,
+			matched = is_null || priority >= msg.mention_priority,
+			higher = is_null || priority > msg.mention_priority;
+
+		if ( msg.filters )
+			msg.filters.push(`${reason}(${priority})${matched && color === false ? ':remove' : color ? `:${color}` : ''}`);
+
+		if ( matched ) {
+			msg.mention_priority = priority;
+
+			if ( color === false ) {
+				if ( higher ) {
+					msg.mentioned = false;
+					msg.clear_priority = priority;
+					msg.mention_color = msg.highlights = null;
+				}
+
+				return;
+			}
+
+			msg.mentioned = true;
+			if ( ! msg.highlights )
+				msg.highlights = new Set;
+		}
+
+		if ( msg.mentioned && (msg.clear_priority == null || priority >= msg.clear_priority) ) {
+			msg.highlights.add(reason);
+			if ( (color || use_null_color) && (higher || ! msg.mention_color) )
+				msg.mention_color = color;
+		}
 	}
 
 

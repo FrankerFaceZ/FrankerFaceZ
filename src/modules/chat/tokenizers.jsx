@@ -19,6 +19,35 @@ const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	MENTION_REGEX = /^(['"*([{<\\/]*)(@)((?:[^\u0000-\u007F]|[\w-])+)(?:\b|$)/; // eslint-disable-line no-control-regex
 
 
+export const FilterTester = {
+	type: 'filter_test',
+	priority: 1000,
+
+	render(token, createElement) {
+		if ( ! token.msg.filters?.length )
+			return null;
+
+		return (<div class="ffz-pill tw-mg-l-1">
+			{ token.msg.filters.join(', ') }
+		</div>);
+	},
+
+	process(tokens, msg) {
+		if ( ! tokens || ! tokens.length || ! this.context.get('chat.filtering.debug') )
+			return tokens;
+
+		msg.filters = [];
+
+		tokens.push({
+			type: 'filter_test',
+			msg
+		});
+
+		return tokens;
+	}
+}
+
+
 // ============================================================================
 // Links
 // ============================================================================
@@ -406,14 +435,8 @@ export const Mentions = {
 						recipient: rlower
 					});
 
-					if ( mentioned ) {
-						(msg.highlights = (msg.highlights || new Set())).add('mention');
-						msg.mentioned = true;
-						if ( msg.color_priority == null || priority > msg.color_priority ) {
-							msg.mention_color = null;
-							msg.color_priority = priority;
-						}
-					}
+					if ( mentioned )
+						this.applyHighlight(msg, priority, null, 'mention', true);
 
 					// Push the remaining text from the token.
 					text.push(segment.substr(match[0].length));
@@ -449,17 +472,8 @@ export const UserHighlights = {
 
 		const u = msg.user;
 		for(const [priority, color, regex] of list) {
-			if ( regex.test(u.login) || regex.test(u.displayName) ) {
-				(msg.highlights = (msg.highlights || new Set())).add('user');
-				msg.mentioned = true;
-				if ( color ) {
-					if ( msg.color_priority == null || priority > msg.color_priority ) {
-						msg.mention_color = color;
-						msg.color_priority = priority;
-					}
-					return tokens;
-				}
-			}
+			if ( regex.test(u.login) || regex.test(u.displayName) )
+				this.applyHighlight(msg, priority, color, 'user');
 		}
 
 		return tokens;
@@ -539,16 +553,8 @@ export const BadgeStuff = {
 
 			if ( highlights && highlights.has(badge) ) {
 				const details = highlights.get(badge);
-				(msg.highlights = (msg.highlights || new Set())).add('badge');
-				msg.mentioned = true;
-				if ( details[1] ) {
-					if ( msg.color_priority == null || details[0] > msg.color_priority ) {
-						msg.mention_color = details[1];
-						msg.color_priority = details[0];
-					}
-					if ( ! list )
-						return tokens;
-				}
+				if ( Array.isArray(details) && details.length > 1 )
+					this.applyHighlight(msg, details[0], details[1], 'badge');
 			}
 		}
 
@@ -612,7 +618,7 @@ export const CustomHighlights = {
 		let had_match = false;
 		if ( data.non ) {
 			for(const [priority, color, regexes] of data.non) {
-				if ( had_match && msg.color_priority != null && msg.color_priority > priority )
+				if ( had_match && msg.mention_priority != null && msg.mention_priority > priority )
 					break;
 
 				let matched = false;
@@ -626,17 +632,8 @@ export const CustomHighlights = {
 				}
 
 				if ( matched ) {
-					(msg.highlights = (msg.highlights || new Set())).add('term');
-					msg.mentioned = true;
 					had_match = true;
-					if ( color ) {
-						if ( msg.color_priority == null || priority > msg.color_priority ) {
-							msg.mention_color = color;
-							msg.color_priority = priority;
-						}
-
-						break;
-					}
+					this.applyHighlight(msg, priority, color, 'term');
 				}
 			}
 		}
@@ -676,12 +673,7 @@ export const CustomHighlights = {
 					if ( idx !== nix )
 						out.push({type: 'text', text: text.slice(idx, nix)});
 
-					(msg.highlights = (msg.highlights || new Set())).add('term');
-					msg.mentioned = true;
-					if ( color && (msg.color_priority == null || priority > msg.color_priority) ) {
-						msg.mention_color = color;
-						msg.color_priority = priority;
-					}
+					this.applyHighlight(msg, priority, color, 'term');
 
 					out.push({
 						type: 'highlight',

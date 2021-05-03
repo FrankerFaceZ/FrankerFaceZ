@@ -83,6 +83,7 @@ export default class ChatLine extends Module {
 		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
 		this.chat.context.on('changed:chat.timestamp-format', this.updateLines, this);
 		this.chat.context.on('changed:chat.filtering.mention-priority', this.updateLines, this);
+		this.chat.context.on('changed:chat.filtering.debug', this.updateLines, this);
 		this.chat.context.on('changed:__filter:highlight-terms', this.updateLines, this);
 		this.chat.context.on('changed:__filter:highlight-users', this.updateLines, this);
 		this.chat.context.on('changed:__filter:highlight-badges', this.updateLines, this);
@@ -1061,7 +1062,7 @@ other {# messages were deleted by a moderator.}
 			if ( msg ) {
 				msg.ffz_tokens = null;
 				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
+				msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
 			}
 		}
 
@@ -1070,7 +1071,7 @@ other {# messages were deleted by a moderator.}
 			if ( msg ) {
 				msg.ffz_tokens = null;
 				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
+				msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
 			}
 		}
 

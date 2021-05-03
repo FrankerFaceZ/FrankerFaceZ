@@ -27,14 +27,6 @@
 					autocorrect="off"
 				>
 			</div>
-			<div v-if="colored" class="tw-flex-shrink-0 tw-mg-l-05">
-				<color-picker v-if="editing" v-model="edit_data.c" :nullable="true" :show-input="false" />
-				<div v-else-if="term.c" class="ffz-color-preview">
-					<figure :style="`background-color: ${term.c}`">
-						&nbsp;
-					</figure>
-				</div>
-			</div>
 			<div class="tw-flex-shrink-0 tw-mg-x-05">
 				<span v-if="! editing">{{ term_type }}</span>
 				<select
@@ -55,6 +47,23 @@
 						{{ t('setting.terms.type.regex', 'Regex') }}
 					</option>
 				</select>
+			</div>
+			<div v-if="colored" class="tw-flex-shrink-0 tw-mg-r-05">
+				<color-picker
+					v-if="editing"
+					v-model="edit_data.c"
+					:nullable="true"
+					:show-input="false"
+					:tooltip="t('settings.term.color.tip', 'Color')"
+				/>
+				<div v-else-if="term.c" class="ffz-color-preview tw-relative tw-tooltip__container">
+					<figure :style="`background-color: ${term.c}`">
+						&nbsp;
+					</figure>
+					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						{{ t('settings.term.color.tip', 'Color') }}
+					</div>
+				</div>
 			</div>
 			<div
 				v-if="priority"

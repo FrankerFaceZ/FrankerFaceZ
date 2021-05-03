@@ -31,7 +31,11 @@
 				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>
 		</div>
-		<div v-else class="tw-relative">
+		<div
+			v-else
+			:class="{'tw-tooltip__container': hasTooltip}"
+			class="tw-relative"
+		>
 			<button
 				class="tw-button tw-button--text ffz-color-preview"
 				@click="togglePicker"
@@ -50,6 +54,15 @@
 				class="tw-absolute tw-z-above tw-tooltip--down tw-tooltip--align-right"
 			>
 				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
+			</div>
+			<div
+				v-if="! open && hasTooltip"
+				class="tw-tooltip tw-tooltip--down tw-tooltip--align-right"
+			>
+				{{ tooltip }}
+				<div v-if="nullable" class="tw-regular">
+					{{ t('setting.color.nullable', 'Right-Click to Reset') }}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -88,6 +101,10 @@ export default {
 			type: Boolean,
 			default: true
 		},
+		tooltip: {
+			type: String,
+			default: null
+		},
 		openUp: {
 			type: Boolean,
 			default: false
@@ -103,6 +120,10 @@ export default {
 	},
 
 	computed: {
+		hasTooltip() {
+			return this.tooltip?.length > 0 || this.nullable
+		},
+
 		colors() {
 			try {
 				return Color.RGBA.fromCSS(this.color || this.default)
