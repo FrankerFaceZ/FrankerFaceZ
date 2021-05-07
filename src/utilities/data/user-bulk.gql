@@ -1,0 +1,8 @@
+query FFZ_UserBulk($ids: [ID!], $logins: [String!]) {
+	users(ids: $ids, logins: $logins) {
+		id
+		login
+		displayName
+		profileImageURL(width: 50)
+	}
+}

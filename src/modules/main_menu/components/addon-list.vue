@@ -63,7 +63,7 @@
 			/>
 		</div>
 
-		<div class="tw-flex tw-align-items-center">
+		<div v-if="visible_unlisted" class="tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1" />
 			<div
 				v-on-clickaway="closeUnlisted"
@@ -128,6 +128,10 @@ export default {
 	},
 
 	computed: {
+		visible_unlisted() {
+			return this.visible_addons.length !== this.sorted_addons.length
+		},
+
 		visible_addons() {
 			return this.sorted_addons.filter(addon => this.shouldShow(addon));
 		},
@@ -180,10 +184,8 @@ export default {
 
 			if ( value && value.length )
 				for(const addon of this.item.getAddons())
-					if ( addon.unlisted && addon.id === value ) {
-						this.unlisted.push(value);
-						break;
-					}
+					if ( addon.unlisted && (addon.id === value || (addon.short_name && addon.short_name.toLowerCase() === value) || (addon.name && addon.name.toLowerCase() === value)) )
+						this.unlisted.push(addon.id);
 
 			this.$refs.unlisted.value = '';
 			this.closeUnlisted();

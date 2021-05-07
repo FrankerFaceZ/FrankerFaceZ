@@ -873,7 +873,7 @@ export default class Chat extends Module {
 				component: 'setting-text-box',
 				type: 'number',
 				process: 'to_int',
-				description: 'Mentions of your name have this priority for the purpose of highlighting. See [Chat > Filtering > Highlight](~) for more details.'
+				description: 'Mentions of your name have this priority for the purpose of highlighting. See [Chat > Filtering > Highlight](~chat.filtering.highlight) for more details.'
 			}
 		});
 

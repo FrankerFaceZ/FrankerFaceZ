@@ -23,6 +23,9 @@ export default class TwitchData extends Module {
 
 		this.inject('site.apollo');
 
+		this._waiting_user_ids = new Map;
+		this._waiting_user_logins = new Map;
+
 		this._waiting_stream_ids = new Map;
 		this._waiting_stream_logins = new Map;
 
@@ -265,6 +268,130 @@ export default class TwitchData extends Module {
 		);
 
 		return get('data.user.lastBroadcast', data);
+	}
+
+
+	/**
+	 * Fetch basic information on a user from Twitch. This is automatically batched
+	 * for performance, but not directly cached. Either an id or login must be provided.
+	 *
+	 * @param {Number|String} [id] The ID of the channel
+	 * @param {String} [login] The username of the channel
+	 *
+	 * @returns {Promise} A basic user object.
+	 */
+	getUserBasic(id, login) {
+		return new Promise((s, f) => {
+			if ( id ) {
+				if ( this._waiting_user_ids.has(id) )
+					this._waiting_user_ids.get(id).push([s,f]);
+				else
+					this._waiting_user_ids.set(id, [[s,f]]);
+			} else if ( login ) {
+				if ( this._waiting_user_logins.has(login) )
+					this._waiting_user_logins.get(login).push([s,f]);
+				else
+					this._waiting_user_logins.set(login, [[s,f]]);
+			} else
+				f('id and login cannot both be null');
+
+			if ( ! this._loading_users )
+				this._loadUsers();
+		})
+	}
+
+	async _loadUsers() {
+		if ( this._loading_users )
+			return;
+
+		this._loading_users = true;
+
+		// Get the first 50... things.
+		const ids = [...this._waiting_user_ids.keys()].slice(0, 50),
+			remaining = 50 - ids.length,
+			logins = remaining > 0 ? [...this._waiting_user_logins.keys()].slice(0, remaining) : [];
+
+		let nodes;
+
+		try {
+			const data = await this.queryApollo({
+				query: await import(/* webpackChunkName: 'queries' */ './data/user-bulk.gql'),
+				variables: {
+					ids: ids.length ? ids : null,
+					logins: logins.length ? logins : null
+				}
+			});
+
+			nodes = get('data.users', data);
+
+		} catch(err) {
+			for(const id of ids) {
+				const promises = this._waiting_user_ids.get(id);
+				this._waiting_user_ids.delete(id);
+
+				for(const pair of promises)
+					pair[1](err);
+			}
+
+			for(const login of logins) {
+				const promises = this._waiting_user_logins.get(login);
+				this._waiting_user_logins.delete(login);
+
+				for(const pair of promises)
+					pair[1](err);
+			}
+
+			return;
+		}
+
+		const id_set = new Set(ids),
+			login_set = new Set(logins);
+
+		if ( Array.isArray(nodes) )
+			for(const node of nodes) {
+				if ( ! node || ! node.id )
+					continue;
+
+				id_set.delete(node.id);
+				login_set.delete(node.login);
+
+				let promises = this._waiting_user_ids.get(node.id);
+				if ( promises ) {
+					this._waiting_user_ids.delete(node.id);
+					for(const pair of promises)
+						pair[0](node);
+				}
+
+				promises = this._waiting_user_logins.get(node.login);
+				if ( promises ) {
+					this._waiting_user_logins.delete(node.login);
+					for(const pair of promises)
+						pair[0](node);
+				}
+			}
+
+		for(const id of id_set) {
+			const promises = this._waiting_user_ids.get(id);
+			if ( promises ) {
+				this._waiting_user_ids.delete(id);
+				for(const pair of promises)
+					pair[0](null);
+			}
+		}
+
+		for(const login of login_set) {
+			const promises = this._waiting_user_logins.get(login);
+			if ( promises ) {
+				this._waiting_user_logins.delete(login);
+				for(const pair of promises)
+					pair[0](null);
+			}
+		}
+
+		this._loading_users = false;
+
+		if ( this._waiting_user_ids.size || this._waiting_user_logins.size )
+			this._loadUsers();
 	}
 
 

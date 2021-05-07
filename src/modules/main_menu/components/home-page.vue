@@ -267,23 +267,28 @@ export default {
 			if ( addons )
 				for(const [key, addon] of Object.entries(addons)) {
 					const enabled = addon_module.isAddonEnabled(key),
-						copy = {
-							key,
-							enabled,
-							icon: addon.icon,
-							name: addon.name,
-							name_i18n: addon.name_i18n,
-							updated: addon.updated,
-							settings: addon.settings,
-							version: addon.version
-						};
+						is_new = addon.created && addon.created >= week_ago,
+						is_updated = enabled && addon.updated && addon.updated >= week_ago;
 
-					if ( addon.created && addon.created >= week_ago )
+					if ( ! is_updated && ! (is_new && ! enabled && ! addon.unlisted) )
+						continue;
+
+					const copy = {
+						key,
+						enabled,
+						icon: addon.icon,
+						name: addon.name,
+						name_i18n: addon.name_i18n,
+						updated: addon.updated,
+						settings: addon.settings,
+						version: addon.version
+					};
+
+					if ( is_new )
 						new_out.push(copy);
 
-					if ( addon.updated && addon.updated >= week_ago && enabled ) {
+					if ( is_updated )
 						out.push(copy);
-					}
 				}
 
 			out.sort((a,b) => b.updated - a.updated);

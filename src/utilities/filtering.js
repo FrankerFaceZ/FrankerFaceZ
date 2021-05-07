@@ -26,8 +26,15 @@ export function createTester(rules, filter_types, inverted = false, or = false, 
 			continue;
 		}
 
+		// Construct the test. If no test is returned, we skip this filter.
+		// This can happen depending on configuration rendering a method
+		// pointless.
+		const test = type.createTest(rule.data, filter_types, rebuild);
+		if ( ! test )
+			continue;
+
 		i++;
-		tests.push(type.createTest(rule.data, filter_types, rebuild));
+		tests.push(test);
 		names.push(`f${i}`);
 	}
 

@@ -3,6 +3,8 @@
 	flex-shrink: 0;
 	width: 100%;
 
+	&--size-1 { width: 1rem }
+	&--size-105 { width: 1.5rem }
 	&--size-2 { width: 2rem }
 	&--size-3 { width: 3rem }
 	&--size-4 { width: 4rem }
