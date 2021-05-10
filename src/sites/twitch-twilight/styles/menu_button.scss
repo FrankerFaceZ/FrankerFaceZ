@@ -33,7 +33,7 @@
 	}
 
 	.ffz-toast {
-		&.ffz-toast--paused .tw-progress-bar--countdown .tw-progress-bar__fill {
+		&.ffz-toast--paused .ffz-progress-bar--countdown .ffz-progress-bar__fill {
 			animation: none !important;
 		}
 

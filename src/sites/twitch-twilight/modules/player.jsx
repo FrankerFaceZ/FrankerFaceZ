@@ -108,6 +108,12 @@ export default class Player extends PlayerBase {
 
 		this.settings.add('player.theatre.metadata', {
 			default: false,
+			requires: ['context.route.name'],
+			process(ctx, val) {
+				if ( ctx.get('context.route.name') === 'video' )
+					return false;
+				return val
+			},
 			ui: {
 				path: 'Player > General >> Theatre Mode',
 				title: 'Show metadata when mousing over the player.',

@@ -406,14 +406,14 @@ export default class MenuButton extends SiteModule {
 
 			progress_bar = (<div class="ffz-toast--progress tw-absolute tw-overflow-hidden tw-z-below">
 				<div
-					class="tw-border-radius-rounded tw-progress-bar tw-progress-bar--countdown tw-progress-bar--default tw-progress-bar--mask"
+					class="tw-border-radius-rounded ffz-progress-bar ffz-progress-bar--countdown ffz-progress-bar--default ffz-progress-bar--mask"
 					role="progressbar"
 					aria-valuenow={percentage}
 					aria-valuemin="0"
 					aria-valuemax="100"
 				>
 					<div
-						class={`tw-block tw-border-bottom-left-radius-rounded tw-border-top-left-radius-rounded tw-progress-bar__fill`}
+						class={`tw-block tw-border-bottom-left-radius-rounded tw-border-top-left-radius-rounded ffz-progress-bar__fill`}
 						data-a-target="tw-progress-bar-animation"
 						style={{
 							width: `${percentage}%`,
