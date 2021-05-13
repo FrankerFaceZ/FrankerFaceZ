@@ -129,6 +129,11 @@ export default {
 		logger: {
 			type: Object,
 			required: false
+		},
+		allowFilter: {
+			type: Boolean,
+			required: false,
+			default: true
 		}
 	},
 
@@ -172,12 +177,15 @@ export default {
 			if ( this.errored )
 				return null;
 
-			if ( ! this.search || ! this.search.length )
+			if ( ! this.search || ! this.search.length || ! this.allowFilter )
 				return this.cachedItems;
 
 			const needle = this.search.toLowerCase();
 			return this.cachedItems.filter(item => {
 				if ( typeof item.displayName === 'string' && item.displayName.toLowerCase().includes(needle) )
+					return true;
+
+				if ( typeof item.login === 'string' && item.login.toLowerCase().includes(needle) )
 					return true;
 
 				if ( typeof item.label === 'string' && item.label.toLowerCase().includes(needle) )

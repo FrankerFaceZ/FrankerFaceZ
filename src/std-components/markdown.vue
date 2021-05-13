@@ -5,21 +5,31 @@
 
 <script>
 
-import getMD from 'utilities/markdown';
+import awaitMD, {getMD} from 'utilities/markdown';
 
 export default {
 	props: {
 		source: String
 	},
 
-	computed: {
-		md() {
-			return getMD();
-		},
+	data() {
+		return {
+			md: getMD()
+		}
+	},
 
+	computed: {
 		output() {
+			if ( ! this.md )
+				return '';
+
 			return this.md.render(this.source);
 		}
+	},
+
+	created() {
+		if ( ! this.md )
+			awaitMD().then(md => this.md = md);
 	}
 }
 

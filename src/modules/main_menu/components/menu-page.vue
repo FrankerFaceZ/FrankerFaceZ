@@ -60,20 +60,21 @@
 		<template v-if="! item.contents || ! item.contents.length || item.always_list_pages">
 			<ul class="tw-border-t tw-pd-y-1">
 				<li
-					v-for="i in item.items"
+					v-for="i in visibleItems"
 					:key="i.full_key"
 					:class="{'ffz-unmatched-item': ! shouldShow(i)}"
 					class="tw-pd-x-1"
 				>
 					<a href="#" @click="$emit('change-item', i, false)">
 						{{ t(i.i18n_key, i.title) }}
-						<span v-if="i.unseen" class="tw-pill">{{ i.unseen }}</span>
+						<span v-if="filter" class="ffz-pill ffz-pill--overlay">{{ countMatches(i) }}</span>
+						<span v-else-if="i.unseen" class="ffz-pill ffz-pill--overlay">{{ i.unseen }}</span>
 					</a>
 				</li>
 			</ul>
 		</template>
 		<div
-			v-for="i in item.contents"
+			v-for="i in visibleContents"
 			:key="i.full_key"
 			:class="{'ffz-unmatched-item': ! shouldShow(i)}"
 		>
@@ -107,6 +108,26 @@ export default {
 			}
 
 			return out;
+		},
+
+		visibleItems() {
+			if ( ! this.item || ! this.item.items )
+				return [];
+
+			if ( ! this.context.matches_only )
+				return this.item.items;
+
+			return this.item.items.filter(item => this.shouldShow(item));
+		},
+
+		visibleContents() {
+			if ( ! this.item || ! this.item.contents )
+				return [];
+
+			if ( ! this.context.matches_only )
+				return this.item.contents;
+
+			return this.item.contents.filter(item => this.shouldShow(item));
 		}
 	},
 
@@ -116,6 +137,31 @@ export default {
 				return true;
 
 			return item.no_filter || item.search_terms.includes(this.filter);
+		},
+
+		countMatches(item, seen) {
+			if ( ! this.filter || ! this.filter.length || ! item )
+				return 0;
+
+			if ( seen && seen.has(item) )
+				return 0;
+
+			if ( ! seen )
+				seen = new Set;
+
+			seen.add(item);
+
+			let count = 0;
+
+			for(const key of ['tabs', 'contents', 'items'])
+				if ( item[key] )
+					for(const thing of item[key])
+						count += this.countMatches(thing, seen);
+
+			if ( item.setting && item.search_terms && item.search_terms.includes(this.filter) )
+				count++;
+
+			return count;
 		},
 
 		markSeen(item) {

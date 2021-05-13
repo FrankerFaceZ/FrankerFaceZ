@@ -35,7 +35,10 @@
 				<span class="tw-flex-grow-1">
 					{{ t(item.i18n_key, item.title) }}
 				</span>
-				<span v-if="item.pill" class="ffz-pill ffz-pill--overlay">
+				<span v-if="filter" class="ffz-pill ffz-pill--overlay">
+					{{ countMatches(item) }}
+				</span>
+				<span v-else-if="item.pill" class="ffz-pill ffz-pill--overlay">
 					{{ item.pill_i18n_key ? t(item.pill_i18n_key, item.pill) : item.pill }}
 				</span>
 				<span v-else-if="item.unseen" class="ffz-pill ffz-pill--overlay">
@@ -115,6 +118,31 @@ export default {
 				return true;
 
 			return false;
+		},
+
+		countMatches(item, seen) {
+			if ( ! this.filter || ! this.filter.length || ! item )
+				return 0;
+
+			if ( seen && seen.has(item) )
+				return 0;
+
+			if ( ! seen )
+				seen = new Set;
+
+			seen.add(item);
+
+			let count = 0;
+
+			for(const key of ['tabs', 'contents', 'items'])
+				if ( item[key] )
+					for(const thing of item[key])
+						count += this.countMatches(thing, seen);
+
+			if ( item.setting && item.search_terms && item.search_terms.includes(this.filter) )
+				count++;
+
+			return count;
 		},
 
 		containsCurrent(item) {

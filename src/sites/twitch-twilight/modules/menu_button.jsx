@@ -9,7 +9,7 @@ import {SiteModule} from 'utilities/module';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 
 import Twilight from 'site';
-import getMD from 'src/utilities/markdown';
+import awaitMD, {getMD} from 'utilities/markdown';
 
 
 export default class MenuButton extends SiteModule {
@@ -292,6 +292,12 @@ export default class MenuButton extends SiteModule {
 		/*if ( ! data.id )
 			data.id = generateUUID();*/
 
+		if ( data.markdown ) {
+			const md = getMD();
+			if ( ! md )
+				return awaitMD().then(() => this.addToast(data));
+		}
+
 		this.toasts.push(data);
 		// TODO: Sort by ending time?
 		if ( this.toasts.length > 5 )
@@ -385,6 +391,9 @@ export default class MenuButton extends SiteModule {
 			}
 
 		let progress_bar = null;
+		const md = data.markdown ? getMD() : null;
+		if ( data.markdown && ! md )
+			return null;
 
 		if ( data.timeout ) {
 			const now = performance.now();

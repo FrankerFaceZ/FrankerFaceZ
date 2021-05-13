@@ -1,15 +1,19 @@
-query FFZ_SearchUser($query: String!, $first: Int, $after: String) {
-	searchFor(userQuery: $query, platform: "web", target: {index: USER, cursor: $after, limit: $first}) {
-		users {
+query FFZ_SearchUser($query: String!, $first: Int, $after: Cursor) {
+	searchUsers(userQuery: $query, first: $first, after: $after) {
+		totalCount
+		pageInfo {
+			hasNextPage
+		}
+		edges {
 			cursor
-			pageInfo {
-				hasNextPage
-			}
-			items {
+			node {
 				id
 				login
 				displayName
 				profileImageURL(width: 50)
+				roles {
+					isPartner
+				}
 			}
 		}
 	}

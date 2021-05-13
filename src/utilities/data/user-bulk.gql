@@ -4,5 +4,8 @@ query FFZ_UserBulk($ids: [ID!], $logins: [String!]) {
 		login
 		displayName
 		profileImageURL(width: 50)
+		roles {
+			isPartner
+		}
 	}
 }

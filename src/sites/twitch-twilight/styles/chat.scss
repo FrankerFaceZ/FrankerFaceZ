@@ -318,32 +318,44 @@
 		}
 	}*/
 
-	.whispers-thread .emote-picker-and-button & .emote-picker__tab-content {
-		max-height: 30rem;
-	}
-
-	.emote-picker__nav-content-overflow,
-	.emote-picker__tab-content {
-		height: unset !important;
-		max-height: 50rem;
-	}
-
-	.whispers-thread {
-		overflow: visible !important;
-	}
-
-	@media only screen and (max-height: 750px) {
+	&:not(.ffz--emote-picker__tall) {
 		.emote-picker__nav-content-overflow {
-			height: 100% !important;
+			height: 30.5rem !important;
+		}
+
+		.emote-picker__nav-content-overflow-whisper {
+			height: 18rem !important;
+		}
+	}
+
+	&.ffz--emote-picker__tall {
+		.whispers-thread .emote-picker-and-button & .emote-picker__tab-content {
+			max-height: 30rem;
 		}
 
 		.emote-picker__nav-content-overflow,
 		.emote-picker__tab-content {
-			#root & {
-				max-height: calc(100vh - 31rem);
+			height: unset !important;
+			max-height: 50rem;
+		}
+
+		.whispers-thread {
+			overflow: visible !important;
+		}
+
+		@media only screen and (max-height: 750px) {
+			.emote-picker__nav-content-overflow {
+				height: 100% !important;
 			}
 
-			max-height: calc(100vh - 26rem);
+			.emote-picker__nav-content-overflow,
+			.emote-picker__tab-content {
+				#root & {
+					max-height: calc(100vh - 31rem);
+				}
+
+				max-height: calc(100vh - 26rem);
+			}
 		}
 	}
 

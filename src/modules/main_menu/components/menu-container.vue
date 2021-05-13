@@ -10,7 +10,7 @@
 			<markdown :source="t(item.desc_i18n_key, item.description)" />
 		</section>
 		<div
-			v-for="i in item.contents"
+			v-for="i in visibleContents"
 			:key="i.full_key"
 			:class="{'ffz-unmatched-item': showing && ! shouldShow(i)}"
 		>
@@ -32,6 +32,16 @@ export default {
 	computed: {
 		showing() {
 			return this.shouldShow(this.item);
+		},
+
+		visibleContents() {
+			if ( ! this.item || ! this.item.contents )
+				return [];
+
+			if ( ! this.context.matches_only )
+				return this.item.contents;
+
+			return this.item.contents.filter(item => this.shouldShow(item));
 		},
 
 		classes() {

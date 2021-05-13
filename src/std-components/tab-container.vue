@@ -19,7 +19,7 @@
 			@keyup.down="nextTab"
 		>
 			<div
-				v-for="(i, idx) in item.tabs"
+				v-for="(i, idx) in visibleTabs"
 				:id="'tab-for-' + i.full_key"
 				:key="i.full_key"
 				:aria-selected="selected === idx"
@@ -30,7 +30,8 @@
 				@click="select(idx)"
 			>
 				{{ t(i.i18n_key, i.title) }}
-				<span v-if="i.unseen > 0" class="tw-pill">{{ i.unseen }}</span>
+				<span v-if="filter" class="ffz-pill ffz-pill--overlay">{{ countMatches(i) }}</span>
+				<span v-else-if="i.unseen" class="ffz-pill ffz-pill--overlay">{{ i.unseen }}</span>
 			</div>
 		</header>
 		<section
@@ -45,7 +46,7 @@
 				{{ t(tab.desc_i18n_key, tab.description) }}
 			</section>
 			<div
-				v-for="i in tab.contents"
+				v-for="i in visibleContents"
 				:key="i.full_key"
 				:class="{'ffz-unmatched-item': showing && ! shouldShow(i)}"
 			>
@@ -79,6 +80,26 @@ export default {
 
 		tab() {
 			return this.item.tabs[this.selected];
+		},
+
+		visibleTabs() {
+			if ( ! this.item || ! this.item.tabs )
+				return [];
+
+			if ( ! this.context.matches_only )
+				return this.item.tabs;
+
+			return this.item.tabs.filter(tab => this.shouldShow(tab));
+		},
+
+		visibleContents() {
+			if ( ! this.tab || ! this.tab.contents )
+				return [];
+
+			if ( ! this.context.matches_only )
+				return this.tab.contents;
+
+			return this.tab.contents.filter(item => this.shouldShow(item));
 		}
 	},
 
@@ -97,6 +118,31 @@ export default {
 	},
 
 	methods: {
+		countMatches(item, seen) {
+			if ( ! this.filter || ! this.filter.length || ! item )
+				return 0;
+
+			if ( seen && seen.has(item) )
+				return 0;
+
+			if ( ! seen )
+				seen = new Set;
+
+			seen.add(item);
+
+			let count = 0;
+
+			for(const key of ['tabs', 'contents', 'items'])
+				if ( item[key] )
+					for(const thing of item[key])
+						count += this.countMatches(thing, seen);
+
+			if ( item.setting && item.search_terms && item.search_terms.includes(this.filter) )
+				count++;
+
+			return count;
+		},
+
 		focus() {
 			this.$el.querySelector('header').focus();
 		},

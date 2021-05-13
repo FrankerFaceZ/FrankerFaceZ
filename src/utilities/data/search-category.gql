@@ -1,11 +1,12 @@
-query FFZ_SearchCategory($query: String!, $first: Int, $after: String) {
-	searchFor(userQuery: $query, platform: "web", target: {index: GAME, cursor: $after, limit: $first}) {
-		games {
+query FFZ_SearchCategory($query: String!, $first: Int, $after: Cursor) {
+	searchCategories(query: $query, first: $first, after: $after) {
+		totalCount
+		pageInfo {
+			hasNextPage
+		}
+		edges {
 			cursor
-			pageInfo {
-				hasNextPage
-			}
-			items {
+			node {
 				id
 				name
 				displayName

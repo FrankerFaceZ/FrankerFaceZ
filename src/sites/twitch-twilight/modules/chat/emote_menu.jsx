@@ -222,6 +222,15 @@ export default class EmoteMenu extends Module {
 			}
 		});
 
+		this.settings.add('chat.emote-menu.tall', {
+			default: false,
+			ui: {
+				path: 'Chat > Emote Menu >> Appearance',
+				title: 'Use extra height for the emote menu.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.emote-menu.show-heading', {
 			default: 1,
 			ui: {
@@ -1066,6 +1075,7 @@ export default class EmoteMenu extends Module {
 					quickNav: t.chat.context.get('chat.emote-menu.show-quick-nav'),
 					animated: t.chat.context.get('chat.emotes.animated'),
 					showHeading: t.chat.context.get('chat.emote-menu.show-heading'),
+					tall: t.chat.context.get('chat.emote-menu.tall'),
 					reducedPadding: t.chat.context.get('chat.emote-menu.reduced-padding'),
 					combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
 					showSearch: t.chat.context.get('chat.emote-menu.show-search'),
@@ -1217,6 +1227,7 @@ export default class EmoteMenu extends Module {
 				t.chat.context.on('changed:chat.emote-menu.show-heading', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.combine-tabs', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.show-search', this.updateSettingState, this);
+				t.chat.context.on('changed:chat.emote-menu.tall', this.updateSettingState, this);
 
 				window.ffz_menu = this;
 			}
@@ -1231,6 +1242,7 @@ export default class EmoteMenu extends Module {
 				t.chat.context.off('changed:chat.emote-menu.reduced-padding', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.combine-tabs', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.show-search', this.updateSettingState, this);
+				t.chat.context.off('changed:chat.emote-menu.tall', this.updateSettingState, this);
 
 				if ( window.ffz_menu === this )
 					window.ffz_menu = null;
@@ -1244,7 +1256,8 @@ export default class EmoteMenu extends Module {
 					showHeading: t.chat.context.get('chat.emote-menu.show-heading'),
 					reducedPadding: t.chat.context.get('chat.emote-menu.reduced-padding'),
 					combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
-					showSearch: t.chat.context.get('chat.emote-menu.show-search')
+					showSearch: t.chat.context.get('chat.emote-menu.show-search'),
+					tall: t.chat.context.get('chat.emote-menu.tall')
 				});
 			}
 
@@ -2303,7 +2316,7 @@ export default class EmoteMenu extends Module {
 				return (<div class={`tw-block${this.props.visible ? '' : ' tw-hide'}`} style={{display: this.props.visible ? null : 'none !important'}}>
 					<div class="tw-absolute tw-attached tw-attached--right tw-attached--up">
 						<div
-							class={`ffz-balloon ffz-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+							class={`ffz-balloon ffz-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${this.state.tall ? ' ffz--emote-picker__tall' : ''}${padding ? ' reduced-padding' : ''}`}
 							data-a-target="emote-picker"
 							role="dialog"
 						>

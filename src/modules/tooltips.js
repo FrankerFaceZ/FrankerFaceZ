@@ -9,6 +9,7 @@ import {has, maybe_call, once} from 'utilities/object';
 
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
+import awaitMD, {getMD} from 'utilities/markdown';
 
 export default class TooltipProvider extends Module {
 	constructor(...args) {
@@ -60,9 +61,9 @@ export default class TooltipProvider extends Module {
 		this.types.markdown = (target, tip) => {
 			tip.add_class = 'ffz-tooltip--markdown';
 
-			const md = this.getMarkdown();
+			const md = getMD();
 			if ( ! md )
-				return this.loadMarkdown().then(md => md.render(target.dataset.title));
+				return awaitMD().then(md => md.render(target.dataset.title));
 
 			return md.render(target.dataset.title);
 		};
@@ -71,45 +72,7 @@ export default class TooltipProvider extends Module {
 		this.types.html = target => target.dataset.title;
 
 		this.onFSChange = this.onFSChange.bind(this);
-
-		this.loadMarkdown = once(this.loadMarkdown);
-
 	}
-
-	getMarkdown(callback) {
-		if ( this._md )
-			return this._md;
-
-		if ( callback )
-			this.loadMarkdown().then(md => callback(md));
-	}
-
-	async loadMarkdown() { // eslint-disable-line class-methods-use-this
-		if ( this._md )
-			return this._md;
-
-		const [MD, MILA] = await Promise.all([
-			import(/* webpackChunkName: 'markdown' */ 'markdown-it'),
-			import(/* webpackChunkName: 'markdown' */ 'markdown-it-link-attributes')
-		]);
-
-		const md = this._md = new MD.default({
-			html: false,
-			linkify: true
-		});
-
-		md.use(MILA.default, {
-			attrs: {
-				class: 'ffz-tooltip',
-				target: '_blank',
-				rel: 'noopener',
-				'data-tooltip-type': 'link'
-			}
-		});
-
-		return md;
-	}
-
 
 	onEnable() {
 		const container = this.getRoot();

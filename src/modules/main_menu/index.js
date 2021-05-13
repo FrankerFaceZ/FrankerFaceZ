@@ -203,6 +203,15 @@ export default class MainMenu extends Module {
 			force_seen: true
 		});
 
+		this.settings.add('ffz.search.matches-only', {
+			default: true,
+			ui: {
+				path: 'Appearance > Control Center >> Search',
+				title: 'Hide items that do not match completely when searching.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.on('settings:added-definition', (key, definition) => {
 			this._addDefinitionToTree(key, definition);
 			this.scheduleUpdate();
@@ -834,6 +843,7 @@ export default class MainMenu extends Module {
 			can_proxy: context._context.can_proxy,
 			proxied: context._context.proxied,
 			has_update: this.has_update,
+			matches_only: settings.get('ffz.search.matches-only'),
 			mod_icons: context.get('context.chat.showModIcons'),
 
 			setProxied: val => {
@@ -946,9 +956,14 @@ export default class MainMenu extends Module {
 					}
 				},
 
+				_update_settings() {
+					_c.matches_only = settings.get('ffz.search.matches-only');
+				},
+
 				_add_user() {
 					this._users++;
 					if ( this._users === 1 ) {
+						settings.on(':changed:ffz.search.matches-only', this._update_settings, this);
 						settings.on(':profile-toggled', this._profile_toggled, this);
 						settings.on(':profile-created', this._profile_created, this);
 						settings.on(':profile-changed', this._profile_changed, this);
@@ -963,6 +978,7 @@ export default class MainMenu extends Module {
 				_remove_user() {
 					this._users--;
 					if ( this._users === 0 ) {
+						settings.off(':changed:ffz.search.matches-only', this._update_settings, this);
 						settings.off(':profile-toggled', this._profile_toggled, this);
 						settings.off(':profile-created', this._profile_created, this);
 						settings.off(':profile-changed', this._profile_changed, this);

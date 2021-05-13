@@ -11,6 +11,15 @@ import {get, debounce} from 'utilities/object';
 const LANGUAGE_MATCHER = /^auto___lang_(\w+)$/;
 
 /**
+ * PaginatedResult
+ *
+ * @typedef {Object} PaginatedResult
+ * @property {String} cursor A cursor usable to fetch the next page of results
+ * @property {Object[]} items This page of results
+ * @property {Boolean} finished Whether or not we have reached the end of results.
+ */
+
+/**
  * TwitchData is a container for getting different types of Twitch data
  * @class TwitchData
  * @extends Module
@@ -99,28 +108,42 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	/**
-	 * Queries Apollo for categories matching the search argument
-	 * @function getMatchingCategories
-	 * @memberof TwitchData
-	 * @async
+	 * Find categories matching the search query
 	 *
-	 * @param {string} query - query text to match to a category
-	 * @returns {Object} a collection of matches for the query string
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getMatchingCategories("siege"));
+	 * @param {String} query The category name to match
+	 * @param {Number} [first=15] How many results to return
+	 * @param {String} [cursor=null] A cursor, to be used in fetching the
+	 * next page of results.
+	 * @returns {PaginatedResult} The results
 	 */
-	async getMatchingCategories(query) {
+	async getMatchingCategories(query, first = 15, cursor = null) {
 		const data = await this.queryApollo(
 			await import(/* webpackChunkName: 'queries' */ './data/search-category.gql'),
-			{ query }
+			{
+				query,
+				first,
+				cursor
+			}
 		);
 
+		const items = get('data.searchCategories.edges.@each.node', data) ?? [],
+			needle = query.toLowerCase();
+
+		if ( Array.isArray(items) )
+			items.sort((a,b) => {
+				const a_match = a && (a.name?.toLowerCase?.() === needle || a?.displayName?.toLowerCase?.() === needle),
+					b_match = a && (b.name?.toLowerCase?.() === needle || b?.displayName?.toLowerCase?.() === needle);
+
+				if ( a_match && ! b_match ) return -1;
+				if ( ! a_match && b_match ) return 1;
+				return 0;
+			});
+
 		return {
-			cursor: get('data.searchFor.games.cursor', data),
-			items: get('data.searchFor.games.items', data) || [],
-			finished: ! get('data.searchFor.games.pageInfo.hasNextPage', data)
+			cursor: get('data.searchCategories.edges.@last.cursor', data),
+			items,
+			finished: ! get('data.searchCategories.pageInfo.hasNextPage', data),
+			count: get('data.searchCategories.totalCount', data) || 0
 		};
 	}
 
@@ -153,28 +176,42 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	/**
-	 * Queries Apollo for users matching the search argument
-	 * @function getMatchingUsers
-	 * @memberof TwitchData
-	 * @async
+	 * Find users matching the search query.
 	 *
-	 * @param {string} query - query text to match to a username
-	 * @returns {Object} a collection of matches for the query string
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getMatchingUsers("ninja"));
+	 * @param {String} query Text to match in the login or display name
+	 * @param {Number} [first=15] How many results to return
+	 * @param {String} [cursor=null] A cursor, to be used in fetching the next
+	 * page of results.
+	 * @returns {PaginatedResult} The results
 	 */
-	async getMatchingUsers(query) {
+	async getMatchingUsers(query, first = 15, cursor = null) {
 		const data = await this.queryApollo(
 			await import(/* webpackChunkName: 'queries' */ './data/search-user.gql'),
-			{ query }
+			{
+				query,
+				first,
+				cursor
+			}
 		);
 
+		const items = get('data.searchUsers.edges.@each.node', data) ?? [],
+			needle = query.toLowerCase();
+
+		if ( Array.isArray(items) )
+			items.sort((a,b) => {
+				const a_match = a && (a.login?.toLowerCase?.() === needle || a?.displayName?.toLowerCase?.() === needle),
+					b_match = a && (b.login?.toLowerCase?.() === needle || b?.displayName?.toLowerCase?.() === needle);
+
+				if ( a_match && ! b_match ) return -1;
+				if ( ! a_match && b_match ) return 1;
+				return 0;
+			});
+
 		return {
-			cursor: get('data.searchFor.users.cursor', data),
-			items: get('data.searchFor.users.items', data) || [],
-			finished: ! get('data.searchFor.users.pageInfo.hasNextPage', data)
+			cursor: get('data.searchUsers.edges.@last.cursor', data),
+			items,
+			finished: ! get('data.searchUsers.pageInfo.hasNextPage', data),
+			count: get('data.searchUsers.totalCount', data) || 0
 		};
 	}
 
