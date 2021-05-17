@@ -1,0 +1,145 @@
+.ffz-il-tooltip {
+	user-select: none;
+	background-color: var(--color-background-tooltip);
+	border-radius: var(--border-radius-medium);
+	color: var(--color-text-tooltip);
+
+	font-size: var(--font-size-6);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-heading);
+
+	display: none;
+	position: absolute;
+	text-align: left;
+
+	padding: 3px 6px;
+	pointer-events: none;
+	white-space: nowrap;
+	z-index: var(--z-index-balloon);
+	display: none;
+
+	.tw-root--hover &__container:hover &,
+	.tw-root--touch &__container:hover &,
+	&__container--show & {
+		display: block;
+	}
+
+	&:before,&:after {
+		content: '';
+		position: absolute;
+	}
+
+	&:before {
+		height: calc(100% + 12px);
+		left: -6px;
+		top: -6px;
+		width: calc(100% + 12px);
+		z-index: -1;
+	}
+
+	&:after {
+		background-color: var(--color-background-tooltip);
+		height: 6px;
+		transform: rotate(45deg);
+		width: 6px;
+		z-index: -1;
+	}
+
+	&--wrap { white-space: normal; }
+
+	&--left {
+		left: auto;
+		margin-right: 6px;
+		right: 100%;
+		top: 0;
+
+		&:after {
+			border-radius: 0 var(--border-radius-small) 0 0;
+			left: 100%;
+			margin-left: -3px;
+			top: 6px;
+		}
+	}
+
+	&--right {
+		left: 100%;
+		margin-left: 6px;
+		top: 0;
+
+		&:after {
+			border-radius: 0 0 0 var(--border-radius-small);
+			left: 0;
+			margin-left: -3px;
+			top: 6px;
+		}
+	}
+
+	&--left.ffz-il-tooltip--align-center,
+	&--right.ffz-il-tooltip--align-center {
+		top: 50%;
+		transform: translateY(-50%);
+
+		&:after {
+			margin-top: -3px;
+			top: 50%;
+		}
+	}
+
+	&--up {
+		bottom: 100%;
+		left: 0;
+		margin-bottom: 6px;
+		top: auto;
+
+		&:after {
+			border-radius: 0 0 var(--border-radius-small);
+			left: 6px;
+			margin-top: -3px;
+			top: 100%;
+		}
+	}
+
+	&--down {
+		left: 0;
+		margin-top: 6px;
+		top: 100%;
+
+		&:after {
+			border-radius: var(--border-radius-small) 0 0;
+			left: 6px;
+			top: -3px;
+		}
+	}
+
+	&--down.ffz-il-tooltip--align-center,
+	&--up.ffz-il-tooltip--align-center {
+		left: 50%;
+		transform: translateX(-50%);
+
+		&:after {
+			left: 50%;
+			margin-left: -3px;
+		}
+	}
+
+	&--down.ffz-il-tooltip--align-right,
+	&--up.ffz-il-tooltip--align-right {
+		left: auto;
+		right: 0;
+		top: auto;
+
+		&:after {
+			left: 100%;
+			margin-left: -12px;
+			top: 100%;
+		}
+	}
+
+	&--down.ffz-il-tooltip--align-right {
+		top: 100%;
+
+		&:after {
+			top: -3px;
+		}
+	}
+}

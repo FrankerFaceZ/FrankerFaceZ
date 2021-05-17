@@ -12,7 +12,7 @@
 			<button
 				:disabled="! has_value"
 				:class="{'tw-button--disabled': ! has_value}"
-				class="tw-mg-l-05 tw-button ffz-button--hollow tw-tooltip__container"
+				class="tw-mg-l-05 tw-button ffz-button--hollow ffz-il-tooltip__container"
 				@click="clear"
 			>
 				<span class="tw-button__icon tw-button__icon--left">
@@ -93,11 +93,11 @@
 									/>
 								</section>
 								<button
-									class="tw-mg-t-05 tw-button ffz-button--hollow tw-tooltip__container"
+									class="tw-mg-t-05 tw-button ffz-button--hollow ffz-il-tooltip__container"
 									@click="reset(i.id)"
 								>
 									<span class="tw-button__text">Reset</span>
-									<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+									<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 										{{ t('setting.reset', 'Reset to Default') }}
 									</span>
 								</button>

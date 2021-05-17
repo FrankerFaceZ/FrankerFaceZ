@@ -51,11 +51,11 @@
 					:show-input="false"
 					:tooltip="t('settings.term.color.tip', 'Color')"
 				/>
-				<div v-else-if="term.c" class="ffz-color-preview tw-relative tw-tooltip__container">
+				<div v-else-if="term.c" class="ffz-color-preview tw-relative ffz-il-tooltip__container">
 					<figure :style="`background-color: ${term.c}`">
 						&nbsp;
 					</figure>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('settings.term.color.tip', 'Color') }}
 					</div>
 				</div>
@@ -63,7 +63,7 @@
 			<div
 				v-if="priority"
 				:class="editing ? 'tw-mg-r-05' : 'tw-mg-x-05'"
-				class="tw-flex-shrink-0 tw-relative tw-tooltip__container"
+				class="tw-flex-shrink-0 tw-relative ffz-il-tooltip__container"
 			>
 				<span v-if="! editing">{{ term.p }}</span>
 				<input
@@ -74,13 +74,13 @@
 					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-min-width-unset ffz-input tw-pd-x-1 tw-pd-y-05"
 					style="width: 5rem"
 				>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('settings.terms.priority.tip', 'Priority') }}
 				</div>
 			</div>
 			<div
 				v-if="removable && (editing || display.remove)"
-				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative tw-tooltip__container"
+				class="tw-flex-shrink-0 tw-mg-r-05 tw-mg-y-05 tw-flex tw-align-items-center ffz-checkbox tw-relative ffz-il-tooltip__container"
 			>
 				<input
 					v-if="editing"
@@ -101,11 +101,11 @@
 					v-else-if="term.remove"
 					class="ffz-i-trash tw-pd-x-1"
 				/>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.terms.remove.on', 'Remove matching messages from chat.') }}
 				</div>
 			</div>
-			<!--div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative tw-tooltip__container">
+			<!--div v-if="removable" class="tw-flex-shrink-0 tw-mg-r-05 tw-relative ffz-il-tooltip__container">
 				<button
 					v-if="editing"
 					:class="{active: edit_data.remove}"
@@ -121,7 +121,7 @@
 					v-else-if="term.remove"
 					class="ffz-i-eye-off tw-pd-x-1"
 				/>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					<span v-if="display.remove">
 						{{ t('setting.terms.remove.on', 'Remove matching messages from chat.') }}
 					</span>
@@ -144,47 +144,47 @@
 			</div>
 			<div v-else-if="editing" class="tw-flex-shrink-0">
 				<button
-					class="tw-button tw-button--text tw-tooltip__container"
+					class="tw-button tw-button--text ffz-il-tooltip__container"
 					:class="! valid && 'tw-button--disabled'"
 					:disabled="! valid"
 					@click="save"
 				>
 					<span class="tw-button__text ffz-i-floppy" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.save', 'Save') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip__container" @click="cancel">
+				<button class="tw-button tw-button--text ffz-il-tooltip__container" @click="cancel">
 					<span class="tw-button__text ffz-i-cancel" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
 					</div>
 				</button>
 			</div>
 			<div v-else-if="deleting" class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip__container" @click="$emit('remove', term)">
+				<button class="tw-button tw-button--text ffz-il-tooltip__container" @click="$emit('remove', term)">
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip__container" @click="deleting = false">
+				<button class="tw-button tw-button--text ffz-il-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
 					</div>
 				</button>
 			</div>
 			<div v-else class="tw-flex-shrink-0">
-				<button class="tw-button tw-button--text tw-tooltip__container" @click="edit">
+				<button class="tw-button tw-button--text ffz-il-tooltip__container" @click="edit">
 					<span class="tw-button__text ffz-i-cog" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.edit', 'Edit') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-tooltip__container" @click="deleting = true">
+				<button class="tw-button tw-button--text ffz-il-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>

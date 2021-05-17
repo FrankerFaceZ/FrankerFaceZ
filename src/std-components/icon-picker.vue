@@ -25,14 +25,14 @@
 				>
 				<button
 					v-if="clearable"
-					class="tw-absolute tw-right-0 tw-top-0 tw-button tw-button--text tw-tooltip__container"
+					class="tw-absolute tw-right-0 tw-top-0 tw-button tw-button--text ffz-il-tooltip__container"
 					@click="change('', false)"
 					@keydown.escape="open = false"
 					@focus="onFocus(false)"
 					@blur="onBlur"
 				>
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 						{{ t('setting.icon.clear', 'Clear') }}
 					</div>
 				</button>

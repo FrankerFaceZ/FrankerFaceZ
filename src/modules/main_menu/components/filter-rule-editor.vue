@@ -14,10 +14,10 @@
 
 		<div
 			v-if="isShort"
-			class="tw-mg-l-1 tw-pd-x-1 tw-border-l tw-flex tw-align-items-center ffz--profile__icon tw-relative tw-tooltip__container"
+			class="tw-mg-l-1 tw-pd-x-1 tw-border-l tw-flex tw-align-items-center ffz--profile__icon tw-relative ffz-il-tooltip__container"
 		>
 			<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
-			<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
+			<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 				<span v-if="passes">
 					{{ t('setting.filters.active', 'This rule matches.') }}
 				</span>
@@ -31,9 +31,9 @@
 			:class="[isShort ? '' : 'tw-mg-l-1']"
 			class="tw-border-l tw-pd-l-1 tw-flex tw-flex-column tw-flex-wrap tw-justify-content-start tw-align-items-start"
 		>
-			<div v-if="! isShort" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative tw-tooltip__container">
+			<div v-if="! isShort" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative ffz-il-tooltip__container">
 				<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
-				<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 					<span v-if="passes">
 						{{ t('setting.filters.active', 'This rule matches.') }}
 					</span>
@@ -44,23 +44,23 @@
 			</div>
 
 			<template v-if="deleting">
-				<button class="tw-button tw-button--text tw-relative tw-tooltip__container" @click="$emit('delete')">
+				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="$emit('delete')">
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
-				<button class="tw-button tw-button--text tw-relative tw-tooltip__container" @click="deleting = false">
+				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
 					</div>
 				</button>
 			</template>
 			<template v-else>
-				<button class="tw-button tw-button--text tw-relative tw-tooltip__container" @click="deleting = true">
+				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>

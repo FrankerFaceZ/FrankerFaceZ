@@ -62,9 +62,9 @@
 				</span>
 			</button>
 
-			<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text tw-tooltip__container" @click="clear">
+			<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container" @click="clear">
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.reset', 'Reset to Default') }}
 				</div>
 			</button>

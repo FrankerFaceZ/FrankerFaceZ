@@ -1,0 +1,179 @@
+.ffz-balloon {
+	max-width: 90vw;
+	min-width: 16rem;
+	z-index: 2000;
+
+	& > &__tail {
+		height: 16px;
+		width: 16px;
+
+		& .ffz-balloon-symbol {
+			height: 8px;
+			transform: rotate(45deg) translate(-50%,-50%);
+			transform-origin: 0 0;
+			width: 8px;
+		}
+	}
+
+	&--overlay-border {
+		border: 2px solid var(--color-border-balloon-overlay);
+	}
+
+	&--left {
+		margin-right: 8px;
+		right: 100%;
+
+		& > .ffz-balloon__tail {
+			left: 100%;
+			margin-left: -1px;
+
+			& .ffz-balloon__tail-symbol {
+				right: 8px;
+			}
+		}
+	}
+
+	&--right {
+		left: 100%;
+		margin-left: 8px;
+
+		& > .ffz-balloon__tail {
+			margin-right: -1px;
+			right: 100%;
+
+			& .ffz-balloon__tail-symbol {
+				right: -8px;
+			}
+		}
+	}
+
+	&--left, &--right {
+		top: 0;
+
+		& > .ffz-balloon__tail {
+			top: 8px;
+
+			& .ffz-balloon__tail-symbol {
+				top: 50%;
+			}
+		}
+
+		&.ffz-balloon--center {
+			top: 50%;
+			transform: translateY(-50%);
+
+			& > .ffz-balloon__tail {
+				margin-top: -5.33333px;
+				top: 50%;
+			}
+		}
+	}
+
+	&--up {
+		bottom: 100%;
+		left: 0;
+		margin-bottom: 8px;
+		top: auto;
+
+		& > .ffz-balloon__tail {
+			margin-top: -1px;
+			top: 100%;
+
+			& .ffz-balloon__tail-symbol {
+				bottom: 8px;
+				top: auto;
+			}
+		}
+	}
+
+	&--down, &--up {
+		& > .ffz-balloon__tail .ffz-balloon__tail-symbol {
+			left: 50%;
+		}
+
+		&.ffz-balloon--left {
+			left: 0;
+			right: auto;
+
+			& > .ffz-balloon__tail {
+				left: 0;
+			}
+		}
+
+		&.ffz-balloon--center {
+			left: 50%;
+			transform: translateX(-50%);
+
+			& > .ffz-balloon__tail {
+				left: 50%;
+				margin-left: -8px;
+			}
+		}
+
+		&.ffz-balloon--right {
+			left: auto;
+			right: 0;
+
+			& > .ffz-balloon__tail {
+				left: 100%;
+				margin-left: -16px;
+				top: 100%;
+			}
+		}
+	}
+
+	&--down {
+		left: 0;
+		margin-top: 8px;
+		top: 100%;
+
+		& > .ffz-balloon__tail {
+			bottom: 100%;
+			margin-bottom: -1px;
+
+			& .ffz-balloon__tail-symbol {
+				bottom: -8px;
+				top: auto;
+			}
+		}
+
+		&.ffz-balloon--right {
+			top: 100%;
+
+			& > .ffz-balloon__tail {
+				left: 100%;
+				margin-left: -16px;
+				top: auto;
+			}
+		}
+	}
+
+	&--xs {
+		min-width: 10rem;
+		width: 10rem;
+	}
+
+	&--auto {
+		min-width: 0;
+		white-space: nowrap;
+	}
+
+	&--sm { width: 20rem }
+	&--md { width: 30rem }
+	&--lg { width: 40rem }
+	&--xl { width: 50rem }
+}
+
+.tw-attached {
+	position: absolute;
+	z-index: var(--z-index-balloon);
+
+	&--up { margin-bottom: 0 }
+	&--down { margin-top: 0 }
+	&--left { margin-right: 0 }
+	&--right { margin-left: 0 }
+
+	&--up.tw-attached--right {
+		inset: auto 0px 100% auto;
+	}
+}

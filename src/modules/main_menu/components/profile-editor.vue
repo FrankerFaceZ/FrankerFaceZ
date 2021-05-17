@@ -42,11 +42,11 @@
 				</div>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip__container"
+				class="tw-button tw-button--text tw-relative ffz-il-tooltip__container"
 				@click="resetExport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.close', 'Close') }}
 				</div>
 			</button>
@@ -57,11 +57,11 @@
 				{{ export_message }}
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip__container"
+				class="tw-button tw-button--text tw-relative ffz-il-tooltip__container"
 				@click="resetExport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.close', 'Close') }}
 				</div>
 			</button>

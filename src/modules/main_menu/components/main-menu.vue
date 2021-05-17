@@ -33,11 +33,11 @@
 					<figure :class="faded ? 'ffz-i-eye-off' : 'ffz-i-eye'" />
 				</span>
 			</button>
-			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip__container" @click="popout">
+			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="popout">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-link-ext" />
 				</span>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center">
 					{{ t('main-menu.popout', 'Open Settings in a New Window') }}
 				</div>
 			</button>

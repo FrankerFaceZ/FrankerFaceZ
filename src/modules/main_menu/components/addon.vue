@@ -72,7 +72,7 @@
 					<button
 						v-if="external"
 						disabled
-						class="tw-button ffz-button--hollow tw-button--disabled tw-tooltip__container tw-mg-r-1"
+						class="tw-button ffz-button--hollow tw-button--disabled ffz-il-tooltip__container tw-mg-r-1"
 					>
 						<span class="tw-button__icon tw-button__icon--left">
 							<figure class="ffz-i-trash" />
@@ -80,7 +80,7 @@
 						<span class="tw-button__text">
 							{{ t('addon.disable', 'Disable') }}
 						</span>
-						<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-left">
+						<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-left">
 							{{ t('addon.external.description', 'This add-on has been loaded by an external script and cannot be disabled here.') }}
 						</div>
 					</button>

@@ -40,13 +40,13 @@
 				</div>
 
 				<button
-					class="tw-mg-05 tw-button tw-button--text tw-tooltip__container"
+					class="tw-mg-05 tw-button tw-button--text ffz-il-tooltip__container"
 					:class="examples_loading && 'tw-button--disabled'"
 					:disabled="examples_loading"
 					@click="updateExamples"
 				>
 					<span class="tw-button__text ffz-i-arrows-cw" />
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('debug.link-provider.refresh', 'Refresh') }}
 					</div>
 				</button>

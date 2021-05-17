@@ -452,7 +452,7 @@ export default class MenuButton extends SiteModule {
 						</span>) : null }
 					</div>) : null}
 					{ ! data.unclosable && (<button
-						class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip__container"
+						class="tw-button-icon tw-mg-l-05 tw-relative ffz-il-tooltip__container"
 						onClick={data._remove}
 					>
 						<span class="tw-button-icon__icon">
@@ -544,7 +544,7 @@ export default class MenuButton extends SiteModule {
 		el = (<div
 			class={`ffz-top-nav ${is_mod ? 'ffz-mod-view-button tw-relative tw-mg-b-1' : `tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-relative ${is_sunlight ? 'tw-mg-l-05 tw-mg-r-2' : 'tw-mg-x-05'}`}`}
 		>
-			<div class="tw-inline-flex tw-relative tw-tooltip__container">
+			<div class="tw-inline-flex tw-relative ffz-il-tooltip__container">
 				{btn = (<button
 					class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.loading ? ' loading' : ''}`}
 					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
@@ -556,14 +556,14 @@ export default class MenuButton extends SiteModule {
 						</span>
 					</div>
 				</button>)}
-				{this.has_error && (<div class={`tw-absolute ffz-balloon ffz-balloon--lg tw-block ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
+				{this.has_error && (<div class={`tw-absolute ffz-balloon ffz-balloon--lg tw-block ${is_mod ? 'ffz-il-tooltip--up ffz-il-tooltip--align-left' : 'ffz-il-tooltip--down ffz-il-tooltip--align-right'}`}>
 					<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4 tw-pd-1">
 						<div class="tw-flex tw-align-items-center">
 							<div class="tw-flex-grow-1">
 								{ this.error.i18n ? this.i18n.t(this.error.i18n, this.error.text) : this.error.text }
 							</div>
 							{this.error.permanent ? null : (<button
-								class="tw-button-icon tw-mg-l-05 tw-relative tw-tooltip__container"
+								class="tw-button-icon tw-mg-l-05 tw-relative ffz-il-tooltip__container"
 								onClick={() => this.error = null} // eslint-disable-line react/jsx-no-bind
 							>
 								<span class="tw-button-icon__icon">
@@ -573,7 +573,7 @@ export default class MenuButton extends SiteModule {
 						</div>
 					</div>
 				</div>)}
-				<div class={`tw-tooltip ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}>
+				<div class={`ffz-il-tooltip ${is_mod ? 'ffz-il-tooltip--up ffz-il-tooltip--align-left' : 'ffz-il-tooltip--down ffz-il-tooltip--align-right'}`}>
 					{this.i18n.t('site.menu_button', 'FrankerFaceZ Control Center')}
 					{this.has_update && (<div class="tw-mg-t-1">
 						{this.i18n.t('site.menu_button.update-desc', 'There is an update available. Please refresh your page.')}
@@ -601,7 +601,7 @@ export default class MenuButton extends SiteModule {
 				</div>
 			</div>
 			{(inst || container)._ffz_toast_el = (<div
-				class={`ffz-toast--container tw-absolute tw-block ${is_mod ? 'tw-tooltip--up tw-tooltip--align-left' : 'tw-tooltip--down tw-tooltip--align-right'}`}
+				class={`ffz-toast--container tw-absolute tw-block ${is_mod ? 'ffz-il-tooltip--up ffz-il-tooltip--align-left' : 'ffz-il-tooltip--down ffz-il-tooltip--align-right'}`}
 				onmouseenter={this.pauseToasts}
 				onmouseleave={this.unpauseToasts}
 			>
@@ -737,7 +737,7 @@ export default class MenuButton extends SiteModule {
 				<div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-4">
 					<div class="tw-c-text-base tw-elevation-1 tw-flex tw-flex-shrink-0 tw-pd-x-1 tw-pd-y-05 tw-popover-header">
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--left">
-							<div class="tw-inline-flex tw-relative tw-tooltip__container">
+							<div class="tw-inline-flex tw-relative ffz-il-tooltip__container">
 								<button
 									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
 									onDblClick={() => {this.emit('site.player:reset'); destroy()}} // eslint-disable-line react/jsx-no-bind
@@ -746,7 +746,7 @@ export default class MenuButton extends SiteModule {
 										<figure class="ffz-i-t-reset" />
 									</span>
 								</button>
-								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+								<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-left">
 									{ this.i18n.t('player.reset_button.all', 'Reset All Players (Double-Click)') }
 								</div>
 							</div>
@@ -757,7 +757,7 @@ export default class MenuButton extends SiteModule {
 							</h5>
 						</div>
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
-							<div class="tw-inline-flex tw-relative tw-tooltip__container">
+							<div class="tw-inline-flex tw-relative ffz-il-tooltip__container">
 								<button
 									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
 									onClick={e => {this.openSettings(e, btn); destroy()}} // eslint-disable-line react/jsx-no-bind
@@ -766,7 +766,7 @@ export default class MenuButton extends SiteModule {
 										<figure class="ffz-i-cog" />
 									</span>
 								</button>
-								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+								<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center">
 									{ this.i18n.t('setting.profiles.configure', 'Configure') }
 								</div>
 							</div>

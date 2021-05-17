@@ -19,8 +19,6 @@ function loadMD() {
 			import(/* webpackChunkName: 'markdown' */ 'markdown-it'),
 			import(/* webpackChunkName: 'markdown' */ 'markdown-it-link-attributes')
 		]).then(modules => {
-			console.log('loaded', modules);
-
 			MD = modules[0]?.default;
 			MILA = modules[1]?.default;
 

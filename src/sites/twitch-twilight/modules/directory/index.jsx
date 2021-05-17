@@ -413,14 +413,14 @@ export default class Directory extends SiteModule {
 			el.ffz_uptime_el = container.querySelector('.ffz-uptime-element');
 			if ( ! el.ffz_uptime_el )
 				container.appendChild(el.ffz_uptime_el = (<div class="ffz-uptime-element tw-absolute tw-right-0 tw-top-0 tw-mg-1">
-					<div class="tw-relative tw-tooltip__container">
+					<div class="tw-relative ffz-il-tooltip__container">
 						<div class="tw-border-radius-small tw-c-background-overlay tw-c-text-overlay tw-flex tw-pd-x-05">
 							<div class="tw-flex tw-c-text-live">
 								<figure class="ffz-i-clock" />
 							</div>
 							{el.ffz_uptime_span = <p />}
 						</div>
-						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 							{this.i18n.t('metadata.uptime.tooltip', 'Stream Uptime')}
 							{el.ffz_uptime_tt = <div class="tw-pd-t-05" />}
 						</div>
@@ -434,7 +434,7 @@ export default class Directory extends SiteModule {
 			return this.clearUptime(el);
 
 		if ( ! el.ffz_uptime_tt )
-			el.ffz_uptime_tt = el.ffz_uptime_el.querySelector('.tw-tooltip > div');
+			el.ffz_uptime_tt = el.ffz_uptime_el.querySelector('.ffz-il-tooltip > div');
 		if ( ! el.ffz_uptime_tt )
 			return this.clearUptime(el);
 

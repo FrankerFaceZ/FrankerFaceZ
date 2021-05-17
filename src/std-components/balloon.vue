@@ -34,9 +34,9 @@ export default {
 			if ( this.dir ) {
 				dir = this.dir.split('-').map(d => {
 					if ( d === 'up' || d === 'down' )
-						return `tw-tooltip--${d}`;
+						return `ffz-il-tooltip--${d}`;
 					if ( d === 'left' || d === 'right' )
-						return `tw-tooltip--align-${d}`;
+						return `ffz-il-tooltip--align-${d}`;
 					return '';
 				}).join(' ');
 			}

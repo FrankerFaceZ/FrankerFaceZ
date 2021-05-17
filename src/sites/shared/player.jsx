@@ -1182,7 +1182,7 @@ export default class PlayerBase extends Module {
 				extra.textContent = `${Math.round(value * 100)}%`;
 			};
 
-			cont = (<div class="ffz--player-gain volume-slider__slider-container tw-relative tw-tooltip__container">
+			cont = (<div class="ffz--player-gain volume-slider__slider-container tw-relative ffz-il-tooltip__container">
 				<div class="tw-align-items-center tw-flex tw-full-height">
 					<label class="tw-hide-accessible">{this.i18n.t('player.gain.label','Gain Control')}</label>
 					<div class="tw-flex tw-full-width tw-relative tw-z-above">
@@ -1205,7 +1205,7 @@ export default class PlayerBase extends Module {
 						</div>
 					</div>
 				</div>
-				{tipcont = (<div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" role="tooltip">
+				{tipcont = (<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up" role="tooltip">
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="tw-regular ffz--p-value" />)}
@@ -1226,9 +1226,9 @@ export default class PlayerBase extends Module {
 		else {
 			input = cont.querySelector('input');
 			fill = cont.querySelector('.ffz--gain-value');
-			tipcont = cont.querySelector('.tw-tooltip');
-			tip = cont.querySelector('.tw-tooltip .ffz--p-tip');
-			extra = cont.querySelector('.tw-tooltip .ffz--p-value');
+			tipcont = cont.querySelector('.ffz-il-tooltip');
+			tip = cont.querySelector('.ffz-il-tooltip .ffz--p-tip');
+			extra = cont.querySelector('.ffz-il-tooltip .ffz--p-value');
 		}
 
 		let value = video._ffz_gain_value;
@@ -1272,7 +1272,7 @@ export default class PlayerBase extends Module {
 		}
 
 		if ( ! cont ) {
-			cont = (<div class="ffz--player-comp tw-inline-flex tw-relative tw-tooltip__container">
+			cont = (<div class="ffz--player-comp tw-inline-flex tw-relative ffz-il-tooltip__container">
 				{btn = (<button
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
@@ -1285,7 +1285,7 @@ export default class PlayerBase extends Module {
 						</div>
 					</div>
 				</button>)}
-				<div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" role="tooltip">
+				<div class="ffz-il-tooltip ffz-il-tooltip--align-left ffz-il-tooltip--up" role="tooltip">
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="ffz--p-extra tw-pd-t-05 ffz--tooltip-explain" />)}
@@ -1300,8 +1300,8 @@ export default class PlayerBase extends Module {
 		else {
 			icon = cont.querySelector('figure');
 			btn = cont.querySelector('button');
-			tip = cont.querySelector('.tw-tooltip .ffz--p-tip');
-			extra = cont.querySelector('.tw-tooltip .ffz--p-extra');
+			tip = cont.querySelector('.ffz-il-tooltip .ffz--p-tip');
+			extra = cont.querySelector('.ffz-il-tooltip .ffz--p-extra');
 		}
 
 		const comp_active = video._ffz_compressed,
@@ -1637,7 +1637,7 @@ export default class PlayerBase extends Module {
 		}
 
 		if ( ! cont ) {
-			cont = (<div class="ffz--player-pip tw-inline-flex tw-relative tw-tooltip__container">
+			cont = (<div class="ffz--player-pip tw-inline-flex tw-relative ffz-il-tooltip__container">
 				{btn = (<button
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
@@ -1650,7 +1650,7 @@ export default class PlayerBase extends Module {
 						</div>
 					</div>
 				</button>)}
-				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
 			let thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]');
@@ -1665,7 +1665,7 @@ export default class PlayerBase extends Module {
 		} else {
 			icon = cont.querySelector('figure');
 			btn = cont.querySelector('button');
-			tip = cont.querySelector('.tw-tooltip');
+			tip = cont.querySelector('.ffz-il-tooltip');
 		}
 
 		const pip_active = !!document.pictureInPictureElement,
@@ -1740,7 +1740,7 @@ export default class PlayerBase extends Module {
 		}
 
 		if ( ! cont ) {
-			cont = (<div class="ffz--player-reset tw-inline-flex tw-relative tw-tooltip__container">
+			cont = (<div class="ffz--player-reset tw-inline-flex tw-relative ffz-il-tooltip__container">
 				{btn = (<button
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
@@ -1754,7 +1754,7 @@ export default class PlayerBase extends Module {
 						</div>
 					</div>
 				</button>)}
-				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
 			const thing = container.querySelector('.ffz--player-pip button') || container.querySelector('button[data-a-target="player-theatre-mode-button"]') || container.querySelector('button[data-a-target="player-fullscreen-button"]');
@@ -1765,7 +1765,7 @@ export default class PlayerBase extends Module {
 
 		} else {
 			btn = cont.querySelector('button');
-			tip = cont.querySelector('.tw-tooltip');
+			tip = cont.querySelector('.ffz-il-tooltip');
 		}
 
 		btn.setAttribute('aria-label',
@@ -1808,7 +1808,7 @@ export default class PlayerBase extends Module {
 		}
 
 		if ( ! cont ) {
-			cont = (<div class="ffz--player-reset tw-absolute tw-bottom-0 tw-right-0 tw-tooltip__container tw-mg-1">
+			cont = (<div class="ffz--player-reset tw-absolute tw-bottom-0 tw-right-0 ffz-il-tooltip__container tw-mg-1">
 				{btn = (<button
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
@@ -1822,14 +1822,14 @@ export default class PlayerBase extends Module {
 						</div>
 					</div>
 				</button>)}
-				{tip = (<div class="tw-tooltip tw-tooltip--align-right tw-tooltip--up" role="tooltip" />)}
+				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
 			container.appendChild(cont);
 
 		} else {
 			btn = cont.querySelector('button');
-			tip = cont.querySelector('.tw-tooltip');
+			tip = cont.querySelector('.ffz-il-tooltip');
 		}
 
 		btn.setAttribute('aria-label',

@@ -541,7 +541,7 @@ export default class EmoteMenu extends Module {
 
 				const tones = Object.entries(emoji.variants).map(([tone, emoji]) => this.renderTone(emoji, tone));
 
-				return (<div class="tw-absolute ffz-balloon tw-tooltip--up tw-tooltip--align-right ffz-balloon tw-block">
+				return (<div class="tw-absolute ffz-balloon ffz-il-tooltip--up ffz-il-tooltip--align-right ffz-balloon tw-block">
 					<div class="tw-border-b tw-border-l tw-border-r tw-border-t tw-border-radius-medium tw-c-background-base tw-elevation-1">
 						{this.renderTone(emoji, null)}
 						{tones}
@@ -1013,7 +1013,7 @@ export default class EmoteMenu extends Module {
 					const padding = t.chat.context.get('chat.emote-menu.reduced-padding');
 
 					return (<div
-						class={`ffz-balloon ffz-balloon--md tw-tooltip--up tw-tooltip--align-right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
+						class={`ffz-balloon ffz-balloon--md ffz-il-tooltip--up ffz-il-tooltip--align-right tw-block tw-absolute ffz--emote-picker${padding ? ' reduced-padding' : ''}`}
 						data-a-target="emote-picker"
 					>
 						<div class="tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base">
@@ -2425,7 +2425,7 @@ export default class EmoteMenu extends Module {
 												choices={this.state.tone_emoji}
 												pickTone={this.pickTone}
 											/>}
-											{(no_tabs || ! is_emoji) && <div class="tw-relative tw-tooltip__container tw-mg-l-1">
+											{(no_tabs || ! is_emoji) && <div class="tw-relative ffz-il-tooltip__container tw-mg-l-1">
 												<button
 													class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon--primary ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.state.visibility_control ? ' ffz-core-button--primary' : ' tw-button-icon'}`}
 													onClick={this.toggleVisibilityControl}
@@ -2434,7 +2434,7 @@ export default class EmoteMenu extends Module {
 														<figure class={this.state.visibility_control ? 'ffz-i-eye-off' : 'ffz-i-eye'} />
 													</span>
 												</button>
-												<div class="tw-tooltip tw-tooltip--up tw-tooltip--align-right">
+												<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 													{this.state.visibility_control ?
 														t.i18n.t('emote-menu.toggle-hide.on', 'Exit Emote Visibility Control') :
 														t.i18n.t('emote-menu.toggle-hide.off', 'Emote Visibility Control')

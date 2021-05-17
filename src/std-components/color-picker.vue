@@ -33,7 +33,7 @@
 		</div>
 		<div
 			v-else
-			:class="{'tw-tooltip__container': hasTooltip}"
+			:class="{'ffz-il-tooltip__container': hasTooltip}"
 			class="tw-relative"
 		>
 			<button
@@ -51,13 +51,13 @@
 				v-if="open"
 				v-on-clickaway="closePicker"
 				:class="{'ffz-bottom-100': openUp}"
-				class="tw-absolute tw-z-above tw-tooltip--down tw-tooltip--align-right"
+				class="tw-absolute tw-z-above ffz-il-tooltip--down ffz-il-tooltip--align-right"
 			>
 				<chrome-picker :disable-alpha="! alpha" :value="colors" @input="onPick" />
 			</div>
 			<div
 				v-if="! open && hasTooltip"
-				class="tw-tooltip tw-tooltip--down tw-tooltip--align-right"
+				class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right"
 			>
 				{{ tooltip }}
 				<div v-if="nullable" class="tw-regular">

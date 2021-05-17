@@ -26,27 +26,27 @@
 					</div>
 				</div>
 			</div>
-			<button class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip__container" @click="saveBlob">
+			<button class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="saveBlob">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-floppy" />
 				</span>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('i18n.ui.save', 'Generate Change Blob') }}
 				</div>
 			</button>
-			<button v-if="can_upload" class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip__container" @click="uploadBlob">
+			<button v-if="can_upload" class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="uploadBlob">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-upload-cloud" />
 				</span>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('i18n.ui.upload', 'Upload Changes') }}
 				</div>
 			</button>
-			<button class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip__container" @click="requestKeys">
+			<button class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="requestKeys">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-arrows-cw" />
 				</span>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('i18n.ui.refresh', 'Refresh Strings') }}
 				</div>
 			</button>
@@ -55,11 +55,11 @@
 					<figure :class="faded ? 'ffz-i-eye-off' : 'ffz-i-eye'" />
 				</span>
 			</button>
-			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative tw-tooltip__container" @click="popout">
+			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="popout">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-link-ext" />
 				</span>
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-center">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center">
 					{{ t('i18n.ui.popout', 'Open the Translation Editor in a New Window') }}
 				</div>
 			</button>
@@ -76,11 +76,11 @@
 		</header>
 		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-flex-column tw-overflow-hidden">
 			<header class="tw-border-b tw-pd-05 tw-c-background-base tw-flex tw-align-items-center">
-				<button class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip__container" @click="prevPage">
+				<button class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container" @click="prevPage">
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-left-dir" />
 					</span>
-					<div class="tw-tooltip tw-tooltip--down">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down">
 						{{ t('page.previous', 'Previous Page') }}
 					</div>
 				</button>
@@ -105,17 +105,17 @@
 					@keydown.enter="closePage"
 					@blur="closePage"
 				>
-				<button class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive tw-relative tw-tooltip__container" @click="nextPage">
+				<button class="tw-border-radius-medium tw-pd-x-05 ffz-core-button ffz-core-button--text tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container" @click="nextPage">
 					<span class="tw-button-icon__icon">
 						<figure class="ffz-i-right-dir" />
 					</span>
-					<div class="tw-tooltip tw-tooltip--down">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down">
 						{{ t('page.next', 'Next Page') }}
 					</div>
 				</button>
 				<div class="tw-flex-grow-1" />
 				<button
-					class="tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					class="tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container"
 					:class="[mode === 0 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 0"
 				>
@@ -125,13 +125,13 @@
 							{{ total }}
 						</div>
 					</div>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('i18n.ui.all', 'All Strings') }}
 					</div>
 				</button>
 				<button
 					v-if="existing != total"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container"
 					:class="[mode === 1 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 1"
 				>
@@ -141,13 +141,13 @@
 							{{ existing }}
 						</div>
 					</div>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('i18n.ui.existing', 'Existing Strings') }}
 					</div>
 				</button>
 				<button
 					v-if="added"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container"
 					:class="[mode === 2 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 2"
 				>
@@ -157,13 +157,13 @@
 							{{ added }}
 						</div>
 					</div>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('i18n.ui.added', 'New Strings') }}
 					</div>
 				</button>
 				<button
 					v-if="changed"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container"
 					:class="[mode === 3 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 3"
 				>
@@ -173,13 +173,13 @@
 							{{ changed }}
 						</div>
 					</div>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('i18n.ui.changed', 'Changed Strings') }}
 					</div>
 				</button>
 				<button
 					v-if="pending"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container"
 					:class="[mode === 4 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 4"
 				>
@@ -189,13 +189,13 @@
 							{{ pending }}
 						</div>
 					</div>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('i18n.ui.pending', 'Pending Strings') }}
 					</div>
 				</button>
 				<button
 					v-if="invalid"
-					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative tw-tooltip__container"
+					class="tw-mg-l-05 tw-border-radius-medium tw-pd-x-05 ffz-core-button tw-c-text-base tw-interactive tw-relative ffz-il-tooltip__container"
 					:class="[mode === 5 ? 'ffz-core-button--primary' : 'ffz-core-button--text']"
 					@click="mode = 5"
 				>
@@ -205,7 +205,7 @@
 							{{ invalid }}
 						</div>
 					</div>
-					<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('i18n.ui.invalid', 'Invalid Strings') }}
 					</div>
 				</button>

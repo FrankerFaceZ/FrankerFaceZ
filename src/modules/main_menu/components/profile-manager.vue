@@ -11,7 +11,7 @@
 				}}
 
 				<div v-if="context.can_proxy" class="tw-flex tw-align-items-center tw-mg-t-1">
-					<div class="ffz-checkbox tw-relative tw-tooltip__container">
+					<div class="ffz-checkbox tw-relative ffz-il-tooltip__container">
 						<input
 							id="proxied"
 							ref="proxied"
@@ -27,7 +27,7 @@
 							</span>
 						</label>
 
-						<div class="tw-tooltip ffz-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-left">
+						<div class="ffz-il-tooltip ffz-balloon--md ffz-il-tooltip--wrap ffz-il-tooltip--down ffz-il-tooltip--align-left">
 							{{ t('setting.context-difference.tip', 'Checking this will use the context from the original window, causing profiles and thier rules to match like they would in the window that opened this Control Center.') }}
 						</div>
 					</div>
@@ -128,11 +128,11 @@
 				</div>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip__container"
+				class="tw-button tw-button--text tw-relative ffz-il-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.close', 'Close') }}
 				</div>
 			</button>
@@ -144,11 +144,11 @@
 			</section>
 			<button
 				v-if="import_closable"
-				class="tw-button tw-button--text tw-relative tw-tooltip__container"
+				class="tw-button tw-button--text tw-relative ffz-il-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.close', 'Close') }}
 				</div>
 			</button>
@@ -163,23 +163,23 @@
 				<button
 					v-for="(profile, idx) in import_profiles"
 					:key="idx"
-					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay tw-relative tw-tooltip__container"
+					class="tw-block tw-full-width tw-mg-y-05 tw-mg-r-1 tw-pd-05 tw-button ffz-button--hollow tw-c-text-overlay tw-relative ffz-il-tooltip__container"
 					@click="importProfile(profile)"
 				>
 					<span class="tw-button__text tw-c-text-overlay">
 						{{ profile.i18n_key ? t(profile.i18n_key, profile.name) : profile.name }}
 					</span>
-					<div v-if="profile.description" class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+					<div v-if="profile.description" class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-left">
 						{{ profile.desc_i18n_key ? t(profile.desc_i18n_key, profile.description) : profile.description }}
 					</div>
 				</button>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip__container"
+				class="tw-button tw-button--text tw-relative ffz-il-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.close', 'Close') }}
 				</div>
 			</button>
@@ -210,11 +210,11 @@
 				</button>
 			</section>
 			<button
-				class="tw-button tw-button--text tw-relative tw-tooltip__container"
+				class="tw-button tw-button--text tw-relative ffz-il-tooltip__container"
 				@click="resetImport"
 			>
 				<span class="tw-button__text ffz-i-cancel" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.close', 'Close') }}
 				</div>
 			</button>
@@ -237,10 +237,10 @@
 
 					<div
 						v-if="p.url"
-						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative tw-tooltip__container tw-font-size-4"
+						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container tw-font-size-4"
 					>
 						<span :class="`ffz-i-download-cloud${p.pause_updates ? ' ffz-unmatched-item' : ''}`" />
-						<div v-if="! p.pause_updates" class="tw-tooltip tw-tooltip--down tw-tooltip--align-left">
+						<div v-if="! p.pause_updates" class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-left">
 							<div class="tw-mg-b-05">
 								{{ t('setting.profile.updates', 'This profile will update automatically from the following URL:') }}
 							</div>
@@ -271,9 +271,9 @@
 									'ffz-i-cancel': ! p.toggled,
 									'ffz-i-minus': p.toggled && ! p.live
 								}"
-								class="ffz--profile__icon tw-relative tw-tooltip__container"
+								class="ffz--profile__icon tw-relative ffz-il-tooltip__container"
 							>
-								<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+								<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 									<span v-if="p.live">
 										{{ t('setting.profiles.active', 'This profile is enabled and active.') }}
 									</span>

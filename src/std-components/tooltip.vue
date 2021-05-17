@@ -1,9 +1,9 @@
 <template functional>
-	<div class="tw-relative tw-tooltip__container">
+	<div class="tw-relative ffz-il-tooltip__container">
 		<slot />
 		<div
-			:class="`tw-tooltip--align-${props.align||'center'} tw-tooltip--${props.above ? 'up' : 'down'}`"
-			class="tw-tooltip"
+			:class="`ffz-il-tooltip--align-${props.align||'center'} ffz-il-tooltip--${props.above ? 'up' : 'down'}`"
+			class="ffz-il-tooltip"
 		>
 			<slot name="tooltip" />
 		</div>

@@ -323,7 +323,7 @@ export default class ChatLine extends Module {
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
 					e('span', {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip__container' : ''}`,
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''}`,
 						role: 'button',
 						style: { color },
 						onClick: this.ffz_user_click_handler,
@@ -333,7 +333,7 @@ export default class ChatLine extends Module {
 							className: 'chat-author__display-name'
 						}, override_name),
 						e('div', {
-							className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'
+							className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
 						}, user_block)
 					] : user_block)
 				]);
@@ -522,7 +522,7 @@ other {# messages were deleted by a moderator.}
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
 					e('span', {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative tw-tooltip__container' : ''}`,
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''}`,
 						role: 'button',
 						style: { color },
 						onClick: this.ffz_user_click_handler,
@@ -532,7 +532,7 @@ other {# messages were deleted by a moderator.}
 							className: 'chat-author__display-name'
 						}, override_name),
 						e('div', {
-							className: 'tw-tooltip tw-tooltip--down tw-tooltip--align-center'
+							className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
 						}, user_block)
 					] : user_block)
 				];

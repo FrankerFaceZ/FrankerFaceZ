@@ -6,25 +6,25 @@
 			</div>
 			<button
 				v-if="! empty"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
+				class="tw-mg-l-1 tw-button tw-button--text ffz-il-tooltip__container"
 				@click="clear"
 			>
 				<span class="tw-button__text ffz-i-trash">
 					{{ t('setting.delete-all', 'Delete All') }}
 				</span>
-				<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.reasons.delete-all', "Delete all of this profile's reasons.") }}
 				</span>
 			</button>
 			<button
 				v-if="empty"
-				class="tw-mg-l-1 tw-button tw-button--text tw-tooltip__container"
+				class="tw-mg-l-1 tw-button tw-button--text ffz-il-tooltip__container"
 				@click="populate"
 			>
 				<span class="tw-button__text ffz-i-trash">
 					{{ t('setting.reasons.add-default', 'Add Defaults') }}
 				</span>
-				<span class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.reasons.add-default-tip', 'Add all of the default reasons to this profile.') }}
 				</span>
 			</button>

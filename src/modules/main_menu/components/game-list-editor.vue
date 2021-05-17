@@ -65,9 +65,9 @@
 					</span>
 				</div>
 				<div class="tw-flex-shrink-0">
-					<button class="tw-button tw-button--text tw-tooltip__container" @click="remove(i)">
+					<button class="tw-button tw-button--text ffz-il-tooltip__container" @click="remove(i)">
 						<span class="tw-button__text ffz-i-trash" />
-						<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 							{{ t('setting.delete', 'Delete') }}
 						</div>
 					</button>

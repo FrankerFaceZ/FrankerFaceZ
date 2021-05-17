@@ -23,11 +23,11 @@
 			</div>
 
 			<button
-				class="ffz-button--hollow ffz-clear-key tw-absolute tw-top-0 tw-bottom-0 tw-right-0 tw-border-l tw-z-default tw-pd-x-1 tw-tooltip__container"
+				class="ffz-button--hollow ffz-clear-key tw-absolute tw-top-0 tw-bottom-0 tw-right-0 tw-border-l tw-z-default tw-pd-x-1 ffz-il-tooltip__container"
 				@click="clear"
 			>
 				<figure class="ffz-i-trash" />
-				<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.clear', 'Clear') }}
 				</div>
 			</button>

@@ -54,25 +54,25 @@
 								<div class="ffz--profile-row__icon-tray tw-flex">
 									<div
 										v-if="p.url"
-										:class="`tw-tooltip__container ffz--profile-row__icon ffz-i-download-cloud tw-relative${p.pause_updates ? ' ffz-unmatched-item' : ''}`"
+										:class="`ffz-il-tooltip__container ffz--profile-row__icon ffz-i-download-cloud tw-relative${p.pause_updates ? ' ffz-unmatched-item' : ''}`"
 									>
-										<div v-if="! p.pause_updates" class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+										<div v-if="! p.pause_updates" class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 											{{ t('setting.profiles.updates', 'This profile will update automatically.') }}
 										</div>
 									</div>
 									<div
 										v-if="! p.toggled"
-										class="tw-tooltip__container ffz--profile-row__icon ffz-i-cancel tw-relative"
+										class="ffz-il-tooltip__container ffz--profile-row__icon ffz-i-cancel tw-relative"
 									>
-										<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+										<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 											{{ t('setting.profiles.disabled', 'This profile is disabled.') }}
 										</div>
 									</div>
 									<div
 										v-if="p.live"
-										class="tw-tooltip__container ffz--profile-row__icon ffz-i-ok tw-relative"
+										class="ffz-il-tooltip__container ffz--profile-row__icon ffz-i-ok tw-relative"
 									>
-										<div class="tw-tooltip tw-tooltip--down tw-tooltip--align-right">
+										<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 											{{ t('setting.profiles.active', 'This profile is enabled and active.') }}
 										</div>
 									</div>

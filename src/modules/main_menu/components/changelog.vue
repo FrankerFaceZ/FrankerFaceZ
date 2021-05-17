@@ -11,7 +11,7 @@
 
 		<div v-if=" ! addons" class="tw-mg-b-1 tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1" />
-			<div class="ffz-checkbox tw-relative tw-tooltip__container">
+			<div class="ffz-checkbox tw-relative ffz-il-tooltip__container">
 				<input
 					id="nonversioned"
 					ref="nonversioned"
@@ -26,7 +26,7 @@
 					</span>
 				</label>
 
-				<div class="tw-tooltip ffz-balloon--md tw-tooltip--wrap tw-tooltip--down tw-tooltip--align-right">
+				<div class="ffz-il-tooltip ffz-balloon--md ffz-il-tooltip--wrap ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('home.changelog.about-nonversioned', 'Non-versioned commits are commits to the FrankerFaceZ repository not associated with a release build. They typically represent maintenance or contributions from the community that will be included in a subsequent release.') }}
 				</div>
 			</div>
