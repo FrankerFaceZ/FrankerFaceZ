@@ -48,7 +48,7 @@ export default class ClipsSite extends BaseSite {
 			'player-gain-volume': '.video-player__overlay[data-compressed="true"] .volume-slider__slider-container:not(.ffz--player-gain)',
 			'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
 			'player-ext-hover': '.video-player__overlay[data-controls="false"] .extension-taskbar,.video-player__overlay[data-controls="false"] .extension-container,.video-player__overlay[data-controls="false"] .extensions-dock__layout,.video-player__overlay[data-controls="false"] .extensions-notifications,.video-player__overlay[data-controls="false"] .extensions-video-overlay-size-container',
-			'dark-toggle': 'div[data-a-target="dark-mode-toggle"],div[data-a-target="dark-mode-toggle"] + .tw-border-b'
+			'dark-toggle': 'div[data-a-target="dark-mode-toggle"],div[data-a-target="dark-mode-toggle"] + div'
 		};
 
 		this.inject(Player);

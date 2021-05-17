@@ -164,7 +164,7 @@
 	&--xl { width: 50rem }
 }
 
-.tw-attached {
+.ffz-attached {
 	position: absolute;
 	z-index: var(--z-index-balloon);
 
@@ -173,7 +173,12 @@
 	&--left { margin-right: 0 }
 	&--right { margin-left: 0 }
 
-	&--up.tw-attached--right {
+	/*&--up.tw-attached--right {
 		inset: auto 0px 100% auto;
-	}
+	}*/
+
+	&--right { right: 0 }
+	&--left { left: 0 }
+	&--up { bottom: 100% }
+	&--down { top: 100% }
 }

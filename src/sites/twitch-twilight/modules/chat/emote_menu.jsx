@@ -2314,7 +2314,7 @@ export default class EmoteMenu extends Module {
 					whisper = this.props.source === 'whisper';
 
 				return (<div class={`tw-block${this.props.visible ? '' : ' tw-hide'}`} style={{display: this.props.visible ? null : 'none !important'}}>
-					<div class="tw-absolute tw-attached tw-attached--right tw-attached--up">
+					<div class="tw-absolute ffz-attached ffz-attached--right ffz-attached--up">
 						<div
 							class={`ffz-balloon ffz-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${this.state.tall ? ' ffz--emote-picker__tall' : ''}${padding ? ' reduced-padding' : ''}`}
 							data-a-target="emote-picker"
