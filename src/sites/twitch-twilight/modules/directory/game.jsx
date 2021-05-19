@@ -63,10 +63,22 @@ export default class Game extends SiteModule {
 			for(const inst of instances)
 				this.updateGameHeader(inst);
 		});
+
+		this.on('site.router:route', route => {
+			if ( route && route.name === 'dir-game-index' )
+				this.updateGameHeader();
+		})
 	}
 
 
 	updateGameHeader(inst) {
+		if ( inst === undefined ) {
+			for(const inst of this.GameHeader.instances)
+				this.updateGameHeader(inst);
+
+			return;
+		}
+
 		this.updateButtons(inst);
 
 		const category = inst?.props?.data?.game;
@@ -83,13 +95,13 @@ export default class Game extends SiteModule {
 		if ( get('data.game', inst.props) == null || ! container || ! container.querySelector )
 			return;
 
-		const buttons = container.querySelector('.tw-flex > .tw-flex-column');
-		if ( ! buttons )
-			return;
-
-		const ffz_buttons = buttons.querySelector('.ffz-directory-buttons');
+		const ffz_buttons = container.querySelector('.ffz-directory-buttons');
 		if ( ffz_buttons )
 			ffz_buttons.remove();
+
+		const buttons = container.querySelector('.directory-header-new__info > div > div + div');
+		if ( ! buttons )
+			return;
 
 		let block_btn, block_label,
 			hidden_btn, hidden_label;

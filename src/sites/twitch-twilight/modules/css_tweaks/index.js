@@ -22,7 +22,7 @@ const CLASSES = {
 	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section:not(.online-friends)',
 	'side-offline-channels': '.ffz--side-nav-card-offline',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
-	'modview-hide-info': '.tw-flex.modview-player-widget__hide-stream-info',
+	'modview-hide-info': '.modview-player-widget__hide-stream-info',
 
 	'community-highlights': '.community-highlight-stack__card',
 
@@ -44,7 +44,7 @@ const CLASSES = {
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',
 	'celebration': 'body .celebration__overlay',
-	'mod-view': '.chat-input__buttons-container .tw-core-button[href*="/moderator"]'
+	'mod-view': '.chat-input__buttons-container a[href*="/moderator"]'
 };
 
 

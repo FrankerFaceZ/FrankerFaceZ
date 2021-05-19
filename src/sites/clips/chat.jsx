@@ -151,6 +151,11 @@ export default class Chat extends Module {
 
 		const room = thing._ffz_room = this.chat.getRoom(channel_id, null, false, true);
 		room.ref(thing);
+
+		this.settings.updateContext({
+			channelID: channel_id
+		});
+
 		return room;
 	}
 
@@ -161,6 +166,10 @@ export default class Chat extends Module {
 
 		thing._ffz_room.unref(thing);
 		thing._ffz_room = null;
+
+		this.settings.updateContext({
+			channelID: null
+		});
 	}
 
 

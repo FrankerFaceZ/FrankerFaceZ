@@ -332,9 +332,9 @@ export default class Channel extends Module {
 		}
 
 		if ( ! el._ffz_links && want_links ) {
-			const link = el.querySelector('a .tw-line-height-heading'),
+			const link = el.querySelector('a .tw-title'),
 				anchor = link && link.closest('a'),
-				cont = anchor && anchor.closest('.tw-flex');
+				cont = anchor && anchor.closest('div');
 
 			if ( cont && el.contains(cont) ) {
 				el._ffz_links = <div class="ffz--links tw-mg-l-1"></div>;

@@ -1187,7 +1187,7 @@ export default class PlayerBase extends Module {
 					<label class="tw-hide-accessible">{this.i18n.t('player.gain.label','Gain Control')}</label>
 					<div class="tw-flex tw-full-width tw-relative tw-z-above">
 						{input = (<input
-							class="tw-range tw-range--overlay"
+							class="ffz-range ffz-range--overlay"
 							type="range"
 							min="0"
 							max="100"
@@ -1195,11 +1195,11 @@ export default class PlayerBase extends Module {
 							data-a-target="player-gain-slider"
 							value="100"
 						/>)}
-						<div class="tw-absolute tw-border-radius-large tw-bottom-0 tw-flex tw-flex-column tw-full-width tw-justify-content-center tw-range__fill tw-range__fill--overlay tw-top-0 tw-z-below">
-							<div class="tw-border-radius-large tw-range__fill-container">
+						<div class="tw-absolute tw-border-radius-large tw-bottom-0 tw-flex tw-flex-column tw-full-width tw-justify-content-center ffz-range__fill ffz-range__fill--overlay tw-top-0 tw-z-below">
+							<div class="tw-border-radius-large ffz-range__fill-container">
 								{fill = (<div
-									class="tw-border-radius-large tw-range__fill-value ffz--gain-value"
-									data-test-selector="tw-range__fill-value-selector"
+									class="tw-border-radius-large ffz-range__fill-value ffz--gain-value"
+									data-test-selector="ffz-range__fill-value-selector"
 								/>)}
 							</div>
 						</div>

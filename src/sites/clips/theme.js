@@ -396,7 +396,7 @@ export default class ThemeEngine extends Module {
 		this.toggleNormalizer(chat_bits.length || bits.length);
 
 		if ( bits.length )
-			this.css_tweaks.set('colors', `body {${bits.join('\n')}}.channel-info-content .tw-accent-region,.channel-info-content .gocjHQ{${accent_bits.join('\n')}}`);
+			this.css_tweaks.set('colors', `body {${bits.join('\n')}}.channel-info-content .tw-accent-region,.channel-info-content div[class^="ScAccentRegion"]{${accent_bits.join('\n')}}`);
 		else
 			this.css_tweaks.delete('colors');
 	}

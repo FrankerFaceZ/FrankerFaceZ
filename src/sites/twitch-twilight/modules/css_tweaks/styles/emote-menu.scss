@@ -1,8 +1,10 @@
 button[data-a-target="emote-picker-button"] {
-    .tw-button-icon__icon {
-        padding: .6rem .4rem .2rem .4rem;
+    div[class^="ScButtonIcon"] {
+        padding: .2rem .2rem 0 0;
 
         div > div {
+            overflow: unset !important;
+
             &:before {
                 display: inline-block;
                 width: 2.4rem;
@@ -11,8 +13,6 @@ button[data-a-target="emote-picker-button"] {
                 font-style: normal;
                 font-weight: normal;
                 speak: none;
-
-                margin-top: -.3rem;
 
                 font-variant: normal;
                 text-transform: none;
