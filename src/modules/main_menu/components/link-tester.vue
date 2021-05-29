@@ -235,9 +235,9 @@ export default {
 			raw_loading: false,
 			raw_data: null,
 
-			force_media: state.ffz_lt_media ?? true,
-			force_unsafe: state.ffz_lt_unsafe ?? false,
-			force_tooltip: state.ffz_lt_tip ?? false,
+			force_media: state?.ffz_lt_media ?? true,
+			force_unsafe: state?.ffz_lt_unsafe ?? false,
+			force_tooltip: state?.ffz_lt_tip ?? false,
 
 			events: {
 				on: (...args) => this.item.getChat().on(...args),
@@ -389,7 +389,6 @@ export default {
 		},
 
 		async updateExamples() {
-			console.log('update-examples', this.examples_loading);
 			if ( this.examples_loading )
 				return;
 
@@ -399,6 +398,14 @@ export default {
 			if ( provider === 'dev' ) {
 				try {
 					examples = (await timeout(fetch('https://localhost:8002/examples'), 15000).then(resp => resp.ok ? resp.json() : null)).examples;
+				} catch(err) {
+					console.error(err);
+				}
+			}
+
+			if ( ! examples ) {
+				try {
+					examples = (await timeout(fetch('https://api-test.frankerfacez.com/v2/link/examples'), 15000).then(resp => resp.ok ? resp.json() : null)).examples;
 				} catch(err) {
 					console.error(err);
 				}

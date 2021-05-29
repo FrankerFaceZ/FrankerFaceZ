@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 
 import {createElement, on, off} from 'utilities/dom';
-import {isValidShortcut, debounce} from 'utilities/object';
+import {isValidShortcut, debounce, has} from 'utilities/object';
 import { IS_FIREFOX } from 'src/utilities/constants';
 
 const STYLE_VALIDATOR = createElement('span');
@@ -1120,11 +1120,29 @@ export default class PlayerBase extends Module {
 		this.emit(':update-gui', inst);
 	}
 
+	areControlsDisabled(inst) {
+		if ( ! inst._ffz_control_state )
+			this.findControlState(inst);
+
+		if ( inst._ffz_control_state )
+			return inst._ffz_control_state.props.disableControls;
+
+		return false;
+	}
+
+	findControlState(inst) {
+		if ( ! inst._ffz_control_state )
+			inst._ffz_control_state = this.fine.searchTree(inst, n => n.props && has(n.props, 'disableControls'), 200);
+	}
+
 	addGainSlider(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
 			container = outer && outer.querySelector('.player-controls__left-control-group');
 		let gain = video != null && video._ffz_compressed && video._ffz_gain;
+
+		if ( this.areControlsDisabled(inst) )
+			gain = null;
 
 		if ( ! container ) {
 			if ( video && ! gain )
@@ -1167,7 +1185,7 @@ export default class PlayerBase extends Module {
 				const player = inst.props.mediaPlayerInstance,
 					core = player.core || player;
 
-				if ( value > 0 && this.settings.get('player.gain.no-volume') && core?.isMuted?.() ) {
+				if ( ! this.areControlsDisabled(inst) && value > 0 && this.settings.get('player.gain.no-volume') && core?.isMuted?.() ) {
 					core.setMuted(false);
 					localStorage.setItem('video-muted', JSON.stringify({default: false}));
 				}
@@ -1265,7 +1283,7 @@ export default class PlayerBase extends Module {
 		}
 
 		let icon, tip, extra, ff_el, btn, cont = container.querySelector('.ffz--player-comp');
-		if ( ! has_comp ) {
+		if ( ! has_comp || this.areControlsDisabled(inst) ) {
 			if ( cont )
 				cont.remove();
 			return;

@@ -118,7 +118,7 @@ export default class SettingsMenu extends Module {
 			}
 
 			cls.prototype.ffzRenderIdentity = function() {
-				if ( ! this.state || ! this.props || this.state.moderatorMode || this.state.chatAppearance || this.state.chatPause || this.state.followerMode || this.state.recentRaids || this.state.repliesAppearance || this.state.slowMode || this.props.isShowingChatFilterSettings || this.props.isShowingDeletedMessageDisplaySettings || ! this.props.isLoggedIn || ! this.props.onClickEditAppearance )
+				if ( ! this.state || ! this.props || this.state.moderatorMode || this.state.chatAppearance || this.state.chatPause || this.state.followerMode || this.state.recentRaids || this.state.repliesAppearance || this.state.slowMode || this.props.isShowingChatFilterSettings || this.props.isShowingDeletedMessageDisplaySettings || ! this.props.isLoggedIn )
 					return null;
 
 				if ( ! t.chat.context.get('chat.input.hide-identity') )
@@ -139,6 +139,12 @@ export default class SettingsMenu extends Module {
 						badges[badge.setID] = badge.version;
 				}
 
+				if ( ! this._ffzIdentityClick )
+					this._ffzIdentityClick = () => {
+						document.querySelector('button[data-a-target="chat-badge-carousel-badge-icon"]').click();
+						this.props.onCloseSettings();
+					}
+
 				return (<div class="ffz-identity">
 					<div class="tw-mg-y-05 tw-pd-x-05">
 						<p class="tw-c-text-alt-2 tw-font-size-6 tw-strong tw-upcase">
@@ -148,7 +154,7 @@ export default class SettingsMenu extends Module {
 					<div class="tw-full-width tw-relative">
 						<button
 							class="tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
-							onClick={this.props.onClickEditAppearance}
+							onClick={this._ffzIdentityClick}
 						>
 							<div class="tw-align-items-center tw-flex tw-pd-05 tw-relative">
 								<div class="tw-flex-grow-1">

@@ -1,5 +1,11 @@
-.chat-input__badge-carousel {
+.chat-input__badge-carousel button[data-a-target="chat-badge-carousel-badge-icon"] {
 	display: none !important;
+}
+
+.chat-input__badge-carousel div[class^="Attached-sc"] {
+	inset: unset;
+	bottom: calc(100% + 1rem);
+	left: 0;
 }
 
 .chat-input__textarea .tw-textarea {

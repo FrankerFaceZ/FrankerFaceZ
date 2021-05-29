@@ -56,7 +56,7 @@ export default class MenuButton extends SiteModule {
 		);*/
 
 		this.SunlightNav = this.elemental.define(
-			'sunlight-nav', '.sunlight-top-nav > .tw-flex > .tw-flex > .tw-justify-content-end > .tw-flex',
+			'sunlight-nav', '.sunlight-top-nav > div > div > div:nth-last-child(2) > div',
 			Twilight.SUNLIGHT_ROUTES,
 			{attributes: true}, 1
 		);
