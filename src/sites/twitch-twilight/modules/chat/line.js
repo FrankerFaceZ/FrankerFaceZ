@@ -60,6 +60,7 @@ export default class ChatLine extends Module {
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('i18n:update', this.updateLines, this);
 
+		this.chat.context.on('changed:chat.name-format', this.updateLines, this);
 		this.chat.context.on('changed:chat.me-style', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.enabled', this.updateLines, this);
 		this.chat.context.on('changed:chat.emotes.2x', this.updateLines, this);
@@ -301,15 +302,7 @@ export default class ChatLine extends Module {
 						room_id = msg.roomId = r.id;
 				}
 
-				const user_block = [
-					e('span', {
-						className: 'chat-author__display-name'
-					}, user.displayName),
-					user.isIntl && e('span', {
-						className: 'chat-author__intl-login'
-					}, ` (${user.login})`)
-				];
-
+				const user_block = t.chat.formatUser(user, e);
 				const override_name = t.overrides.getName(user.id);
 
 				return e('span', {
@@ -505,15 +498,7 @@ other {# messages were deleted by a moderator.}
 				}
 
 
-				const user_block = [
-					e('span', {
-						className: 'chat-author__display-name'
-					}, user.displayName),
-					user.isIntl && e('span', {
-						className: 'chat-author__intl-login'
-					}, ` (${user.login})`)
-				];
-
+				const user_block = t.chat.formatUser(user, e);
 				const override_name = t.overrides.getName(user.id);
 
 				const user_bits = [

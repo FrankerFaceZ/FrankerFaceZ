@@ -3,7 +3,7 @@
 		:class="{inherits: isInherited, default: isDefault}"
 		class="ffz--widget ffz--select-box"
 	>
-		<div class="tw-flex tw-align-items-start">
+		<div class="tw-flex tw-align-items-center">
 			<label :for="item.full_key" class="tw-mg-y-05">
 				{{ t(item.i18n_key, item.title) }}
 				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>

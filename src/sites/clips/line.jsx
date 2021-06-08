@@ -46,6 +46,7 @@ export default class Line extends Module {
 		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.all-links', this.updateLines, this);
 		this.chat.context.on('changed:chat.rich.minimum-level', this.updateLines, this);
+		this.chat.context.on('changed:chat.name-format', this.updateLines, this);
 		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
 		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 
@@ -94,13 +95,10 @@ export default class Line extends Module {
 								t.chat.badges.render(msg, createElement)
 							}</span>
 							<a
-								class="clip-chat__message-author tw-font-size-5 ffz-link notranslate"
+								class="clip-chat__message-author tw-font-size-5 ffz-link notranslate tw-strong"
 								href={`https://www.twitch.tv/${user.login}/clips`}
 								style={{color}}
-							>
-								<span class="tw-strong chat-author__display_name">{ user.displayName }</span>
-								{user.isIntl && <span class="chat-author__intl-login"> ({user.login}) </span>}
-							</a>
+							>{ t.chat.formatUser(user, createElement) }</a>
 							<div class="tw-inline-block tw-mg-r-05">{
 								is_action ? '' : ':'
 							}</div>

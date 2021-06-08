@@ -182,6 +182,21 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.name-format', {
+			default: 0,
+			ui: {
+				path: 'Chat > Appearance >> Usernames',
+				title: 'Display Style',
+				description: 'Change how usernames are displayed in chat when users have an international display name set.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'International Name (Username) <Default>'},
+					{value: 1, title: 'International Name'},
+					{value: 2, title: 'Username'}
+				]
+			}
+		});
+
 		this.settings.add('chat.lines.emote-alignment', {
 			default: 0,
 			ui: {
@@ -1737,6 +1752,30 @@ export default class Chat extends Module {
 		msg.bits = bits;
 		msg.ffz_emotes = emotes;
 		return msg;
+	}
+
+
+	/**
+	 * Format a user block. This uses our use "chat.name-format" style.
+	 *
+	 * @param {Object} user The user object we're rendering.
+	 * @param {Function} e createElement method, either from React or utilities/dom.
+	 * @returns {Array} Array of rendered elements.
+	 */
+	formatUser(user, e) {
+		const setting = this.context.get('chat.name-format');
+		const name = setting === 2 && user.isIntl ? user.login : (user.displayName || user.login);
+
+		const out = [e('span', {
+			className: 'chat-author__display-name'
+		}, name)];
+
+		if ( setting === 0 && user.isIntl )
+			out.push(e('span', {
+				className: 'chat-author__intl-login'
+			}, ` (${user.login})`));
+
+		return [out];
 	}
 
 

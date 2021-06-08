@@ -670,6 +670,7 @@ export default class Input extends Module {
 			if ( inst.doesEmoteMatchTerm(emote, search) ) {
 				const element = {
 					current: input,
+					emote,
 					replacement: emote.token,
 					element: inst.renderEmoteSuggestion(emote),
 					favorite: emote.favorite,
@@ -718,15 +719,20 @@ export default class Input extends Module {
 
 				if ( emoji && (style === 0 || source.has[style]) && ! included.has(source.raw) ) {
 					included.add(source.raw);
+
+					const srcSet = this.emoji.getFullImageSet(source.image, style);
+
 					const favorite = favorites.includes(emoji.code);
 					results.push({
 						current: input,
+						emoji: source,
+						srcSet,
 						replacement: source.raw,
 						element: inst.renderFFZEmojiSuggestion({
 							token: `:${name}:`,
 							id: `emoji-${emoji.code}`,
 							src: this.emoji.getFullImage(source.image, style),
-							srcSet: this.emoji.getFullImageSet(source.image, style),
+							srcSet,
 							favorite
 						}),
 						favorite
@@ -817,6 +823,7 @@ export default class Input extends Module {
 			if ( inst.doesEmoteMatchTerm(emote, search) )
 				results.push({
 					current: input,
+					emote,
 					replacement: emote.token,
 					element: inst.renderEmoteSuggestion(emote),
 					favorite: emote.favorite,

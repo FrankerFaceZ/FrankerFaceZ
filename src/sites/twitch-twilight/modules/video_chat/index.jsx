@@ -311,10 +311,9 @@ export default class VideoChatHook extends Module {
 						rel="noopener noreferrer"
 						target="_blank"
 						style={{color}}
-					>
-						<span class="chat-author__display-name" data-a-target="chat-message-username" data-a-user={user.login} data-test-selector="message-username">{ user.displayName }</span>
-						{user.isIntl && <span class="chat-author__intl-login" data-test-selector="message-username-canonical"> ({ user.login})</span>}
-					</a>
+					>{
+						t.chat.formatUser(user, createElement)
+					}</a>
 					<div data-test-selector="comment-message-selector" class="tw-inline video-chat__message">
 						<span>{is_action ? ' ' : ': '}</span>
 						<span
