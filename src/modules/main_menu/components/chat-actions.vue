@@ -472,6 +472,7 @@ export default {
 			if ( ! this.item.inline ) {
 				out.push({
 					title: 'New Line',
+					title_i18n: 'setting.new-line',
 					value: {
 						v: {type: 'new-line'}
 					}
@@ -479,6 +480,7 @@ export default {
 
 				out.push({
 					title: 'Space (Small)',
+					title_i18n: 'setting.space-small',
 					value: {
 						v: {type: 'space-small'}
 					}
@@ -486,6 +488,7 @@ export default {
 
 				out.push({
 					title: 'Space (Expanding)',
+					title_i18n: 'setting.space',
 					value: {
 						v: {type: 'space'}
 					}

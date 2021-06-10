@@ -57,7 +57,6 @@ const MODIFIERS = {
 };
 
 
-
 export default class Emotes extends Module {
 	constructor(...args) {
 		super(...args);
@@ -636,30 +635,42 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	addDefaultSet(provider, set_id, data) {
-		let changed = false;
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
+		let changed = false, added = false;
 		if ( ! this.default_sets.sourceIncludes(provider, set_id) ) {
+			changed = ! this.default_sets.includes(set_id);
 			this.default_sets.push(provider, set_id);
-			this.refSet(set_id);
-			changed = true;
+			added = true;
 		}
 
 		if ( data )
 			this.loadSetData(set_id, data);
 
-		if ( changed )
+		if ( changed ) {
+			this.refSet(set_id);
 			this.emit(':update-default-sets', provider, set_id, true);
+		}
+
+		return added;
 	}
 
 	removeDefaultSet(provider, set_id) {
-		let changed = false;
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
 		if ( this.default_sets.sourceIncludes(provider, set_id) ) {
 			this.default_sets.remove(provider, set_id);
-			this.unrefSet(set_id);
-			changed = true;
+			if ( ! this.default_sets.includes(set_id) ) {
+				this.unrefSet(set_id);
+				this.emit(':update-default-sets', provider, set_id, false);
+			}
+
+			return true;
 		}
 
-		if ( changed )
-			this.emit(':update-default-sets', provider, set_id, false);
+		return false;
 	}
 
 	refSet(set_id) {
@@ -668,7 +679,6 @@ export default class Emotes extends Module {
 			clearTimeout(this._set_timers[set_id]);
 			this._set_timers[set_id] = null;
 		}
-
 	}
 
 	unrefSet(set_id) {
@@ -885,6 +895,11 @@ export default class Emotes extends Module {
 			this.log.info(`Loaded emote set #${set_id}: ${data.title} (${count} emotes)`);
 
 		this.emit(':loaded', set_id, data);
+
+		// Don't let people endlessly load unused sets.
+		const refs = this._set_refs[set_id] || 0;
+		if ( refs <= 0 && ! this._set_timers[set_id] )
+			this._set_timers[set_id] = setTimeout(() => this.unloadSet(set_id), 5000);
 	}
 
 
@@ -903,6 +918,11 @@ export default class Emotes extends Module {
 
 		if ( ! suppress_log )
 			this.log.info(`Unloaded emote set #${set_id}: ${old_set.title}`);
+
+		if ( this._set_timers[set_id] ) {
+			clearTimeout(this._set_timers[set_id]);
+			this._set_timers[set_id] = null;
+		}
 
 		this.emit(':unloaded', set_id, old_set);
 		this.emote_sets[set_id] = null;

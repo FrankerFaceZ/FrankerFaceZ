@@ -588,28 +588,29 @@ export default class Input extends Module {
 			favorites = this.emotes.getFavorites('twitch');
 
 		for(const set of emotes) {
-			if ( has_hidden ) {
-				const int_id = parseInt(set.id, 10),
-					owner = set.owner,
-					is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
-					channel = is_points ? null : owner;
+			const int_id = parseInt(set.id, 10),
+				owner = set.owner,
+				is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
+				channel = is_points ? null : owner;
 
-				let key = `twitch-set-${set.id}`;
+			let key = `twitch-set-${set.id}`;
+			let extra = null;
 
-				if ( channel?.login )
-					key = `twitch-${channel.id}`;
-				else if ( is_points )
-					key = 'twitch-points';
-				else if ( TWITCH_GLOBAL_SETS.includes(int_id) )
-					key = 'twitch-global';
-				else if ( TWITCH_PRIME_SETS.includes(int_id) )
-					key = 'twitch-prime';
-				else
-					key = 'twitch-misc';
+			if ( channel?.login ) {
+				key = `twitch-${channel.id}`;
+				extra = channel.displayName || channel.login;
 
-				if ( hidden_sets.includes(key) )
-					continue;
-			}
+			} else if ( is_points )
+				key = 'twitch-points';
+			else if ( TWITCH_GLOBAL_SETS.includes(int_id) )
+				key = 'twitch-global';
+			else if ( TWITCH_PRIME_SETS.includes(int_id) )
+				key = 'twitch-prime';
+			else
+				key = 'twitch-misc';
+
+			if ( has_hidden && hidden_sets.includes(key) )
+				continue;
 
 			for(const emote of set.emotes) {
 				if ( ! emote || ! emote.id || hidden_emotes.includes(emote.id) )
@@ -635,6 +636,8 @@ export default class Input extends Module {
 
 				out.push({
 					id,
+					source: key,
+					extra,
 					setID: set.id,
 					token,
 					tokenLower: token.toLowerCase(),
@@ -721,15 +724,17 @@ export default class Input extends Module {
 					included.add(source.raw);
 
 					const srcSet = this.emoji.getFullImageSet(source.image, style);
+					const matched = `:${name}:`;
 
 					const favorite = favorites.includes(emoji.code);
 					results.push({
 						current: input,
 						emoji: source,
+						matched,
 						srcSet,
 						replacement: source.raw,
 						element: inst.renderFFZEmojiSuggestion({
-							token: `:${name}:`,
+							token: matched,
 							id: `emoji-${emoji.code}`,
 							src: this.emoji.getFullImage(source.image, style),
 							srcSet,
@@ -760,6 +765,7 @@ export default class Input extends Module {
 				continue;
 
 			const source = set.source || 'ffz',
+				source_line = set.source_line || (`${set.source || 'FFZ'} ${set.title || 'Global'}`),
 				key = `${set.merge_source || source}-${set.merge_id || set.id}`;
 
 			if ( has_hidden && hidden_sets.includes(key) )
@@ -779,6 +785,8 @@ export default class Input extends Module {
 
 				out.push({
 					id: `${source}-${emote.id}`,
+					source,
+					extra: source_line,
 					token: emote.name,
 					tokenLower: emote.name.toLowerCase(),
 					srcSet: anim && emote.animSrcSet || emote.srcSet,

@@ -306,13 +306,10 @@ export default class Room {
 
 		this.data = d;
 
-		if ( d.set ) {
-			if ( ! this.emote_sets )
-				this.emote_sets = new SourcedSet;
-			this.emote_sets.set('main', d.set);
-		} else if ( this.emote_sets )
-			this.emote_sets.delete('main');
-
+		if ( d.set )
+			this.addSet('main', d.set);
+		else
+			this.removeAllSets('main');
 
 		if ( data.sets )
 			for(const set_id in data.sets)
@@ -349,29 +346,59 @@ export default class Room {
 		if ( ! this.emote_sets )
 			this.emote_sets = new SourcedSet;
 
-		let changed = false;
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
+		let changed = false, added = false;
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
+			changed = ! this.emote_sets.includes(set_id);
 			this.emote_sets.push(provider, set_id);
-			this.manager.emotes.refSet(set_id);
-			changed = true;
+			added = true;
 		}
 
 		if ( data )
 			this.manager.emotes.loadSetData(set_id, data);
 
-		if ( changed )
+		if ( changed ) {
+			this.manager.emotes.refSet(set_id);
 			this.manager.emotes.emit(':update-room-sets', this, provider, set_id, true);
+		}
+
+		return added;
+	}
+
+	removeAllSets(provider) {
+		if ( this.destroyed || ! this.emote_sets )
+			return false;
+
+		const sets = this.emote_sets.get(provider);
+		if ( ! Array.isArray(sets) || ! sets.length )
+			return false;
+
+		for(const set_id of sets)
+			this.removeSet(provider, set_id);
+
+		return true;
 	}
 
 	removeSet(provider, set_id) {
 		if ( this.destroyed || ! this.emote_sets )
 			return;
 
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
-			this.manager.emotes.unrefSet(set_id);
-			this.manager.emotes.emit(':update-room-sets', this, provider, set_id, false);
+			if ( ! this.emote_sets.includes(set_id) ) {
+				this.manager.emotes.unrefSet(set_id);
+				this.manager.emotes.emit(':update-room-sets', this, provider, set_id, false);
+			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 

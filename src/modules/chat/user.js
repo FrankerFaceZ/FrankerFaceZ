@@ -106,6 +106,9 @@ export default class User {
 		if ( this.destroyed )
 			return;
 
+		if ( typeof badge_id === 'number' )
+			badge_id = `${badge_id}`;
+
 		if ( data )
 			data.id = badge_id;
 		else
@@ -132,7 +135,7 @@ export default class User {
 			return null;
 
 		for(const badge of this.badges._cache)
-			if ( badge.id ==  badge_id )
+			if ( badge.id == badge_id )
 				return badge;
 	}
 
@@ -155,29 +158,64 @@ export default class User {
 	// Emote Sets
 	// ========================================================================
 
-	addSet(provider, set_id) {
+	addSet(provider, set_id, data) {
 		if ( this.destroyed )
 			return;
 
 		if ( ! this.emote_sets )
 			this.emote_sets = new SourcedSet;
 
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
+		let changed = false, added = false;
 		if ( ! this.emote_sets.sourceIncludes(provider, set_id) ) {
+			changed = ! this.emote_sets.includes(set_id);
 			this.emote_sets.push(provider, set_id);
+			added = true;
+		}
+
+		if ( data )
+			this.manager.emotes.loadSetData(set_id, data);
+
+		if ( changed ) {
 			this.manager.emotes.refSet(set_id);
 			this.manager.emotes.emit(':update-user-sets', this, provider, set_id, true);
-			return true;
 		}
+
+		return added;
+	}
+
+	removeAllSets(provider) {
+		if ( this.destroyed || ! this.emote_sets )
+			return false;
+
+		const sets = this.emote_sets.get(provider);
+		if ( ! Array.isArray(sets) || ! sets.length )
+			return false;
+
+		for(const set_id of sets)
+			this.removeSet(provider, set_id);
+
+		return true;
 	}
 
 	removeSet(provider, set_id) {
 		if ( this.destroyed || ! this.emote_sets )
 			return;
 
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
-			this.manager.emotes.unrefSet(set_id);
-			this.manager.emotes.emit(':update-user-sets', this, provider, set_id, false);
+			if ( ! this.emote_sets.includes(set_id) ) {
+				this.manager.emotes.unrefSet(set_id);
+				this.manager.emotes.emit(':update-user-sets', this, provider, set_id, false);
+			}
+			return true;
 		}
+
+		return false;
 	}
 }

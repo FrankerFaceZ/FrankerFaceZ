@@ -294,6 +294,7 @@ export default class Badges extends Module {
 
 	getSettingsBadges(include_addons, callback) {
 		const twitch = [],
+			other = [],
 			owl = [],
 			tcon = [],
 			game = [],
@@ -333,7 +334,9 @@ export default class Badges extends Module {
 
 				if ( v ) {
 					let cat;
-					if ( badge.__cat === 'm-owl' )
+					if ( badge.__cat === 'm-other' )
+						cat = other;
+					else if ( badge.__cat === 'm-owl' )
 						cat = owl;
 					else if ( badge.__cat === 'm-tcon' )
 						cat = tcon;
@@ -382,6 +385,7 @@ export default class Badges extends Module {
 		return [
 			{title: 'Twitch', id: 'm-twitch', badges: twitch},
 			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
+			{title: 'Twitch: Other', id: 'm-other', badges: other},
 			{title: 'Twitch: Overwatch League', id: 'm-owl', badges: owl},
 			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game},
 			{title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz},
@@ -1148,10 +1152,22 @@ export default class Badges extends Module {
 }
 
 
+const OTHER_BADGES = [
+	'vga-champ-2017',
+	'warcraft',
+	'samusoffer_beta',
+	'power-rangers',
+	'bits-charity',
+	'glhf-pledge'
+];
+
+
 export function getBadgeCategory(key) {
-	if ( key.startsWith('overwatch-league') )
+	if ( OTHER_BADGES.includes(key) )
+		return 'm-other';
+	else if ( key.startsWith('overwatch-league') )
 		return 'm-owl';
-	else if ( key.startsWith('twitchcon') )
+	else if ( key.startsWith('twitchcon') || key.startsWith('glitchcon') )
 		return 'm-tcon';
 	else if ( /_\d+$/.test(key) )
 		return 'm-game';

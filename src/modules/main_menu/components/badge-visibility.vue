@@ -32,7 +32,7 @@
 			<header
 				v-if="sec.id"
 				:class="{default: badgeDefault(sec.id)}"
-				class="tw-flex ffz-checkbox"
+				class="tw-flex ffz-checkbox tw-align-items-center tw-z-above"
 			>
 				<input
 					:id="sec.id"
@@ -40,23 +40,33 @@
 					type="checkbox"
 					class="ffz-checkbox__input"
 					@click="onChange(sec.id, $event)"
-					@contextmenu.prevent="reset(sec.id)"
 				>
 				<label
 					:for="sec.id"
-					:title="t('setting.right-click-reset', 'Right-Click to Reset')"
 					class="ffz-checkbox__label"
-					@contextmenu.prevent="reset(sec.id)"
 				>
 					<span class="tw-mg-l-1">
 						{{ sec.title }}
 					</span>
 				</label>
+
+				<div class="ffz--reset-button">
+					<button
+						v-if="! badgeDefault(sec.id)"
+						class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
+						@click="reset(sec.id)"
+					>
+						<span class="tw-button__text ffz-i-cancel" />
+						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+							{{ t('setting.reset', 'Reset to Default') }}
+						</div>
+					</button>
+				</div>
 			</header>
 			<header v-else>
 				{{ sec.title }}
 			</header>
-			<ul class="tw-flex tw-flex-wrap tw-align-content-start">
+			<ul v-if="! sec.id || badgeChecked(sec.id)" class="tw-flex tw-flex-wrap tw-align-content-start">
 				<li
 					v-for="i in sec.badges"
 					:key="i.id"
@@ -96,7 +106,7 @@
 									class="tw-mg-t-05 tw-button ffz-button--hollow ffz-il-tooltip__container"
 									@click="reset(i.id)"
 								>
-									<span class="tw-button__text">Reset</span>
+									<span class="tw-button__text ffz-i-cancel" />
 									<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 										{{ t('setting.reset', 'Reset to Default') }}
 									</span>
@@ -106,6 +116,11 @@
 					</label>
 				</li>
 			</ul>
+			<div v-else class="tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-pd-05">
+				{{ t('setting.badges.hidden', '{count,plural,one{# badge is} other{# badges are} } hidden in this set', {
+					count: sec.badges.length
+				}) }}
+			</div>
 		</section>
 	</div>
 </template>

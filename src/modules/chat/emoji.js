@@ -100,6 +100,8 @@ export default class Emoji extends Module {
 		// For some reason, splitter is a function.
 		this.splitter = splitter();
 
+		this.categories = CATEGORIES;
+
 		this.emoji = {};
 		this.names = {};
 		this.chars = new Map;
