@@ -1079,29 +1079,11 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.emotes.animated', {
-			requires: ['context.bttv.gifs'],
-			default: null,
-			process(ctx, val) {
-				if ( val == null ) {
-					const temp = ctx.get('ffzap.betterttv.gif_emoticons_mode');
-					if ( temp == null )
-						val = ctx.get('context.bttv.gifs') ? 1 : 0;
-					else
-						val = temp === 2 ? 1 : 0;
-				}
-				return val;
-			},
+			default: 1,
 			ui: {
 				path: 'Chat > Appearance >> Emotes',
 				sort: -50,
 				title: 'Animated Emotes',
-
-				default(ctx) {
-					const temp = ctx.get('ffzap.betterttv.gif_emoticons_mode');
-					if ( temp == null )
-						return ctx.get('context.bttv.gifs') ? 1 : 0;
-					return temp === 2 ? 1 : 0;
-				},
 
 				getExtraTerms: () => GIF_TERMS,
 

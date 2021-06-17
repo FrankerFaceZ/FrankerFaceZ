@@ -4,8 +4,8 @@
 // Chat Emote Menu
 // ============================================================================
 
-import {has, get, once, maybe_call, set_equals} from 'utilities/object';
-import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, TWITCH_EMOTE_BASE, REPLACEMENT_BASE, REPLACEMENTS, KEYS} from 'utilities/constants';
+import {has, get, once, maybe_call, set_equals, getTwitchEmoteURL, getTwitchEmoteSrcSet} from 'utilities/object';
+import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, REPLACEMENT_BASE, REPLACEMENTS, KEYS} from 'utilities/constants';
 import {HIDDEN_CATEGORIES, CATEGORIES, CATEGORY_SORT, IMAGE_PATHS} from 'src/modules/chat/emoji';
 import {ClickOutside} from 'utilities/dom';
 
@@ -639,8 +639,8 @@ export default class EmoteMenu extends Module {
 					this.props.stopObserving(this.ref);
 			}
 
-			keyInteract(code) {
-
+			keyInteract(code) { // eslint-disable-line
+				/* no-op */
 			}
 
 			clickEmote(event) {
@@ -1855,14 +1855,16 @@ export default class EmoteMenu extends Module {
 									overridden = mapped && mapped.id != new_id,
 									replacement = REPLACEMENTS[new_id];
 
-								let src, srcSet;
+								let src, srcSet, animSrc, animSrcSet;
 
 								if ( replacement && t.chat.context.get('chat.fix-bad-emotes') )
 									src = `${REPLACEMENT_BASE}${replacement}`;
 								else {
-									const base = `${TWITCH_EMOTE_BASE}${new_id}`;
-									src = `${base}/1.0`;
-									srcSet = `${src} 1x, ${base}/2.0 2x`
+									src = getTwitchEmoteURL(new_id, 1, false);
+									srcSet = getTwitchEmoteSrcSet(new_id, false);
+
+									animSrc = getTwitchEmoteURL(new_id, 1, true);
+									animSrcSet = getTwitchEmoteSrcSet(new_id, true);
 								}
 
 								const em = {
@@ -1872,6 +1874,8 @@ export default class EmoteMenu extends Module {
 									name: new_name,
 									src,
 									srcSet,
+									animSrc,
+									animSrcSet,
 									order: order++,
 									overridden: overridden ? mapped.id : null,
 									misc: ! chan,
@@ -1967,7 +1971,6 @@ export default class EmoteMenu extends Module {
 									continue;
 
 								const id = emote.id,
-									base = `${TWITCH_EMOTE_BASE}${id}`,
 									name = KNOWN_CODES[emote.token] || emote.token,
 									seen = twitch_seen.has(id),
 									is_fav = twitch_favorites.includes(id);
@@ -1979,8 +1982,10 @@ export default class EmoteMenu extends Module {
 									name,
 									order: order++,
 									locked: locked && ! seen,
-									src: `${base}/1.0`,
-									srcSet: `${base}/1.0 1x, ${base}/2.0 2x`,
+									src: getTwitchEmoteURL(id, 1, false),
+									srcSet: getTwitchEmoteSrcSet(id, false),
+									animSrc: getTwitchEmoteURL(id, 1, true),
+									animSrcSet: getTwitchEmoteSrcSet(id, true),
 									favorite: is_fav,
 									hidden: twitch_hidden.includes(id)
 								};
@@ -2024,8 +2029,7 @@ export default class EmoteMenu extends Module {
 									emotes: new Set([emote.id])
 								}
 
-							const base = `${TWITCH_EMOTE_BASE}${id}`,
-								is_fav = twitch_favorites.includes(id);
+							const is_fav = twitch_favorites.includes(id);
 
 							/*if ( Array.isArray(emote.modifiers) && emote.modifiers.length )
 								modifiers[id] = emote.modifiers;*/
@@ -2037,8 +2041,10 @@ export default class EmoteMenu extends Module {
 								name: emote.token,
 								locked,
 								order: order++,
-								src: `${base}/1.0`,
-								srcSet: `${base}/1.0 1x, ${base}/2.0 2x`,
+								src: getTwitchEmoteURL(id, 1, false),
+								srcSet: getTwitchEmoteSrcSet(id, false),
+								animSrc: getTwitchEmoteURL(id, 1, true),
+								animSrcSet: getTwitchEmoteSrcSet(id, true),
 								bits: true,
 								bit_value: summary.threshold,
 								favorite: is_fav,

@@ -1,8 +1,19 @@
 'use strict';
 
-import {BAD_HOTKEYS} from 'utilities/constants';
+import {BAD_HOTKEYS, TWITCH_EMOTE_V2} from 'utilities/constants';
 
 const HOP = Object.prototype.hasOwnProperty;
+
+export function getTwitchEmoteURL(id, scale, animated = false, dark = true) {
+	return `${TWITCH_EMOTE_V2}/${id}/${animated ? 'default' : 'static'}/${dark ? 'dark' : 'light'}/${scale}.0`
+}
+
+export function getTwitchEmoteSrcSet(id, animated = false, dark = true, big = false) {
+	if ( big )
+		return `${getTwitchEmoteURL(id, 2, animated, dark)} 1x, ${getTwitchEmoteURL(id, 4, animated, dark)} 2x`;
+
+	return `${getTwitchEmoteURL(id, 1, animated, dark)} 1x, ${getTwitchEmoteURL(id, 2, animated, dark)} 2x, ${getTwitchEmoteURL(id, 4, animated, dark)} 4x`;
+}
 
 export function isValidShortcut(key) {
 	if ( ! key )

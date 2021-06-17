@@ -6,10 +6,11 @@
 
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
-import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, TWITCH_EMOTE_BASE, KEYS } from 'utilities/constants';
+import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
 import { FFZEvent } from 'src/utilities/events';
+import { getTwitchEmoteSrcSet, getTwitchEmoteURL } from 'src/utilities/object';
 
 export default class Input extends Module {
 	constructor(...args) {
@@ -623,15 +624,13 @@ export default class Input extends Module {
 					continue;
 
 				const replacement = REPLACEMENTS[id];
-				let src, srcSet;
+				let srcSet, animSrcSet;
 
 				if ( replacement && this.chat.context.get('chat.fix-bad-emotes') ) {
-					src = `${REPLACEMENT_BASE}${replacement}`;
-					srcSet = `${src} 1x`;
+					srcSet = `${REPLACEMENT_BASE}${replacement} 1x`;
 				} else {
-					const base = `${TWITCH_EMOTE_BASE}${id}`;
-					src = `${base}/1.0`;
-					srcSet = `${src} 1x, ${base}/2.0 2x`
+					srcSet = getTwitchEmoteSrcSet(id, false);
+					animSrcSet = getTwitchEmoteSrcSet(id, true);
 				}
 
 				out.push({
@@ -642,6 +641,7 @@ export default class Input extends Module {
 					token,
 					tokenLower: token.toLowerCase(),
 					srcSet,
+					animSrcSet,
 					favorite: favorites.includes(id)
 				});
 			}

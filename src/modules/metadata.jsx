@@ -461,7 +461,7 @@ export default class Metadata extends Module {
 				const stats = data.stats,
 					video_info = this.i18n.t(
 						'metadata.player-stats.video-info',
-						'Video: {videoResolution}p{fps}\nPlayback Rate: {playbackRate,number} Kbps\nDropped Frames:{skippedFrames,number}',
+						'Video: {videoResolution}p{fps}\nPlayback Rate: {playbackRate, number} Kbps\nDropped Frames: {skippedFrames, number}',
 						stats
 					);
 

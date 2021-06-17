@@ -5,9 +5,9 @@
 // ============================================================================
 
 import {sanitize, createElement} from 'utilities/dom';
-import {has, split_chars} from 'utilities/object';
+import {has, getTwitchEmoteURL, split_chars, getTwitchEmoteSrcSet} from 'utilities/object';
 
-import {TWITCH_EMOTE_BASE, EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
 import {CATEGORIES} from './emoji';
 
 
@@ -1328,7 +1328,7 @@ export const AddonEmotes = {
 			const set_id = hide_source ? null : await this.emotes.getTwitchEmoteSet(emote_id),
 				emote_set = set_id != null && await this.emotes.getTwitchSetChannel(set_id);
 
-			preview = `${TWITCH_EMOTE_BASE}${ds.id}/3.0?_=preview`;
+			preview = `${getTwitchEmoteURL(ds.id, 4, true, true)}?_=preview`;
 			fav_source = 'twitch';
 
 			if ( emote_set ) {
@@ -1641,6 +1641,7 @@ export const TwitchEmotes = {
 			return tokens;
 
 		const data = msg.ffz_emotes,
+			anim = this.context.get('chat.emotes.animated'),
 			big = this.context.get('chat.emotes.2x'),
 			use_replacements = this.context.get('chat.fix-bad-emotes'),
 			emotes = [];
@@ -1713,8 +1714,8 @@ export const TwitchEmotes = {
 						text: text.slice(idx - t_start, e_start - t_start).join('')
 					});
 
-				let src, srcSet;
-				let src2, srcSet2;
+				let src, srcSet, animSrc, animSrcSet;
+				let src2, srcSet2, animSrc2, animSrcSet2;
 				let can_big = true;
 
 				const replacement = REPLACEMENTS[e_id];
@@ -1724,12 +1725,22 @@ export const TwitchEmotes = {
 					can_big = false;
 
 				} else {
-					src = `${TWITCH_EMOTE_BASE}${e_id}/1.0`;
-					srcSet = `${TWITCH_EMOTE_BASE}${e_id}/1.0 1x, ${TWITCH_EMOTE_BASE}${e_id}/2.0 2x`;
+					src = getTwitchEmoteURL(e_id, 1, false);
+					srcSet = getTwitchEmoteSrcSet(e_id, false);
+
+					if ( anim > 0 ) {
+						animSrc = getTwitchEmoteURL(e_id, 1, true);
+						animSrcSet = getTwitchEmoteSrcSet(e_id, true);
+					}
 
 					if ( big ) {
-						src2 = `${TWITCH_EMOTE_BASE}${e_id}/2.0`;
-						srcSet2 = `${TWITCH_EMOTE_BASE}${e_id}/2.0 1x, ${TWITCH_EMOTE_BASE}${e_id}/3.0 2x`;
+						src2 = getTwitchEmoteURL(e_id, 2, false);
+						srcSet2 = getTwitchEmoteSrcSet(e_id, false, true, true);
+
+						if ( anim > 0 ) {
+							animSrc2 = getTwitchEmoteURL(e_id, 2, true);
+							animSrcSet2 = getTwitchEmoteSrcSet(e_id, true, true, true);
+						}
 					}
 				}
 
@@ -1741,6 +1752,11 @@ export const TwitchEmotes = {
 					srcSet,
 					src2,
 					srcSet2,
+					animSrc,
+					animSrc2,
+					animSrcSet,
+					animSrcSet2,
+					anim,
 					big,
 					can_big,
 					height: 28, // Not always accurate but close enough.

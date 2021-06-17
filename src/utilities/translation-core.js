@@ -12,6 +12,11 @@ dayjs.extend(RelativeTime);
 
 import Parser from '@ffz/icu-msgparser';
 
+const DEFAULT_PARSER_OPTIONS = {
+	allowTags: false,
+	requireOther: false
+};
+
 import {get} from 'utilities/object';
 import {duration_to_string} from 'utilities/time';
 
@@ -217,7 +222,7 @@ export default class TranslationCore {
 				this.formats[key] = Object.assign({}, this.formats[key], options.formats[key]);
 
 		this.types = Object.assign({}, DEFAULT_TYPES, options.types || {});
-		this.parser = new Parser(options.parserOptions);
+		this.parser = new Parser(Object.assign({}, DEFAULT_PARSER_OPTIONS, options.parserOptions));
 
 		if ( options.phrases )
 			this.extend(options.phrases);
