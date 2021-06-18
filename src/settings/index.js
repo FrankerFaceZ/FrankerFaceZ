@@ -71,6 +71,12 @@ export default class SettingsManager extends Module {
 			}
 		} catch(err) { /* no-op */ }
 
+		// Local Storage
+		this.__ls_scheduled = new Set;
+		this.__ls_cache = new Map;
+		this.__ls_hooked = false;
+		this._updateLS = this._updateLS.bind(this);
+
 		// State
 		this.__contexts = [];
 		this.__profiles = [];
@@ -274,6 +280,107 @@ export default class SettingsManager extends Module {
 
 			this.updateClock();
 		}, delta);
+	}
+
+
+	// ========================================================================
+	// LocalStorage Management
+	// ========================================================================
+
+	_updateLSKey(key) {
+		if ( this.__ls_cache.has(key) || this.__ls_cache.has(`raw.${key}`) ) {
+			this.__ls_scheduled.add(key);
+			if ( ! this.__ls_timer )
+				this.__ls_timer = setTimeout(this._updateLS, 0);
+		}
+	}
+
+	_hookLS() {
+		if ( this.__ls_hooked )
+			return;
+
+		this.__ls_hooked = true;
+		const original = localStorage.setItem,
+			t = this;
+
+		localStorage.setItem = function(key, ...args) {
+			// Guard this because we never want to break
+			// localStorage, even if something really
+			// weird happens.
+			try {
+				t._updateLSKey(key);
+			} catch(err) { /* no-op */ }
+
+			return original.call(this, key, ...args);
+		}
+
+		this._handleLSEvent = this._handleLSEvent.bind(this);
+		window.addEventListener('storage', this._handleLSEvent);
+	}
+
+	_handleLSEvent(event) {
+		if ( event.storageArea === localStorage )
+			this._updateLSKey(event.key);
+	}
+
+	_updateLS() {
+		clearTimeout(this.__ls_timer);
+		this.__ls_timer = null;
+		const keys = this.__ls_scheduled;
+		this.__ls_scheduled = new Set;
+
+		for(const key of keys) {
+			const has_value = this.__ls_cache.has(key),
+				raw_key = `raw.${key}`,
+				has_raw = this.__ls_cache.has(raw_key);
+
+			if ( ! has_raw && ! has_value )
+				continue;
+
+			const raw = localStorage.getItem(key);
+
+			if ( has_raw ) {
+				this.__ls_cache.set(raw_key, raw);
+				this.emit(':ls-update', raw_key, raw);
+			}
+
+			if ( has_value ) {
+				let value;
+				if ( raw )
+					try {
+						value = JSON.parse(raw);
+					} catch(err) {
+						this.log.warn(`Unable to parse localStorage value as JSON for "${key}"`, err);
+					}
+
+				this.__ls_cache.set(key, value);
+				this.emit(':ls-update', key, value);
+			}
+		}
+	}
+
+	getLS(key) {
+		if ( this.__ls_cache.has(key) )
+			return this.__ls_cache.get(key);
+
+		if ( ! this.__ls_hooked )
+			this._hookLS();
+
+		const is_raw = key.startsWith('raw.'),
+			raw = localStorage.getItem(is_raw ? key.slice(4) : key);
+
+		let value;
+		if ( is_raw )
+			value = raw;
+		else
+			try {
+				value = JSON.parse(raw);
+			} catch(err) {
+				this.log.warn(`Unable to parse localStorage value as JSON for "${key}"`, err);
+			}
+
+		this.__ls_cache.set(key, value);
+		return value;
 	}
 
 

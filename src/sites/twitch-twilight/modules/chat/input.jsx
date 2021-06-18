@@ -583,6 +583,7 @@ export default class Input extends Module {
 			return {emotes: [], length: 0};
 
 		const out = [],
+			anim = this.chat.context.get('chat.emotes.animated') > 0,
 			hidden_sets = this.settings.provider.get('emote-menu.hidden-sets'),
 			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0,
 			hidden_emotes = this.emotes.getHidden('twitch'),
@@ -624,14 +625,12 @@ export default class Input extends Module {
 					continue;
 
 				const replacement = REPLACEMENTS[id];
-				let srcSet, animSrcSet;
+				let srcSet;
 
 				if ( replacement && this.chat.context.get('chat.fix-bad-emotes') ) {
 					srcSet = `${REPLACEMENT_BASE}${replacement} 1x`;
-				} else {
-					srcSet = getTwitchEmoteSrcSet(id, false);
-					animSrcSet = getTwitchEmoteSrcSet(id, true);
-				}
+				} else
+					srcSet = getTwitchEmoteSrcSet(id, anim);
 
 				out.push({
 					id,
@@ -641,7 +640,6 @@ export default class Input extends Module {
 					token,
 					tokenLower: token.toLowerCase(),
 					srcSet,
-					animSrcSet,
 					favorite: favorites.includes(id)
 				});
 			}

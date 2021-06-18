@@ -1333,10 +1333,15 @@ export const AddonEmotes = {
 
 			if ( emote_set ) {
 				const type = emote_set.type;
-				if ( type === EmoteTypes.Global )
-					source = this.i18n.t('emote.global', 'Twitch Global');
+				if ( type === EmoteTypes.Global ) {
+					if ( emote_set.owner?.login ) {
+						source = this.i18n.t('tooltip.channel', 'Channel: {source}', {
+							source: emote_set.owner.displayName || emote_set.owner.login
+						});
+					} else
+						source = this.i18n.t('emote.global', 'Twitch Global');
 
-				else if ( type === EmoteTypes.BitsTier ) {
+				} else if ( type === EmoteTypes.BitsTier ) {
 					source = this.i18n.t('emote.bits', 'Twitch Bits Reward');
 					if ( emote_set.owner?.login )
 						source = this.i18n.t('emote.bits-owner', '{source}\nChannel: {channel}', {

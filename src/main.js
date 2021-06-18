@@ -1,7 +1,7 @@
 'use strict';
 
 import dayjs from 'dayjs';
-import RavenLogger from './raven';
+//import RavenLogger from './raven';
 
 import Logger from 'utilities/logging';
 import Module from 'utilities/module';
@@ -40,9 +40,9 @@ class FrankerFaceZ extends Module {
 		// Error Reporting and Logging
 		// ========================================================================
 
-		this.inject('raven', RavenLogger);
+		//this.inject('raven', RavenLogger);
 
-		this.log = new Logger(null, null, null, this.raven);
+		this.log = new Logger(null, null, null); //, this.raven);
 		this.log.init = true;
 
 		this.core_log = this.log.get('core');

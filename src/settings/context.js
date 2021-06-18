@@ -75,6 +75,9 @@ export default class SettingsContext extends EventEmitter {
 		if ( context )
 			this._updateContext(context, undefined, undefined, new Set);*/
 
+		this.__ls_listening = false;
+		this.__ls_wanted = new Map;
+
 		this.__cache = new Map;
 		this.__meta = new Map;
 		this.__profiles = [];
@@ -95,6 +98,34 @@ export default class SettingsContext extends EventEmitter {
 
 		if ( idx !== -1 )
 			contexts.splice(idx, 1);
+	}
+
+
+	// ========================================================================
+	// Local Storage Handling
+	// ========================================================================
+
+	_watchLS() {
+		if ( this.__ls_watched )
+			return;
+
+		this.__ls_watched = true;
+		this.manager.on(':ls-update', this._onLSUpdate, this);
+	}
+
+	_unwatchLS() {
+		if ( ! this.__ls_watched )
+			return;
+
+		this.__ls_watched = false;
+		this.manager.off(':ls-update', this._onLSUpdate, this);
+	}
+
+	_onLSUpdate(key) {
+		const keys = this.__ls_wanted.get(`ls.${key}`);
+		if ( keys )
+			for(const key of keys)
+				this._update(key, key, []);
 	}
 
 
@@ -340,7 +371,7 @@ export default class SettingsContext extends EventEmitter {
 		const definition = this.manager.definitions.get(key);
 		if ( definition && definition.required_by )
 			for(const req_key of definition.required_by)
-				if ( ! req_key.startsWith('context.') )
+				if ( ! req_key.startsWith('context.') && ! req_key.startsWith('ls.') )
 					this._update(req_key, initial, Array.from(visited));
 	}
 
@@ -382,7 +413,15 @@ export default class SettingsContext extends EventEmitter {
 
 			if ( definition.requires )
 				for(const req_key of definition.requires)
-					if ( ! req_key.startsWith('context.') && ! this.__cache.has(req_key) )
+					if ( req_key.startsWith('ls.') ) {
+						this._watchLS();
+						let keys = this.__ls_wanted.get(req_key);
+						if ( ! keys )
+							this.__ls_wanted.set(req_key, keys = new Set);
+
+						keys.add(key);
+
+					} else if ( ! req_key.startsWith('context.') && ! this.__cache.has(req_key) )
 						this._get(req_key, initial, Array.from(visited));
 
 			if ( definition.process )
@@ -432,6 +471,9 @@ export default class SettingsContext extends EventEmitter {
 	}
 
 	get(key) {
+		if ( key.startsWith('ls.') )
+			return this.manager.getLS(key.slice(3));
+
 		if ( key.startsWith('context.') )
 			//return this.__context[key.slice(8)];
 			return getter(key.slice(8), this.__context);
@@ -453,6 +495,9 @@ export default class SettingsContext extends EventEmitter {
 
 
 	uses(key) {
+		if ( key.startsWith('ls.') )
+			return null;
+
 		if ( key.startsWith('context.') )
 			return null;
 

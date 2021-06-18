@@ -1,7 +1,5 @@
 'use strict';
 
-import RavenLogger from './raven';
-
 import Logger from 'utilities/logging';
 import Module from 'utilities/module';
 
@@ -23,12 +21,10 @@ class FFZBridge extends Module {
 		this.__modules.core = this;
 
 		// ========================================================================
-		// Error Reporting and Logging
+		// Logging
 		// ========================================================================
 
-		this.inject('raven', RavenLogger);
-
-		this.log = new Logger(null, null, null, this.raven);
+		this.log = new Logger(null, null, null);
 		this.log.label = 'FFZBridge';
 		this.log.init = true;
 

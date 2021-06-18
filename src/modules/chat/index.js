@@ -1014,11 +1014,22 @@ export default class Chat extends Module {
 
 
 		this.settings.add('chat.adjustment-mode', {
-			default: 1,
+			default: null,
+			process(ctx, val) {
+				if ( val == null )
+					return (ctx.get('ls.useHighContrastColors') ?? true) ? 1 : 0;
+
+				return val;
+			},
+			requires: ['ls.useHighContrastColors'],
 			ui: {
 				path: 'Chat > Appearance >> Colors',
 				title: 'Adjustment',
 				description: 'Alter user colors to ensure that they remain readable.',
+
+				default(ctx) {
+					return (ctx.get('ls.useHighContrastColors') ?? true) ? 1 : 0;
+				},
 
 				component: 'setting-select-box',
 
@@ -1079,11 +1090,21 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.emotes.animated', {
-			default: 1,
+			default: null,
+			requires: ['ls.emoteAnimationsEnabled'],
+			process(ctx, val) {
+				if ( val == null )
+					return (ctx.get('ls.emoteAnimationsEnabled') ?? true) ? 1 : 0;
+				return val;
+			},
 			ui: {
 				path: 'Chat > Appearance >> Emotes',
 				sort: -50,
 				title: 'Animated Emotes',
+
+				default(ctx) {
+					return (ctx.get('ls.emoteAnimationsEnabled') ?? true) ? 1 : 0;
+				},
 
 				getExtraTerms: () => GIF_TERMS,
 

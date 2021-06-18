@@ -1,6 +1,6 @@
 .ffz--meta-tray {
-	& > :first-child > :first-child:not(.tw-core-button) {
+	.tw-svg svg[type="color-text-accessible-red"],
+	p[data-a-target="animated-channel-viewers-count"] {
 		display: none !important;
-		margin-right: 0 !important;
 	}
 }
