@@ -344,7 +344,8 @@ export default class EmoteMenu extends Module {
 
 		this.EmoteMenu = this.fine.define(
 			'chat-emote-menu',
-			n => n.subscriptionProductHasEmotes,
+			n => n.getAllEmoteSets && n.getSortedChannelEmotes && n.props?.emotePickerSource,
+			//n => n.subscriptionProductHasEmotes,
 			Twilight.CHAT_ROUTES
 		)
 
@@ -410,12 +411,11 @@ export default class EmoteMenu extends Module {
 			const old_render = cls.prototype.render;
 
 			cls.prototype.render = function() {
-				if ( ! this.props || ! has(this.props, 'channelOwnerID') || ! t.chat.context.get('chat.emote-menu.enabled') ) {
-					this._ffz_no_scan = false;
+				this._ffz_no_scan = false;
+
+				if ( ! this.props || ! has(this.props, 'channelID') || ! t.chat.context.get('chat.emote-menu.enabled') ) {
 					return old_render.call(this);
 				}
-
-				this._ffz_no_scan = true;
 
 				return (<t.MenuErrorWrapper visible={this.props.visible}>
 					<t.MenuComponent
@@ -425,9 +425,9 @@ export default class EmoteMenu extends Module {
 						channel_data={this.props.channelData}
 						emote_data={this.props.emoteSetsData}
 						user_id={this.props.currentUserID}
-						channel_id={this.props.channelOwnerID}
-						loading={this.state.gqlLoading}
-						error={this.state.gqlError}
+						channel_id={this.props.channelID}
+						loading={this.props.channelData?.loading || this.props.emoteSetsData?.loading}
+						error={this.props.channelData?.error || this.props.emoteSetsData?.error}
 						onClickToken={this.props.onClickToken}
 					/>
 				</t.MenuErrorWrapper>)
