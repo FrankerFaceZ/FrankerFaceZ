@@ -8,6 +8,7 @@ import Module from 'utilities/module';
 
 import {createElement} from 'react';
 import { split_chars } from 'utilities/object';
+import { RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 
 export default class Line extends Module {
 	constructor(...args) {
@@ -33,26 +34,25 @@ export default class Line extends Module {
 	}
 
 	onEnable() {
-		this.chat.context.on('changed:chat.me-style', this.updateLines, this);
-		this.chat.context.on('changed:chat.emotes.enabled', this.updateLines, this);
-		this.chat.context.on('changed:chat.emotes.2x', this.updateLines, this);
-		this.chat.context.on('changed:chat.emotes.animated', this.updateLines, this);
-		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
-		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
-		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
-		this.chat.context.on('changed:chat.badges.hidden', this.updateLines, this);
-		this.chat.context.on('changed:chat.badges.custom-mod', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.all-links', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.minimum-level', this.updateLines, this);
-		this.chat.context.on('changed:chat.name-format', this.updateLines, this);
-		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
-		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
-
+		this.on('chat.overrides:changed', id => this.updateLinesByUser(id, null, false, false), this);
 		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
 		this.on('chat:update-lines', this.updateLines, this);
-		this.on('i18n:update', this.updateLines, this);
+		this.on('chat:rerender-lines', this.rerenderLines, this);
+		this.on('chat:update-line-tokens', this.updateLineTokens, this);
+		this.on('chat:update-line-badges', this.updateLineBadges, this);
+		this.on('i18n:update', this.rerenderLines, this);
+
+		for(const setting of RERENDER_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
+
+		for(const setting of UPDATE_TOKEN_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.updateLineTokens, this);
+
+		for(const setting of UPDATE_BADGE_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.updateLineBadges, this);
+
+		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
+		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 
 		this.site = this.resolve('site');
 
@@ -138,11 +138,27 @@ export default class Line extends Module {
 			this.updateLines();
 	}
 
-
 	updateLines() {
+		return this._updateLines();
+	}
+
+	rerenderLines() {
+		this.ChatLine.forceUpdate();
+	}
+
+	updateLineTokens() {
+		return this._updateLines(true, false);
+	}
+
+	updateLineBadges() {
+		return this._updateLines(false, true);
+	}
+
+	_updateLines(clear_tokens = true, clear_badges = true) { // eslint-disable-line no-unused-vars
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.node;
-			if ( msg )
+			// TODO: Selective state clear.
+			if ( msg?._ffz_message )
 				msg._ffz_message = null;
 		}
 

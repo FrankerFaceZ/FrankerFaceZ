@@ -673,7 +673,8 @@ export default class ChatHook extends Module {
 		ic.mode = mode;
 		ic.contrast = contrast;
 
-		this.updateChatLines();
+		this.chat_line.rerenderLines();
+		//this.updateChatLines();
 		this.updateMentionCSS();
 		this.emit(':update-colors');
 	}
@@ -844,11 +845,6 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.mention-color', this.updateMentionCSS, this);
-		this.chat.context.on('changed:chat.fix-bad-emotes', this.updateChatLines, this);
-		this.chat.context.on('changed:chat.points.allow-highlight', this.updateChatLines, this);
-		this.chat.context.on('changed:chat.filtering.display-deleted', this.updateChatLines, this);
-		this.chat.context.on('changed:chat.filtering.display-mod-action', this.updateChatLines, this);
-		this.chat.context.on('changed:chat.replies.style', this.updateChatLines, this);
 		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
 		this.chat.context.on('changed:chat.filtering.bold-mentions', val => this.css_tweaks.toggle('chat-mention-no-bold', ! val));
 		this.chat.context.on('changed:chat.pin-resubs', val => {
@@ -2382,9 +2378,9 @@ export default class ChatHook extends Module {
 	}
 
 
-	updateChatLines() {
+	/*updateChatLines() {
 		this.chat_line.updateLines();
-	}
+	}*/
 
 
 	// ========================================================================
@@ -2541,7 +2537,8 @@ export default class ChatHook extends Module {
 		this._ffz_old_bits = new_bits;
 
 		room.updateBitsConfig(formatBitsConfig(config));
-		this.updateChatLines();
+		this.chat_line.updateLineTokens();
+		//this.updateChatLines();
 	}
 
 
@@ -2688,7 +2685,8 @@ export default class ChatHook extends Module {
 			return;
 
 		room.updateBadges(badges);
-		this.updateChatLines();
+		this.chat_line.updateLineBadges();
+		//this.updateChatLines();
 	}
 
 	updateRoomRules(cont, rules) { // eslint-disable-line class-methods-use-this

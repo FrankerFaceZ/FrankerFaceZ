@@ -32,6 +32,50 @@ export const BAD_HOTKEYS = [
 ];
 
 
+export const RERENDER_SETTINGS = [
+	'chat.name-format',
+	'chat.me-style',
+	'chat.rituals.show',
+	'chat.subs.show',
+	'chat.subs.compact',
+	'chat.actions.inline',
+	'chat.timestamp-format',
+	'chat.points.allow-highlight',
+	'chat.filtering.display-deleted',
+	'chat.filtering.display-mod-action',
+	'chat.replies.style'
+];
+
+export const UPDATE_BADGE_SETTINGS = [
+	'chat.badges.style',
+	'chat.badges.hidden',
+	'chat.badges.custom-mod',
+	'chat.badges.custom-vip',
+];
+
+export const UPDATE_TOKEN_SETTINGS = [
+	'chat.emotes.enabled',
+	'chat.emotes.2x',
+	'chat.emotes.animated',
+	'chat.emoji.style',
+	'chat.bits.stack',
+	'chat.rich.enabled',
+	'chat.rich.hide-tokens',
+	'chat.rich.all-links',
+	'chat.rich.minimum-level',
+	'chat.filtering.process-own',
+	'chat.filtering.mention-priority',
+	'chat.filtering.debug',
+	'chat.fix-bad-emotes',
+	'__filter:highlight-terms',
+	'__filter:highlight-users',
+	'__filter:highlight-badges',
+	'__filter:block-terms',
+	'__filter:block-users',
+	'__filter:block-badges'
+];
+
+
 export const KEYS = {
 	Tab: 9,
 	Enter: 13,

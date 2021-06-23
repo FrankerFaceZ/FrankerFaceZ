@@ -9,7 +9,7 @@ import Module from 'utilities/module';
 
 import RichContent from './rich_content';
 import { has } from 'utilities/object';
-import { KEYS } from 'utilities/constants';
+import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
 import { FFZEvent } from 'utilities/events';
 import { getRewardTitle, getRewardCost, isHighlightedReward } from './points';
@@ -55,42 +55,25 @@ export default class ChatLine extends Module {
 	}
 
 	async onEnable() {
-		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
+		this.on('chat.overrides:changed', id => this.updateLinesByUser(id, null, false, false), this);
 		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
 		this.on('chat:update-lines', this.updateLines, this);
-		this.on('i18n:update', this.updateLines, this);
+		this.on('chat:rerender-lines', this.rerenderLines, this);
+		this.on('chat:update-line-tokens', this.updateLineTokens, this);
+		this.on('chat:update-line-badges', this.updateLineBadges, this);
+		this.on('i18n:update', this.rerenderLines, this);
 
-		this.chat.context.on('changed:chat.name-format', this.updateLines, this);
-		this.chat.context.on('changed:chat.me-style', this.updateLines, this);
-		this.chat.context.on('changed:chat.emotes.enabled', this.updateLines, this);
-		this.chat.context.on('changed:chat.emotes.2x', this.updateLines, this);
-		this.chat.context.on('changed:chat.emotes.animated', this.updateLines, this);
-		this.chat.context.on('changed:chat.emoji.style', this.updateLines, this);
-		this.chat.context.on('changed:chat.bits.stack', this.updateLines, this);
-		this.chat.context.on('changed:chat.badges.style', this.updateLines, this);
-		this.chat.context.on('changed:chat.badges.hidden', this.updateLines, this);
-		this.chat.context.on('changed:chat.badges.custom-mod', this.updateLines, this);
-		this.chat.context.on('changed:chat.rituals.show', this.updateLines, this);
-		this.chat.context.on('changed:chat.subs.show', this.updateLines, this);
-		this.chat.context.on('changed:chat.subs.compact', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.enabled', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.hide-tokens', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.all-links', this.updateLines, this);
-		this.chat.context.on('changed:chat.rich.minimum-level', this.updateLines, this);
+		for(const setting of RERENDER_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
+
+		for(const setting of UPDATE_TOKEN_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.updateLineTokens, this);
+
+		for(const setting of UPDATE_BADGE_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.updateLineBadges, this);
+
 		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
 		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
-		this.chat.context.on('changed:chat.actions.inline', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.show-deleted', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.process-own', this.updateLines, this);
-		this.chat.context.on('changed:chat.timestamp-format', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.mention-priority', this.updateLines, this);
-		this.chat.context.on('changed:chat.filtering.debug', this.updateLines, this);
-		this.chat.context.on('changed:__filter:highlight-terms', this.updateLines, this);
-		this.chat.context.on('changed:__filter:highlight-users', this.updateLines, this);
-		this.chat.context.on('changed:__filter:highlight-badges', this.updateLines, this);
-		this.chat.context.on('changed:__filter:block-terms', this.updateLines, this);
-		this.chat.context.on('changed:__filter:block-users', this.updateLines, this);
-		this.chat.context.on('changed:__filter:block-badges', this.updateLines, this);
 
 		this.on('chat:get-tab-commands', e => {
 			if ( this.experiments.getTwitchAssignmentByName('chat_replies') === 'control' )
@@ -882,7 +865,7 @@ other {# messages were deleted by a moderator.}
 							'data-test-selector': 'chat-message-highlight'
 						}),
 						e('div', {
-							className: 'chat-line__message-container'
+							className: 'chat-line__message-container tw-relative'
 						}, [
 							this.props.repliesAppearancePreference && this.props.repliesAppearancePreference === 'expanded' ? this.renderReplyLine() : null,
 							out
@@ -1013,14 +996,19 @@ other {# messages were deleted by a moderator.}
 	}
 
 
-	updateLinesByUser(id, login) {
+	updateLinesByUser(id, login, clear_tokens = true, clear_badges = true) {
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.message,
 				user = msg?.user;
 			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
-				msg.ffz_tokens = null;
-				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
+				if ( clear_badges )
+					msg.ffz_badges = msg.ffz_badge_cache = null;
+
+				if ( clear_tokens ) {
+					msg.ffz_tokens = null;
+					msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
+				}
+
 				inst.forceUpdate();
 			}
 		}
@@ -1042,21 +1030,45 @@ other {# messages were deleted by a moderator.}
 	}
 
 	updateLines() {
+		return this._updateLines();
+	}
+
+	rerenderLines() {
+		return this._updateLines(false, false);
+	}
+
+	updateLineTokens() {
+		return this._updateLines(true, false);
+	}
+
+	updateLineBadges() {
+		return this._updateLines(false, true);
+	}
+
+	_updateLines(clear_tokens = true, clear_badges = true) {
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.message;
 			if ( msg ) {
-				msg.ffz_tokens = null;
-				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
+				if ( clear_badges )
+					msg.ffz_badge_cache = msg.ffz_badges = null;
+
+				if ( clear_tokens ) {
+					msg.ffz_tokens = null;
+					msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
+				}
 			}
 		}
 
 		for(const inst of this.ExtensionLine.instances) {
 			const msg = inst.props.message;
 			if ( msg ) {
-				msg.ffz_tokens = null;
-				msg.ffz_badges = null;
-				msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
+				if ( clear_badges )
+					msg.ffz_badge_cache = msg.ffz_badges = null;
+
+				if ( clear_tokens ) {
+					msg.ffz_tokens = null;
+					msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
+				}
 			}
 		}
 

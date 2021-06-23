@@ -49,10 +49,10 @@ const CSS_BADGES = {
 }
 
 export const BADGE_POSITIONS = {
+	staff: -2,
+	admin: -1,
+	global_mod: -1,
 	broadcaster: 0,
-	staff: 0,
-	admin: 0,
-	global_mod: 0,
 	mod: 1,
 	moderator: 1,
 	twitchbot: 1,
@@ -396,6 +396,7 @@ export default class Badges extends Module {
 
 	onEnable() {
 		this.parent.context.on('changed:chat.badges.custom-mod', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:chat.badges.custom-vip', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.style', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.is-dark', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:theme.tooltips-dark', this.rebuildAllCSS, this);
@@ -417,8 +418,31 @@ export default class Badges extends Module {
 
 			const room_id = container?.dataset?.roomId,
 				room_login = container?.dataset?.room,
-				data = JSON.parse(target.dataset.badgeData),
 				out = [];
+
+			let data;
+			if ( target.dataset.badgeData )
+				data = JSON.parse(target.dataset.badgeData);
+			else {
+				const badge_idx = target.dataset.badgeIdx,
+					fine = this.resolve('site.fine');
+
+				if ( fine ) {
+					let message;
+					message = container[fine.accessor]?.return?.stateNode?.props?.message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n.props?.message)?.props?.message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n.props?.node)?.props?.node?._ffz_message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n.props?.messageContext)?.props?.messageContext?.comment?._ffz_message;
+
+					if ( message?._ffz_message)
+						message = message._ffz_message;
+					if ( message )
+						data = message.ffz_badge_cache?.[badge_idx]?.[1]?.badges;
+				}
+			}
 
 			if ( data == null )
 				return out;
@@ -565,11 +589,9 @@ export default class Badges extends Module {
 	}
 
 
-	render(msg, createElement, skip_hide = false, skip_click = false) { // eslint-disable-line class-methods-use-this
-		if ( ! msg.badges && ! msg.ffz_badges )
-			return null;
-
-		// TODO: A lot of this can be cached
+	cacheBadges(msg, skip_hide = false) {
+		if ( msg.ffz_badge_cache )
+			return msg.ffz_badge_cache;
 
 		const hidden_badges = skip_hide ? {} : (this.parent.context.get('chat.badges.hidden') || {}),
 			badge_style = this.parent.context.get('chat.badges.style'),
@@ -584,8 +606,7 @@ export default class Badges extends Module {
 
 			tb = this.twitch_badges,
 
-			out = [],
-			slotted = {},
+			slotted = new Map,
 			twitch_badges = msg.badges || {},
 			dynamic_data = msg.badgeDynamicData || {},
 
@@ -648,7 +669,7 @@ export default class Badges extends Module {
 						data
 					});
 
-				slotted[slot] = {
+				slotted.set(slot, {
 					id: badge_id,
 					props: {
 						'data-provider': 'twitch',
@@ -657,7 +678,7 @@ export default class Badges extends Module {
 						style: {}
 					},
 					badges
-				};
+				});
 			}
 
 		if ( Array.isArray(badges) ) {
@@ -677,7 +698,7 @@ export default class Badges extends Module {
 						continue;
 
 					const slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
-						old_badge = slotted[slot],
+						old_badge = slotted.get(slot),
 						urls = badge.urls || (badge.image ? {1: badge.image} : null),
 						color = badge.color || full_badge.color || 'transparent',
 						no_invert = badge.no_invert,
@@ -725,17 +746,18 @@ export default class Badges extends Module {
 							style
 						};
 
-						slotted[slot] = {
+						slotted.set(slot, {
 							id: badge.id,
 							props,
 							badges: [bd],
 							content: badge.content || full_badge.content
-						}
+						})
 					}
 
 					if (no_invert) {
-						slotted[slot].full_size = true;
-						slotted[slot].no_invert = true;
+						const old = slotted.get(slot);
+						old.full_size = true;
+						old.no_invert = true;
 
 						style.background = 'unset';
 						style.backgroundSize = 'unset';
@@ -762,28 +784,43 @@ export default class Badges extends Module {
 				}
 		}
 
-		for(const slot in slotted)
-			if ( has(slotted, slot) ) {
-				const data = slotted[slot],
-					props = data.props;
+		return msg.ffz_badge_cache = Array.from(slotted).sort((a,b) => a[0] - b[0]);
+	}
 
-				let content = maybe_call(data.content, this, data, msg, createElement);
-				if ( content && ! Array.isArray(content) )
-					content = [content];
 
-				props.className = `ffz-tooltip ffz-badge${content ? ' tw-pd-x-05' : ''}${data.full_size ? ' ffz-full-size' : ''}${data.no_invert ? ' ffz-no-invert' : ''}`;
-				props.key = `${props['data-provider']}-${props['data-badge']}`;
-				props['data-tooltip-type'] = 'badge';
-				props['data-badge-data'] = JSON.stringify(data.badges);
+	render(msg, createElement, skip_hide = false, skip_click = false) {
+		if ( ! msg.badges && ! msg.ffz_badges )
+			return null;
 
-				if ( ! skip_click )
-					props.onClick = this.handleClick;
+		if ( ! msg.ffz_badge_cache )
+			this.cacheBadges(msg, skip_hide);
 
-				if ( data.replaced )
-					props['data-replaced'] = data.replaced;
+		if ( ! msg.ffz_badge_cache.length )
+			return null;
 
-				out.push(createElement('span', props, content || undefined));
-			}
+		const out = [];
+		for(let i=0, l = msg.ffz_badge_cache.length; i < l; i++) {
+			const data = msg.ffz_badge_cache[i][1],
+				props = data.props;
+
+			let content = maybe_call(data.content, this, data, msg, createElement);
+			if ( content && ! Array.isArray(content) )
+				content = [content];
+
+			props.className = `ffz-tooltip ffz-badge${content ? ' tw-pd-x-05' : ''}${data.full_size ? ' ffz-full-size' : ''}${data.no_invert ? ' ffz-no-invert' : ''}`;
+			props.key = `${props['data-provider']}-${props['data-badge']}`;
+			props['data-tooltip-type'] = 'badge';
+			props['data-badge-idx'] = i;
+			//props['data-badge-data'] = JSON.stringify(data.badges);
+
+			if ( ! skip_click )
+				props.onClick = this.handleClick;
+
+			if ( data.replaced )
+				props['data-replaced'] = data.replaced;
+
+			out.push(createElement('span', props, content || undefined));
+		}
 
 		return out;
 	}

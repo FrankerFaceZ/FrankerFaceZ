@@ -10,6 +10,7 @@ import {print_duration} from 'utilities/time';
 import {formatBitsConfig} from '../chat';
 
 import Module from 'utilities/module';
+import { RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'src/utilities/constants';
 
 const SUB_REGEX = /^([^\s]+) subscribed ([^.]+)\. They've subscribed for (\d+) months(?:[^!]+streak)?!/;
 const SUB_TIERS = {
@@ -91,12 +92,24 @@ export default class VideoChatHook extends Module {
 
 
 	async onEnable() {
-		this.chat.context.on('changed:chat.video-chat.enabled', this.updateLines, this);
-		this.chat.context.on('changed:chat.video-chat.timestamps', this.updateLines, this);
-		this.on('chat.overrides:changed', id => this.updateLinesByUser(id), this);
-		this.on('chat:update-lines', this.updateLines, this);
+		this.chat.context.on('changed:chat.video-chat.enabled', this.rerenderLines, this);
+		this.chat.context.on('changed:chat.video-chat.timestamps', this.rerenderLines, this);
+		this.on('chat.overrides:changed', id => this.updateLinesByUser(id, null, false, false), this);
 		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
-		this.on('i18n:update', this.updateLines, this);
+		this.on('chat:update-lines', this.updateLines, this);
+		this.on('chat:rerender-lines', this.rerenderLines, this);
+		this.on('chat:update-line-tokens', this.updateLineTokens, this);
+		this.on('chat:update-line-badges', this.updateLineBadges, this);
+		this.on('i18n:update', this.rerenderLines, this);
+
+		for(const setting of RERENDER_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
+
+		for(const setting of UPDATE_TOKEN_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.updateLineTokens, this);
+
+		for(const setting of UPDATE_BADGE_SETTINGS)
+			this.chat.context.on(`changed:${setting}`, this.updateLineBadges, this);
 
 		this.VideoChatController.on('mount', this.chatMounted, this);
 		this.VideoChatController.on('unmount', this.chatUnmounted, this);
@@ -311,9 +324,7 @@ export default class VideoChatHook extends Module {
 						rel="noopener noreferrer"
 						target="_blank"
 						style={{color}}
-					>{
-						t.chat.formatUser(user, createElement)
-					}</a>
+					>{t.chat.formatUser(user, createElement)}</a>
 					<div data-test-selector="comment-message-selector" class="tw-inline video-chat__message">
 						<span>{is_action ? ' ' : ': '}</span>
 						<span
@@ -440,6 +451,22 @@ export default class VideoChatHook extends Module {
 
 
 	updateLines() {
+		return this._updateLines();
+	}
+
+	rerenderLines() {
+		this.VideoChatLine.forceUpdate();
+	}
+
+	updateLineTokens() {
+		return this._updateLines(true, false);
+	}
+
+	updateLineBadges() {
+		return this._updateLines(false, true);
+	}
+
+	_updateLines(clear_tokens = true, clear_badges = true) { // eslint-disable-line no-unused-vars
 		for(const inst of this.VideoChatLine.instances) {
 			const context = inst.props.messageContext;
 			if ( ! context.comment )

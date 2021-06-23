@@ -1185,7 +1185,7 @@ export default class Chat extends Module {
 			else
 				this.color_cache = null;
 
-			this.emit(':update-lines');
+			this.emit(':update-line-tokens');
 		});
 	}
 
@@ -1209,7 +1209,7 @@ export default class Chat extends Module {
 		this.socket = this.resolve('socket');
 
 		if ( this.context.get('chat.filtering.color-mentions') )
-			this.createColorCache().then(() => this.emit(':update-lines'));
+			this.createColorCache().then(() => this.emit(':update-line-tokens'));
 
 		for(const key in TOKENIZERS)
 			if ( has(TOKENIZERS, key) )

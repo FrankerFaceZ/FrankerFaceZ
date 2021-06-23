@@ -24,7 +24,8 @@ function getRequireRegex(name) {
 const NAMES = [
 	'webpackJsonp',
 	'webpackChunktwitch_twilight',
-	'webpackChunktwitch_sunlight'
+	'webpackChunktwitch_sunlight',
+	'webpackJsonp_N_E'
 ];
 
 const HARD_MODULES = [
