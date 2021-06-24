@@ -172,27 +172,6 @@ export default class ThemeEngine extends Module {
 			changed: () => this.updateCSS()
 		});
 
-
-		/*this.settings.add('theme.dark', {
-			requires: ['theme.is-dark'],
-			default: false,
-			process(ctx, val) {
-				return ctx.get('theme.is-dark') ? val : false
-			},
-
-			ui: {
-				path: 'Appearance @{"description": "Personalize the appearance of Twitch. Change the color scheme and fonts and tune the layout to optimize your experience."} > Theme >> Legacy',
-				title: 'Gray (no Purple)',
-				description: `*Requires Dark Theme to be Enabled.*
-
-This setting will be going away very soon, as the new theme system matures.
-The CSS loaded by this setting is far too heavy and can cause performance issues.`,
-				component: 'setting-check-box'
-			},
-
-			changed: val => this.updateSetting(val)
-		});*/
-
 		this.settings.add('theme.can-dark', {
 			requires: ['context.route.name'],
 			process(ctx) {
@@ -226,15 +205,6 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		this._normalizer = null;
 	}
 
-	/*updateOldCSS() {
-		const dark = this.settings.get('theme.is-dark'),
-			gray = this.settings.get('theme.dark');
-
-		//document.body.classList.toggle('tw-root--theme-dark', dark);
-		document.body.classList.toggle('tw-root--theme-ffz', gray);
-
-		this.css_tweaks.setVariable('border-color', dark ? (gray ? '#2a2a2a'  : '#2c2541') : '#dad8de');
-	}*/
 
 	updateFont() {
 		let size = this.settings.get('theme.font.size');
@@ -264,6 +234,90 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 `);
 	}
 
+
+	generateBackgroundTextBlob(color) {
+		const hsla = color.toHSLA(),
+			luma = hsla.l,
+			dark = luma < 0.5;
+
+		return this.generateBackgroundBlob(color) + this.generateTextBlob(Color.RGBA.fromCSS(dark ? '#FFF' : '#000'));
+	}
+
+
+	generateBackgroundBlob(color) { // eslint-disable-line class-methods-use-this
+		const hsla = color.toHSLA(),
+			luma = hsla.l,
+			dark = luma < 0.5;
+
+		return [
+			`--color-background-body:${color.toCSS()};`,
+			`--color-background-input-focus:${color.toCSS()};`,
+			`--color-background-base:${hsla._l(luma + (dark ? 0.05 : -0.05)).toCSS()};`,
+			`--color-background-alt:${hsla._l(luma + (dark ? 0.1 : -0.1)).toCSS()};`,
+			`--color-background-alt-2:${hsla._l(luma + (dark ? 0.15 : -0.15)).toCSS()};`
+		].join('');
+	}
+
+
+	generateTextBlob(color) { // eslint-disable-line class-methods-use-this
+		if ( color.a < 0.4 )
+			color = color._a(0.4);
+
+		const alpha = color.a;
+
+		return [
+			`--color-text-base:${color.toCSS()};`,
+			`--color-text-input:${color.toCSS()};`,
+			`--color-text-label:${color.toCSS()};`,
+			`--color-text-label-optional:${color._a(alpha - 0.4).toCSS()};`,
+			`--color-text-alt:${color._a(alpha - 0.2).toCSS()};`,
+			`--color-text-alt-2:${color._a(alpha - 0.4).toCSS()};`
+		].join('')
+	}
+
+
+	generateAccentBlob(color, dark) { // eslint-disable-line class-methods-use-this
+		if ( color.a < 1 )
+			color = color._a(1);
+
+		const hsla = color.toHSLA(),
+			luma = hsla.l;
+
+		const colors = COLORS.map(x => {
+			if ( x === 0 )
+				return color.toCSS();
+
+			return hsla._l(luma + x).toCSS();
+		});
+
+		const out = [],
+			accent_out = [];
+
+		for(let i=0; i < colors.length; i++)
+			out.push(`--ffz-color-accent-${i+1}:${colors[i]};`);
+
+		let source = dark ? ACCENT_COLORS.dark : ACCENT_COLORS.light;
+
+		for(const [key,val] of Object.entries(source.c)) {
+			if ( typeof val !== 'number' )
+				continue;
+
+			out.push(`--color-${key}:${colors[val-1]};`);
+		}
+
+		source = dark ? ACCENT_COLORS.accent_dark : ACCENT_COLORS.accent_light;
+
+		for(const [key,val] of Object.entries(source.c)) {
+			if ( typeof val !== 'number' )
+				continue;
+
+			accent_out.push(`--color-${key}:${colors[val-1]} !important;`);
+		}
+
+		return [out.join(''), accent_out.join('')];
+	}
+
+
 	updateCSS() {
 		//this.updateOldCSS();
 
@@ -282,7 +336,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		const background = Color.RGBA.fromCSS(this.settings.get('theme.color.background'));
 		if ( background ) {
 			background.a = 1;
-			bits.push(`--color-background-body: ${background.toCSS()};`);
+			//bits.push(`--color-background-body: ${background.toCSS()};`);
 
 			const hsla = background.toHSLA(),
 				luma = hsla.l;
@@ -303,68 +357,22 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 				this.log.warning('Unable to automatically set the Twitch Dark Theme state.', err);
 			}
 
-			bits.push(`--color-background-input-focus: ${background.toCSS()};`);
-			bits.push(`--color-background-base: ${hsla._l(luma + (dark ? .05 : -.05)).toCSS()};`);
-			bits.push(`--color-background-alt: ${hsla._l(luma + (dark ? .1 : -.1)).toCSS()};`);
-			bits.push(`--color-background-alt-2: ${hsla._l(luma + (dark ? .15 : -.15)).toCSS()};`);
+			bits.push(this.generateBackgroundBlob(hsla));
 		}
 
 		let text = Color.RGBA.fromCSS(this.settings.get('theme.color.text'));
-		if ( ! text && background ) {
+		if ( ! text && background )
 			text = Color.RGBA.fromCSS(dark ? '#FFF' : '#000');
-		}
-
-		if ( text ) {
-			bits.push(`--color-text-base: ${text.toCSS()};`);
-			bits.push(`--color-text-input: ${text.toCSS()};`);
-
-			const hsla = text.toHSLA(),
-				alpha = hsla.a;
-
-			bits.push(`--color-text-label: ${text.toCSS()};`);
-			bits.push(`--color-text-label-optional: ${hsla._a(alpha - 0.4).toCSS()};`);
-
-			bits.push(`--color-text-alt: ${hsla._a(alpha - 0.2).toCSS()};`);
-			bits.push(`--color-text-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
-		}
+		if ( text )
+			bits.push(this.generateTextBlob(text));
 
 		// Accent
 		const accent = Color.RGBA.fromCSS(this.settings.get('theme.color.accent'));
 		this.toggleAccentNormal(! accent);
 		if ( accent ) {
-			accent.a = 1;
-
-			const hsla = accent.toHSLA(),
-				luma = hsla.l;
-
-			const colors = COLORS.map(x => {
-				if ( x === 0 )
-					return accent.toCSS();
-
-				return hsla._l(luma + x).toCSS()
-			});
-
-			for(let i=0; i < colors.length; i++) {
-				bits.push(`--ffz-color-accent-${i+1}:${colors[i]};`);
-			}
-
-			let source = dark ? ACCENT_COLORS.dark : ACCENT_COLORS.light;
-
-			for(const [key,val] of Object.entries(source.c)) {
-				if ( typeof val !== 'number' )
-					continue;
-
-				bits.push(`--color-${key}:${colors[val-1]};`);
-			}
-
-			source = dark ? ACCENT_COLORS.accent_dark : ACCENT_COLORS.accent_light;
-
-			for(const [key,val] of Object.entries(source.c)) {
-				if ( typeof val !== 'number' )
-					continue;
-
-				accent_bits.push(`--color-${key}:${colors[val-1]} !important;`);
-			}
+			const data = this.generateAccentBlob(accent, dark);
+			bits.push(data[0]);
+			accent_bits.push(data[1]);
 		}
 
 		// Tooltips
@@ -406,75 +414,28 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 		let chat_dark = dark;
 		if ( chat_background ) {
 			chat_background.a = 1;
-			chat_bits.push(`--color-background-body: ${chat_background.toCSS()};`);
-
 			const hsla = chat_background.toHSLA(),
 				luma = hsla.l;
 			chat_dark = luma < 0.5;
 
-			chat_bits.push(`--color-background-input-focus: ${chat_background.toCSS()};`);
-			chat_bits.push(`--color-background-base: ${hsla._l(luma + (chat_dark ? .05 : -.05)).toCSS()};`);
-			chat_bits.push(`--color-background-alt: ${hsla._l(luma + (chat_dark ? .1 : -.1)).toCSS()};`);
-			chat_bits.push(`--color-background-alt-2: ${hsla._l(luma + (chat_dark ? .15 : -.15)).toCSS()};`);
+			chat_bits.push(this.generateBackgroundBlob(hsla));
 		}
 
 		let chat_text = Color.RGBA.fromCSS(this.settings.get('theme.color.chat-text'));
-		if ( ! chat_text && chat_background ) {
+		if ( ! chat_text && chat_background )
 			chat_text = Color.RGBA.fromCSS(chat_dark ? '#FFF' : '#000');
-		}
+		if ( chat_text )
+			chat_bits.push(this.generateTextBlob(chat_text));
 
-		if ( chat_text ) {
-			chat_bits.push(`--color-text-base: ${chat_text.toCSS()};`);
-			chat_bits.push(`--color-text-input: ${chat_text.toCSS()};`);
-
-			const hsla = chat_text.toHSLA(),
-				alpha = hsla.a;
-
-			chat_bits.push(`--color-text-label: ${chat_text.toCSS()};`);
-			chat_bits.push(`--color-text-label-optional: ${hsla._a(alpha - 0.4).toCSS()};`);
-
-			chat_bits.push(`--color-text-alt: ${hsla._a(alpha - 0.2).toCSS()};`);
-			chat_bits.push(`--color-text-alt-2: ${hsla._a(alpha - 0.4).toCSS()};`);
-		}
 
 		// Accent
 		const chat_accent = Color.RGBA.fromCSS(this.settings.get('theme.color.chat-accent')),
 			chat_accent_bits = [];
 		//this.toggleAccentNormal(! accent);
 		if ( chat_accent ) {
-			chat_accent.a = 1;
-
-			const hsla = chat_accent.toHSLA(),
-				luma = hsla.l;
-
-			const colors = COLORS.map(x => {
-				if ( x === 0 )
-					return chat_accent.toCSS();
-
-				return hsla._l(luma + x).toCSS()
-			});
-
-			for(let i=0; i < colors.length; i++) {
-				chat_bits.push(`--ffz-color-accent-${i+1}:${colors[i]};`);
-			}
-
-			let source = chat_dark ? ACCENT_COLORS.dark : ACCENT_COLORS.light;
-
-			for(const [key,val] of Object.entries(source.c)) {
-				if ( typeof val !== 'number' )
-					continue;
-
-				chat_bits.push(`--color-${key}:${colors[val-1]};`);
-			}
-
-			source = chat_dark ? ACCENT_COLORS.accent_dark : ACCENT_COLORS.accent_light;
-
-			for(const [key,val] of Object.entries(source.c)) {
-				if ( typeof val !== 'number' )
-					continue;
-
-				chat_accent_bits.push(`--color-${key}:${colors[val-1]} !important;`);
-			}
+			const data = this.generateAccentBlob(chat_accent, chat_dark);
+			chat_bits.push(data[0]);
+			chat_accent_bits.push(data[1]);
 		}
 
 		if ( chat_bits.length )
@@ -520,32 +481,7 @@ The CSS loaded by this setting is far too heavy and can cause performance issues
 			document.head.appendChild(this._normalizer)
 	}
 
-	/*toggleStyle(enable) {
-		if ( ! this._style ) {
-			if ( ! enable )
-				return;
-
-			this._style = createElement('link', {
-				rel: 'stylesheet',
-				type: 'text/css',
-				href: THEME_CSS
-			});
-
-		} else if ( ! enable ) {
-			this._style.remove();
-			return;
-		}
-
-		document.head.appendChild(this._style);
-	}
-
-	updateSetting(enable) {
-		this.toggleStyle(enable);
-		this.updateCSS();
-	}*/
-
 	onEnable() {
-		//this.updateSetting(this.settings.get('theme.dark'));
 		this.updateCSS();
 		this.updateFont();
 	}

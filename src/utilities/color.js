@@ -232,6 +232,7 @@ RGBAColor.fromHSLA = function(h, s, l, a) {
 	);
 }
 
+RGBAColor.prototype.toRGBA = function() { return this; }
 RGBAColor.prototype.toHSVA = function() { return HSVAColor.fromRGBA(this.r, this.g, this.b, this.a); }
 RGBAColor.prototype.toHSLA = function() { return HSLAColor.fromRGBA(this.r, this.g, this.b, this.a); }
 RGBAColor.prototype.toCSS = function() { return `rgb${this.a !== 1 ? 'a' : ''}(${Math.round(this.r)},${Math.round(this.g)},${Math.round(this.b)}${this.a !== 1 ? `,${this.a}` : ''})`; }
@@ -387,6 +388,7 @@ HSLAColor.prototype.targetLuminance = function (target) {
 
 HSLAColor.prototype.toRGBA = function() { return RGBAColor.fromHSLA(this.h, this.s, this.l, this.a); }
 HSLAColor.prototype.toCSS = function() { return `hsl${this.a !== 1 ? 'a' : ''}(${Math.round(this.h*360)},${Math.round(this.s*100)}%,${Math.round(this.l*100)}%${this.a !== 1 ? `,${this.a}` : ''})`; }
+HSLAColor.prototype.toHSLA = function() { return this; }
 HSLAColor.prototype.toHSVA = function() { return this.toRGBA().toHSVA(); }
 HSLAColor.prototype.toXYZA = function() { return this.toRGBA().toXYZA(); }
 HSLAColor.prototype.toLUVA = function() { return this.toRGBA().toLUVA(); }
@@ -435,6 +437,7 @@ HSVAColor.fromRGBA = function(r, g, b, a) {
 
 
 HSVAColor.prototype.toRGBA = function() { return RGBAColor.fromHSVA(this.h, this.s, this.v, this.a); }
+HSVAColor.prototype.toHSVA = function() { return this; }
 HSVAColor.prototype.toHSLA = function() { return this.toRGBA().toHSLA(); }
 HSVAColor.prototype.toXYZA = function() { return this.toRGBA().toXYZA(); }
 HSVAColor.prototype.toLUVA = function() { return this.toRGBA().toLUVA(); }
@@ -486,6 +489,7 @@ XYZAColor.prototype.toRGBA = function() { return RGBAColor.fromXYZA(this.x, this
 XYZAColor.prototype.toLUVA = function() { return LUVAColor.fromXYZA(this.x, this.y, this.z, this.a); }
 XYZAColor.prototype.toHSLA = function() { return this.toRGBA().toHSLA(); }
 XYZAColor.prototype.toHSVA = function() { return this.toRGBA().toHSVA(); }
+XYZAColor.prototype.toXYZA = function() { return this; }
 
 
 XYZAColor.prototype._x = function(x) { return new XYZAColor(x, this.y, this.z, this.a); }
@@ -532,6 +536,7 @@ LUVAColor.prototype.toXYZA = function() { return XYZAColor.fromLUVA(this.l, this
 LUVAColor.prototype.toRGBA = function() { return this.toXYZA().toRGBA(); }
 LUVAColor.prototype.toHSLA = function() { return this.toXYZA().toHSLA(); }
 LUVAColor.prototype.toHSVA = function() { return this.toXYZA().toHSVA(); }
+LUVAColor.prototype.toLUVA = function() { return this; }
 
 
 LUVAColor.prototype._l = function(l) { return new LUVAColor(l, this.u, this.v, this.a); }
