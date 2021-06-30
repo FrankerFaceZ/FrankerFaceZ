@@ -132,6 +132,7 @@ const CHAT_TYPES = make_enum(
 	'StandardPayForward',
 	'CommunityPayForward',
 	'FirstCheerMessage',
+	'FirstMessageHighlight',
 	'BitsBadgeTierMessage',
 	'InlinePrivateCallout',
 	'ChannelPointsReward',

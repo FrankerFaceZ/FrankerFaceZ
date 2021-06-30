@@ -1170,15 +1170,15 @@ function determineEmoteType(emote) {
 
 
 function determineSetType(set) {
-	const id = parseInt(set.id, 10);
+	const id = /^\d+$/.test(set.id) ? parseInt(set.id, 10) : null;
 
-	if ( TWITCH_GLOBAL_SETS.includes(id) )
+	if ( id && TWITCH_GLOBAL_SETS.includes(id) )
 		return EmoteTypes.Global;
 
-	if ( TWITCH_POINTS_SETS.includes(id) )
+	if ( id && TWITCH_POINTS_SETS.includes(id) )
 		return EmoteTypes.ChannelPoints;
 
-	if ( TWITCH_PRIME_SETS.includes(id) )
+	if ( id && TWITCH_PRIME_SETS.includes(id) )
 		return EmoteTypes.Prime;
 
 	if ( id == 300374282 )

@@ -4,7 +4,7 @@
 // Chat Emote Menu
 // ============================================================================
 
-import {has, get, once, maybe_call, set_equals, getTwitchEmoteURL, getTwitchEmoteSrcSet} from 'utilities/object';
+import {has, get, once, maybe_call, set_equals, getTwitchEmoteURL, getTwitchEmoteSrcSet, deep_equals} from 'utilities/object';
 import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, WEBKIT_CSS as WEBKIT, IS_OSX, KNOWN_CODES, REPLACEMENT_BASE, REPLACEMENTS, KEYS} from 'utilities/constants';
 import {HIDDEN_CATEGORIES, CATEGORIES, CATEGORY_SORT, IMAGE_PATHS} from 'src/modules/chat/emoji';
 import {ClickOutside} from 'utilities/dom';
@@ -828,6 +828,8 @@ export default class EmoteMenu extends Module {
 						if ( emote_lock ) {
 							if ( emote_lock.id === 'cheer' ) {
 								sellout = t.i18n.t('emote-menu.emote-cheer', 'Cheer an additional {bits_remaining,number} bit{bits_remaining,en_plural} to unlock this emote.', emote_lock);
+							} else if ( emote_lock.id === 'follower' ) {
+								sellout = t.i18n.t('emote-menu.emote-follower', 'Follow {user} to unlock this emote in their channel.', emote_lock);
 							} else if ( data.all_locked )
 								sellout = t.i18n.t('emote-menu.emote-sub', 'Subscribe for {price} to unlock this emote.', emote_lock);
 							else
@@ -897,7 +899,7 @@ export default class EmoteMenu extends Module {
 					</figure>
 					{! visibility && has_modifiers && <div class="emote-button__options" />}
 					{! visibility && emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
-					{! visibility && locked && <figure class="ffz-i-lock" />}
+					{! visibility && locked && <figure class={`ffz-i-${emote.lock_icon || 'lock'}`} />}
 					{hidden && <figure class="ffz-i-eye-off" />}
 				</button>)
 			}
@@ -919,7 +921,7 @@ export default class EmoteMenu extends Module {
 						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count,number} emote{count,en_plural}', {price: lock.price, count: lock.emotes.size}) :
 						t.i18n.t('emote-menu.sub-basic', 'Subscribe to unlock some emotes')}
 					<div class="ffz--sub-buttons tw-mg-t-05">
-						{locks.map(lock => (<a
+						{locks.map(lock => lock.hide_button ? null : (<a
 							key={lock.price}
 							class="tw-button tw-border-radius-none"
 							href={lock.url}
@@ -971,7 +973,7 @@ export default class EmoteMenu extends Module {
 						}}
 					/>
 					{emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
-					{locked && <figure class="ffz-i-lock" />}
+					{locked && <figure class={`ffz-i-${emote.lock_icon || 'lock'}`} />}
 				</button>)
 			}
 		}
@@ -1673,6 +1675,19 @@ export default class EmoteMenu extends Module {
 					}
 
 
+				// Before anything, identify the follower sets.
+				const user = props.channel_data && props.channel_data.user,
+					products = user && user.subscriptionProducts,
+					local_sets = user && props.channel_data?.channel?.localEmoteSets,
+					is_following = user && user.self?.follower != null,
+					bits = user?.cheer?.badgeTierEmotes;
+
+				const follower_sets = new Set();
+				if ( Array.isArray(local_sets) )
+					for(const local of local_sets)
+						if ( local?.id )
+							follower_sets.add(local.id);
+
 				// Start with the All tab. Some data calculated for
 				// all is re-used for the Channel tab.
 
@@ -1697,9 +1712,10 @@ export default class EmoteMenu extends Module {
 						const set_id = emote_set.id,
 							int_id = parseInt(set_id, 10),
 							owner = emote_set.owner,
-							is_bits = parseInt(emote_set.id, 10) > 5e8,
+							is_follower = follower_sets.has(set_id),
+							is_bits = ! is_follower && int_id > 5e8,
 							is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
-							chan = is_points ? null : owner,
+							chan = is_follower ? user : is_points ? null : owner,
 							set_data = data[set_id],
 							is_current_bits = is_bits && owner && owner.id == props?.channel_data?.user?.id;
 
@@ -1721,7 +1737,17 @@ export default class EmoteMenu extends Module {
 						if ( title ) {
 							key = `twitch-${chan?.id}`;
 
-							if ( is_bits )
+							if ( is_follower )
+								t.emotes.setTwitchSetChannel(set_id, {
+									id: set_id,
+									type: EmoteTypes.Follower,
+									owner: {
+										id: chan.id,
+										login: chan.login,
+										displayName: chan.displayName
+									}
+								});
+							else if ( is_bits )
 								t.emotes.setTwitchSetChannel(set_id, {
 									id: set_id,
 									type: EmoteTypes.BitsTier,
@@ -1787,6 +1813,10 @@ export default class EmoteMenu extends Module {
 
 						} else
 							title = t.i18n.t('emote-menu.unknown-set', 'Set #{set_id}', {set_id})
+
+						// Do not display follower emotes the user does not have.
+						if ( is_follower )
+							continue;
 
 						let section, emotes;
 
@@ -1907,13 +1937,10 @@ export default class EmoteMenu extends Module {
 
 				// Now we handle the current Channel's emotes.
 
-				const user = props.channel_data && props.channel_data.user,
-					products = user && user.subscriptionProducts,
-					bits = user?.cheer?.badgeTierEmotes;
-
-				if ( Array.isArray(products) || Array.isArray(bits) ) {
+				if ( Array.isArray(local_sets) || Array.isArray(products) || Array.isArray(bits) ) {
 					const badge = t.badges.getTwitchBadge('subscriber', '0', user.id, user.login),
 						emotes = [],
+						unlockable_emotes = new Set,
 						locks = {},
 						section = {
 							sort_key: -10,
@@ -1928,6 +1955,67 @@ export default class EmoteMenu extends Module {
 							locks,
 							all_locked: true
 						};
+
+					if ( Array.isArray(local_sets) ) {
+						for(const local of local_sets) {
+							if ( ! local || ! Array.isArray(local.emotes) )
+								continue;
+
+							const set_id = local.id;
+
+							let lock_set;
+
+							// If we're not following, we can't use the emote
+							// so lock it.
+							if ( ! is_following )
+								locks[set_id] = {
+									set_id,
+									id: 'follower',
+									user: user?.displayName || user?.login,
+									hide_button: true,
+									emotes: lock_set = new Set()
+								}
+							else
+								section.all_locked = false;
+
+							let order = 0;
+							for(const emote of local.emotes) {
+								if ( ! emote || ! emote.id || ! emote.token )
+									continue;
+
+								const id = emote.id,
+									name = KNOWN_CODES[emote.token] || emote.token,
+									seen = twitch_seen.has(id),
+									is_fav = twitch_favorites.includes(id);
+
+								const em = {
+									provider: 'twitch',
+									id,
+									set_id,
+									name,
+									order: order++,
+									src: getTwitchEmoteURL(id, 1, false),
+									srcSet: getTwitchEmoteSrcSet(id, false),
+									animSrc: getTwitchEmoteURL(id, 1, true),
+									animSrcSet: getTwitchEmoteSrcSet(id, true),
+									favorite: is_fav,
+									hidden: twitch_hidden.includes(id),
+									locked: ! is_following,
+									lock_icon: 'heart'
+								};
+
+								emotes.push(em);
+
+								if ( is_fav && ! seen )
+									favorites.push(em);
+
+								twitch_seen.add(id);
+
+								if ( lock_set )
+									lock_set.add(id);
+							}
+						}
+					}
 
 					if ( Array.isArray(products) ) {
 						for(const product of products) {
@@ -1957,7 +2045,7 @@ export default class EmoteMenu extends Module {
 									id: product.id,
 									price: product.price || TIERS[product.tier],
 									url: product.url,
-									emotes: lock_set = new Set(emotes.map(e => e.id))
+									emotes: lock_set = new Set(unlockable_emotes)
 								}
 							else
 								section.all_locked = false;
@@ -1997,8 +2085,10 @@ export default class EmoteMenu extends Module {
 
 								twitch_seen.add(id);
 
-								if ( lock_set )
+								if ( lock_set ) {
+									unlockable_emotes.add(id);
 									lock_set.add(id);
+								}
 							}
 						}
 					}
@@ -2216,16 +2306,32 @@ export default class EmoteMenu extends Module {
 
 
 			componentDidUpdate(old_props) {
-				if ( this.props.visible && ! old_props.visible )
+				if ( this.props.visible && ! old_props.visible ) {
 					this.loadData();
+					return;
+				}
 
-				if ( this.props.channel_data !== old_props.channel_data ||
-						this.props.emote_data !== old_props.emote_data ||
+				const cd = this.props.channel_data,
+					old_cd = old_props.channel_data,
+					cd_diff = cd?.user !== old_cd?.user || cd?.channel !== old_cd?.channel,
+
+					// emote_data is rebuilt by Twitch a lot so we can't
+					// rely on object equality. Use a deep equality check. It's
+					// going to be slower, but it's still faster than rebuilding
+					// our entire data structure when nothing actually changed.
+					ed = this.props.emote_data,
+					old_ed = old_props.emote_data,
+					ed_diff = ! deep_equals(ed?.emoteSets, old_ed?.emoteSets) ||
+						! deep_equals(ed?.emoteMap, old_ed?.emoteMap);
+
+				if ( cd_diff || ed_diff ||
 						this.props.user_id !== old_props.user_id ||
 						this.props.channel_id !== old_props.channel_id ||
 						this.props.loading !== old_props.loading ||
-						this.props.error !== old_props.error )
+						this.props.error !== old_props.error ) {
+					t.log.debug('Updating emote menu data. cd', cd_diff, ', ed', ed_diff);
 					this.rebuildData();
+				}
 			}
 
 			renderError() {

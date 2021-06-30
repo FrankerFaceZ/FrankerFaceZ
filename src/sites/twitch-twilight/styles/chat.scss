@@ -417,8 +417,7 @@
 				opacity: 0.5;
 			}
 
-			.ffz-i-lock,
-			.ffz-i-eye-off {
+			[class^="ffz-i-"] {
 				position: absolute;
 				bottom: 0; right: 0;
 				border-radius: .2rem;

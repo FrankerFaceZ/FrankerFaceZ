@@ -183,5 +183,6 @@ export const EmoteTypes = make_enum(
 	'Subscription',
 	'BitsTier',
 	'Global',
-	'TwoFactor'
+	'TwoFactor',
+	'Follower'
 );

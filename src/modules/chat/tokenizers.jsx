@@ -1361,6 +1361,11 @@ export const AddonEmotes = {
 				else if ( type === EmoteTypes.ChannelPoints )
 					source = this.i18n.t('emote.points', 'Channel Points Emote');
 
+				else if ( type === EmoteTypes.Follower && emote_set.owner?.login )
+					source = this.i18n.t('emote.follower', 'Follower Emote ({source})', {
+						source: emote_set.owner.displayName || emote_set.owner.login
+					});
+
 				else if ( type === EmoteTypes.Subscription && emote_set.owner?.login )
 					source = this.i18n.t('tooltip.channel', 'Channel: {source}', {
 						source: emote_set.owner.displayName || emote_set.owner.login

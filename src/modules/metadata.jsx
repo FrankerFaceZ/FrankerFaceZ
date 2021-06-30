@@ -45,7 +45,12 @@ export default class Metadata extends Module {
 				path: 'Channel > Metadata >> Player',
 				title: 'Playback Statistics',
 				description: 'Show the current stream delay, with playback rate and dropped frames in the tooltip.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+
+				getExtraTerms: () => ([
+					'latency',
+					'bitrate'
+				])
 			},
 
 			changed: () => this.updateMetadata('player-stats')

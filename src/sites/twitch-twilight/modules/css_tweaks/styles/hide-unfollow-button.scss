@@ -1,7 +1,3 @@
-.follow-btn__follow-notify-container--following {
-	margin-left: 3rem;
-}
-
-.follow-btn__follow-btn--following,.follow-btn--following {
+button[data-test-selector="unfollow-button"] {
 	display: none !important;
 }
