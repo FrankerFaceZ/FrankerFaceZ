@@ -1680,6 +1680,7 @@ export default class EmoteMenu extends Module {
 					products = user && user.subscriptionProducts,
 					local_sets = user && props.channel_data?.channel?.localEmoteSets,
 					is_following = user && user.self?.follower != null,
+					follower_locked = ! is_following && (props.user_id && user?.id != props.user_id),
 					bits = user?.cheer?.badgeTierEmotes;
 
 				const follower_sets = new Set();
@@ -1717,7 +1718,7 @@ export default class EmoteMenu extends Module {
 							is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
 							chan = is_follower ? user : is_points ? null : owner,
 							set_data = data[set_id],
-							is_current_bits = is_bits && owner && owner.id == props?.channel_data?.user?.id;
+							is_current_bits = is_bits && owner && owner.id == user?.id;
 
 						/*if ( chan )
 							t.emotes.setTwitchSetChannel(set_id, {
@@ -1967,7 +1968,7 @@ export default class EmoteMenu extends Module {
 
 							// If we're not following, we can't use the emote
 							// so lock it.
-							if ( ! is_following )
+							if ( follower_locked )
 								locks[set_id] = {
 									set_id,
 									id: 'follower',
@@ -2000,7 +2001,7 @@ export default class EmoteMenu extends Module {
 									animSrcSet: getTwitchEmoteSrcSet(id, true),
 									favorite: is_fav,
 									hidden: twitch_hidden.includes(id),
-									locked: ! is_following,
+									locked: follower_locked,
 									lock_icon: 'heart'
 								};
 
