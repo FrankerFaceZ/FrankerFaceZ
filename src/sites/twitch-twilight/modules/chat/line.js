@@ -844,6 +844,25 @@ other {# messages were deleted by a moderator.}
 							'data-user': user.userLogin && user.userLogin.toLowerCase()
 						}, out)
 					]
+				} else if ( msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') ) {
+					cls = `ffz-notice-line user-notice-line tw-pd-y-05 tw-pd-r-2 ffz--ritual-line${show_class ? ' ffz--deleted-message' : ''}${twitch_clickable ? ' tw-relative' : ''}`;
+					out = [
+						e('div', {className: 'tw-c-text-alt-2'}, [
+							out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
+								className: 'chat-line__timestamp'
+							}, t.chat.formatTime(msg.timestamp)),
+							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+							t.i18n.tList('chat.bits-message', 'Cheered {count, plural, one {# Bit} other {# Bits}}', {count: msg.bits || 0})
+						]),
+						out && e('div', {
+							className: 'chat-line--inline chat-line__message',
+							'data-room-id': room_id,
+							'data-room': room,
+							'data-user-id': user.userID,
+							'data-user': user.userLogin && user.userLogin.toLowerCase(),
+						}, out)
+					];
+
 				}
 
 				if ( ! out )

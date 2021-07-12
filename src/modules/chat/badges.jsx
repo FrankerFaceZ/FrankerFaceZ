@@ -424,24 +424,29 @@ export default class Badges extends Module {
 			if ( target.dataset.badgeData )
 				data = JSON.parse(target.dataset.badgeData);
 			else {
-				const badge_idx = target.dataset.badgeIdx,
-					fine = this.resolve('site.fine');
+				const badge_idx = target.dataset.badgeIdx;
+				let message;
 
-				if ( fine ) {
-					let message;
-					message = container[fine.accessor]?.return?.stateNode?.props?.message;
-					if ( ! message )
-						message = fine.searchParent(container, n => n.props?.message)?.props?.message;
-					if ( ! message )
-						message = fine.searchParent(container, n => n.props?.node)?.props?.node?._ffz_message;
-					if ( ! message )
-						message = fine.searchParent(container, n => n.props?.messageContext)?.props?.messageContext?.comment?._ffz_message;
+				if ( container.message )
+					message = container.message;
+				else {
+					const fine = this.resolve('site.fine');
 
-					if ( message?._ffz_message)
-						message = message._ffz_message;
-					if ( message )
-						data = message.ffz_badge_cache?.[badge_idx]?.[1]?.badges;
+					if ( fine ) {
+						message = container[fine.accessor]?.return?.stateNode?.props?.message;
+						if ( ! message )
+							message = fine.searchParent(container, n => n.props?.message)?.props?.message;
+						if ( ! message )
+							message = fine.searchParent(container, n => n.props?.node)?.props?.node?._ffz_message;
+						if ( ! message )
+							message = fine.searchParent(container, n => n.props?.messageContext)?.props?.messageContext?.comment?._ffz_message;
+					}
 				}
+
+				if ( message?._ffz_message)
+					message = message._ffz_message;
+				if ( message )
+					data = message.ffz_badge_cache?.[badge_idx]?.[1]?.badges;
 			}
 
 			if ( data == null )

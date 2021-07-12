@@ -43,7 +43,8 @@ export const RERENDER_SETTINGS = [
 	'chat.points.allow-highlight',
 	'chat.filtering.display-deleted',
 	'chat.filtering.display-mod-action',
-	'chat.replies.style'
+	'chat.replies.style',
+	'chat.bits.cheer-notice'
 ];
 
 export const UPDATE_BADGE_SETTINGS = [

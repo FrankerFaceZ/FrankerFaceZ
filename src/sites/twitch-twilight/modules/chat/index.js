@@ -511,6 +511,16 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.bits.cheer-notice', {
+			default: true,
+			ui: {
+				path: 'Chat > Bits and Cheering >> Appearance',
+				title: 'Display a notice on chat messages that include cheers.',
+				description: 'This feature is intended to prevent possible confusion from chatters using emotes to fake cheers in messages. When enabled, messages that contain real cheers will display a message above them, similar to how resubscription messages or point redemptions with messages function.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.rituals.show', {
 			default: true,
 			ui: {
@@ -1518,7 +1528,13 @@ export default class ChatHook extends Module {
 									return;
 							}
 
-						} else if ( msg.type === types.ModerationAction && false && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
+						} /*else if ( msg.type === types.ModerationAction ) {
+							t.emit('chat:mod-user', msg.moderationActionType, )
+
+						} */ else if ( msg.type === types.Moderation ) {
+							t.emit('chat:mod-user', msg.moderationType, msg.userLogin, msg.targetMessageID, msg);
+
+						} /*else if ( msg.type === types.ModerationAction && false && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							if ( !((! msg.level || ! msg.level.length) && msg.targetUserLogin && msg.targetUserLogin === inst.props.currentUserLogin) ) {
 								//t.log.info('Moderation Action', msg);
 								if ( ! inst.props.isCurrentUserModerator )
@@ -1613,12 +1629,14 @@ export default class ChatHook extends Module {
 
 							return;
 
-						} else if ( msg.type === types.Clear ) {
+						} */ else if ( msg.type === types.Clear ) {
 							if ( t.chat.context.get('chat.filtering.ignore-clear') )
 								msg = {
 									type: types.Info,
 									message: t.i18n.t('chat.ignore-clear', 'An attempt by a moderator to clear chat was ignored.')
 								}
+							else
+								t.emit('chat:clear-chat', msg);
 						}
 
 					} catch(err) {
