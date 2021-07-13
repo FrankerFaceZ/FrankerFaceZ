@@ -1922,6 +1922,30 @@ export default class ChatHook extends Module {
 	}
 
 
+	addNotice(room, message) {
+		if ( ! room )
+			return false;
+
+		if ( room.startsWith('#') )
+			room = room.slice(1);
+
+		room = room.toLowerCase();
+
+		for(const inst of this.ChatService.instances) {
+			if ( inst.props.channelLogin.toLowerCase() === room ) {
+				inst.addMessage({
+					type: this.chat_types.Notice,
+					message
+				});
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
 	sendMessage(room, message) {
 		const service = this.ChatService.first;
 

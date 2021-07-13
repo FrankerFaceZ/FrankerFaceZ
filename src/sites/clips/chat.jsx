@@ -138,6 +138,19 @@ export default class Chat extends Module {
 
 
 	// ========================================================================
+	// API Compliance
+	// ========================================================================
+
+	addNotice() { // eslint-disable-line class-methods-use-this
+		return false;
+	}
+
+	sendMessage() { // eslint-disable-line class-methods-use-this
+		return null;
+	}
+
+
+	// ========================================================================
 	// Room Handling
 	// ========================================================================
 
