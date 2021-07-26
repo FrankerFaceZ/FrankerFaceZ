@@ -1319,7 +1319,8 @@ export default class ChatHook extends Module {
 			'megacheer': this.chat.context.get('chat.bits.show'),
 			'hype_train': this.chat.context.get('chat.banners.hype-train'),
 			'prediction': this.chat.context.get('chat.banners.prediction'),
-			'poll': this.chat.context.get('chat.banners.polls')
+			'poll': this.chat.context.get('chat.banners.polls'),
+			'mw-drop-available': false
 		};
 
 		const highlights = this.community_stack?.highlights;
