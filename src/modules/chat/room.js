@@ -446,9 +446,7 @@ export default class Room {
 						__cat: getBadgeCategory(sid)
 					};
 
-				fixBadgeData(data);
-
-				bs[data.version] = data;
+				bs[data.version] = fixBadgeData(data);
 				this.badge_count++;
 			}
 

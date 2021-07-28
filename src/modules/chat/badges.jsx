@@ -1086,10 +1086,8 @@ export default class Badges extends Module {
 							__cat: getBadgeCategory(sid)
 						};
 
-					fixBadgeData(data);
-
 					this.twitch_badge_count++;
-					bs[data.version] = data;
+					bs[data.version] = fixBadgeData(data);
 				}
 			}
 
@@ -1220,6 +1218,10 @@ export function getBadgeCategory(key) {
 export function fixBadgeData(badge) {
 	if ( ! badge )
 		return badge;
+
+	// Duplicate the badge object, because
+	// Apollo results are frozen.
+	badge = {...badge};
 
 	// Click Behavior
 	if ( ! badge.clickAction && badge.onClickAction )

@@ -154,7 +154,6 @@ export default class SettingsManager extends Module {
 			if ( type === 'request-context' ) {
 				this._context_proxies.add(event.source);
 				this._updateContextProxies(event.source);
-
 			}
 		});
 

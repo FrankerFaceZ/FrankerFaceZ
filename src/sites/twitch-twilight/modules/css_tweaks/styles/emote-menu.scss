@@ -1,8 +1,8 @@
 button[data-a-target="emote-picker-button"] {
-    div[class^="ScButtonIcon"] {
+    & { //div[class^="ScButtonIcon"] {
         padding: .2rem .2rem 0 0;
 
-        div > div {
+        & > div > div {
             overflow: unset !important;
 
             &:before {
