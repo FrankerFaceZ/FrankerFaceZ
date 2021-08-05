@@ -7,7 +7,7 @@ website at https://www.frankerfacez.com/terms
 
 ### Sentry
 
-This client uses Sentry.io for automatic error reporting. When an error occurs, a report
+This client uses [Sentry.io](https://sentry.io/terms/) for automatic error reporting. When an error occurs, a report
 is automatically sent to Sentry's API with information about the error and the state of
 the client at the time to assist us with reproducing and fixing the issue. We attempt to
 filter personal information such as API keys from error reports before they are submitted
