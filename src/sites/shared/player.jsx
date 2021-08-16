@@ -995,9 +995,13 @@ export default class PlayerBase extends Module {
 					if ( document.pictureInPictureElement != null )
 						return false;
 
+					if ( this.settings.get('player.force-visible') )
+						return false;
+
 					return document.visibilityState === 'hidden';
 				}
 			});
+
 		} catch(err) {
 			this.log.warn('Unable to install document visibility hook.', err);
 		}

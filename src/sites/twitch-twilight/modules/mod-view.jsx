@@ -99,7 +99,10 @@ export default class ModView extends Module {
 			i = 0;
 			while(state != null && channel == null && i < 50) {
 				state = state?.next;
-				channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
+				//channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
+				channel = state?.memoizedState?.current?.currentObservable?.lastResult?.data?.user;
+				if ( ! channel )
+					channel = state?.memoizedState?.current?.previous?.result?.previousData?.user;
 				i++;
 			}
 			node = node?.child;

@@ -26,6 +26,7 @@ export default class Line extends Module {
 		);
 
 		this.render = true;
+		this.messages = new WeakMap();
 
 		window.toggleLines = () => {
 			this.render = ! this.render;
@@ -126,7 +127,7 @@ export default class Line extends Module {
 			const msg = inst.props.node,
 				user = msg?.commentor;
 			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
-				msg._ffz_message = null;
+				this.messages.delete(msg);
 				inst.forceUpdate();
 			}
 		}
@@ -157,9 +158,7 @@ export default class Line extends Module {
 	_updateLines(clear_tokens = true, clear_badges = true) { // eslint-disable-line no-unused-vars
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.node;
-			// TODO: Selective state clear.
-			if ( msg?._ffz_message )
-				msg._ffz_message = null;
+			this.messages.delete(msg);
 		}
 
 		this.ChatLine.forceUpdate();
@@ -170,8 +169,8 @@ export default class Line extends Module {
 		if ( ! msg || ! msg.message )
 			return msg;
 
-		if ( msg._ffz_message )
-			return msg._ffz_message;
+		if ( this.messages.has(msg) )
+			return this.messages.get(msg);
 
 		const room = this.chat.getRoom(video.owner.id, null, true, true),
 			author = msg.commenter || {},
@@ -182,7 +181,7 @@ export default class Line extends Module {
 				if ( badge )
 					badges[badge.setID] = badge.version;
 
-		const out = msg._ffz_message = {
+		const out = {
 			user: {
 				color: author.chatColor,
 				id: author.id,
@@ -199,6 +198,8 @@ export default class Line extends Module {
 		};
 
 		this.detokenizeMessage(out, msg);
+
+		this.messages.set(msg, out);
 
 		return out;
 	}

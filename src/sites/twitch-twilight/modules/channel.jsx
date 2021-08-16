@@ -521,7 +521,9 @@ export default class Channel extends Module {
 			i=0;
 			while(state != null && channel == null && i < 50) {
 				state = state?.next;
-				channel = state?.memoizedState?.current?.previousData?.result?.data?.userOrError;
+				channel = state?.memoizedState?.current?.currentObservable?.lastResult?.data?.userOrError;
+				if ( ! channel )
+					channel = state?.memoizedState?.current?.previous?.result?.previousData?.userOrError;
 				i++;
 			}
 			node = node?.return;

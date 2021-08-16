@@ -408,13 +408,27 @@ export default class Metadata extends Module {
 
 			click() {
 				const Player = this.resolve('site.player'),
+					fine = this.resolve('site.fine'),
+					player = Player.Player?.first,
+					inst = fine && player && fine.searchTree(player, n => n.props?.setStatsOverlay, 200),
+					cont = inst && fine.getChildNode(player),
+					el = cont && cont.querySelector('[data-a-target="player-overlay-video-stats"]');
+
+				if ( ! inst )
+					return;
+
+				inst.props.setStatsOverlay(el ? 0 : 1);
+			},
+
+			/*click() {
+				const Player = this.resolve('site.player'),
 					ui = Player.playerUI;
 
 				if ( ! ui )
 					return;
 
 				ui.setStatsOverlay(ui.statsOverlay === 1 ? 0 : 1);
-			},
+			},*/
 
 			color(data) {
 				const setting = this.settings.get('metadata.stream-delay-warning');

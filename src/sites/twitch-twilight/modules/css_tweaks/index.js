@@ -28,10 +28,10 @@ const CLASSES = {
 
 	'prime-offers': '.top-nav__prime',
 
-	'player-gain-volume': '.video-player__overlay[data-compressed="true"] .volume-slider__slider-container:not(.ffz--player-gain)',
+	'player-gain-volume': '.video-player__container[data-compressed="true"] .volume-slider__slider-container:not(.ffz--player-gain)',
 
 	'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
-	'player-ext-hover': '.video-player__overlay[data-controls="false"] .extension-taskbar,.video-player__overlay[data-controls="false"] .extension-container,.video-player__overlay[data-controls="false"] .extensions-dock__layout,.video-player__overlay[data-controls="false"] .extensions-notifications,.video-player__overlay[data-controls="false"] .extensions-video-overlay-size-container',
+	'player-ext-hover': '.video-player__container[data-controls="false"] .extension-taskbar,.video-player__container[data-controls="false"] .extension-container,.video-player__container[data-controls="false"] .extensions-dock__layout,.video-player__container[data-controls="false"] .extensions-notifications,.video-player__container[data-controls="false"] .extensions-video-overlay-size-container',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',

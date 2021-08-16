@@ -1429,7 +1429,7 @@ export default class Chat extends Module {
 			offset = is_action ? 4 : 0,
 
 			out = msg._ffz_message = {
-				user: msg.from,
+				user: {...msg.from}, // Apollo seals this~
 				message: msg.content.slice(offset),
 				is_action,
 				ffz_emotes: emotes,

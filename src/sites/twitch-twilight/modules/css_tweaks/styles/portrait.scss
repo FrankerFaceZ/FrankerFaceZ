@@ -4,7 +4,7 @@
 	--ffz-theater-height: calc(calc(100vw * 0.5625) + var(--ffz-portrait-extra-height));
 	--ffz-chat-height: calc(100vh - var(--ffz-player-height));
 
-	& > div:first-child > div[class^="sc"] {
+	& > div:first-child > div[class^="Layout-sc"] {
 		.ffz--portrait-invert & {
 			position: absolute;
 			left: 0;
