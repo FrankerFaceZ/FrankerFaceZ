@@ -973,6 +973,8 @@ export default class PlayerBase extends Module {
 			return;
 		}
 
+		const t = this;
+
 		document.addEventListener('fullscreenchange', () => {
 			const fs = document.fullscreenElement,
 				pip = document.pictureInPictureElement;
@@ -995,7 +997,7 @@ export default class PlayerBase extends Module {
 					if ( document.pictureInPictureElement != null )
 						return false;
 
-					if ( this.settings.get('player.force-visible') )
+					if ( t.settings.get('player.force-visible') )
 						return false;
 
 					return document.visibilityState === 'hidden';
