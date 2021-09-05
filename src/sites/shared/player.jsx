@@ -481,6 +481,7 @@ export default class PlayerBase extends Module {
 			ui: {
 				path: 'Player > General >> Extensions',
 				title: 'Show Overlay Extensions',
+				description: 'Note: This feature does not prevent extensions from loading. Hidden extensions are merely invisible. Hiding extensions with this feature will not improve your security.',
 				component: 'setting-select-box',
 				data: [
 					{value: 2, title: 'Never'},

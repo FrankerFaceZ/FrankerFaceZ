@@ -180,14 +180,14 @@ export class Vue extends Module {
 
 		vue.mixin({
 			methods: {
-				reactNavigate(url, event) {
+				reactNavigate(url, event, state) {
 					const router = t.resolve('site.router');
 					if ( router && router.history ) {
 						if ( event ) {
 							event.preventDefault();
 							event.stopPropagation();
 						}
-						router.history.push(url);
+						router.history.push(url, state ?? undefined);
 					}
 				},
 				getReactURL(route, data, opts, ...args) {

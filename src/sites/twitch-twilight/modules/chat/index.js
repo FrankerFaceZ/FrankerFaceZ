@@ -346,6 +346,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.drops', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow messages about Drops to be displayed in chat.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.banners.polls', {
 			default: true,
 			ui: {
@@ -836,6 +845,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.subs.gift-banner', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.drops', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.effective-width', this.updateChatCSS, this);
@@ -1320,7 +1330,7 @@ export default class ChatHook extends Module {
 			'hype_train': this.chat.context.get('chat.banners.hype-train'),
 			'prediction': this.chat.context.get('chat.banners.prediction'),
 			'poll': this.chat.context.get('chat.banners.polls'),
-			'mw-drop-available': false
+			'mw-drop-available': this.chat.context.get('chat.banners.drops')
 		};
 
 		const highlights = this.community_stack?.highlights;
@@ -1332,11 +1342,13 @@ export default class ChatHook extends Module {
 				continue;
 
 			const type = entry.event.type;
-			if ( type && has(types, type) && ! types[type] )
+			if ( type && has(types, type) && ! types[type] ) {
+				this.log.info('Removing community highlight: ', type, '#', entry.id);
 				this.community_dispatch({
 					type: 'remove-highlight',
 					id: entry.id
 				});
+			}
 		}
 	}
 
@@ -2085,6 +2097,8 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
+						out.gift_theme = e.giftTheme;
+						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_plan = e.methods;
 						return i.postMessageToCurrentChannel(e, out);
 
@@ -2121,6 +2135,8 @@ export default class ChatHook extends Module {
 
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
+						out.gift_theme = e.giftTheme;
+						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_cumulative = e.cumulativeMonths || 0;
 						out.sub_streak = e.streakMonths || 0;
 						out.sub_share_streak = e.shouldShareStreakTenure;
@@ -2176,6 +2192,8 @@ export default class ChatHook extends Module {
 							login: e.recipientLogin,
 							displayName: e.recipientName
 						};
+						out.gift_theme = e.giftTheme;
+						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_months = e.giftMonths;
 						out.sub_plan = e.methods;
 						out.sub_total = e.senderCount;
@@ -2221,6 +2239,8 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'sub_gift';
+						out.gift_theme = e.giftTheme;
+						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_anon = true;
 						out.sub_recipient = {
 							id: e.recipientID,
@@ -2259,6 +2279,8 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'sub_mystery';
+						out.gift_theme = e.giftTheme;
+						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.mystery = mystery;
 						out.sub_plan = e.plan;
 						out.sub_count = e.massGiftCount;

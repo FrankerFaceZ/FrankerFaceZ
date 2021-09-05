@@ -439,7 +439,7 @@ export default class ThemeEngine extends Module {
 		}
 
 		if ( chat_bits.length )
-			this.css_tweaks.set('chat-colors', `.chat-shell {${chat_bits.join('\n')}}.chat-shell .tw-accent-region{${chat_accent_bits.join('\n')}}`);
+			this.css_tweaks.set('chat-colors', `.moderation-view-page-widget .stream-chat,.chat-shell {${chat_bits.join('\n')}}.moderation-view-page-widget .stream-chat .tw-accent-region,.chat-shell .tw-accent-region{${chat_accent_bits.join('\n')}}`);
 		else
 			this.css_tweaks.delete('chat-colors');
 

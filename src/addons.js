@@ -311,7 +311,7 @@ export default class AddonManager extends Module {
 		}));
 
 		// Error if this takes more than 5 seconds.
-		await timeout(this.waitFor(`addon.${id}:registered`), 5000);
+		await timeout(this.waitFor(`addon.${id}:registered`), 60000);
 
 		module = this.resolve(`addon.${id}`);
 		if ( module && ! module.loaded )

@@ -115,3 +115,9 @@ html {
 		color: var(--ffz-color-accent-10) !important;
 	}
 }
+
+html, .tw-root--theme-dark, .tw-root--theme-light {
+	.search-box__variant1 .tw-input {
+		border-color: var(--color-background-button-primary-default) !important;
+	}
+}
