@@ -8,7 +8,8 @@ import Module from 'utilities/module';
 
 import {createElement, on, off} from 'utilities/dom';
 import {isValidShortcut, debounce, has} from 'utilities/object';
-import { IS_FIREFOX } from 'src/utilities/constants';
+import { IS_FIREFOX } from 'utilities/constants';
+import { getFontsList, useFont } from 'utilities/fonts';
 
 const STYLE_VALIDATOR = createElement('span');
 
@@ -417,7 +418,8 @@ export default class PlayerBase extends Module {
 				path: 'Player > Closed Captioning >> Font',
 				title: 'Font Family',
 				description: 'Override the font used for displaying Closed Captions.',
-				component: 'setting-text-box'
+				component: 'setting-combo-box',
+				data: () => getFontsList()
 			},
 			changed: () => this.updateCaptionsCSS()
 		});
@@ -1031,20 +1033,33 @@ export default class PlayerBase extends Module {
 
 	updateCaptionsCSS() {
 		// Font
+		const font_out = [];
+
 		const font_size = this.settings.get('player.captions.font-size');
 		let font_family = this.settings.get('player.captions.font-family');
-		if ( font_family.indexOf(' ') !== -1 && font_family.indexOf(',') === -1 && font_family.indexOf('"') === -1 && font_family.indexOf("'") === -1 )
-			font_family = `"${font_family}"`;
+
+		if ( font_family && font_family.length ) {
+			const [processed, unloader] = useFont(font_family);
+			font_family = processed;
+
+			if ( this._font_unloader )
+				this._font_unloader();
+
+			this._font_unloader = unloader;
+
+			if ( font_family.indexOf(' ') !== -1 && font_family.indexOf(',') === -1 && font_family.indexOf('"') === -1 && font_family.indexOf("'") === -1 )
+				font_family = `"${font_family}"`;
+
+			STYLE_VALIDATOR.style.fontFamily = '';
+			STYLE_VALIDATOR.style.fontFamily = font_family;
+
+			if ( STYLE_VALIDATOR.style.fontFamily )
+				font_out.push(`font-family: ${STYLE_VALIDATOR.style.fontFamily} !important;`);
+		}
 
 		STYLE_VALIDATOR.style.fontSize = '';
-		STYLE_VALIDATOR.style.fontFamily = '';
-
 		STYLE_VALIDATOR.style.fontSize = font_size;
-		STYLE_VALIDATOR.style.fontFamily = font_family;
 
-		const font_out = [];
-		if ( STYLE_VALIDATOR.style.fontFamily )
-			font_out.push(`font-family: ${STYLE_VALIDATOR.style.fontFamily} !important;`);
 		if ( STYLE_VALIDATOR.style.fontSize )
 			font_out.push(`font-size: ${STYLE_VALIDATOR.style.fontSize} !important;`);
 

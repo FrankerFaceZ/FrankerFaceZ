@@ -119,7 +119,7 @@ module.exports = {
 			loader: 'graphql-tag/loader'
 		},
 		{
-			test: /\.(?:eot|ttf|woff|woff2)$/,
+			test: /\.(?:otf|eot|ttf|woff|woff2)$/,
 			use: [{
 				loader: 'file-loader',
 				options: {

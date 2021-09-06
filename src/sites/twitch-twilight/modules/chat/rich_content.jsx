@@ -169,7 +169,7 @@ export default class RichContent extends Module {
 
 				return (<div
 					class="ffz--corner-flag ffz--corner-flag__warn ffz-tooltip ffz-tooltip--no-mouse"
-					data-title={t.i18n.t('tooltip.link-unsafe', "Caution: This URL is on Google's Safe Browsing List for: {reasons}", {reasons})}
+					data-title={t.i18n.t('tooltip.link-unsafe', 'Caution: This URL is has been flagged as potentially harmful by: {reasons}', {reasons})}
 				>
 					<figure class="ffz-i-attention" />
 				</div>);

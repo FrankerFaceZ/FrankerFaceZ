@@ -200,7 +200,7 @@ export default {
 				attrs: {
 					'data-title': this.t(
 						'tooltip.link-unsafe',
-						"Caution: This URL is on Google's Safe Browsing List for: {reasons}",
+						'Caution: This URL is has been flagged as potentially harmful by: {reasons}',
 						{
 							reasons: reasons.toLowerCase()
 						}

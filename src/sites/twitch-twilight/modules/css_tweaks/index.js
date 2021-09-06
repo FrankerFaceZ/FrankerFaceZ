@@ -7,6 +7,7 @@
 import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has} from 'utilities/object';
+import { getFontsList, useFont } from 'utilities/fonts';
 
 const STYLE_VALIDATOR = document.createElement('span');
 
@@ -378,8 +379,9 @@ export default class CSSTweaks extends Module {
 			ui: {
 				path: 'Appearance > Theme >> Fonts',
 				title: 'Font Family',
-				description: 'Override the font used for the entire Twitch website. The old default font was: `"Helvetica Neue",Helvetica,Arial,sans-serif`',
-				component: 'setting-text-box'
+				description: 'Override the font used for the entire Twitch website. The old default font was: `"Helvetica Neue",Helvetica,Arial,sans-serif`\n\nAny font available via [Google Fonts](https://fonts.google.com/) can be loaded by prefixing the font name with `google:`.',
+				component: 'setting-combo-box',
+				data: () => getFontsList()
 			},
 			changed: () => this.updateFont()
 		});
@@ -481,6 +483,14 @@ export default class CSSTweaks extends Module {
 	updateFont() {
 		let font = this.settings.get('layout.theme.global-font');
 		if ( font && font.length ) {
+			const [processed, unloader] = useFont(font);
+			font = processed;
+
+			if ( this._font_unloader )
+				this._font_unloader();
+
+			this._font_unloader = unloader;
+
 			if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
 				font = `"${font}"`;
 

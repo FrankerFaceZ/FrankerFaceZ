@@ -388,13 +388,16 @@ export default class SettingsManager extends Module {
 	// ========================================================================
 
 	async generateBackupFile() {
+		const now = new Date(),
+			timestamp = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+
 		if ( await this._needsZipBackup() ) {
 			const blob = await this._getZipBackup();
-			return new File([blob], 'ffz-settings.zip', {type: 'application/zip'});
+			return new File([blob], `ffz-settings (${timestamp}).zip`, {type: 'application/zip'});
 		}
 
 		const settings = await this.getSettingsDump();
-		return new File([JSON.stringify(settings)], 'ffz-settings.json', {type: 'application/json;charset=utf-8'});
+		return new File([JSON.stringify(settings)], `ffz-settings (${timestamp}).json`, {type: 'application/json;charset=utf-8'});
 	}
 
 

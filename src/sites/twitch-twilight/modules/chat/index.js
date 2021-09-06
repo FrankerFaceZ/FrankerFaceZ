@@ -8,6 +8,7 @@ import {Color, ColorAdjuster} from 'utilities/color';
 import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
+import {useFont} from 'utilities/fonts';
 
 import Module from 'utilities/module';
 
@@ -717,6 +718,14 @@ export default class ChatHook extends Module {
 			lh = Math.round((20/12) * size);
 
 		let font = this.chat.context.get('chat.font-family') || 'inherit';
+		const [processed, unloader] = useFont(font);
+		font = processed;
+
+		if ( this._font_unloader )
+			this._font_unloader();
+
+		this._font_unloader = unloader;
+
 		if ( font.indexOf(' ') !== -1 && font.indexOf(',') === -1 && font.indexOf('"') === -1 && font.indexOf("'") === -1 )
 			font = `"${font}"`;
 
