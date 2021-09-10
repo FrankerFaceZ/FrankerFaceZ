@@ -548,11 +548,15 @@ function header_vue(token, h, ctx) {
 		]
 	}, content);
 
-	if ( token.image ) {
-		const aspect = token.image.aspect;
+	let imtok = token.sfw_image;
+	if ( token.image && canShowImage(token.image, ctx) )
+		imtok = token.image;
+
+	if ( imtok ) {
+		const aspect = imtok.aspect;
 
 		let image = render_image({
-			...token.image,
+			...imtok,
 			aspect: undefined
 		}, h, ctx);
 		const right = token.image_side === 'right';
@@ -634,11 +638,15 @@ function header_normal(token, createElement, ctx) {
 		className: `tw-flex tw-full-width tw-overflow-hidden ${token.compact ? 'ffz--rich-header ffz--compact-header tw-align-items-center' : 'tw-justify-content-center tw-flex-column tw-flex-grow-1'}`
 	}, content);
 
-	if ( token.image ) {
-		const aspect = token.image.aspect;
+	let imtok = token.sfw_image;
+	if ( token.image && canShowImage(token.image, ctx) )
+		imtok = token.image;
+
+	if ( imtok ) {
+		const aspect = imtok.aspect;
 
 		let image = render_image({
-			...token.image,
+			...imtok,
 			aspect: undefined
 		}, createElement, ctx);
 		const right = token.image_side === 'right';
@@ -717,8 +725,12 @@ TOKEN_TYPES.icon = function(token, createElement, ctx) {
 // Token Type: Image
 // ============================================================================
 
+function canShowImage(token, ctx) {
+	return !(has(token, 'sfw') && ! token.sfw && ! ctx.allow_unsafe);
+}
+
 function render_image(token, createElement, ctx) {
-	if ( ! token.url || (has(token, 'sfw') && ! token.sfw && ! ctx.allow_unsafe) )
+	if ( ! token.url || ! canShowImage(token, ctx) )
 		return null;
 
 	const round = getRoundClass(token.rounding);

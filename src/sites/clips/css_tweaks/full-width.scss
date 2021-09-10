@@ -1,4 +1,9 @@
 @media (min-width: 1200px) {
+	.clips-edit-clip-wrapper {
+		max-width: #{"min(calc(100vw - 4rem),calc(16 / 9 * calc(100vh - 31rem)))"};
+		width: 100vw;
+	}
+
 	.clips-watch {
 		max-width: #{"min(calc(100vw - 2rem),calc(calc(16 / 9 * calc(100vh - 15rem)) + 36rem))"};
 	}
