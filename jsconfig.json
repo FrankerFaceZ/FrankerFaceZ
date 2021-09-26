@@ -3,13 +3,11 @@
 		"allowSyntheticDefaultImports": true,
 		"lib": [
 			"dom",
-			"es2015",
-			"es2016",
-			"es6",
+			"esnext",
 			"es2017"
 		],
 		"target": "es2017",
-		"module": "es6",
+		"module": "esnext",
 		"baseUrl": ".",
 		"paths": {
 			"root": ["."],
