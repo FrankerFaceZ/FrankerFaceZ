@@ -24,6 +24,8 @@ export class Dialog extends EventEmitter {
 		this._maximized = options.maximized || false;
 		this._exclusive = options.exclusive || false;
 
+		this.prepend = options.prepend || false;
+
 		this._element = null;
 		this._visible = false;
 
@@ -149,7 +151,10 @@ export class Dialog extends EventEmitter {
 			if ( el instanceof Promise ) {
 				el.then(e => {
 					this._element = e;
-					container.appendChild(e);
+					if ( this.prepend )
+						container.insertBefore(e, container.firstChild);
+					else
+						container.appendChild(e);
 					this.emit('show');
 				}).catch(err => {
 					this.emit('error', err);
@@ -161,7 +166,10 @@ export class Dialog extends EventEmitter {
 				this._element = el;
 		}
 
-		container.appendChild(this._element);
+		if ( this.prepend )
+			container.insertBefore(this._element, container.firstChild);
+		else
+			container.appendChild(this._element);
 		this.emit('show');
 	}
 
@@ -185,8 +193,12 @@ export class Dialog extends EventEmitter {
 			old_container.classList.remove('ffz-has-dialog');
 
 		this._element.remove();
-		if ( container )
-			container.appendChild(this._element);
+		if ( container ) {
+			if ( this.prepend )
+				container.insertBefore(this._element, container.firstChild);
+			else
+				container.appendChild(this._element);
+		}
 
 		this.emit('resize');
 	}

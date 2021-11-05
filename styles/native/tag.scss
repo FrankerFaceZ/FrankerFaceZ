@@ -39,6 +39,11 @@
 		width: 1.6rem;
 	}
 
+	.ffz__tooltip & {
+		background: rgba(128,128,128,0.3);
+		color: var(--color-text-tooltip);
+	}
+
 	&--overlay {
 		background: rgba(0,0,0,0.3);
 		border: var(--border-width-tag) solid var(--color-border-input-overlay);

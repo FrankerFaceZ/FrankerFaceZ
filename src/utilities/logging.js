@@ -45,6 +45,19 @@ export class Logger {
 		this.children = {};
 	}
 
+	hi(core) {
+		const VER = core.constructor.version_info;
+		this.info(`FrankerFaceZ v${VER} (s:${core.host} f:${core.flavor} b:${VER.build} c:${VER.commit || 'null'})`);
+
+		try {
+			const loc = new URL(location);
+			loc.search = '';
+			this.info(`Initial URL: ${loc}`);
+		} catch(err) {
+			this.warn(`Unable to read location.`, err);
+		}
+	}
+
 	get(name, level) {
 		if ( ! this.children[name] )
 			this.children[name] = new Logger(this, (this.name ? `${this.name}.${name}` : name), level);

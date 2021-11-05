@@ -18,11 +18,11 @@ import Site from './sites/player';
 class FrankerFaceZ extends Module {
 	constructor() {
 		super();
-		const start_time = performance.now(),
-			VER = FrankerFaceZ.version_info;
+		const start_time = performance.now();
 
 		FrankerFaceZ.instance = this;
 
+		this.host = 'twitch';
 		this.flavor = 'player';
 		this.name = 'ffz_player';
 		this.__state = 0;
@@ -39,8 +39,7 @@ class FrankerFaceZ extends Module {
 		this.log.init = true;
 
 		this.core_log = this.log.get('core');
-
-		this.log.info(`FrankerFaceZ Standalone Player v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''}) (initial ${location})`);
+		this.log.hi(this);
 
 
 		// ========================================================================

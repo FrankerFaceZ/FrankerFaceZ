@@ -99,7 +99,7 @@ export default class Subpump extends Module {
 				}
 
 			} catch(err) {
-				this.log.error('Error processing PubSub event.', err);
+				t.log.error('Error processing PubSub event.', err);
 			}
 
 			return orig_message.call(this, e);

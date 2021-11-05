@@ -47,6 +47,11 @@ export default class Directory extends SiteModule {
 			DIR_ROUTES, null, 0, 0
 		);
 
+		this.DirectoryGameCard = this.elemental.define(
+			'directory-game-card', '.game-card[data-a-id]',
+			DIR_ROUTES, null, 0, 0
+		);
+
 		this.DirectoryShelf = this.fine.define(
 			'directory-shelf',
 			n => n.shouldRenderNode && n.props && n.props.shelf,
@@ -213,9 +218,34 @@ export default class Directory extends SiteModule {
 		this.DirectoryCard.on('unmount', this.clearCard, this);
 		this.DirectoryCard.each(el => this.updateCard(el));
 
+		this.DirectoryGameCard.on('mount', this.updateGameCard, this);
+		this.DirectoryGameCard.on('mutate', this.updateGameCard, this);
+		//this.DirectoryGameCard.on('unmount', this.clearGameCard, this);
+		this.DirectoryGameCard.each(el => this.updateGameCard(el));
+
 		const t = this;
 
 		this.DirectoryShelf.ready(cls => {
+			const old_should_render = cls.prototype.shouldRenderNode;
+			cls.prototype.shouldRenderNode = function(node, ...args) {
+				try {
+					let game;
+					if ( node.__typename === 'Game' )
+						game = node.name;
+					else if ( node.game )
+						game = node.game.name;
+
+					if ( game && t.settings.provider.get('directory.game.blocked-games', []).includes(game) )
+						return false;
+
+				} catch(err) {
+					t.log.capture(err);
+					t.log.error(err);
+				}
+
+				return old_should_render.call(this, node, ...args);
+			}
+
 			const old_render = cls.prototype.render;
 			cls.prototype.render = function() {
 				try {
@@ -234,86 +264,44 @@ export default class Directory extends SiteModule {
 
 			this.DirectoryShelf.forceUpdate();
 		});
-
-		/*this.DirectoryCard.ready((cls, instances) => {
-			//const old_render = cls.prototype.render,
-			const old_render_iconic = cls.prototype.renderIconicImage,
-				old_render_titles = cls.prototype.renderTitles;
-
-			/*cls.prototype.render = function() {
-				if ( get('props.streamType', this) === 'rerun' && t.settings.get('directory.hide-vodcasts') )
-					return null;
-
-				return old_render.call(this);
-			}*
-
-			cls.prototype.renderIconicImage = function() {
-				if ( this.props.context !== CARD_CONTEXTS.SingleChannelList &&
-					! t.settings.get('directory.show-channel-avatars') )
-					return;
-
-				return old_render_iconic.call(this);
-			}
-
-			cls.prototype.renderTitles = function() {
-				const nodes = get(get('props.channelLogin', this), t.following.hosts);
-				if ( this.props.hostedByChannelLogin == null || ! nodes || ! nodes.length )
-					return old_render_titles.call(this);
-
-				const channel = nodes[0].hosting,
-					stream = channel.stream,
-					game = stream && stream.game,
-
-					channel_url = `/${channel.login}`,
-					game_url = game && `/directory/game/${stream.game.name}`,
-
-					user_link = <a href={channel_url} data-href={channel_url} title={channel.displayName} class="ffz-link ffz-link--inherit" onClick={t.routeClick}>{channel.displayName}</a>,
-					game_link = game && <a href={game_url} data-href={game_url} title={game.name} class="ffz-link ffz-link--inherit" onClick={t.routeClick}>{game.name}</a>;
-
-				return (<div>
-					<a href={channel_url} data-href={channel_url} class="ffz-link ffz-link--inherit" data-test-selector="preview-card-titles__primary-link" onClick={t.routeClick}>
-						<h3 class="tw-ellipsis tw-font-size-5 tw-strong" title={stream.title}>{stream.title}</h3>
-					</a>
-					<div class="preview-card-titles__subtitle-wrapper">
-						<div data-test-selector="preview-card-titles__subtitle">
-							<p class="tw-c-text-alt tw-ellipsis">{
-								game ?
-									game.id == CREATIVE_ID ?
-										t.i18n.tList('directory.user-creative', '{user} being {game}', {
-											user: user_link,
-											game: game_link
-										}) :
-										t.i18n.tList('directory.user-playing', '{user} playing {game}', {
-											user: user_link,
-											game: game_link
-										})
-									: user_link
-							}</p>
-						</div>
-						<div data-test-selector="preview-card-titles__subtitle">
-							<p class="tw-c-text-alt tw-ellipsis">{
-								nodes.length > 1 ?
-									t.i18n.t('directory.hosted.by-many', 'Hosted by {count,number} channel{count,en_plural}', nodes.length) :
-									t.i18n.tList('directory.hosted.by-one', 'Hosted by {user}', {
-										user: <a href={`/${nodes[0].login}`} data-href={`/${nodes[0].login}`} title={nodes[0].displayName} class="ffz-link ffz-link--inherit" onClick={t.routeClick}>{nodes[0].displayName}</a>
-									})
-							}</p>
-						</div>
-					</div>
-				</div>);
-			}
-
-			this.DirectoryCard.forceUpdate();
-
-			for(const inst of instances)
-				this.updateCard(inst);
-		});
-
-		this.DirectoryCard.on('update', this.updateCard, this);
-		this.DirectoryCard.on('mount', this.updateCard, this);
-		this.DirectoryCard.on('unmount', this.clearCard, this);*/
 	}
 
+
+	updateGameCard(el) {
+		const react = this.fine.getReactInstance(el);
+		if ( ! react )
+			return;
+
+		const props = react.return?.memoizedProps;
+		if ( ! props?.trackingProps?.category )
+			return;
+
+		const game = props.trackingProps.category,
+			tags = props.tagListProps?.tags;
+
+		let bad_tag = false;
+
+		if ( Array.isArray(tags) ) {
+			const bad_tags = this.settings.provider.get('directory.game.blocked-tags', []);
+			if ( bad_tags.length ) {
+				for(const tag of tags) {
+					if ( tag?.id && bad_tags.includes(tag.id) ) {
+						bad_tag = true;
+						break;
+					}
+				}
+			}
+		}
+
+		const should_hide = bad_tag || this.settings.provider.get('directory.game.blocked-games', []).includes(game);
+
+		let hide_container = el.closest('.tw-tower > div');
+		if ( ! hide_container )
+			hide_container = el;
+
+		if ( hide_container.querySelectorAll('a[data-a-target="tw-box-art-card-link"]').length < 2 )
+			hide_container.classList.toggle('tw-hide', should_hide);
+	}
 
 
 	updateCard(el) {
@@ -340,7 +328,7 @@ export default class Directory extends SiteModule {
 		el.dataset.ffzType = props.streamType;
 
 		if ( Array.isArray(tags) ) {
-			const bad_tags = this.settings.provider.get('directory.game.hidden-tags', []);
+			const bad_tags = this.settings.provider.get('directory.game.blocked-tags', []);
 			if ( bad_tags.length ) {
 				for(const tag of tags) {
 					if ( tag?.id && bad_tags.includes(tag.id) ) {
@@ -368,6 +356,8 @@ export default class Directory extends SiteModule {
 
 	updateCards() {
 		this.DirectoryCard.each(el => this.updateCard(el));
+		this.DirectoryGameCard.each(el => this.updateGameCard(el));
+		this.DirectoryShelf.forceUpdate();
 
 		this.emit(':update-cards');
 	}
@@ -381,7 +371,7 @@ export default class Directory extends SiteModule {
 		if ( ! document.contains(el) )
 			return this.clearUptime(el);
 
-		const container = el.querySelector('.tw-media-card-image__corners'),
+		const container = el.querySelector('a[data-a-target="preview-card-image-link"] > div'),
 			setting = this.settings.get('directory.uptime');
 
 		if ( ! container || setting === 0 || props.viewCount || props.animatedImageProps )

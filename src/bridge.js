@@ -11,10 +11,12 @@ import SettingsManager from './settings/index';
 class FFZBridge extends Module {
 	constructor() {
 		super();
-		const start_time = performance.now(),
-			VER = FFZBridge.version_info;
+		const start_time = performance.now();
 
 		FFZBridge.instance = this;
+
+		this.host = 'null';
+		this.flavor = 'bridge';
 
 		this.name = 'ffz_bridge';
 		this.__state = 0;
@@ -29,8 +31,7 @@ class FFZBridge extends Module {
 		this.log.init = true;
 
 		this.core_log = this.log.get('core');
-
-		this.log.info(`FrankerFaceZ Settings Bridge v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''}) (initial ${location})`);
+		this.log.hi(this);
 
 
 		// ========================================================================

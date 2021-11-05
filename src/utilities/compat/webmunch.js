@@ -474,6 +474,9 @@ export default class WebMunch extends Module {
 
 				this._required_ids.add(id);
 
+				if ( ! require.m[id] )
+					this.log.warn('Tried requiring module that isn\'t loaded', id);
+
 				const mod = require(id);
 				if ( mod ) {
 					const ret = predicate(mod);

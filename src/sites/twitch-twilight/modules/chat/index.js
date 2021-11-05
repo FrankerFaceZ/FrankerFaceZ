@@ -875,8 +875,6 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.highlight-tokens', this.updateMentionCSS, this);
 		this.chat.context.on('changed:chat.filtering.mention-color', this.updateMentionCSS, this);
-		this.chat.context.on('changed:chat.filtering.clickable-mentions', val => this.css_tweaks.toggle('clickable-mentions', val));
-		this.chat.context.on('changed:chat.filtering.bold-mentions', val => this.css_tweaks.toggle('chat-mention-no-bold', ! val));
 		this.chat.context.on('changed:chat.pin-resubs', val => {
 			if ( val ) {
 				this.updateInlineCallouts();
@@ -889,46 +887,74 @@ export default class ChatHook extends Module {
 			this.CalloutSelector.forceUpdate();
 		}, this);
 
-		this.chat.context.on('changed:chat.input.show-mod-view', val => this.css_tweaks.toggleHide('mod-view', ! val));
-		this.css_tweaks.toggleHide('mod-view', ! this.chat.context.get('chat.input.show-mod-view'));
+		this.chat.context.getChanges('chat.input.show-mod-view', val =>
+			this.css_tweaks.toggleHide('mod-view', ! val));
 
-		this.chat.context.on('changed:chat.lines.alternate', val => {
-			this.css_tweaks.toggle('chat-rows', val);
-			this.updateMentionCSS();
-		});
+		/*this.chat.context.on('changed:chat.input.show-mod-view', val => this.css_tweaks.toggleHide('mod-view', ! val));
+		this.css_tweaks.toggleHide('mod-view', ! this.chat.context.get('chat.input.show-mod-view'));*/
 
-		this.chat.context.on('changed:chat.lines.padding', val =>
+		this.chat.context.getChanges('chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));
 
-		this.chat.context.on('changed:chat.bits.show', val =>
+		/*this.chat.context.on('changed:chat.lines.padding', val =>
+			this.css_tweaks.toggle('chat-padding', val));
+		this.css_tweaks.toggle('chat-padding', this.chat.context.get('chat.lines.padding'));*/
+
+		this.chat.context.getChanges('chat.bits.show', val =>
 			this.css_tweaks.toggle('hide-bits', !val));
-		this.chat.context.on('changed:chat.bits.show-pinned', val =>
+
+		/*this.chat.context.on('changed:chat.bits.show', val =>
+			this.css_tweaks.toggle('hide-bits', !val));
+		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));*/
+
+		this.chat.context.getChanges('chat.bits.show-pinned', val =>
 			this.css_tweaks.toggleHide('pinned-cheer', !val));
 
-		this.chat.context.on('changed:chat.filtering.deleted-style', val => {
+		/*this.chat.context.on('changed:chat.bits.show-pinned', val =>
+			this.css_tweaks.toggleHide('pinned-cheer', !val));
+		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));*/
+
+		this.chat.context.getChanges('chat.filtering.deleted-style', val => {
 			this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
 			this.css_tweaks.toggle('chat-deleted-fade', val < 2);
 		});
 
-		const val = this.chat.context.get('chat.filtering.deleted-style');
-		this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
-		this.css_tweaks.toggle('chat-deleted-fade', val < 2);
+		this.chat.context.getChanges('chat.filtering.clickable-mentions', val =>
+			this.css_tweaks.toggle('clickable-mentions', val));
 
-		this.css_tweaks.toggle('clickable-mentions', this.chat.context.get('chat.filtering.clickable-mentions'));
-		this.css_tweaks.toggle('chat-mention-no-bold', ! this.chat.context.get('chat.filtering.bold-mentions'));
+		/*this.chat.context.on('changed:chat.filtering.clickable-mentions', val =>
+			this.css_tweaks.toggle('clickable-mentions', val));
+		this.css_tweaks.toggle('clickable-mentions', this.chat.context.get('chat.filtering.clickable-mentions'));*/
 
-		this.chat.context.on('changed:chat.hide-community-highlights', val => this.css_tweaks.toggleHide('community-highlights', val));
+		this.chat.context.getChanges('chat.filtering.bold-mentions', val =>
+			this.css_tweaks.toggle('chat-mention-no-bold', ! val));
 
-		this.css_tweaks.toggleHide('community-highlights', this.chat.context.get('chat.hide-community-highlights'));
-		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));
-		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));
-		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));
-		this.css_tweaks.toggle('chat-padding', this.chat.context.get('chat.lines.padding'));
+		/*this.chat.context.on('changed:chat.filtering.bold-mentions', val =>
+			this.css_tweaks.toggle('chat-mention-no-bold', ! val));
+		this.css_tweaks.toggle('chat-mention-no-bold', ! this.chat.context.get('chat.filtering.bold-mentions'));*/
+
+		this.chat.context.getChanges('chat.hide-community-highlights', val =>
+			this.css_tweaks.toggleHide('community-highlights', val));
+
+		/*this.chat.context.on('changed:chat.hide-community-highlights', val =>
+			this.css_tweaks.toggleHide('community-highlights', val));
+		this.css_tweaks.toggleHide('community-highlights', this.chat.context.get('chat.hide-community-highlights'));*/
+
+		this.chat.context.getChanges('chat.lines.alternate', val => {
+			this.css_tweaks.toggle('chat-rows', val);
+			this.updateMentionCSS();
+		});
+
+		/*this.chat.context.on('changed:chat.lines.alternate', val => {
+			this.css_tweaks.toggle('chat-rows', val);
+			this.updateMentionCSS();
+		});
+		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));*/
 
 		this.updateChatCSS();
 		this.updateColors();
 		this.updateLineBorders();
-		this.updateMentionCSS();
+		//this.updateMentionCSS();
 
 		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);

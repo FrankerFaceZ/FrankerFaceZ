@@ -301,7 +301,8 @@ export class Tooltip {
 			inner.classList.add(`${opts.innerClass}--align-${tip.align}`);
 
 		if ( tip.add_class ) {
-			inner.classList.add(tip.add_class);
+			for(const cls of Array.isArray(tip.add_class) ? tip.add_class : [tip.add_class])
+				inner.classList.add(cls);
 			tip.add_class = undefined;
 		}
 

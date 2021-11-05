@@ -22,11 +22,11 @@ import Vue from 'utilities/vue';
 class FrankerFaceZ extends Module {
 	constructor() {
 		super();
-		const start_time = performance.now(),
-			VER = FrankerFaceZ.version_info;
+		const start_time = performance.now();
 
 		FrankerFaceZ.instance = this;
 
+		this.host = 'twitch';
 		this.flavor = 'main';
 		this.name = 'frankerfacez';
 		this.__state = 0;
@@ -46,8 +46,7 @@ class FrankerFaceZ extends Module {
 		this.log.init = true;
 
 		this.core_log = this.log.get('core');
-
-		this.log.info(`FrankerFaceZ v${VER} (build ${VER.build}${VER.commit ? ` - commit ${VER.commit}` : ''}) (initial ${location})`);
+		this.log.hi(this);
 
 
 		// ========================================================================
@@ -188,7 +187,6 @@ FrankerFaceZ.utilities = {
 	filtering: require('utilities/filtering'),
 	popper: require('popper.js').default
 }
-
 
 
 window.FrankerFaceZ = FrankerFaceZ;

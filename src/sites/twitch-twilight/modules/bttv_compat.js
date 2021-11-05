@@ -40,6 +40,7 @@ export default class BTTVCompat extends Module {
 		const settings = await this.awaitSettings(),
 			waiter = () => this.updateContext(settings);
 
+		settings.on('changed.clickTwitchEmotes', waiter);
 		settings.on('changed.bttvGIFEmotes', waiter);
 		waiter();
 
@@ -62,6 +63,8 @@ export default class BTTVCompat extends Module {
 	updateContext(settings) {
 		this.settings.updateContext({
 			bttv: {
+				loaded: true,
+				emote_menu: settings.get('clickTwitchEmotes'),
 				gifs: settings.get('bttvGIFEmotes')
 			}
 		});

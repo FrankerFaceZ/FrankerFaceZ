@@ -52,7 +52,7 @@ export default class SettingsManager extends Module {
 		for(const key in PROVIDERS)
 			if ( has(PROVIDERS, key) ) {
 				const provider = PROVIDERS[key];
-				if ( provider.key && provider.supported() )
+				if ( provider.key && provider.supported(this) )
 					this.providers[provider.key] = provider;
 			}
 
@@ -584,7 +584,7 @@ export default class SettingsManager extends Module {
 		providers.sort((a,b) => b.priority - a.priority);
 
 		for(const provider of providers) {
-			if ( provider.supported() && provider.hasContent && await provider.hasContent() ) // eslint-disable-line no-await-in-loop
+			if ( provider.supported(this) && provider.hasContent && await provider.hasContent(this) ) // eslint-disable-line no-await-in-loop
 				return provider.key;
 		}
 
@@ -602,7 +602,7 @@ export default class SettingsManager extends Module {
 	 * from the current provider.
 	 */
 	async changeProvider(key, transfer) {
-		if ( ! this.providers[key] || ! this.providers[key].supported() )
+		if ( ! this.providers[key] || ! this.providers[key].supported(this) )
 			throw new Error(`Invalid provider: ${key}`);
 
 		// If we're changing to the current provider... well, that doesn't make

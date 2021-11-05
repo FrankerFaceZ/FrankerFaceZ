@@ -9,7 +9,8 @@ import {EventEmitter} from 'utilities/events';
 import {has} from 'utilities/object';
 
 const DB_VERSION = 1,
-	NOT_WWW = window.location.host !== 'www.twitch.tv';
+	NOT_WWW_TWITCH = window.location.host !== 'www.twitch.tv',
+	NOT_WWW_YT = window.location.host !== 'www.youtube.com';
 
 
 // ============================================================================
@@ -1026,7 +1027,9 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 		this._last_id = 0;
 
 		const frame = this.frame = document.createElement('iframe');
-		frame.src = '//www.twitch.tv/p/ffz_bridge/';
+		frame.src = this.manager.root.host === 'twitch' ?
+			'//www.twitch.tv/p/ffz_bridge/' :
+			'//www.youtube.com/__ffz_bridge/';
 		frame.id = 'ffz-settings-bridge';
 		frame.style.width = 0;
 		frame.style.height = 0;
@@ -1038,8 +1041,8 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 
 	// Static Properties
 
-	static supported() { return NOT_WWW; }
-	static hasContent() { return NOT_WWW; }
+	static supported(manager) { return manager.root.host === 'twitch' ? NOT_WWW_TWITCH : NOT_WWW_YT; }
+	static hasContent(manager) { return CrossOriginStorageBridge.supported(manager); }
 
 	static key = 'cosb';
 	static priority = 100;

@@ -16,11 +16,11 @@ const CLASSES = {
 	'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav,#sideNav',
 	'side-nav-viewers': '.side-nav-card__live-status',
-	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends)',
+	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends):not(.bd--shelf)',
 	//'side-rec-friends': '.side-nav .recommended-friends',
 	'side-friends': '.side-nav .online-friends',
 	'side-closed-friends': '.side-nav--collapsed .online-friends',
-	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section:not(.online-friends)',
+	'side-closed-rec-channels': '.side-nav--collapsed .recommended-channels,.side-nav--collapsed .side-nav-section + .side-nav-section:not(.online-friends):not(.bd--shelf)',
 	'side-offline-channels': '.ffz--side-nav-card-offline',
 	'side-rerun-channels': '.side-nav .ffz--side-nav-card-rerun',
 	'modview-hide-info': '.modview-player-widget__hide-stream-info',
@@ -28,6 +28,7 @@ const CLASSES = {
 	'community-highlights': '.community-highlight-stack__card',
 
 	'prime-offers': '.top-nav__prime',
+	'discover-luna': '.top-nav__external-link[data-a-target="try-presto-link"]',
 
 	'player-gain-volume': '.video-player__container[data-compressed="true"] .volume-slider__slider-container:not(.ffz--player-gain)',
 
@@ -60,7 +61,6 @@ export default class CSSTweaks extends Module {
 		this.style = new ManagedStyle;
 		this.chunks = {};
 		this.chunks_loaded = false;
-
 
 		// Layout
 
@@ -333,6 +333,15 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggleHide('prime-offers', !val)
 		});
 
+		this.settings.add('layout.hide-discover-luna', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Hide the "Discover Luna" link.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('discover-luna', val)
+		});
 
 		// Chat
 
@@ -446,6 +455,7 @@ export default class CSSTweaks extends Module {
 		this.toggle('hide-side-nav', !this.settings.get('layout.side-nav.show'));
 		//this.toggleHide('side-rec-friends', !this.settings.get('layout.side-nav.show-rec-friends'));
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
+		this.toggleHide('discover-luna', this.settings.get('layout.hide-discover-luna'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));

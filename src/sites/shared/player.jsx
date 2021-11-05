@@ -643,8 +643,8 @@ export default class PlayerBase extends Module {
 
 			this._ffz_installed = true;
 
-			if ( ! this._ffzUpdateVolume )
-				this._ffzUpdateVolume = debounce(this.ffzUpdateVolume.bind(this));
+			//if ( ! this._ffzUpdateVolume )
+			//	this._ffzUpdateVolume = debounce(this.ffzUpdateVolume.bind(this));
 
 			if ( ! this._ffzUpdateState )
 				this._ffzUpdateState = this.ffzUpdateState.bind(this);
@@ -694,7 +694,7 @@ export default class PlayerBase extends Module {
 			this.ffzStopAutoplay();
 		}
 
-		cls.prototype.ffzUpdateVolume = function() {
+		/*cls.prototype.ffzUpdateVolume = function() {
 			if ( document.hidden )
 				return;
 
@@ -708,7 +708,7 @@ export default class PlayerBase extends Module {
 					player.setMuted(muted);
 				}
 			}
-		}
+		}*/
 
 		cls.prototype.ffzUninstall = function() {
 			if ( this._ffz_state_raf )
@@ -1136,8 +1136,8 @@ export default class PlayerBase extends Module {
 		this.addGainSlider(inst, false);
 		this.addMetadata(inst);
 
-		if ( inst._ffzUpdateVolume )
-			inst._ffzUpdateVolume();
+		//if ( inst._ffzUpdateVolume )
+		//	inst._ffzUpdateVolume();
 
 		this.emit(':update-gui', inst);
 	}

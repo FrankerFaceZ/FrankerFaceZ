@@ -200,15 +200,19 @@ export default class EmoteMenu extends Module {
 		});
 
 		this.settings.add('chat.emote-menu.icon', {
-			requires: ['chat.emote-menu.enabled'],
+			requires: ['chat.emote-menu.enabled', 'context.bttv.emote_menu'],
 			default: false,
 			process(ctx, val) {
-				return ctx.get('chat.emote-menu.enabled') ? val : false
+				if ( ! ctx.get('chat.emote-menu.enabled') )
+					return false;
+
+				return ctx.get('context.bttv.emote_menu') || val;
 			},
 
 			ui: {
 				path: 'Chat > Emote Menu >> Appearance',
 				title: 'Replace the emote menu icon with the FFZ icon for that classic feel.',
+				description: '**Note:** This setting may be forcibly enabled if other emote menus are detected, to ensure you can visually identify the FFZ Emote Menu.',
 				component: 'setting-check-box'
 			}
 		});
@@ -367,7 +371,6 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
 			this.EmoteMenu.forceUpdate());
 
-		//const fup = () => this.MenuWrapper.forceUpdate();
 		const rebuild = () => {
 			for(const inst of this.MenuWrapper.instances)
 				inst.rebuildData();
@@ -379,17 +382,11 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
-		//this.chat.context.on('changed:chat.emote-menu.show-heading', fup);
-		//this.chat.context.on('changed:chat.emote-menu.show-search', fup);
-		//this.chat.context.on('changed:chat.emote-menu.reduced-padding', fup);
-		//this.chat.context.on('changed:chat.emote-menu.combine-tabs', fup);
 
 		this.chat.context.on('changed:chat.emoji.style', this.updateEmojiVariables, this);
 
-		this.chat.context.on('changed:chat.emote-menu.icon', val =>
+		this.chat.context.getChanges('chat.emote-menu.icon', val =>
 			this.css_tweaks.toggle('emote-menu', val));
-
-		this.css_tweaks.toggle('emote-menu', this.chat.context.get('chat.emote-menu.icon'));
 
 		this.updateEmojiVariables();
 
