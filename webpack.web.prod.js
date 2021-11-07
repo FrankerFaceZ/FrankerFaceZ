@@ -4,7 +4,7 @@ const common = require('./webpack.web.common.js');
 
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
-const ManifestPlugin = require('webpack-manifest-plugin');
+const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
 const Terser = require('terser');
@@ -14,6 +14,12 @@ const Terser = require('terser');
 const commit_hash = require('child_process').execSync('git rev-parse HEAD').toString().trim();
 
 /* global module Buffer */
+
+const minifier = content => {
+	const text = content.toString('utf8');
+	const minified = Terser.minify(text);
+	return (minified && minified.code) ? Buffer.from(minified.code) : content;
+};
 
 module.exports = merge(common, {
 	mode: 'production',
@@ -41,14 +47,10 @@ module.exports = merge(common, {
 			{
 				from: './src/entry.js',
 				to: 'script.min.js',
-				transform: content => {
-					const text = content.toString('utf8');
-					const minified = Terser.minify(text);
-					return (minified && minified.code) ? Buffer.from(minified.code) : content;
-				}
+				transform: minifier
 			}
 		]),
-		new ManifestPlugin({
+		new WebpackManifestPlugin({
 			publicPath: '',
 			map: data => {
 				if ( data.name.endsWith('.scss') )

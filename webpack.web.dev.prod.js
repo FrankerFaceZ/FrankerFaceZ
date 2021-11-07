@@ -22,18 +22,23 @@ module.exports = merge(prod, {
 	],
 
 	devServer: {
+		hot: false,
 		https: true,
 		port: 8000,
 		compress: true,
-		inline: false,
 
 		allowedHosts: [
 			'.twitch.tv',
 			'.frankerfacez.com'
 		],
 
-		contentBase: path.join(__dirname, 'dev_cdn'),
-		publicPath: '/script/',
+		static: {
+			directory: path.join(__dirname, 'dev_cdn'),
+		},
+
+		devMiddleware: {
+			publicPath: '/script/',
+		},
 
 		proxy: {
 			'**': {
@@ -42,7 +47,9 @@ module.exports = merge(prod, {
 			}
 		},
 
-		before(app) {
+		onBeforeSetupMiddleware(devServer) {
+			const app = devServer.app;
+
 			// Because the headers config option is broken.
 			app.get('/*', (req, res, next) => {
 				res.setHeader('Access-Control-Allow-Origin', '*');

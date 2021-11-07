@@ -13,7 +13,7 @@ module.exports = {
 		'react'
 	],
 	'parserOptions': {
-		'parser': 'babel-eslint',
+		'parser': '@babel/eslint-parser',
 		'ecmaVersion': 8,
 		'sourceType': 'module',
 		'ecmaFeatures': {
