@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import { findReactFragment } from 'utilities/dom';
+import { findReactFragment, createElement } from 'utilities/dom';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
@@ -324,9 +324,17 @@ export default class Input extends Module {
 		inst.tempInput = '';
 		inst.messageHistoryPos = -1;
 
+		let element = this.fine.getChildNode(inst);
+		let container = element && element.querySelector('div[class="Layout-sc-nxg1ff-0 chat-input__input-icons"]');
+		container.append(<div class="Layout-sc-nxg1ff-0 appendChildForWrittenChars"><p id="textForCharsWritten">( 0 / 500 )</p></div>);
+		let replacedDivP = element && element.querySelector('p[id="textForCharsWritten"]');
+
 		inst.onKeyDown = function(event) {
 			try {
 				const code = event.charCode || event.keyCode;
+
+				let charsWritten = '( ' + inst.chatInputRef.value.length.toString() + '/500 )';
+				replacedDivP.innerHTML = charsWritten;
 
 				if ( inst.onEmotePickerToggle && t.chat.context.get('chat.emote-menu.shortcut') && event.key === 'e' && event.ctrlKey && ! event.altKey && ! event.shiftKey ) {
 					inst.onEmotePickerToggle();

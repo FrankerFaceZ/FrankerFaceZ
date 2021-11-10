@@ -184,6 +184,15 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('test', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Displays amount of written characters in your Chatinput',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.name-format', {
 			default: 0,
 			ui: {
