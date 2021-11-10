@@ -16,6 +16,7 @@ specifiers:
   '@babel/plugin-transform-react-jsx': ^7.16.0
   '@ffz/fontello-cli': ^1.0.4
   '@ffz/icu-msgparser': ^2.0.0
+  '@popperjs/core': ^2.10.2
   '@webpack-cli/serve': ^1.6.0
   babel-loader: ^8.2.3
   clean-webpack-plugin: ^3.0.0
@@ -41,7 +42,6 @@ specifiers:
   markdown-it-link-attributes: ^3.0.0
   mnemonist: ^0.38.5
   path-to-regexp: ^3.2.0
-  popper.js: ^1.16.1
   raven-js: ^3.27.2
   raw-loader: ^3.1.0
   react: ^17.0.2
@@ -69,6 +69,7 @@ specifiers:
 
 dependencies:
   '@ffz/icu-msgparser': 2.0.0
+  '@popperjs/core': 2.10.2
   crypto-js: 3.3.0
   dayjs: 1.10.7
   displacejs: 1.4.1
@@ -81,7 +82,6 @@ dependencies:
   markdown-it-link-attributes: 3.0.0
   mnemonist: 0.38.5
   path-to-regexp: 3.2.0
-  popper.js: 1.16.1
   raven-js: 3.27.2
   react: 17.0.2
   safe-regex: 2.1.1
@@ -615,6 +615,10 @@ packages:
       mkdirp: 1.0.4
       rimraf: 3.0.2
     dev: true
+
+  /@popperjs/core/2.10.2:
+    resolution: {integrity: sha512-IXf3XA7+XyN7CP9gGh/XB0UxVMlvARGEgGXLubFICsUMGz6Q+DU+i4gGlpOxTjKvXjkJDJC8YdqdKkDj9qZHEQ==}
+    dev: false
 
   /@types/glob/7.2.0:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
@@ -4462,11 +4466,6 @@ packages:
     dependencies:
       find-up: 4.1.0
     dev: true
-
-  /popper.js/1.16.1:
-    resolution: {integrity: sha512-Wb4p1J4zyFTbM+u6WuO4XstYx4Ky9Cewe4DWrel7B0w6VVICvPwdOpotjzcf6eD8TsckVnIMNONQyPIUFOUbCQ==}
-    deprecated: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
-    dev: false
 
   /portfinder/1.0.28:
     resolution: {integrity: sha512-Se+2isanIcEqf2XMHjyUKskczxbPH7dQnlMjXX6+dybayyHvAf/TCgyMRlzf/B6QDhAEFOGes0pzRo3by4AbMA==}

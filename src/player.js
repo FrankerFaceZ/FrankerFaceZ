@@ -143,7 +143,7 @@ FrankerFaceZ.utilities = {
 	tooltip: require('utilities/tooltip'),
 	i18n: require('utilities/translation-core'),
 	dayjs: require('dayjs'),
-	popper: require('popper.js').default
+	popper: require('@popperjs/core')
 }
 
 

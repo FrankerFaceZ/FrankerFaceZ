@@ -185,7 +185,7 @@ FrankerFaceZ.utilities = {
 	i18n: require('utilities/translation-core'),
 	dayjs: require('dayjs'),
 	filtering: require('utilities/filtering'),
-	popper: require('popper.js').default
+	popper: require('@popperjs/core')
 }
 
 

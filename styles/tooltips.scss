@@ -34,7 +34,7 @@ body {
 
 
 .ffz-balloon {
-	&[x-placement^="bottom"] > .ffz-balloon__tail {
+	&[data-popper-placement^="bottom"] > .ffz-balloon__tail {
 		bottom: 100%;
 
 		.ffz-balloon__tail-symbol {
@@ -44,7 +44,7 @@ body {
 		}
 	}
 
-	&[x-placement^="top"] > .ffz-balloon__tail {
+	&[data-popper-placement^="top"] > .ffz-balloon__tail {
 		top: 100%;
 
 		.ffz-balloon__tail-symbol {
@@ -54,7 +54,7 @@ body {
 		}
 	}
 
-	&[x-placement^="right"] > .ffz-balloon__tail {
+	&[data-popper-placement^="right"] > .ffz-balloon__tail {
 		right: 100%;
 
 		.ffz-balloon__tail-symbol {
@@ -64,7 +64,7 @@ body {
 		}
 	}
 
-	&[x-placement^="left"] > .ffz-balloon__tail {
+	&[data-popper-placement^="left"] > .ffz-balloon__tail {
 		left: 100%;
 
 		.ffz-balloon__tail-symbol {
@@ -110,35 +110,40 @@ body {
 
 	.ffz__tooltip--arrow {
 		position: absolute;
-		width: 6px; height: 6px;
-		transform: rotate(45deg);
-		z-index: -1;
 
-		background: var(--color-background-tooltip);
+		&:before {
+			content: '';
+			position: absolute;
+			top: 0; left: 0;
+			width: 6px; height: 6px;
+			transform: rotate(45deg);
+			background: var(--color-background-tooltip);
+			z-index: -1;
+		}
 	}
 
-	&[x-placement^="bottom"] {
+	&[data-popper-placement^="bottom"] {
 		.ffz__tooltip--arrow {
 			top: -3px;
 			border-radius: 2px 0 0;
 		}
 	}
 
-	&[x-placement^="top"] {
+	&[data-popper-placement^="top"] {
 		.ffz__tooltip--arrow {
-			bottom: -3px;
+			bottom: 3px;
 			border-radius: 0 0 2px;
 		}
 	}
 
-	&[x-placement^="right"] {
+	&[data-popper-placement^="right"] {
 		.ffz__tooltip--arrow {
 			left: -3px;
 			border-radius: 0 2px 0 0;
 		}
 	}
 
-	&[x-placement^="left"] {
+	&[data-popper-placement^="left"] {
 		.ffz__tooltip--arrow {
 			right: -3px;
 			border-radius: 0 0 0 2px;

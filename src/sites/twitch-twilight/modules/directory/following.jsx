@@ -8,7 +8,7 @@ import {SiteModule} from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import {get} from 'utilities/object';
 
-import Popper from 'popper.js';
+import {createPopper} from '@popperjs/core';
 import {makeReference} from 'utilities/tooltip';
 
 export default class Following extends SiteModule {
@@ -208,7 +208,7 @@ export default class Following extends SiteModule {
 		const root = (document.body.querySelector('#root>div') || document.body);
 		root.appendChild(this.hostMenu);
 
-		this.hostMenuPopper = new Popper(
+		this.hostMenuPopper = createPopper(
 			makeReference(event.clientX - 60, event.clientY - 60),
 			this.hostMenu,
 			{

@@ -113,12 +113,7 @@ export default class TooltipProvider extends Module {
 			popper: {
 				placement: 'top',
 				modifiers: {
-					flip: {
-						behavior: ['top', 'bottom', 'left', 'right']
-					},
-					preventOverflow: {
-						boundariesElement: container
-					}
+					flip: {}
 				}
 			},
 

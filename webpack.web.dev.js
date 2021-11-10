@@ -27,6 +27,11 @@ module.exports = merge(common, {
 	],
 
 	devServer: {
+		client: false,
+		webSocketServer: false,
+
+		magicHtml: false,
+		liveReload: false,
 		hot: false,
 		https: true,
 		port: 8000,

@@ -9,9 +9,9 @@
 // ============================================================================
 
 import {createElement, setChildren} from 'utilities/dom';
-import {maybe_call, debounce} from 'utilities/object';
+import {maybe_call, debounce, has} from 'utilities/object';
 
-import Popper from 'popper.js';
+import {createPopper} from '@popperjs/core';
 
 let last_id = 0;
 
@@ -347,14 +347,23 @@ export class Tooltip {
 		const use_html = maybe_call(opts.html, null, target, tip),
 			setter = use_html ? 'innerHTML' : 'textContent';
 
-		let pop_opts = Object.assign({
-			modifiers: {
-				flip: {
-					behavior: ['top', 'bottom', 'left', 'right']
-				}
+		const modifiers = {
+			flip: {
+				behavior: ['top', 'bottom', 'left', 'right']
 			},
-			arrowElement: arrow
+			offset: {
+				offset: [0, 10]
+			},
+			arrow: {
+				element: arrow
+			}
+		};
+
+		let pop_opts = Object.assign({
+			modifiers
 		}, opts.popper);
+
+		pop_opts.modifiers = Object.assign(modifiers, pop_opts.modifiers);
 
 		if ( opts.popperConfig )
 			pop_opts = opts.popperConfig(target, tip, pop_opts) ?? pop_opts;
@@ -370,9 +379,7 @@ export class Tooltip {
 
 		tip._update = () => {
 			if ( tip.popper ) {
-				tip.popper.update();
-				/*tip.popper.destroy();
-				tip.popper = new Popper(popper_target, el, pop_opts);*/
+				tip.popper.forceUpdate();
 			}
 		}
 
@@ -413,9 +420,11 @@ export class Tooltip {
 				inner[setter] = content;
 		}
 
+		// Format the modifiers how Popper wants them now.
+		pop_opts.modifiers = normalizeModifiers(pop_opts.modifiers);
 
 		// Add everything to the DOM and create the Popper instance.
-		tip.popper = new Popper(popper_target, el, pop_opts);
+		tip.popper = createPopper(popper_target, el, pop_opts);
 		this.container.appendChild(el);
 		tip.visible = true;
 
@@ -463,6 +472,30 @@ export class Tooltip {
 }
 
 export default Tooltip;
+
+
+export function normalizeModifiers(input) {
+	const output = [];
+
+	for(const [key, val] of Object.entries(input)) {
+		const thing = {
+			name: key
+		};
+
+		if (val && typeof val === 'object' && ! Array.isArray(val)) {
+			if (has(val, 'enabled'))
+				thing.enabled = val.enabled;
+
+			const keys = Object.keys(val);
+			if (keys.length > 1 || (keys.length === 1 && keys[0] !== 'enabled'))
+				thing.options = val;
+		}
+
+		output.push(thing);
+	}
+
+	return output;
+}
 
 
 export function makeReference(x, y, height=0, width=0) {

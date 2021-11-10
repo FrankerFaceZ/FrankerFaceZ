@@ -432,7 +432,7 @@ other {# messages were deleted by a moderator.}
 				const u = t.site.getUser(),
 					r = {id: room_id, login: room};
 
-				const has_replies = this.chatRepliesTreatment ? this.chatRepliesTreatment !== 'control' : false,
+				const has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
 					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
 					can_reply = can_replies && u && u.login !== msg.user?.login && ! msg.reply,
 					twitch_clickable = reply_mode === 1 && can_replies && (!!msg.reply || can_reply);

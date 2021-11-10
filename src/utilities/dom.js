@@ -142,42 +142,33 @@ export function createElement(tag, props, ...children) {
 }
 
 export function setChildren(el, children, no_sanitize, no_empty) {
-	if ( typeof children === 'string' ) {
-		if ( no_empty ) {
-			el.appendChild(no_sanitize ?
-				range.createContextualFragment(children) :
-				document.createTextNode(children)
-			)
-
-		} else {
-			if ( no_sanitize )
-				el.innerHTML = children;
-			else
-				el.textContent = children;
-		}
-
-	} else if ( Array.isArray(children) ) {
-		if ( ! no_empty )
-			el.innerHTML = '';
-
-		for(const child of children)
-			if ( typeof child === 'string' )
-				el.appendChild(no_sanitize ?
-					range.createContextualFragment(child) :
-					document.createTextNode(child)
-				);
-
-			else if ( Array.isArray(child) )
-				setChildren(el, child, no_sanitize, true);
-
-			else if ( child )
-				el.appendChild(child);
-
-	} else if ( children ) {
-		if ( ! no_empty )
+	if (children instanceof Node ) {
+		if (! no_empty )
 			el.innerHTML = '';
 
 		el.appendChild(children);
+
+	} else if ( Array.isArray(children) ) {
+		if (! no_empty)
+			el.innerHTML = '';
+
+		for(const child of children)
+			if (child instanceof Node)
+				el.appendChild(child);
+			else if (Array.isArray(child))
+				setChildren(el, child, no_sanitize, true);
+			else if (child) {
+				const val = typeof child === 'string' ? child : String(child);
+
+				el.appendChild(no_sanitize ?
+					range.createContextualFragment(val) : document.createTextNode(val));
+			}
+
+	} else if (children) {
+		const val = typeof children === 'string' ? children : String(children);
+
+		el.appendChild(no_sanitize ?
+			range.createContextualFragment(val) : document.createTextNode(val));
 	}
 }
 
