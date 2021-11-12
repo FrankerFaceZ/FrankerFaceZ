@@ -260,6 +260,7 @@ export default class MainMenu extends Module {
 
 	async onEnable() {
 		await this.site.awaitElement(Dialog.EXCLUSIVE);
+		await this.i18n.loadChunk('settings');
 
 		this.on('addons:added', this.scheduleUpdate, this);
 		this.on('experiments:enabled', this.scheduleUpdate, this);
@@ -631,16 +632,16 @@ export default class MainMenu extends Module {
 						];
 
 						if ( tok.title ) {
-							terms.push(this.i18n.t(tok.i18n_key, tok.title, null, true));
+							terms.push(tok.i18n_key ? this.i18n.t(tok.i18n_key, tok.title, null, true) : tok.title);
 
-							if ( have_locale && this.i18n.has(tok.i18n_key) )
+							if ( have_locale && tok.i18n_key && this.i18n.has(tok.i18n_key) )
 								terms.push(this.i18n.t(tok.i18n_key, tok.title, null));
 						}
 
 						if ( tok.description ) {
-							terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, null, true));
+							terms.push(tok.desc_i18n_key ? this.i18n.t(tok.desc_i18n_key, tok.description, null, true) : tok.description);
 
-							if ( have_locale && this.i18n.has(tok.desc_i18n_key) )
+							if ( have_locale && tok.desc_i18n_key && this.i18n.has(tok.desc_i18n_key) )
 								terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, null));
 						}
 
@@ -670,19 +671,19 @@ export default class MainMenu extends Module {
 			}
 
 			if ( ! token.search_terms ) {
-				const formatted = token.title && this.i18n.t(token.i18n_key, token.title, null, true);
+				const formatted = token.title && (token.i18n_key ? this.i18n.t(token.i18n_key, token.title, null, true) : token.title);
 				let terms = [token.key];
 
 				if ( formatted && formatted.localeCompare(token.key, undefined, {sensitivity: 'base'}) )
 					terms.push(formatted);
 
-				if ( have_locale && this.i18n.has(token.i18n_key) )
+				if ( have_locale && token.i18n_key && this.i18n.has(token.i18n_key) )
 					terms.push(this.i18n.t(token.i18n_key, token.title, null));
 
 				if ( token.description ) {
-					terms.push(this.i18n.t(token.desc_i18n_key, token.description, null, true));
+					terms.push(token.desc_i18n_key ? this.i18n.t(token.desc_i18n_key, token.description, null, true) : token.description);
 
-					if ( have_locale && this.i18n.has(token.desc_i18n_key) )
+					if ( have_locale && token.desc_i18n_key && this.i18n.has(token.desc_i18n_key) )
 						terms.push(this.i18n.t(token.desc_i18n_key, token.description, null));
 				}
 

@@ -466,18 +466,18 @@ export default class Badges extends Module {
 					if ( d.data ) {
 						if ( d.badge === 'subscriber' ) {
 							if ( tier > 0 )
-								title = this.i18n.t('badges.subscriber.tier-months', '{title}\n(Tier {tier}, {months,number} Month{months,en_plural})', {
+								title = this.i18n.t('badges.subscriber.tier-months', '{title}\n(Tier {tier}, {months, plural, one {# Month} other {# Months}})', {
 									title,
 									tier,
 									months: d.data
 								});
 							else
-								title = this.i18n.t('badges.subscriber.months', '{title}\n({count,number} Month{count,en_plural})', {
+								title = this.i18n.t('badges.subscriber.months', '{title}\n({count, plural, one {# Month} other {# Months}})', {
 									title,
 									count: d.data
 								});
 						} else if ( d.badge === 'founder' ) {
-							title = this.i18n.t('badges.founder.months', '{title}\n(Subscribed for {count,number} Month{count,en_plural})', {
+							title = this.i18n.t('badges.founder.months', '{title}\n(Subscribed for {count, plural, one {# Month} other {# Months}})', {
 								title,
 								count: d.data
 							});

@@ -824,7 +824,7 @@ export default class EmoteMenu extends Module {
 
 						if ( emote_lock ) {
 							if ( emote_lock.id === 'cheer' ) {
-								sellout = t.i18n.t('emote-menu.emote-cheer', 'Cheer an additional {bits_remaining,number} bit{bits_remaining,en_plural} to unlock this emote.', emote_lock);
+								sellout = t.i18n.t('emote-menu.emote-cheer', 'Cheer an additional {bits_remaining, plural, one {# bit} other {# bits}} to unlock this emote.', emote_lock);
 							} else if ( emote_lock.id === 'follower' ) {
 								sellout = t.i18n.t('emote-menu.emote-follower', 'Follow {user} to unlock this emote in their channel.', emote_lock);
 							} else if ( data.all_locked )
@@ -915,7 +915,7 @@ export default class EmoteMenu extends Module {
 
 				return (<div class="tw-mg-1 tw-border-t tw-pd-t-1 tw-mg-b-0">
 					{lock ?
-						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count,number} emote{count,en_plural}', {price: lock.price, count: lock.emotes.size}) :
+						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count, plural, one {# emote} other {# emotes}}', {price: lock.price, count: lock.emotes.size}) :
 						t.i18n.t('emote-menu.sub-basic', 'Subscribe to unlock some emotes')}
 					<div class="ffz--sub-buttons tw-mg-t-05">
 						{locks.map(lock => lock.hide_button ? null : (<a

@@ -103,5 +103,6 @@ export default [
 	"volume-off",
 	"reply",
 	"threads",
-	"right-open"
+	"right-open",
+	"list-bullet"
 ];

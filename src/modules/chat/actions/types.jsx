@@ -276,11 +276,11 @@ export const timeout = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-timeout.vue'),
 
 	title: 'Timeout User',
-	description: '{options.duration,number} second{options.duration,en_plural}',
+	description: '{options.duration, plural, one {# second} other {# seconds}}',
 
 	reason_text(data) {
 		return this.i18n.t('chat.actions.timeout-reason',
-			'Timeout {user.login} for {duration,number} second{duration,en_plural} for:',
+			'Timeout {user.login} for {duration, plural, one {# second} other {# seconds}} for:',
 			{
 				user: data.user,
 				duration: data.options.duration
@@ -291,7 +291,7 @@ export const timeout = {
 	tooltip(data) {
 		return this.i18n.t(
 			'chat.actions.timeout.tooltip',
-			'Timeout {user.login} for {duration,number} second{duration,en_plural}',
+			'Timeout {user.login} for {duration, plural, one {# second} other {# seconds}}',
 			{
 				user: data.user,
 				duration: data.options.duration

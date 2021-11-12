@@ -6,11 +6,14 @@
 
 import Parser from '@ffz/icu-msgparser';
 
-import {DEBUG} from 'utilities/constants';
+import {DEBUG, SERVER} from 'utilities/constants';
 import {get, pick_random, shallow_copy, deep_copy} from 'utilities/object';
+import { getBuster } from 'utilities/time';
 import Module from 'utilities/module';
 
 import NewTransCore from 'utilities/translation-core';
+
+const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
 
 const API_SERVER = 'https://api-test.frankerfacez.com';
 
@@ -78,6 +81,7 @@ export class TranslationManager extends Module {
 		this._seen = new Set;
 
 		this.availableLocales = ['en'];
+		this.chunks = ['client'];
 
 		this.localeData = {
 			en: { name: 'English' }
@@ -350,6 +354,25 @@ export class TranslationManager extends Module {
 		this.locale = this.settings.get('i18n.locale');
 	}
 
+	async loadChunk(name) {
+		if (this.chunks.includes(name))
+			return [];
+
+		this.chunks.push(name);
+
+		const locale = this._.locale;
+		const phrases = await this.loadLocale(locale, name);
+
+		const added = this._.extend(phrases);
+		if ( added.length ) {
+			this.log.info(`Loaded Chunk: ${name} -- Phrases: ${added.length}`);
+			this.emit(':loaded', added);
+			this.emit(':update');
+		}
+
+		return added;
+	}
+
 	broadcast(msg) {
 		if ( this._broadcaster )
 			this._broadcaster.postMessage(msg);
@@ -448,32 +471,13 @@ export class TranslationManager extends Module {
 
 		this.strings_loading = true;
 
-		const loadPage = async page => {
-			const resp = await fetch(`${API_SERVER}/v2/i18n/strings?page=${page}`);
-			if ( ! resp.ok ) {
-				this.log.warn(`Error Loading Strings -- Status: ${resp.status}`);
-				return {
-					next: false,
-					strings: []
-				};
-			}
-
-			const data = await resp.json();
-			return {
-				next: data?.pages > page,
-				strings: data?.strings || []
-			}
-		}
-
-		let page = 1;
-		let next = true;
-		let strings = [];
-
-		while(next) {
-			const data = await loadPage(page++); // eslint-disable-line no-await-in-loop
-			strings = strings.concat(data.strings);
-			next = data.next;
-		}
+		const resp = await fetch(`${SERVER}/script/locale/strings.json?_=${getBuster(30)}`);
+		let strings;
+		if (! resp.ok ) {
+			this.log.warn(`Error Loading Strings -- Status: ${resp.status}`);
+			strings = [];
+		} else
+			strings = await resp.json();
 
 		for(const str of strings) {
 			const key = str.id;
@@ -629,19 +633,20 @@ export class TranslationManager extends Module {
 
 
 	async loadLocales() {
-		const resp = await fetch(`${API_SERVER}/v2/i18n/locales`);
+		const resp = await fetch(`${SERVER}/script/locale/locales.json?_=${getBuster(30)}`);
+		let data;
 		if ( ! resp.ok ) {
 			this.log.warn(`Error Populating Locales -- Status: ${resp.status}`);
-			throw new Error(`http error ${resp.status} loading locales`)
-		}
+		} else
+			data = await resp.json();
 
-		let data = await resp.json();
 		if ( ! Array.isArray(data) || ! data.length )
 			data = [{
 				id: 'en',
 				name: 'English',
 				coverage: 100,
-				rtl: false
+				rtl: false,
+				hashes: {}
 			}];
 
 		this.localeData = {};
@@ -657,11 +662,46 @@ export class TranslationManager extends Module {
 	}
 
 
-	async loadLocale(locale) {
+	async loadLocale(locale, chunk = null) {
 		if ( locale === 'en' )
 			return {};
 
-		const resp = await fetch(`${API_SERVER}/v2/i18n/locale/${locale}`);
+		const hashes = this.localeData[locale]?.hashes;
+		if (! hashes) {
+			this.log.info(`Cannot Load Locale: ${locale}`);
+			return {};
+		}
+
+		if (! chunk)
+			chunk = this.chunks;
+		else if (! Array.isArray(chunk))
+			chunk = [chunk];
+
+		const id = this.localeData[locale].id;
+		const promises = [];
+
+		for(const chnk of chunk) {
+			const hash = hashes[chnk];
+			if (! hash)
+				continue;
+
+			promises.push(fetchJSON(`https://cdn.frankerfacez.com/static/locale/${id}/${chnk}.${hash}.json`));
+		}
+
+		const chunks = await Promise.all(promises);
+		const result = {};
+
+		for(const chunk of chunks) {
+			if (! chunk)
+				continue;
+
+			for(const [key,val] of Object.entries(chunk))
+				result[key] = val;
+		}
+
+		return result;
+
+		/*const resp = await fetch(`${API_SERVER}/v2/i18n/locale/${locale}`);
 		if ( ! resp.ok ) {
 			if ( resp.status === 404 ) {
 				this.log.info(`Cannot Load Locale: ${locale}`);
@@ -673,7 +713,7 @@ export class TranslationManager extends Module {
 		}
 
 		const data = await resp.json();
-		return data?.phrases;
+		return data?.phrases;*/
 	}
 
 	async setLocale(new_locale) {
@@ -713,7 +753,7 @@ export class TranslationManager extends Module {
 	}
 
 	async loadDayjsLocale(locale) {
-		if ( locale === 'en' )
+		if ( locale === 'en' || locale === 'en-arrr' )
 			return;
 
 		try {

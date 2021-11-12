@@ -32,7 +32,7 @@ export default class SubButton extends Module {
 
 		this.SubButton = this.fine.define(
 			'sub-button',
-			n => n.handleSubMenuAction && n.isUserDataReady,
+			n => n.handleSubMenuAction && n.openSubModal,
 			['user', 'user-home', 'user-video', 'user-clip', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		);
 	}

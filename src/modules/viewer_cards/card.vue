@@ -64,10 +64,10 @@
 							</span>
 							<span
 								v-if="subscription"
-								:data-title="t('viewer-card.months-tip', 'Subscribed for {months,number} month{months,en_plural}', {months: subscription.months})"
+								:data-title="t('viewer-card.months-tip', 'Subscribed for {months, plural, one {# month} other {# months}}', {months: subscription.months})"
 								class="ffz-tooltip ffz-i-star viewer-card-drag-cancel"
 							>
-								{{ t('viewer-card.months', '{months,number} month{months,en_plural}', {months: subscription.months}) }}
+								{{ t('viewer-card.months', '{months, plural, one {# month} other {# months}}', {months: subscription.months}) }}
 							</span>
 						</div>
 					</div>

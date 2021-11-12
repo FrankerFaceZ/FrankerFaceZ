@@ -556,7 +556,7 @@ export default {
 
 			this.resetImport();
 
-			this.import_message = this.t('setting.backup-restore.imported', 'The profile "{name}" has been successfully imported with {count,number} setting{count,en_plural}.', {
+			this.import_message = this.t('setting.backup-restore.imported', 'The profile "{name}" has been successfully imported with {count, plural, one {# setting} other {# settings}}.', {
 				name: prof.i18n_key ? this.t(prof.i18n_key, prof.title) : prof.title,
 				count: i
 			});

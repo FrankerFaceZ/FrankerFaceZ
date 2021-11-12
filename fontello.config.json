@@ -779,6 +779,12 @@
       "css": "right-open",
       "code": 59462,
       "src": "fontawesome"
+    },
+    {
+      "uid": "a2a74f5e7b7d9ba054897d8c795a326a",
+      "css": "list-bullet",
+      "code": 61642,
+      "src": "fontawesome"
     }
   ]
 }

@@ -126,6 +126,10 @@ body {
 		.ffz__tooltip--arrow {
 			top: -3px;
 			border-radius: 2px 0 0;
+
+			&:before {
+				left: -3px;
+			}
 		}
 	}
 
@@ -133,6 +137,10 @@ body {
 		.ffz__tooltip--arrow {
 			bottom: 3px;
 			border-radius: 0 0 2px;
+
+			&:before {
+				left: -3px;
+			}
 		}
 	}
 
@@ -140,13 +148,21 @@ body {
 		.ffz__tooltip--arrow {
 			left: -3px;
 			border-radius: 0 2px 0 0;
+
+			&:before {
+				top: -3px;
+			}
 		}
 	}
 
 	&[data-popper-placement^="left"] {
 		.ffz__tooltip--arrow {
-			right: -3px;
+			right: 3px;
 			border-radius: 0 0 0 2px;
+
+			&:before {
+				top: -3px;
+			}
 		}
 	}
 }

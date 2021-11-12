@@ -294,6 +294,8 @@ export default class AddonManager extends Module {
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
 
+		await this.i18n.loadChunk(`addon.${id}`);
+
 		let module = this.resolve(`addon.${id}`);
 		if ( module ) {
 			if ( ! module.loaded )

@@ -562,7 +562,7 @@ other {# messages were deleted by a moderator.}
 					if ( mystery )
 						msg.mystery.line = this;
 
-					const sub_msg = t.i18n.tList('chat.sub.gift', "{user} is gifting {count,number} Tier {tier} Sub{count,en_plural} to {channel}'s community! ", {
+					const sub_msg = t.i18n.tList('chat.sub.gift', "{user} is gifting {count, plural, one {# Tier {tier} Sub} other {# Tier {tier} Subs}} to {channel}'s community! ", {
 						user: (msg.sub_anon || user.username === 'ananonymousgifter') ?
 							t.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
 							e('span', {
@@ -683,7 +683,7 @@ other {# messages were deleted by a moderator.}
 					if ( months <= 1 )
 						sub_msg = t.i18n.tList('chat.sub.mystery', '{user} gifted a {plan} Sub to {recipient}! ', bits);
 					else
-						sub_msg = t.i18n.tList('chat.sub.gift-months', '{user} gifted {months,number} month{months,en_plural} of {plan} Sub to {recipient}!', bits);
+						sub_msg = t.i18n.tList('chat.sub.gift-months', '{user} gifted {months, plural, one {# month} other {# months}} of {plan} Sub to {recipient}!', bits);
 
 					if ( msg.sub_total === 1 )
 						sub_msg.push(t.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));

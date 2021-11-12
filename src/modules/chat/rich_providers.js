@@ -251,7 +251,7 @@ export const Clips = {
 
 				const extra = {
 					type: 'i18n', key: 'clip.desc.2',
-					phrase: 'Clipped by {curator} — {views,number} View{views,en_plural}',
+					phrase: 'Clipped by {curator} — {views, plural, one {# View} other {# Views}}',
 					content: {
 						curator,
 						views: clip.viewCount

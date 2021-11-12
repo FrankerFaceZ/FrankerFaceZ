@@ -122,7 +122,7 @@ function parse(text) {
 	}
 }
 
-const NUMBER_TYPES = ['number', 'plural', 'en_plural', 'selectordinal', 'duration']
+const NUMBER_TYPES = ['number', 'plural', 'selectordinal', 'duration']
 
 function extractVariables(ast, out, vars, context) {
 	for(const node of ast) {
