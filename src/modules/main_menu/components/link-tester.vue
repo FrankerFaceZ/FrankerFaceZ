@@ -158,6 +158,22 @@
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
 			<label>
+				{{ t('debug.link-provider.mid-embed', 'Mid Embed') }}
+			</label>
+			<div class="tw-full-width tw-overflow-hidden">
+				<chat-rich
+					v-if="rich_data"
+					:data="rich_data"
+					:url="url"
+					:force-mid="true"
+					:force-media="force_media"
+					:force-unsafe="force_unsafe"
+					:events="events"
+				/>
+			</div>
+		</div>
+		<div class="tw-flex tw-mg-b-1 tw-full-width">
+			<label>
 				{{ t('debug.link-provider.full-embed', 'Full Embed') }}
 			</label>
 			<div class="tw-full-width tw-overflow-hidden">
@@ -170,6 +186,14 @@
 					:force-unsafe="force_unsafe"
 					:events="events"
 				/>
+			</div>
+		</div>
+		<div class="tw-flex tw-mg-b-1 tw-full-width">
+			<label>
+				{{ t('debug.link-provider.raw-length', 'Raw Length') }}
+			</label>
+			<div>
+				{{ tNumber(length) }}
 			</div>
 		</div>
 		<div class="tw-flex tw-mg-b-1 tw-full-width">
@@ -234,6 +258,7 @@ export default {
 			rich_data: null,
 			raw_loading: false,
 			raw_data: null,
+			length: 0,
 
 			force_media: state?.ffz_lt_media ?? true,
 			force_unsafe: state?.ffz_lt_unsafe ?? false,
@@ -436,6 +461,7 @@ export default {
 
 		async refreshRaw() {
 			this.raw_data = null;
+			this.length = 0;
 			if ( ! this.rich_data ) {
 				this.raw_loading = false;
 				return;
@@ -443,7 +469,9 @@ export default {
 
 			this.raw_loading = true;
 			try {
-				this.raw_data = JSON.stringify(await this.chat.get_link_info(this.url), null, '\t');
+				const data = await this.chat.get_link_info(this.url);
+				this.raw_data = JSON.stringify(data, null, '\t');
+				this.length = JSON.stringify(data).length;
 			} catch(err) {
 				this.raw_data = `Error\n\n${err.toString()}`;
 			}

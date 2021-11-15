@@ -8,6 +8,8 @@ import {has} from 'utilities/object';
 import Markdown from 'markdown-it';
 import MILA from 'markdown-it-link-attributes';
 
+export const VERSION = 6;
+
 export const TOKEN_TYPES = {};
 
 const validate = (input, valid) => valid.includes(input) ? input : null;
@@ -241,6 +243,17 @@ export function renderTokens(tokens, createElement, ctx, markdown) {
 }
 
 export default renderTokens;
+
+
+// ============================================================================
+// Token Type: Reference
+// ============================================================================
+
+TOKEN_TYPES.ref = function(token, createElement, ctx) {
+	const frag = ctx.fragments?.[token.name];
+	if (frag )
+		return renderTokens(frag, createElement, ctx);
+}
 
 
 // ============================================================================
@@ -667,9 +680,11 @@ function header_normal(token, createElement, ctx) {
 						content.appendChild(image);
 					else
 						content.insertBefore(image, content.firstChild);
-				} else {
-					console.warn('Add React support!');
-					console.log(content);
+				} else if ( Array.isArray(content?.props?.children) ) {
+					if ( right )
+						content.props.children.push(image);
+					else
+						content.props.children.unshift(image);
 				}
 
 			} else {

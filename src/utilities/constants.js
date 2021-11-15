@@ -61,6 +61,7 @@ export const UPDATE_TOKEN_SETTINGS = [
 	'chat.emoji.style',
 	'chat.bits.stack',
 	'chat.rich.enabled',
+	'chat.rich.want-mid',
 	'chat.rich.hide-tokens',
 	'chat.rich.all-links',
 	'chat.rich.minimum-level',

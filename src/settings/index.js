@@ -389,7 +389,7 @@ export default class SettingsManager extends Module {
 
 	async generateBackupFile() {
 		const now = new Date(),
-			timestamp = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+			timestamp = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
 
 		if ( await this._needsZipBackup() ) {
 			const blob = await this._getZipBackup();

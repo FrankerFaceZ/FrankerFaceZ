@@ -38,11 +38,12 @@ export const Links = {
 		return token.type === 'link'
 	},
 
-	process(token) {
+	process(token, want_mid) {
 		return {
 			card_tooltip: true,
 			url: token.url,
 			timeout: 0,
+			want_mid,
 
 			getData: async (refresh = false) => {
 				let data;

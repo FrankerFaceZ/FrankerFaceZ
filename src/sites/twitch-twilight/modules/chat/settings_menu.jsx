@@ -145,6 +145,16 @@ export default class SettingsMenu extends Module {
 						this.props.onCloseSettings();
 					}
 
+				const msg = {
+					user,
+					badges,
+					ffz_badges: t.badges.getBadges(user.id, user.login, this.props.channelID, this.props.channelLogin),
+					roomID: this.props.channelID,
+					roomLogin: this.props.channelLogin
+				};
+
+				this._ffzIdentityMsg = msg;
+
 				return (<div class="ffz-identity">
 					<div class="tw-mg-y-05 tw-pd-x-05">
 						<p class="tw-c-text-alt-2 tw-font-size-6 tw-strong tw-upcase">
@@ -162,15 +172,9 @@ export default class SettingsMenu extends Module {
 										<span
 											class="ffz--editor-badges"
 											data-room-id={this.props.channelID}
-											data-room-login={this.props.channelLogin}
+											data-room={this.props.channelLogin}
 										>
-											{t.badges.render({
-												user,
-												badges,
-												ffz_badges: t.badges.getBadges(user.id, user.login, this.props.channelID, this.props.channelLogin),
-												roomID: this.props.channelID,
-												roomLogin: this.props.channelLogin
-											}, createElement, true, true)}
+											{t.badges.render(msg, createElement, true, true)}
 										</span>
 
 										<span class="tw-strong notranslate" style={{color}}>
@@ -192,7 +196,8 @@ export default class SettingsMenu extends Module {
 				const out = old_render.call(this);
 
 				try {
-					const children = out?.props?.children?.props?.children?.[1]?.props?.children?.props?.children;
+					const children = out?.props?.children?.props?.children?.props?.children?.[1]?.props?.children?.props?.children;
+					//const children = out?.props?.children?.props?.children?.[1]?.props?.children?.props?.children;
 					if ( Array.isArray(children) ) {
 						const extra = this.ffzRenderIdentity();
 						if ( extra )
