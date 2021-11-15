@@ -62,7 +62,7 @@ export default class ViewerCards extends Module {
 	onEnable() {
 		this.chat.context.on('changed:chat.viewer-cards.highlight-chat', this.refreshStyle, this);
 		this.chat.context.on('changed:chat.viewer-cards.color', this.refreshStyle, this);
-		this.toggle('hide-gift-subscribe-button', this.settings.get('chat.viewer-cards.hide-gift-subscribe-button'));
+		this.css_tweaks.toggle('hide-gift-subscribe-button', this.settings.get('chat.viewer-cards.hide-gift-subscribe-button'));
 		this.on('..:update-colors', this.refreshStyle, this);
 
 		this.ViewerCard.on('mount', this.updateCard, this);
