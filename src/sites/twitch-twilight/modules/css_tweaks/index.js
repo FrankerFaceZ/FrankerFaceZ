@@ -46,7 +46,9 @@ const CLASSES = {
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',
 	'celebration': 'body .celebration__overlay',
-	'mod-view': '.chat-input__buttons-container a[href*="/moderator"]'
+	'mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
+
+	'hide-gift-subscribe-button': 'button[data-test-selector="gift-subscribe-button"]'
 };
 
 

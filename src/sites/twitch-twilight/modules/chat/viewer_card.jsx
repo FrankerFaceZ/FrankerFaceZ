@@ -18,13 +18,12 @@ export default class ViewerCards extends Module {
 		this.last_login = null;
 
 		this.settings.add('chat.viewer-cards.hide-gift-subscribe-button', {
-			default: '',
+			default: false,
 			ui: {
 				path: 'Chat > Viewer Cards >> Appearance',
-				title: 'Hide the gift-subscribe-button on the viewer card',
+				title: 'Hide "Gift a Sub" button on viewer cards',
 				component: 'setting-check-box'
 			},
-			changed: val => this.css_tweaks.toggle('hide-gift-subscribe-button', val)
 		});
 
 		this.settings.add('chat.viewer-cards.highlight-chat', {
@@ -62,7 +61,9 @@ export default class ViewerCards extends Module {
 	onEnable() {
 		this.chat.context.on('changed:chat.viewer-cards.highlight-chat', this.refreshStyle, this);
 		this.chat.context.on('changed:chat.viewer-cards.color', this.refreshStyle, this);
-		this.css_tweaks.toggle('hide-gift-subscribe-button', this.settings.get('chat.viewer-cards.hide-gift-subscribe-button'));
+		this.chat.context.getChanges('chat.viewer-cards.hide-gift-subscribe-button', val =>
+			this.css_tweaks.toggleHide('hide-gift-subscribe-button', val)
+		);
 		this.on('..:update-colors', this.refreshStyle, this);
 
 		this.ViewerCard.on('mount', this.updateCard, this);
