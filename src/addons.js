@@ -85,7 +85,10 @@ export default class AddonManager extends Module {
 			// main script's execution.
 			for(const id of this.enabled_addons)
 				if ( this.hasAddon(id) && this.doesAddonTarget(id) )
-					this._enableAddon(id);
+					this._enableAddon(id).catch(err => {
+						this.log.error(`An error occured while enabling the add-on "${id}":` , err);
+						this.log.capture(err);
+					});
 
 			this.emit(':ready');
 		});
@@ -353,7 +356,10 @@ export default class AddonManager extends Module {
 
 		// Actually load it.
 		if ( this.doesAddonTarget(id) )
-			this._enableAddon(id);
+			this._enableAddon(id).catch(err => {
+				this.log.error(`An error occured while enabling the add-on "${id}":` , err);
+				this.log.capture(err);
+			});
 	}
 
 	async disableAddon(id, save = true) {

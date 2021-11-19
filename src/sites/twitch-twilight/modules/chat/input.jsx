@@ -298,26 +298,31 @@ export default class Input extends Module {
 		const t = this;
 
 		const originalOnKeyDown = inst.onKeyDown,
-			originalOnMessageSend = inst.onMessageSend;
-			//old_resize = inst.resizeInput;
+			originalOnMessageSend = inst.onMessageSend,
+			old_resize = inst.resizeInput;
 
-		inst.resizeInput = function(msg) {
-			if ( msg ) {
-				if ( inst.chatInputRef ) {
-					const style = getComputedStyle(inst.chatInputRef),
-						height = style && parseFloat(style.lineHeight || 18) || 18,
-						t = height * 1 + 20,
-						i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
-						a = Math.min(1 + i, 4);
+		inst.resizeInput = function(msg, ...args) {
+			try {
+				if ( msg ) {
+					if ( inst.chatInputRef instanceof Element ) {
+						const style = getComputedStyle(inst.chatInputRef),
+							height = style && parseFloat(style.lineHeight || 18) || 18,
+							t = height * 1 + 20,
+							i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
+							a = Math.min(1 + i, 4);
 
+						inst.setState({
+							numInputRows: a
+						});
+					}
+				} else
 					inst.setState({
-						numInputRows: a
+						numInputRows: 1
 					});
-				}
-			} else
-				inst.setState({
-					numInputRows: 1
-				});
+			} catch (err) {
+				t.log.error('Error in resizeInput', err);
+				return old_resize.call(this, msg, ...args);
+			}
 		}
 
 		inst.messageHistory = [];
