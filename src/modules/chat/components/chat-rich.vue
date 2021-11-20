@@ -8,15 +8,18 @@ let tokenizer;
 
 
 export default {
-	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia'],
+	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia', 'forceMid'],
 
 	data() {
 		return {
 			has_tokenizer: false,
 			loaded: false,
+			version: null,
+			fragments: {},
 			error: null,
 			accent: null,
 			short: null,
+			mid: null,
 			full: null,
 			unsafe: false,
 			urls: null,
@@ -103,9 +106,12 @@ export default {
 
 			this.loaded = false;
 			this.error = null;
+			this.version = null;
 			this.accent = null;
 			this.short = null;
+			this.mid = null;
 			this.full = null;
+			this.fragments = {};
 			this.unsafe = false;
 			this.urls = null;
 			this.allow_media = false;
@@ -164,10 +170,13 @@ export default {
 			}
 
 			this.loaded = true;
+			this.version = data.v;
 			this.error = data.error;
 			this.accent = data.accent;
 			this.short = data.short;
+			this.mid = data.mid;
 			this.full = data.full;
+			this.fragments = data.fragments ?? {};
 			this.unsafe = data.unsafe;
 			this.urls = data.urls;
 			this.allow_media = data.allow_media;
@@ -214,13 +223,21 @@ export default {
 		},
 
 		renderBody(h) {
-			if ( this.has_tokenizer && this.loaded && (this.forceFull ? this.full : this.short) ) {
+			let body = this.forceFull ? this.full :
+				this.forceMid ? this.mid : this.short;
+
+			if ( this.has_tokenizer && this.version && this.version > tokenizer.VERSION )
+				body = null;
+
+			if ( this.has_tokenizer && this.loaded && body ) {
 				return h('div', {
 					class: 'ffz--card-rich tw-full-width tw-overflow-hidden tw-flex tw-flex-column'
-				}, tokenizer.renderTokens(this.forceFull ? this.full : this.short, h, {
+				}, tokenizer.renderTokens(body, h, {
 					vue: true,
 					tList: (...args) => this.tList(...args),
 					i18n: this.getI18n(),
+
+					fragments: this.fragments,
 
 					allow_media: this.forceMedia ?? this.allow_media,
 					allow_unsafe: this.forceUnsafe ?? this.allow_unsafe
@@ -233,6 +250,9 @@ export default {
 			let title, description;
 			if ( this.loaded && this.forceFull && ! this.full ) {
 				description = 'null';
+
+			} else if ( this.loaded && this.forceMid && ! this.mid ) {
+				description = 'null -- will use short instead';
 
 			} else if ( this.error ) {
 				title = this.t('card.error', 'An error occurred.');

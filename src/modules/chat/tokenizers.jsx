@@ -56,8 +56,6 @@ function datasetBool(value) {
 	return value == null ? null : value === 'true';
 }
 
-const TOOLTIP_VERSION = 5;
-
 export const Links = {
 	type: 'link',
 	priority: 50,
@@ -91,12 +89,15 @@ export const Links = {
 			import(/* webpackChunkName: 'rich_tokens' */ 'utilities/rich_tokens'),
 			this.get_link_info(url)
 		]).then(([rich_tokens, data]) => {
-			if ( ! data || (data.v || 1) > TOOLTIP_VERSION )
+			if ( ! data || (data.v || 1) > rich_tokens.VERSION )
 				return '';
 
 			const ctx = {
 				tList: (...args) => this.i18n.tList(...args),
 				i18n: this.i18n,
+
+				fragments: data.fragments,
+
 				allow_media: show_images,
 				allow_unsafe: show_unsafe,
 				onload: () => requestAnimationFrame(() => tip.update())
@@ -111,12 +112,14 @@ export const Links = {
 			if ( data.full ) {
 				content = rich_tokens.renderTokens(data.full, createElement, ctx);
 
-			} else {
-				if ( data.short ) {
-					content = rich_tokens.renderTokens(data.short, createElement, ctx);
-				} else
-					content = this.i18n.t('card.empty', 'No data was returned.');
-			}
+			} else if ( data.mid ) {
+				content = rich_tokens.renderTokens(data.mid, createElement, ctx);
+
+			} else if ( data.short ) {
+				content = rich_tokens.renderTokens(data.short, createElement, ctx);
+
+			} else
+				content = this.i18n.t('card.empty', 'No data was returned.');
 
 			if ( ! data.urls )
 				return content;
@@ -1038,7 +1041,7 @@ export const CheerEmotes = {
 
 			if ( length > 12 ) {
 				out.push(<br />);
-				out.push(this.i18n.t('tooltip.bits.more', '(and {count} more)', length-12));
+				out.push(this.i18n.t('tooltip.bits.more', '(and {count, number} more)', length-12));
 			}
 		}
 

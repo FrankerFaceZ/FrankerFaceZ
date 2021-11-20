@@ -412,50 +412,17 @@ export default class Badges extends Module {
 			tip.add_class = 'ffz__tooltip--badges';
 
 			const show_previews = this.parent.context.get('tooltip.badge-images');
-			let container = target.parentElement.parentElement;
-			if ( ! container.dataset.roomId )
-				container = target.closest('[data-room-id]');
+			const ds = this.getBadgeData(target);
 
-			const room_id = container?.dataset?.roomId,
-				room_login = container?.dataset?.room,
-				out = [];
+			const out = [];
 
-			let data;
-			if ( target.dataset.badgeData )
-				data = JSON.parse(target.dataset.badgeData);
-			else {
-				const badge_idx = target.dataset.badgeIdx;
-				let message;
-
-				if ( container.message )
-					message = container.message;
-				else {
-					const fine = this.resolve('site.fine');
-
-					if ( fine ) {
-						message = container[fine.accessor]?.return?.stateNode?.props?.message;
-						if ( ! message )
-							message = fine.searchParent(container, n => n.props?.message)?.props?.message;
-						if ( ! message )
-							message = fine.searchParent(container, n => n.props?.node)?.props?.node?._ffz_message;
-						if ( ! message )
-							message = fine.searchParent(container, n => n.props?.messageContext)?.props?.messageContext?.comment?._ffz_message;
-					}
-				}
-
-				if ( message?._ffz_message)
-					message = message._ffz_message;
-				if ( message )
-					data = message.ffz_badge_cache?.[badge_idx]?.[1]?.badges;
-			}
-
-			if ( data == null )
+			if ( ds.data == null )
 				return out;
 
-			for(const d of data) {
+			for(const d of ds.data) {
 				const p = d.provider;
 				if ( p === 'twitch' ) {
-					const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
+					const bd = this.getTwitchBadge(d.badge, d.version, ds.room_id, ds.room_login),
 						global_badge = this.getTwitchBadge(d.badge, d.version, null, null, true) || {};
 					if ( ! bd )
 						continue;
@@ -489,14 +456,6 @@ export default class Badges extends Module {
 						{title}
 					</div>);
 
-					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
-						show_previews && e('img', {
-							className: 'preview-image ffz-badge',
-							src: bd.image4x
-						}),
-						bd.title
-					]));*/
-
 				} else if ( p === 'ffz' ) {
 					out.push(<div class="ffz-badge-tip">
 						{show_previews && d.image && <div
@@ -508,17 +467,6 @@ export default class Badges extends Module {
 						/>}
 						{d.title}
 					</div>);
-
-					/*out.push(e('div', {className: 'ffz-badge-tip'}, [
-						show_previews && e('div', {
-							className: 'preview-image ffz-badge',
-							style: {
-								backgroundColor: d.color,
-								backgroundImage: `url("${d.image}")`
-							}
-						}),
-						d.title
-					]));*/
 				}
 			}
 
@@ -527,31 +475,74 @@ export default class Badges extends Module {
 	}
 
 
+	getBadgeData(target) {
+		let container = target.parentElement?.parentElement;
+		if ( ! container?.dataset?.roomId )
+			container = target.closest('[data-room-id]');
+
+		const room_id = container?.dataset?.roomId,
+			room_login = container?.dataset?.room,
+
+			user_id = container?.dataset?.userId,
+			user_login = container?.dataset?.user;
+
+		let data;
+		if (target.dataset.badgeData )
+			data = JSON.parse(target.dataset.badgeData);
+		else {
+			const badge_idx = target.dataset.badgeIdx;
+			let message;
+
+			if ( container.message )
+				message = container.message;
+			else {
+				const fine = this.resolve('site.fine');
+
+				if ( fine ) {
+					message = container[fine.accessor]?.return?.stateNode?.props?.message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n.props?.message)?.props?.message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n.props?.node)?.props?.node?._ffz_message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n.props?.messageContext)?.props?.messageContext?.comment?._ffz_message;
+					if ( ! message )
+						message = fine.searchParent(container, n => n._ffzIdentityMsg, 50)?._ffzIdentityMsg;
+				}
+			}
+
+			if ( message?._ffz_message)
+				message = message._ffz_message;
+			if ( message )
+				data = message.ffz_badge_cache?.[badge_idx]?.[1]?.badges;
+		}
+
+		return {
+			room_id: room_id,
+			room_login: room_login,
+			user_id: user_id,
+			user_login: user_login,
+			data
+		};
+	}
+
+
 	handleClick(event) {
 		if ( ! this.parent.context.get('chat.badges.clickable') )
 			return;
 
 		const target = event.target;
-		let container = target.parentElement.parentElement;
-		if ( ! container.dataset.roomId )
-			container = target.closest('[data-room-id]');
+		const ds = this.getBadgeData(target);
 
-		const ds = container?.dataset,
-			room_id = ds?.roomId,
-			room_login = ds?.room,
-			user_id = ds?.userId,
-			user_login = ds?.user,
-			data = JSON.parse(target.dataset.badgeData);
-
-		if ( data == null )
+		if ( ds.data == null )
 			return;
 
 		let url = null;
 
-		for(const d of data) {
+		for(const d of ds.data) {
 			const p = d.provider;
 			if ( p === 'twitch' ) {
-				const bd = this.getTwitchBadge(d.badge, d.version, room_id, room_login),
+				const bd = this.getTwitchBadge(d.badge, d.version, ds.room_id, ds.room_login),
 					global_badge = this.getTwitchBadge(d.badge, d.version, null, null, true) || {};
 				if ( ! bd )
 					continue;
@@ -560,8 +551,8 @@ export default class Badges extends Module {
 					url = bd.click_url;
 				else if ( global_badge.click_url )
 					url = global_badge.click_url;
-				else if ( (bd.click_action === 'sub' || global_badge.click_action === 'sub') && room_login )
-					url = `https://www.twitch.tv/subs/${room_login}`;
+				else if ( (bd.click_action === 'sub' || global_badge.click_action === 'sub') && ds.room_login )
+					url = `https://www.twitch.tv/subs/${ds.room_login}`;
 				else
 					continue;
 
@@ -570,7 +561,7 @@ export default class Badges extends Module {
 			} else if ( p === 'ffz' ) {
 				const badge = this.badges[target.dataset.badge];
 				if ( badge?.click_handler ) {
-					url = badge.click_handler(user_id, user_login, room_id, room_login, data, event);
+					url = badge.click_handler(ds.user_id, ds.user_login, ds.room_id, ds.room_login, ds.data, event);
 					break;
 				}
 

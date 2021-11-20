@@ -176,13 +176,22 @@ export default class RichContent extends Module {
 			}
 
 			renderBody() {
-				const doc = this.props.force_full ? this.state.full : this.state.short;
+				let doc = this.props.force_full ? this.state.full :
+					this.props.force_mid ? this.state.mid :
+					((this.props.want_mid ? this.state.mid : null) ?? this.state.short);
+
+				if ( t.has_tokenizer && this.state.v && this.state.v > t.tokenizer.VERSION)
+					doc = null;
+
+				//const doc = (this.props.force_full ? this.state.full : null) ?? (this.props.force_mid ? this.state.mid : null) ?? this.state.short;
 				if ( t.has_tokenizer && this.state.loaded && doc ) {
 					return (<div class="ffz-card-rich tw-full-width tw-overflow-hidden tw-flex tw-flex-column">
 						{t.tokenizer.renderTokens(doc, createElement, {
 							vue: false,
 							tList: (...args) => t.i18n.tList(...args),
 							i18n: t.i18n,
+
+							fragments: this.state.fragments,
 
 							allow_media: t.chat.context.get('tooltip.link-images'),
 							allow_unsafe: t.chat.context.get('tooltip.link-nsfw-images')

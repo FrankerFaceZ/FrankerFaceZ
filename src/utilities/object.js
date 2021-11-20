@@ -94,6 +94,39 @@ export function timeout(promise, delay) {
 }
 
 
+export class Mutex {
+	constructor(limit = 1) {
+		this.limit = limit;
+		this._active = 0;
+		this._waiting = [];
+
+		this._done = this._done.bind(this);
+	}
+
+	get available() { return this._active < this.limit }
+
+	_done() {
+		this._active--;
+
+		while(this._active < this.limit && this._waiting.length > 0) {
+			this._active++;
+			const waiter = this._waiting.shift();
+			waiter(this._done);
+		}
+	}
+
+	wait() {
+		if ( this._active < this.limit) {
+			this._active++;
+			return Promise.resolve(this._done);
+		}
+
+		return new Promise(s => this._waiting.push(s));
+	}
+}
+
+
+
 /**
  * Return a wrapper for a function that will only execute the function
  * a period of time after it has stopped being called.

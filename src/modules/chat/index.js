@@ -224,6 +224,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.rich.want-mid', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Rich Content',
+				title: 'Display larger rich content in chat.',
+				description: 'This enables the use of bigger rich content embeds in chat. This is **not** recommended for most users and/or chats.\n\n**Note:** Enabling this may cause chat to scroll at inopportune times due to content loading. Moderators should not use this feature.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.rich.hide-tokens', {
 			default: false,
 			ui: {
@@ -1879,11 +1889,13 @@ export default class Chat extends Module {
 
 		const providers = this.__rich_providers;
 
+		const want_mid = this.context.get('chat.rich.want-mid');
+
 		for(const token of tokens) {
 			for(const provider of providers)
 				if ( provider.test.call(this, token, msg) ) {
 					token.hidden = provider.can_hide_token && (this.context.get('chat.rich.hide-tokens') || provider.hide_token);
-					return provider.process.call(this, token);
+					return provider.process.call(this, token, want_mid);
 				}
 		}
 	}
