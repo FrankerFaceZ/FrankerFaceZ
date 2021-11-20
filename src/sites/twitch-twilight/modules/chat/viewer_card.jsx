@@ -29,7 +29,7 @@ export default class ViewerCards extends Module {
 			ui: {
 				path: 'Chat > Viewer Cards >> Appearance',
 				title: 'Hide "Gift a Sub" button on viewer cards',
-				description: 'By default, this inherits its value from [Channel > Appearance > Hide all "Gift a Sub" button](~channel.hide-all-sub-gifting)\'',
+				description: 'By default, this inherits its value from [Channel > Appearance > Hide all "Gift a Sub" button](~channel.appearance)',
 				component: 'setting-check-box'
 			},
 		});
