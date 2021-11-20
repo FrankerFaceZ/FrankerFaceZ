@@ -48,7 +48,7 @@ const CLASSES = {
 	'celebration': 'body .celebration__overlay',
 	'mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
 
-	'hide-gift-subscribe-button': 'button[data-test-selector="gift-subscribe-button"]'
+	'viewer-card-gift-subscribe-button': '.viewer-card button[data-test-selector="gift-subscribe-button"]'
 };
 
 
