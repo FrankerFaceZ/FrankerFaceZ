@@ -1,0 +1,4 @@
+.support-panel > div:not(.scrollable-area) button:not(.tw-interactable):not(.tw-purchase-button),
+button[data-test-selector="gift-subscribe-button"] {
+	display: none !important;
+}

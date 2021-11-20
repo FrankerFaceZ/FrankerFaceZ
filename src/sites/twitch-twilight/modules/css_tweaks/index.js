@@ -407,6 +407,16 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggle('hide-unfollow-button', val)
 		});
 
+		this.settings.add('channel.hide-all-sub-gifting', {
+			default: false,
+			ui: {
+				path: 'Channel > Appearance >> General',
+				title: 'Hide all "Gift a Sub" button.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('hide-all-sub-gifting', val)
+		});
+
 		this.settings.add('channel.hide-live-indicator', {
 			requires: ['context.route.name'],
 			process(ctx, val) {
@@ -461,6 +471,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));
+		this.toggle('hide-all-sub-gifting', this.settings.get('channel.hide-all-sub-gifting'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 		//this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
