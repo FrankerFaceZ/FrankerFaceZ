@@ -24,6 +24,10 @@
 
 .ffz--inline-reasons {
 	max-width: 30rem;
+
+	.scrollable-area {
+		max-height: min(90vh, max(30rem, 50vh));
+	}
 }
 
 .ffz--inline-actions {

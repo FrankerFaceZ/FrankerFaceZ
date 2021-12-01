@@ -1854,6 +1854,24 @@ export default class Chat extends Module {
 		});
 	}
 
+	removeTokenizer(tokenizer) {
+		let type;
+		if ( typeof tokenizer === 'string' ) type = tokenizer;
+		else type = tokenizer.type;
+
+		tokenizer = this.tokenizers[type];
+		if ( ! tokenizer )
+			return null;
+
+		if ( tokenizer.tooltip )
+			delete this.tooltips.types[type];
+
+		const idx = this.__tokenizers.indexOf(tokenizer);
+		if ( idx !== -1 )
+			this.__tokenizers.splice(idx, 1);
+
+		return tokenizer;
+	}
 
 	addRichProvider(provider) {
 		const type = provider.type;
@@ -1869,12 +1887,39 @@ export default class Chat extends Module {
 		});
 	}
 
+	removeRichProvider(provider) {
+		let type;
+		if ( typeof provider === 'string' ) type = provider;
+		else type = provider.type;
 
-	tokenizeString(message, msg) {
+		provider = this.rich_providers[type];
+		if ( ! provider )
+			return null;
+
+		const idx = this.__rich_providers.indexOf(provider);
+		if ( idx !== -1 )
+			this.__rich_providers.splice(idx, 1);
+
+		return provider;
+	}
+
+
+	tokenizeString(message, msg, user, haltable = false) {
 		let tokens = [{type: 'text', text: message}];
 
-		for(const tokenizer of this.__tokenizers)
-			tokens = tokenizer.process.call(this, tokens, msg);
+		for(const tokenizer of this.__tokenizers) {
+			if ( ! tokenizer.process )
+				continue;
+
+			const new_tokens = tokenizer.process.call(this, tokens, msg, user, haltable);
+			if ( new_tokens )
+				tokens = new_tokens;
+
+			if ( haltable && msg.ffz_halt_tokens ) {
+				msg.ffz_halt_tokens = undefined;
+				break;
+			}
+		}
 
 		return tokens;
 	}
@@ -1914,7 +1959,13 @@ export default class Chat extends Module {
 		let tokens = [{type: 'text', text: msg.message}];
 
 		for(const tokenizer of this.__tokenizers) {
-			tokens = tokenizer.process.call(this, tokens, msg, user, haltable);
+			if ( ! tokenizer.process )
+				continue;
+
+			const new_tokens = tokenizer.process.call(this, tokens, msg, user, haltable);
+			if ( new_tokens )
+				tokens = new_tokens;
+
 			if ( haltable && msg.ffz_halt_tokens ) {
 				msg.ffz_halt_tokens = undefined;
 				break;

@@ -20,10 +20,6 @@ const SUB_TIERS = {
 	3000: 3
 };
 
-function getGiftThemeURL(theme) {
-	return `https://static-cdn.jtvnw.net/subs-image-assets/TUN-${theme}.png`;
-}
-
 
 export default class ChatLine extends Module {
 	constructor(...args) {
