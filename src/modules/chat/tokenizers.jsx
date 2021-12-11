@@ -1460,12 +1460,14 @@ export const AddonEmotes = {
 					// Is this emote a modifier?
 					if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
 						if ( last_token.modifiers.indexOf(emote.token) === -1 ) {
-							if ( big )
-								last_token.modifiers.push(Object.assign({
-									big
-								}, emote.token));
-							else
-								last_token.modifiers.push(emote.token);
+							last_token.modifiers.push(
+								Object.assign({
+										big,
+										anim
+									},
+									emote.token
+								)
+							);
 						}
 
 						continue;
