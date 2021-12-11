@@ -11,6 +11,7 @@ import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES,
 import Twilight from 'site';
 import { FFZEvent } from 'src/utilities/events';
 import { getTwitchEmoteSrcSet, getTwitchEmoteURL } from 'src/utilities/object';
+import {EMOJI_JOINER} from 'src/modules/chat/emoji';
 
 export default class Input extends Module {
 	constructor(...args) {
@@ -404,6 +405,9 @@ export default class Input extends Module {
 				t.log.capture(err);
 				t.log.error(err);
 			}
+
+			// replace ZERO WIDTH JOINER with custom joiner so combined emoji work
+			inst.autocompleteInputRef.setValue(inst.chatInputRef.value.replace('\u{200d}', EMOJI_JOINER));
 
 			originalOnMessageSend.call(this, event);
 		}
