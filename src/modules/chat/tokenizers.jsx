@@ -8,7 +8,7 @@ import {sanitize, createElement} from 'utilities/dom';
 import {has, getTwitchEmoteURL, split_chars, getTwitchEmoteSrcSet} from 'utilities/object';
 
 import {EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
-import {CATEGORIES} from './emoji';
+import {CATEGORIES, JOINER_REPLACEMENT} from './emoji';
 
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
@@ -1592,7 +1592,7 @@ export const Emoji = {
 				continue;
 			}
 
-			const text = token.text;
+			const text = token.text.replace(JOINER_REPLACEMENT, "\u200d");
 
 			splitter.lastIndex = 0;
 			let idx = 0, match;
