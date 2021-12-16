@@ -6,11 +6,44 @@
 
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
+import { FFZEvent } from 'utilities/events';
+import { getTwitchEmoteSrcSet, has, getTwitchEmoteURL } from 'utilities/object';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
-import { FFZEvent } from 'src/utilities/events';
-import { getTwitchEmoteSrcSet, getTwitchEmoteURL } from 'src/utilities/object';
+
+function getNodeText(node) {
+	if ( ! node )
+		return '';
+
+	if ( node.type === 'emote' )
+		return node.emoteName;
+
+	if ( node.type === 'text' )
+		return node.text;
+
+	if ( Array.isArray(node.children) )
+		return node.children.map(getNodeText).join('');
+
+	return '';
+}
+
+function getNodeOffset(nodes, path) {
+	let offset = 0, pidx = 0, n = nodes;
+
+	while(pidx < path.length) {
+		const p = path[pidx];
+
+		for(let i = 0; i < p; i++)
+			offset += getNodeText(n[i]).length;
+
+		n = Array.isArray(n[p]) ? n[p] : n[p]?.children;
+		pidx++;
+	}
+
+	return offset;
+}
+
 
 export default class Input extends Module {
 	constructor(...args) {
@@ -329,6 +362,46 @@ export default class Input extends Module {
 		inst.tempInput = '';
 		inst.messageHistoryPos = -1;
 
+		inst.ffzGetValue = function() {
+			if ( inst.chatInputRef && typeof inst.chatInputRef.value === 'string' )
+				return inst.chatInputRef.value;
+
+			if ( inst.state.value && typeof inst.state.value === 'string' )
+				return inst.state.value;
+
+			return '';
+		}
+
+		inst.ffzGetSelection = function() {
+			if ( typeof inst.chatInputRef?.selectionEnd === 'number' ) {
+				return [inst.chatInputRef.selectionStart, inst.chatInputRef.selectionEnd]
+			}
+
+			if ( inst.chatInputRef?.state?.slateEditor ) {
+				const editor = inst.chatInputRef.state.slateEditor,
+					sel = editor.selection,
+					nodes = editor.children;
+
+				if ( ! sel?.anchor?.path || ! sel?.focus?.path )
+					return [0,0];
+
+				const first = getNodeOffset(nodes, sel.anchor.path) + sel.anchor.offset,
+					second = getNodeOffset(nodes, sel.focus.path) + sel.focus.offset;
+
+				if ( first < second )
+					return [first, second];
+				else
+					return [second, first];
+			}
+
+			return [0,0];
+		}
+
+		inst.ffzSetSelection = function(start, end) {
+			if ( inst.chatInputRef?.setSelectionRange )
+				inst.chatInputRef.setSelectionRange(start, end);
+		}
+
 		inst.onKeyDown = function(event) {
 			try {
 				const code = event.charCode || event.keyCode;
@@ -339,33 +412,40 @@ export default class Input extends Module {
 					return;
 				}
 
-				if ( inst.autocompleteInputRef && t.chat.context.get('chat.mru.enabled') && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
+				const val = inst.ffzGetValue();
+
+				if ( inst.autocompleteInputRef && inst.chatInputRef && t.chat.context.get('chat.mru.enabled') && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
+					const sel = inst.ffzGetSelection();
+
 					// Arrow Up
-					if ( code === 38 && inst.chatInputRef.selectionStart === 0 ) {
+					if ( code === 38 && sel[0] === 0 && sel[1] === 0 ) {
 						if ( ! inst.messageHistory.length )
 							return;
 
-						if ( inst.chatInputRef.value && inst.messageHistoryPos === -1 )
-							inst.tempInput = inst.chatInputRef.value;
+						if ( val && inst.messageHistoryPos === -1 )
+							inst.tempInput = val;
 
 						if ( inst.messageHistoryPos < inst.messageHistory.length - 1 ) {
 							inst.messageHistoryPos++;
 							inst.autocompleteInputRef.setValue(inst.messageHistory[inst.messageHistoryPos]);
+							inst.ffzSetSelection(0);
 						}
 
 						return;
 
 					// Arrow Down
-					} else if ( code === 40 && inst.chatInputRef.selectionStart == inst.chatInputRef.value.length ) {
+					} else if ( code === 40 && sel[0] >= val.length && sel[1] === sel[0] ) {
 						if ( ! inst.messageHistory.length )
 							return;
 
 						if ( inst.messageHistoryPos > 0 ) {
 							inst.messageHistoryPos--;
 							inst.autocompleteInputRef.setValue(inst.messageHistory[inst.messageHistoryPos]);
+							inst.ffzSetSelection(inst.messageHistory[inst.messageHistoryPos].length);
 
 						} else if ( inst.messageHistoryPos === 0 ) {
 							inst.autocompleteInputRef.setValue(inst.tempInput);
+							inst.ffzSetSelection(inst.tempInput.length);
 							inst.messageHistoryPos = -1;
 						}
 
@@ -392,9 +472,12 @@ export default class Input extends Module {
 		inst.onMessageSend = function(event) {
 			try {
 				if ( t.chat.context.get('chat.mru.enabled') ) {
-					if (! inst.messageHistory.length || inst.messageHistory[0] !== inst.chatInputRef.value) {
-						inst.messageHistory.unshift(inst.chatInputRef.value);
-						inst.messageHistory = inst.messageHistory.slice(0, 20);
+					const val = inst.ffzGetValue();
+					if (val && val.length) {
+						if (! inst.messageHistory.length || inst.messageHistory[0] !== val) {
+							inst.messageHistory.unshift(val);
+							inst.messageHistory = inst.messageHistory.slice(0, 20);
+						}
 					}
 					inst.messageHistoryPos = -1;
 					inst.tempInput = '';

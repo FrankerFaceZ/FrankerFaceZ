@@ -237,7 +237,7 @@ export default {
 	data() {
 		return {
 			code: pick_random(CODES),
-			experiments_locked: true, //this.item.is_locked(),
+			experiments_locked: this.item.is_locked(),
 			sort_by: 1,
 			unused: false,
 			unique_id: this.item.unique_id(),

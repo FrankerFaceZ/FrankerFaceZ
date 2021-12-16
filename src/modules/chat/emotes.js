@@ -498,6 +498,8 @@ export default class Emotes extends Module {
 			if ( ! line || ! opener )
 				return;
 
+			const rect = target.getBoundingClientRect();
+
 			opener.onShowEmoteCard({
 				channelID: line.props.channelID || '',
 				channelLogin: line.props.channelLogin || '',
@@ -505,7 +507,8 @@ export default class Emotes extends Module {
 				emoteCode: target.alt,
 				sourceID: 'chat',
 				referrerID: '',
-				initialTopOffset: target.getBoundingClientRect().bottom
+				initialTopOffset: rect.bottom,
+				initialBottomOffset: rect.top
 			});
 
 			return true;
