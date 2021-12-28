@@ -2010,6 +2010,21 @@ export default class ChatHook extends Module {
 	}
 
 
+	scheduleMystery(mystery) { // eslint-disable-line class-methods-use-this
+		if ( ! mystery.line )
+			return;
+
+		if ( mystery._timer )
+			return;
+
+		mystery._timer = setTimeout(() => requestAnimationFrame(() => {
+			mystery._timer = null;
+			if ( mystery.line )
+				mystery.line.forceUpdate();
+		}), 250);
+	}
+
+
 	wrapChatService(cls) {
 		const t = this,
 			old_mount = cls.prototype.componentDidMount,
@@ -2213,7 +2228,7 @@ export default class ChatHook extends Module {
 									mysteries[key] = null;
 
 								if ( mystery.line )
-									mystery.line.forceUpdate();
+									t.scheduleMystery(mystery);
 
 								return;
 							}
@@ -2265,7 +2280,7 @@ export default class ChatHook extends Module {
 									mysteries[key] = null;
 
 								if ( mystery.line )
-									mystery.line.forceUpdate();
+									t.scheduleMystery(mystery);
 
 								return;
 							}

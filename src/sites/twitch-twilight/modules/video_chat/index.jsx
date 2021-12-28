@@ -47,6 +47,7 @@ export default class VideoChatHook extends Module {
 		this.inject('site.web_munch');
 
 		this.inject('chat');
+		this.inject('chat.overrides');
 		this.injectAs('site_chat', 'site.chat');
 		this.inject('site.chat.chat_line.rich_content');
 
@@ -248,7 +249,8 @@ export default class VideoChatHook extends Module {
 					action_italic = action_style >= 2,
 					action_color = action_style === 1 || action_style === 3,
 					user = msg.user,
-					color = t.site_chat.colors.process(user.color),
+					raw_color = t.overrides.getColor(user.id) || user.color,
+					color = t.site_chat.colors.process(raw_color),
 
 					u = t.site.getUser();
 
@@ -313,18 +315,38 @@ export default class VideoChatHook extends Module {
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
 
+				const user_block = t.chat.formatUser(user, createElement);
+				const override_name = t.overrides.getName(user.id);
+
+				const user_props = {
+					className: `video-chat__message-author notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${msg.ffz_user_class ?? ''}`,
+					'data-test-selector': 'comment-author-selector',
+					href: `/${user.login}`,
+					rel: 'noopener noreferrer',
+					target: '_blank',
+					style: { color }
+				};
+
+				if ( msg.ffz_user_props )
+					Object.assign(user_props, msg.ffz_user_props);
+
+				if ( msg.ffz_user_style )
+					Object.assign(user_props.style, msg.ffz_user_style);
+
+				const user_bits = createElement('a', user_props, override_name ? [
+					createElement('span', {
+						className: 'chat-author__display-name'
+					}, override_name),
+					createElement('div', {
+						className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+					}, user_block)
+				] : user_block);
+
 				let out = (<div class="tw-flex-grow-1" data-room-id={msg.roomID} data-room={msg.roomLogin} data-user-id={user.id} data-user={user.login}>
 					<span class="chat-line__message--badges">{
 						t.chat.badges.render(msg, createElement)
 					}</span>
-					<a
-						class="video-chat__message-author notranslate"
-						data-test-selector="comment-author-selector"
-						href={`/${user.login}`}
-						rel="noopener noreferrer"
-						target="_blank"
-						style={{color}}
-					>{t.chat.formatUser(user, createElement)}</a>
+					{user_bits}
 					<div data-test-selector="comment-message-selector" class="tw-inline video-chat__message">
 						<span>{is_action ? ' ' : ': '}</span>
 						<span

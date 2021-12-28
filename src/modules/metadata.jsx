@@ -287,8 +287,14 @@ export default class Metadata extends Module {
 			icon: 'ffz-i-download',
 
 			click(src) {
-				const link = createElement('a', {target: '_blank', href: src});
+				const title = this.settings.get('context.title');
+				const name = title.replace(/[\\/:"*?<>|]+/, '_') + '.mp4';
+
+				const link = createElement('a', {target: '_blank', download: name, href: src, style: {display: 'none'}});
+
+				document.body.appendChild(link);
 				link.click();
+				link.remove();
 			}
 		}
 
@@ -396,6 +402,9 @@ export default class Metadata extends Module {
 
 			label(data) {
 				if ( ! this.settings.get('metadata.player-stats') || ! data.delay )
+					return null;
+
+				if ( data.old )
 					return null;
 
 				const delayed = data.drift > 5000 ? '(!) ' : '';

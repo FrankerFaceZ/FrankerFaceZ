@@ -485,18 +485,26 @@ other {# messages were deleted by a moderator.}
 				const user_block = t.chat.formatUser(user, e);
 				const override_name = t.overrides.getName(user.id);
 
+				const user_props = {
+					className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${msg.ffz_user_class ?? ''}`,
+					role: 'button',
+					style: { color },
+					onClick: this.ffz_user_click_handler,
+					onContextMenu: t.actions.handleUserContext
+				};
+
+				if ( msg.ffz_user_props )
+					Object.assign(user_props, msg.ffz_user_props);
+
+				if ( msg.ffz_user_style )
+					Object.assign(user_props.style, msg.ffz_user_style);
+
 				const user_bits = [
 					t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
 					e('span', {
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
-					e('span', {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''}`,
-						role: 'button',
-						style: { color },
-						onClick: this.ffz_user_click_handler,
-						onContextMenu: t.actions.handleUserContext
-					}, override_name ? [
+					e('span', user_props, override_name ? [
 						e('span', {
 							className: 'chat-author__display-name'
 						}, override_name),
