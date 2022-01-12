@@ -91,6 +91,8 @@
 
 			<button
 				class="tw-mg-l-1 tw-button tw-button--text"
+				:class="es_waiting && 'tw-button--disabled'"
+				:disabled="es_waiting"
 				@click="refresh"
 			>
 				<span class="tw-button__text ffz-i-arrows-cw">
@@ -257,6 +259,7 @@ export default {
 			is_custom: stuff[1],
 			rich_data: null,
 			raw_loading: false,
+			es_waiting: false,
 			raw_data: null,
 			length: 0,
 
@@ -330,14 +333,17 @@ export default {
 		this.chat = this.item.getChat();
 		this.settings = this.chat.resolve('settings');
 
-		this.chat.on('chat:update-link-resolver', this.checkRefreshRaw, this);
-		this.settings.on(':changed:debug.link-resolver.source', this.updateExamples, this);
-		this.updateExamples();
-
+		this.refreshES = debounce(this.refresh, 1000, true);
 		this.rebuildData = debounce(this.rebuildData, 250);
 		this.refreshRaw = debounce(this.refreshRaw, 250);
 		this.onTextChange = debounce(this.onTextChange, 500);
 		this.updateExamples = debounce(this.updateExamples, 500);
+		this.updateEventSource = debounce(this.updateEventSource, 500);
+
+		this.chat.on('chat:update-link-resolver', this.checkRefreshRaw, this);
+		this.settings.on(':changed:debug.link-resolver.source', this.changeProvider, this);
+		this.updateExamples();
+		this.updateEventSource();
 	},
 
 	mounted() {
@@ -361,12 +367,44 @@ export default {
 
 	beforeDestroy() {
 		this.chat.off('chat:update-link-resolver', this.checkRefreshRaw, this);
-		this.settings.off(':changed:debug.link-resolver.source', this.updateExamples, this);
+		this.settings.off(':changed:debug.link-resolver.source', this.changeProvider, this);
 		this.chat = null;
 		this.settings = null;
 	},
 
 	methods: {
+		changeProvider() {
+			this.updateEventSource();
+			this.updateExamples();
+		},
+
+		updateEventSource() {
+			const provider = this.settings.get('debug.link-resolver.source');
+			if ( provider !== 'dev' ) {
+				if ( this.es ) {
+					this.es.close();
+					this.es = null;
+				}
+
+				this.es_waiting = false;
+				return;
+			}
+
+			if ( this.es )
+				return;
+
+			this.es = new EventSource('https://localhost:8002/sse');
+			this.es.addEventListener('error', () => {
+				this.es_waiting = true;
+			});
+			this.es.addEventListener('message', () => {
+				if ( this.es_waiting ) {
+					this.es_waiting = false;
+					this.refreshES();
+				}
+			})
+		},
+
 		saveState() {
 			try {
 				window.history.replaceState({

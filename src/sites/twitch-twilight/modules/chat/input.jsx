@@ -340,7 +340,7 @@ export default class Input extends Module {
 					if ( inst.chatInputRef instanceof Element ) {
 						const style = getComputedStyle(inst.chatInputRef),
 							height = style && parseFloat(style.lineHeight || 18) || 18,
-							t = height * 1 + 20,
+							t = height * 1 + 20.5,
 							i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
 							a = Math.min(1 + i, 4);
 
