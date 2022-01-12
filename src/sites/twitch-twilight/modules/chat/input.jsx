@@ -606,7 +606,7 @@ export default class Input extends Module {
 					results = Array.isArray(results) ? results.concat(emoji) : emoji;
 			}
 
-			results = t.sortFavorites(results);
+			results = t.sortEmotes(results, input);
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
@@ -647,21 +647,49 @@ export default class Input extends Module {
 
 
 	// eslint-disable-next-line class-methods-use-this
-	sortFavorites(results) {
-		if (!this.chat.context.get('chat.tab-complete.prioritize-favorites')) {
-			return results;
+	sortEmotes(emotes, input) {
+		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
+		const lowerCaseInput = input.toLowerCase();
+
+		const locale = new Intl.Collator();
+		const localeCI = new Intl.Collator(undefined, {sensitivity: 'accent'}); // case insensitive
+
+		const startsWithInput = new Set();
+		const startsWithInputCI = new Set(); // case insensitive
+		for (let i = 0; i < emotes.length; ++i) {
+			const str = emotes[i].replacement;
+			if (str.startsWith(input))
+				startsWithInput.add(str);
+			else if (str.toLowerCase().startsWith(lowerCaseInput))
+				startsWithInputCI.add(str);
 		}
 
-		return results.sort((a, b) => {
-			if (a.favorite) {
-				return b.favorite ? a.replacement.localeCompare(b.replacement) : -1;
-			}
-			else if (b.favorite) {
-				return 1;
-			}
-			else {
-				a.replacement.localeCompare(b.replacement)
-			}
+		return emotes.sort((a, b) => {
+			const aStr = a.replacement;
+			const bStr = b.replacement;
+
+			// Prefer favorites over non-favorites, if enabled
+			if (preferFavorites && (a.favorite ^ b.favorite))
+				return 0 - a.favorite + b.favorite;
+
+			// Prefer case-sensitive prefix matches
+			const aStartsWithInput = startsWithInput.has(aStr);
+			const bStartsWithInput = startsWithInput.has(bStr);
+			if (aStartsWithInput && bStartsWithInput)
+				return locale.compare(aStr, bStr);
+			else if (aStartsWithInput) return -1;
+			else if (bStartsWithInput) return 1;
+
+			// Else prefer case-insensitive prefix matches
+			const aStartsWithInputCI = aStartsWithInput || startsWithInputCI.has(aStr);
+			const bStartsWithInputCI = bStartsWithInput || startsWithInputCI.has(bStr);
+			if (aStartsWithInputCI && bStartsWithInputCI)
+				return localeCI.compare(aStr, bStr);
+			 else if (aStartsWithInputCI) return -1;
+			 else if (bStartsWithInputCI) return 1;
+
+			// Else alphabetize
+			return locale.compare(aStr, bStr);
 		});
 	}
 
