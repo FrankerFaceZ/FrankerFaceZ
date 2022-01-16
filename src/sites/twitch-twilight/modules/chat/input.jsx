@@ -12,6 +12,10 @@ import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES,
 
 import Twilight from 'site';
 
+// Prefer using these statically-allocated collators to String.localeCompare
+const locale = Intl.Collator();
+const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
+
 function getNodeText(node) {
 	if ( ! node )
 		return '';
@@ -651,9 +655,6 @@ export default class Input extends Module {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
 		const lowerCaseInput = input.toLowerCase();
 
-		const locale = new Intl.Collator();
-		const localeCI = new Intl.Collator(undefined, {sensitivity: 'accent'}); // case insensitive
-
 		const startsWithInput = new Set();
 		const startsWithInputCI = new Set(); // case insensitive
 		for (let i = 0; i < emotes.length; ++i) {
@@ -684,7 +685,7 @@ export default class Input extends Module {
 			const aStartsWithInputCI = aStartsWithInput || startsWithInputCI.has(aStr);
 			const bStartsWithInputCI = bStartsWithInput || startsWithInputCI.has(bStr);
 			if (aStartsWithInputCI && bStartsWithInputCI)
-				return localeCI.compare(aStr, bStr);
+				return localeCaseInsensitive.compare(aStr, bStr);
 			 else if (aStartsWithInputCI) return -1;
 			 else if (bStartsWithInputCI) return 1;
 
@@ -804,8 +805,8 @@ export default class Input extends Module {
 		}
 
 		results_usage.sort((a,b) => b.count - a.count);
-		results_starting.sort((a,b) => a.replacement.localeCompare(b.replacement));
-		results_other.sort((a,b) => a.replacement.localeCompare(b.replacement));
+		results_starting.sort((a,b) => locale.compare(a.replacement, b.replacement));
+		results_other.sort((a,b) => locale.compare(a.replacement, b.replacement));
 
 		return results_usage.concat(results_starting).concat(results_other);
 	}
