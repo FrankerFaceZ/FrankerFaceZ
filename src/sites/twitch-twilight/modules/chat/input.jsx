@@ -16,6 +16,13 @@ import Twilight from 'site';
 const locale = Intl.Collator();
 const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
 
+// Describes how an emote matches against a given input
+// Higher values represent a more exact match
+const NO_MATCH = 0;
+const NON_PREFIX_MATCH = 1;
+const CASE_INSENSITIVE_PREFIX_MATCH = 2;
+const EXACT_PREFIX_MATCH = 3;
+
 function getNodeText(node) {
 	if ( ! node )
 		return '';
@@ -576,7 +583,10 @@ export default class Input extends Module {
 		inst.doesEmoteMatchTerm = function(emote, term) {
 			const emote_name = emote.name || emote.token;
 			if ( ! emote_name )
-				return false;
+				return NO_MATCH;
+
+			if (emote_name.startsWith(term))
+				return EXACT_PREFIX_MATCH;
 
 			let emote_lower = emote.tokenLower;
 			if ( ! emote_lower )
@@ -584,13 +594,13 @@ export default class Input extends Module {
 
 			const term_lower = term.toLowerCase();
 			if (emote_lower.startsWith(term_lower))
-				return true;
+				return CASE_INSENSITIVE_PREFIX_MATCH;
 
 			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
-			if (idx !== -1)
-				return emote_lower.slice(idx + 1).startsWith(term_lower.slice(1));
+			if (idx !== -1 && emote_lower.slice(idx + 1).startsWith(term_lower.slice(1)))
+				return NON_PREFIX_MATCH;
 
-			return false;
+			return NO_MATCH;
 		}
 
 		inst.getMatchedEmotes = function(input) {
@@ -653,17 +663,6 @@ export default class Input extends Module {
 	// eslint-disable-next-line class-methods-use-this
 	sortEmotes(emotes, input) {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
-		const lowerCaseInput = input.toLowerCase();
-
-		const startsWithInput = new Set();
-		const startsWithInputCI = new Set(); // case insensitive
-		for (let i = 0; i < emotes.length; ++i) {
-			const str = emotes[i].replacement;
-			if (str.startsWith(input))
-				startsWithInput.add(str);
-			else if (str.toLowerCase().startsWith(lowerCaseInput))
-				startsWithInputCI.add(str);
-		}
 
 		return emotes.sort((a, b) => {
 			const aStr = a.replacement;
@@ -674,16 +673,16 @@ export default class Input extends Module {
 				return 0 - a.favorite + b.favorite;
 
 			// Prefer case-sensitive prefix matches
-			const aStartsWithInput = startsWithInput.has(aStr);
-			const bStartsWithInput = startsWithInput.has(bStr);
+			const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
+			const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH);
 			if (aStartsWithInput && bStartsWithInput)
 				return locale.compare(aStr, bStr);
 			else if (aStartsWithInput) return -1;
 			else if (bStartsWithInput) return 1;
 
 			// Else prefer case-insensitive prefix matches
-			const aStartsWithInputCI = aStartsWithInput || startsWithInputCI.has(aStr);
-			const bStartsWithInputCI = bStartsWithInput || startsWithInputCI.has(bStr);
+			const aStartsWithInputCI = (a.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
+			const bStartsWithInputCI = (b.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
 			if (aStartsWithInputCI && bStartsWithInputCI)
 				return localeCaseInsensitive.compare(aStr, bStr);
 			 else if (aStartsWithInputCI) return -1;
@@ -785,19 +784,21 @@ export default class Input extends Module {
 			search = input.startsWith(':') ? input.slice(1) : input;
 
 		for(const emote of emotes) {
-			if ( inst.doesEmoteMatchTerm(emote, search) ) {
+			const match_type = inst.doesEmoteMatchTerm(emote, search);
+			if ( match_type !== NO_MATCH ) {
 				const element = {
 					current: input,
 					emote,
 					replacement: emote.token,
 					element: inst.renderEmoteSuggestion(emote),
 					favorite: emote.favorite,
-					count: this.EmoteUsageCount[emote.token] || 0
+					count: this.EmoteUsageCount[emote.token] || 0,
+					match_type
 				};
 
 				if ( element.count > 0 )
 					results_usage.push(element);
-				else if ( emote.token.toLowerCase().startsWith(search) )
+				else if ( match_type > NON_PREFIX_MATCH )
 					results_starting.push(element);
 				else
 					results_other.push(element);
@@ -943,14 +944,16 @@ export default class Input extends Module {
 			results = [];
 
 		for(const emote of emotes) {
-			if ( inst.doesEmoteMatchTerm(emote, search) )
+			const match_type = inst.doesEmoteMatchTerm(emote, search)
+			if ( match_type !== NO_MATCH )
 				results.push({
 					current: input,
 					emote,
 					replacement: emote.token,
 					element: inst.renderEmoteSuggestion(emote),
 					favorite: emote.favorite,
-					count: 0 // TODO: Count stuff?
+					count: 0, // TODO: Count stuff?
+					match_type
 				});
 		}
 
