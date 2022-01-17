@@ -620,7 +620,7 @@ export default class Input extends Module {
 					results = Array.isArray(results) ? results.concat(emoji) : emoji;
 			}
 
-			results = t.sortEmotes(results, input);
+			results = t.sortEmotes(results);
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
@@ -661,7 +661,7 @@ export default class Input extends Module {
 
 
 	// eslint-disable-next-line class-methods-use-this
-	sortEmotes(emotes, input) {
+	sortEmotes(emotes) {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
 
 		return emotes.sort((a, b) => {
