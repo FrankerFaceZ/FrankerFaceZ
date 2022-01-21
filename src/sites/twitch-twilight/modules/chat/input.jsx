@@ -128,6 +128,15 @@ export default class Input extends Module {
 			}
 		});
 
+		this.settings.add('chat.tab-complete.prioritize-prefix-matches', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Prioritize emotes that start with user input.',
+				component: 'setting-check-box'
+			}
+		});
+
 
 		// Components
 
@@ -664,6 +673,7 @@ export default class Input extends Module {
 	sortEmotes(emotes) {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
 		const canBeTriggeredByTab = this.chat.context.get('chat.tab-complete.emotes-without-colon');
+		const prioritizePrefixMatches = this.chat.context.get('chat.tab-complete.prioritize-prefix-matches');
 
 		return emotes.sort((a, b) => {
 			const aStr = a.matched || a.replacement;
@@ -673,32 +683,37 @@ export default class Input extends Module {
 			if (preferFavorites && (a.favorite ^ b.favorite))
 				return 0 - a.favorite + b.favorite;
 
-			// Prefer emoji over emotes if tab-complete is enabled, disprefer them otherwise
-			const aIsEmoji = !!a.matched;
-			const bIsEmoji = !!b.matched;
-			if (aIsEmoji ^ bIsEmoji) {
-				if (canBeTriggeredByTab) return 0 - aIsEmoji + bIsEmoji;
-				else return 0 - bIsEmoji + aIsEmoji;
+			if (prioritizePrefixMatches) {
+				// Prefer emoji over emotes if tab-complete is enabled, disprefer them otherwise
+				const aIsEmoji = !!a.matched;
+				const bIsEmoji = !!b.matched;
+				if (aIsEmoji ^ bIsEmoji) {
+					if (canBeTriggeredByTab) return 0 - aIsEmoji + bIsEmoji;
+					else return 0 - bIsEmoji + aIsEmoji;
+				}
+
+				// Prefer case-sensitive prefix matches
+				const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
+				const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH);
+				if (aStartsWithInput && bStartsWithInput)
+					return locale.compare(aStr, bStr);
+				else if (aStartsWithInput) return -1;
+				else if (bStartsWithInput) return 1;
+
+				// Else prefer case-insensitive prefix matches
+				const aStartsWithInputCI = (a.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
+				const bStartsWithInputCI = (b.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
+				if (aStartsWithInputCI && bStartsWithInputCI)
+					return localeCaseInsensitive.compare(aStr, bStr);
+				else if (aStartsWithInputCI) return -1;
+				else if (bStartsWithInputCI) return 1;
+
+				// Else alphabetize
+				return locale.compare(aStr, bStr);
 			}
 
-			// Prefer case-sensitive prefix matches
-			const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
-			const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH);
-			if (aStartsWithInput && bStartsWithInput)
-				return locale.compare(aStr, bStr);
-			else if (aStartsWithInput) return -1;
-			else if (bStartsWithInput) return 1;
-
-			// Else prefer case-insensitive prefix matches
-			const aStartsWithInputCI = (a.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
-			const bStartsWithInputCI = (b.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
-			if (aStartsWithInputCI && bStartsWithInputCI)
-				return localeCaseInsensitive.compare(aStr, bStr);
-			 else if (aStartsWithInputCI) return -1;
-			 else if (bStartsWithInputCI) return 1;
-
-			// Else alphabetize
-			return locale.compare(aStr, bStr);
+			// Keep unsorted order for non-favorite items if prefix matching is not enabled.
+			return 0;
 		});
 	}
 
