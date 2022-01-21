@@ -663,14 +663,23 @@ export default class Input extends Module {
 	// eslint-disable-next-line class-methods-use-this
 	sortEmotes(emotes) {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
+		const canBeTriggeredByTab = this.chat.context.get('chat.tab-complete.emotes-without-colon');
 
 		return emotes.sort((a, b) => {
-			const aStr = a.replacement;
-			const bStr = b.replacement;
+			const aStr = a.matched || a.replacement;
+			const bStr = b.matched || b.replacement;
 
 			// Prefer favorites over non-favorites, if enabled
 			if (preferFavorites && (a.favorite ^ b.favorite))
 				return 0 - a.favorite + b.favorite;
+
+			// Prefer emoji over emotes if tab-complete is enabled, disprefer them otherwise
+			const aIsEmoji = !!a.matched;
+			const bIsEmoji = !!b.matched;
+			if (aIsEmoji ^ bIsEmoji) {
+				if (canBeTriggeredByTab) return 0 - aIsEmoji + bIsEmoji;
+				else return 0 - bIsEmoji + aIsEmoji;
+			}
 
 			// Prefer case-sensitive prefix matches
 			const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
