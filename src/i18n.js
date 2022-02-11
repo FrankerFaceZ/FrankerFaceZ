@@ -15,8 +15,6 @@ import NewTransCore from 'utilities/translation-core';
 
 const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
 
-const API_SERVER = 'https://api-test.frankerfacez.com';
-
 const STACK_SPLITTER = /\s*at\s+(.+?)\s+\((.+)\)$/,
 	SOURCE_SPLITTER = /^(.+):\/\/(.+?)(?:\?[a-zA-Z0-9]+)?:(\d+:\d+)$/;
 
@@ -691,29 +689,24 @@ export class TranslationManager extends Module {
 		const chunks = await Promise.all(promises);
 		const result = {};
 
+		let ignored = 0;
+
 		for(const chunk of chunks) {
 			if (! chunk)
 				continue;
 
-			for(const [key,val] of Object.entries(chunk))
-				result[key] = val;
+			for(const [key,val] of Object.entries(chunk)) {
+				if (typeof val === 'string' && val.length > 0)
+					result[key] = val;
+				else
+					ignored++;
+			}
 		}
+
+		if (ignored > 0)
+			this.log.debug(`Ignored ${ignored} invalid values while loading ${locale} chunks.`);
 
 		return result;
-
-		/*const resp = await fetch(`${API_SERVER}/v2/i18n/locale/${locale}`);
-		if ( ! resp.ok ) {
-			if ( resp.status === 404 ) {
-				this.log.info(`Cannot Load Locale: ${locale}`);
-				return {};
-			}
-
-			this.log.warn(`Cannot Load Locale: ${locale} -- Status: ${resp.status}`);
-			throw new Error(`http error ${resp.status} loading phrases`);
-		}
-
-		const data = await resp.json();
-		return data?.phrases;*/
 	}
 
 	async setLocale(new_locale) {

@@ -462,7 +462,7 @@ export default class MainMenu extends Module {
 			tree = this.getSettingsTree();
 
 		root.nav = tree;
-		root.nav_keys = tree.keys;
+		root.navKeys = tree.keys;
 
 		let current, restored = true;
 
@@ -1119,7 +1119,7 @@ export default class MainMenu extends Module {
 			nav: settings,
 			currentItem: current,
 			restoredItem: true, // restored, -- Look into making this smoother later.
-			nav_keys: settings.keys,
+			navKeys: settings.keys,
 
 			has_unseen,
 

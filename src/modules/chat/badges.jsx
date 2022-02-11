@@ -502,6 +502,12 @@ export default class Badges extends Module {
 					message = container[fine.accessor]?.return?.stateNode?.props?.message;
 					if ( ! message )
 						message = fine.searchParent(container, n => n.props?.message)?.props?.message;
+					if ( ! message && this.root.flavor === 'clips' ) {
+						const lines = this.resolve('site.chat.line');
+						const node = fine.searchParent(container, n => n.props?.node)?.props?.node;
+						if ( lines && node )
+							message = lines.messages.get(node);
+					}
 					if ( ! message )
 						message = fine.searchParent(container, n => n.props?.node)?.props?.node?._ffz_message;
 					if ( ! message )

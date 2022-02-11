@@ -18,6 +18,7 @@ export default class Line extends Module {
 		this.inject('i18n');
 
 		this.inject('chat');
+		this.inject('chat.overrides');
 		this.inject('site.fine');
 
 		this.ChatLine = this.fine.define(
@@ -75,11 +76,36 @@ export default class Line extends Module {
 						action_italic = action_style >= 2,
 						action_color = action_style === 1 || action_style === 3,
 						user = msg.user,
-						color = t.parent.colors.process(user.color),
+						raw_color = t.overrides.getColor(user.id) || user.color,
+						color = t.parent.colors.process(raw_color),
 
 						u = t.site.getUser();
 
 					const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u);
+
+					const user_block = t.chat.formatUser(user, createElement);
+					const override_name = t.overrides.getName(user.id);
+
+					const user_props = {
+						className: `clip-chat__message-author tw-font-size-5 ffz-link notranslate tw-strong${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${msg.ffz_user_class ?? ''}`,
+						href: `https://www.twitch.tv/${user.login}/clips`,
+						style: { color }
+					};
+
+					if ( msg.ffz_user_props )
+						Object.assign(user_props, msg.ffz_user_props);
+
+					if ( msg.ffz_user_style )
+						Object.assign(user_props.style, msg.ffz_user_style);
+
+					const user_bits = createElement('a', user_props, override_name ? [
+						createElement('span', {
+							className: 'chat-author__display-name'
+						}, override_name),
+						createElement('div', {
+							className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+						}, user_block)
+					] : user_block);
 
 					return (<div class="tw-mg-b-1" style={{marginBottom:'0 !important'}}>
 						<div
@@ -95,11 +121,7 @@ export default class Line extends Module {
 							<span class="chat-line__message--badges">{
 								t.chat.badges.render(msg, createElement)
 							}</span>
-							<a
-								class="clip-chat__message-author tw-font-size-5 ffz-link notranslate tw-strong"
-								href={`https://www.twitch.tv/${user.login}/clips`}
-								style={{color}}
-							>{ t.chat.formatUser(user, createElement) }</a>
+							{user_bits}
 							<div class="tw-inline-block tw-mg-r-05">{
 								is_action ? '' : ':'
 							}</div>

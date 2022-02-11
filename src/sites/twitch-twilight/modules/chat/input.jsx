@@ -6,12 +6,56 @@
 
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
+import { FFZEvent } from 'utilities/events';
+import { getTwitchEmoteSrcSet, has, getTwitchEmoteURL } from 'utilities/object';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
-import { FFZEvent } from 'src/utilities/events';
-import { getTwitchEmoteSrcSet, getTwitchEmoteURL } from 'src/utilities/object';
+
 import {EMOJI_JOINER} from 'src/modules/chat/emoji';
+
+// Prefer using these statically-allocated collators to String.localeCompare
+const locale = Intl.Collator();
+const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
+
+// Describes how an emote matches against a given input
+// Higher values represent a more exact match
+const NO_MATCH = 0;
+const NON_PREFIX_MATCH = 1;
+const CASE_INSENSITIVE_PREFIX_MATCH = 2;
+const EXACT_PREFIX_MATCH = 3;
+
+function getNodeText(node) {
+	if ( ! node )
+		return '';
+
+	if ( node.type === 'emote' )
+		return node.emoteName;
+
+	if ( node.type === 'text' )
+		return node.text;
+
+	if ( Array.isArray(node.children) )
+		return node.children.map(getNodeText).join('');
+
+	return '';
+}
+
+function getNodeOffset(nodes, path) {
+	let offset = 0, pidx = 0, n = nodes;
+
+	while(pidx < path.length) {
+		const p = path[pidx];
+
+		for(let i = 0; i < p; i++)
+			offset += getNodeText(n[i]).length;
+
+		n = Array.isArray(n[p]) ? n[p] : n[p]?.children;
+		pidx++;
+	}
+
+	return offset;
+}
 
 export default class Input extends Module {
 	constructor(...args) {
@@ -81,6 +125,15 @@ export default class Input extends Module {
 			ui: {
 				path: 'Chat > Input >> Tab Completion',
 				title: 'Prioritize favorite emotes at the top.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.tab-complete.prioritize-prefix-matches', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Prioritize emotes that start with user input.',
 				component: 'setting-check-box'
 			}
 		});
@@ -308,7 +361,7 @@ export default class Input extends Module {
 					if ( inst.chatInputRef instanceof Element ) {
 						const style = getComputedStyle(inst.chatInputRef),
 							height = style && parseFloat(style.lineHeight || 18) || 18,
-							t = height * 1 + 20,
+							t = height * 1 + 20.5,
 							i = Math.ceil((inst.chatInputRef.scrollHeight - t) / height),
 							a = Math.min(1 + i, 4);
 
@@ -330,6 +383,46 @@ export default class Input extends Module {
 		inst.tempInput = '';
 		inst.messageHistoryPos = -1;
 
+		inst.ffzGetValue = function() {
+			if ( inst.chatInputRef && typeof inst.chatInputRef.value === 'string' )
+				return inst.chatInputRef.value;
+
+			if ( inst.state.value && typeof inst.state.value === 'string' )
+				return inst.state.value;
+
+			return '';
+		}
+
+		inst.ffzGetSelection = function() {
+			if ( typeof inst.chatInputRef?.selectionEnd === 'number' ) {
+				return [inst.chatInputRef.selectionStart, inst.chatInputRef.selectionEnd]
+			}
+
+			if ( inst.chatInputRef?.state?.slateEditor ) {
+				const editor = inst.chatInputRef.state.slateEditor,
+					sel = editor.selection,
+					nodes = editor.children;
+
+				if ( ! sel?.anchor?.path || ! sel?.focus?.path )
+					return [0,0];
+
+				const first = getNodeOffset(nodes, sel.anchor.path) + sel.anchor.offset,
+					second = getNodeOffset(nodes, sel.focus.path) + sel.focus.offset;
+
+				if ( first < second )
+					return [first, second];
+				else
+					return [second, first];
+			}
+
+			return [0,0];
+		}
+
+		inst.ffzSetSelection = function(start, end) {
+			if ( inst.chatInputRef?.setSelectionRange )
+				inst.chatInputRef.setSelectionRange(start, end);
+		}
+
 		inst.onKeyDown = function(event) {
 			try {
 				const code = event.charCode || event.keyCode;
@@ -340,33 +433,40 @@ export default class Input extends Module {
 					return;
 				}
 
-				if ( inst.autocompleteInputRef && t.chat.context.get('chat.mru.enabled') && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
+				const val = inst.ffzGetValue();
+
+				if ( inst.autocompleteInputRef && inst.chatInputRef && t.chat.context.get('chat.mru.enabled') && ! event.shiftKey && ! event.ctrlKey && ! event.altKey ) {
+					const sel = inst.ffzGetSelection();
+
 					// Arrow Up
-					if ( code === 38 && inst.chatInputRef.selectionStart === 0 ) {
+					if ( code === 38 && sel[0] === 0 && sel[1] === 0 ) {
 						if ( ! inst.messageHistory.length )
 							return;
 
-						if ( inst.chatInputRef.value && inst.messageHistoryPos === -1 )
-							inst.tempInput = inst.chatInputRef.value;
+						if ( val && inst.messageHistoryPos === -1 )
+							inst.tempInput = val;
 
 						if ( inst.messageHistoryPos < inst.messageHistory.length - 1 ) {
 							inst.messageHistoryPos++;
 							inst.autocompleteInputRef.setValue(inst.messageHistory[inst.messageHistoryPos]);
+							inst.ffzSetSelection(0);
 						}
 
 						return;
 
 					// Arrow Down
-					} else if ( code === 40 && inst.chatInputRef.selectionStart == inst.chatInputRef.value.length ) {
+					} else if ( code === 40 && sel[0] >= val.length && sel[1] === sel[0] ) {
 						if ( ! inst.messageHistory.length )
 							return;
 
 						if ( inst.messageHistoryPos > 0 ) {
 							inst.messageHistoryPos--;
 							inst.autocompleteInputRef.setValue(inst.messageHistory[inst.messageHistoryPos]);
+							inst.ffzSetSelection(inst.messageHistory[inst.messageHistoryPos].length);
 
 						} else if ( inst.messageHistoryPos === 0 ) {
 							inst.autocompleteInputRef.setValue(inst.tempInput);
+							inst.ffzSetSelection(inst.tempInput.length);
 							inst.messageHistoryPos = -1;
 						}
 
@@ -393,9 +493,12 @@ export default class Input extends Module {
 		inst.onMessageSend = function(event) {
 			try {
 				if ( t.chat.context.get('chat.mru.enabled') ) {
-					if (! inst.messageHistory.length || inst.messageHistory[0] !== inst.chatInputRef.value) {
-						inst.messageHistory.unshift(inst.chatInputRef.value);
-						inst.messageHistory = inst.messageHistory.slice(0, 20);
+					const val = inst.ffzGetValue();
+					if (val && val.length) {
+						if (! inst.messageHistory.length || inst.messageHistory[0] !== val) {
+							inst.messageHistory.unshift(val);
+							inst.messageHistory = inst.messageHistory.slice(0, 20);
+						}
 					}
 					inst.messageHistoryPos = -1;
 					inst.tempInput = '';
@@ -493,7 +596,10 @@ export default class Input extends Module {
 		inst.doesEmoteMatchTerm = function(emote, term) {
 			const emote_name = emote.name || emote.token;
 			if ( ! emote_name )
-				return false;
+				return NO_MATCH;
+
+			if (emote_name.startsWith(term))
+				return EXACT_PREFIX_MATCH;
 
 			let emote_lower = emote.tokenLower;
 			if ( ! emote_lower )
@@ -501,13 +607,13 @@ export default class Input extends Module {
 
 			const term_lower = term.toLowerCase();
 			if (emote_lower.startsWith(term_lower))
-				return true;
+				return CASE_INSENSITIVE_PREFIX_MATCH;
 
 			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
-			if (idx !== -1)
-				return emote_lower.slice(idx + 1).startsWith(term_lower.slice(1));
+			if (idx !== -1 && emote_lower.slice(idx + 1).startsWith(term_lower.slice(1)))
+				return NON_PREFIX_MATCH;
 
-			return false;
+			return NO_MATCH;
 		}
 
 		inst.getMatchedEmotes = function(input) {
@@ -527,7 +633,7 @@ export default class Input extends Module {
 					results = Array.isArray(results) ? results.concat(emoji) : emoji;
 			}
 
-			results = t.sortFavorites(results);
+			results = t.sortEmotes(results);
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
@@ -568,21 +674,50 @@ export default class Input extends Module {
 
 
 	// eslint-disable-next-line class-methods-use-this
-	sortFavorites(results) {
-		if (!this.chat.context.get('chat.tab-complete.prioritize-favorites')) {
-			return results;
-		}
+	sortEmotes(emotes) {
+		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
+		const canBeTriggeredByTab = this.chat.context.get('chat.tab-complete.emotes-without-colon');
+		const prioritizePrefixMatches = this.chat.context.get('chat.tab-complete.prioritize-prefix-matches');
 
-		return results.sort((a, b) => {
-			if (a.favorite) {
-				return b.favorite ? a.replacement.localeCompare(b.replacement) : -1;
+		return emotes.sort((a, b) => {
+			const aStr = a.matched || a.replacement;
+			const bStr = b.matched || b.replacement;
+
+			// Prefer favorites over non-favorites, if enabled
+			if (preferFavorites && (a.favorite ^ b.favorite))
+				return 0 - a.favorite + b.favorite;
+
+			if (prioritizePrefixMatches) {
+				// Prefer emoji over emotes if tab-complete is enabled, disprefer them otherwise
+				const aIsEmoji = !!a.matched;
+				const bIsEmoji = !!b.matched;
+				if (aIsEmoji ^ bIsEmoji) {
+					if (canBeTriggeredByTab) return 0 - aIsEmoji + bIsEmoji;
+					else return 0 - bIsEmoji + aIsEmoji;
+				}
+
+				// Prefer case-sensitive prefix matches
+				const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
+				const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH);
+				if (aStartsWithInput && bStartsWithInput)
+					return locale.compare(aStr, bStr);
+				else if (aStartsWithInput) return -1;
+				else if (bStartsWithInput) return 1;
+
+				// Else prefer case-insensitive prefix matches
+				const aStartsWithInputCI = (a.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
+				const bStartsWithInputCI = (b.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
+				if (aStartsWithInputCI && bStartsWithInputCI)
+					return localeCaseInsensitive.compare(aStr, bStr);
+				else if (aStartsWithInputCI) return -1;
+				else if (bStartsWithInputCI) return 1;
+
+				// Else alphabetize
+				return locale.compare(aStr, bStr);
 			}
-			else if (b.favorite) {
-				return 1;
-			}
-			else {
-				a.replacement.localeCompare(b.replacement)
-			}
+
+			// Keep unsorted order for non-favorite items if prefix matching is not enabled.
+			return 0;
 		});
 	}
 
@@ -677,19 +812,21 @@ export default class Input extends Module {
 			search = input.startsWith(':') ? input.slice(1) : input;
 
 		for(const emote of emotes) {
-			if ( inst.doesEmoteMatchTerm(emote, search) ) {
+			const match_type = inst.doesEmoteMatchTerm(emote, search);
+			if ( match_type !== NO_MATCH ) {
 				const element = {
 					current: input,
 					emote,
 					replacement: emote.token,
 					element: inst.renderEmoteSuggestion(emote),
 					favorite: emote.favorite,
-					count: this.EmoteUsageCount[emote.token] || 0
+					count: this.EmoteUsageCount[emote.token] || 0,
+					match_type
 				};
 
 				if ( element.count > 0 )
 					results_usage.push(element);
-				else if ( emote.token.toLowerCase().startsWith(search) )
+				else if ( match_type > NON_PREFIX_MATCH )
 					results_starting.push(element);
 				else
 					results_other.push(element);
@@ -697,8 +834,8 @@ export default class Input extends Module {
 		}
 
 		results_usage.sort((a,b) => b.count - a.count);
-		results_starting.sort((a,b) => a.replacement.localeCompare(b.replacement));
-		results_other.sort((a,b) => a.replacement.localeCompare(b.replacement));
+		results_starting.sort((a,b) => locale.compare(a.replacement, b.replacement));
+		results_other.sort((a,b) => locale.compare(a.replacement, b.replacement));
 
 		return results_usage.concat(results_starting).concat(results_other);
 	}
@@ -835,14 +972,16 @@ export default class Input extends Module {
 			results = [];
 
 		for(const emote of emotes) {
-			if ( inst.doesEmoteMatchTerm(emote, search) )
+			const match_type = inst.doesEmoteMatchTerm(emote, search)
+			if ( match_type !== NO_MATCH )
 				results.push({
 					current: input,
 					emote,
 					replacement: emote.token,
 					element: inst.renderEmoteSuggestion(emote),
 					favorite: emote.favorite,
-					count: 0 // TODO: Count stuff?
+					count: 0, // TODO: Count stuff?
+					match_type
 				});
 		}
 

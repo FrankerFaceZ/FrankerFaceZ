@@ -110,7 +110,7 @@
 					:context="context"
 					:item="currentItem"
 					:filter="filter"
-					:nav_keys="nav_keys"
+					:nav-keys="navKeys"
 					@change-item="changeItem"
 					@mark-seen="markSeen"
 					@navigate="navigate"
@@ -257,7 +257,7 @@ export default {
 		navigate(...keys) {
 			let item;
 			for(const key of keys) {
-				item = this.nav_keys[key];
+				item = this.navKeys[key];
 				if ( item )
 					break;
 			}

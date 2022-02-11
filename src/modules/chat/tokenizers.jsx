@@ -34,7 +34,7 @@ export const FilterTester = {
 
 	process(tokens, msg) {
 		if ( ! tokens || ! tokens.length || ! this.context.get('chat.filtering.debug') )
-			return tokens;
+			return;
 
 		msg.filters = [];
 
@@ -178,9 +178,7 @@ export const Links = {
 
 	process(tokens) {
 		if ( ! tokens || ! tokens.length )
-			return tokens;
-
-		//const use_new = this.experiments.getAssignment('new_links');
+			return;
 
 		const out = [];
 		for(const token of tokens) {
@@ -189,7 +187,6 @@ export const Links = {
 				continue;
 			}
 
-			//LINK_REGEX.lastIndex = 0;
 			NEW_LINK_REGEX.lastIndex = 0;
 			const text = token.text;
 			let idx = 0, match;
@@ -252,41 +249,6 @@ Links.tooltip.delayHide = function(target) {
 
 
 // ============================================================================
-// Rich Content
-// ============================================================================
-
-/*export const RichContent = {
-	type: 'rich-content',
-
-	render(token, e) {
-		return e('div', {
-			className: 'ffz--rich-content elevation-1 mg-y-05',
-		}, e('a', {
-			className: 'clips-chat-card flex flex-nowrap pd-05',
-			target: '_blank',
-			href: token.url
-		}, [
-			e('div', {
-				className: 'clips-chat-card__thumb align-items-center flex justify-content-center'
-			})
-		]));
-	},
-
-	process(tokens, msg) {
-		if ( ! tokens || ! tokens.length )
-			return tokens;
-
-		for(const token of tokens) {
-			if ( token.type !== 'link' )
-				continue;
-
-
-		}
-	}
-}*/
-
-
-// ============================================================================
 // Replies (Styled Like Mentions)
 // ============================================================================
 
@@ -333,10 +295,6 @@ export const Replies = {
 				reply.parentMessageBody
 			])
 		];
-	},
-
-	process(tokens) {
-		return tokens;
 	}
 }
 
@@ -351,11 +309,11 @@ export const Mentions = {
 
 	component: () => import(/* webpackChunkName: 'vue-chat' */ './components/chat-mention.vue'),
 
-	oldRender(token, createElement) {
+	/*oldRender(token, createElement) {
 		return (<strong class={`chat-line__message-mention${token.me ? ' ffz--mention-me' : ''}`}>
 			{token.text}
 		</strong>);
-	},
+	},*/
 
 	render(token, createElement) {
 		let color = token.color;
@@ -376,7 +334,7 @@ export const Mentions = {
 
 	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
-			return tokens;
+			return;
 
 		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
 			priority = this.context.get('chat.filtering.mention-priority');
@@ -467,19 +425,17 @@ export const UserHighlights = {
 
 	process(tokens, msg, user) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
+			return;
 
 		const list = this.context.get('__filter:highlight-users');
 		if ( ! list || ! list.length )
-			return tokens;
+			return;
 
 		const u = msg.user;
 		for(const [priority, color, regex] of list) {
 			if ( regex.test(u.login) || regex.test(u.displayName) )
 				this.applyHighlight(msg, priority, color, 'user');
 		}
-
-		return tokens;
 	}
 }
 
@@ -489,12 +445,12 @@ export const BlockedUsers = {
 
 	process(tokens, msg, user, haltable) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
+			return;
 
 		const u = msg.user,
 			regexes = this.context.get('__filter:block-users');
 		if ( ! regexes )
-			return tokens;
+			return;
 
 		if ( regexes[1] && (regexes[1].test(u.login) || regexes[1].test(u.displayName)) ) {
 			msg.deleted = true;
@@ -504,8 +460,6 @@ export const BlockedUsers = {
 
 		} else if ( ! msg.deleted && regexes[0] && (regexes[0].test(u.login) || regexes[0].test(u.displayName)) )
 			msg.deleted = true;
-
-		return tokens;
 	}
 }
 
@@ -530,17 +484,17 @@ export const BadgeStuff = {
 
 	process(tokens, msg, user, haltable) {
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
+			return;
 
 		const highlights = this.context.get('__filter:highlight-badges'),
 			list = this.context.get('__filter:block-badges');
 
 		if ( ! highlights && ! list )
-			return tokens;
+			return;
 
 		const keys = getBadgeIDs(msg);
 		if ( ! keys || ! keys.length )
-			return tokens;
+			return;
 
 		for(const badge of keys) {
 			if ( list && list[1].includes(badge) ) {
@@ -548,7 +502,7 @@ export const BadgeStuff = {
 				msg.ffz_removed = true;
 				if ( haltable )
 					msg.ffz_halt_tokens = true;
-				return tokens;
+				return;
 			}
 
 			if ( list && ! msg.deleted && list[0].includes(badge) )
@@ -560,8 +514,6 @@ export const BadgeStuff = {
 					this.applyHighlight(msg, details[0], details[1], 'badge');
 			}
 		}
-
-		return tokens;
 	}
 }
 
@@ -609,14 +561,14 @@ export const CustomHighlights = {
 
 	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
-			return tokens;
+			return;
 
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
+			return;
 
 		const data = this.context.get('__filter:highlight-terms');
 		if ( ! data )
-			return tokens;
+			return;
 
 		let had_match = false;
 		if ( data.non ) {
@@ -781,14 +733,14 @@ export const BlockedTerms = {
 
 	process(tokens, msg, user, haltable) {
 		if ( ! tokens || ! tokens.length )
-			return tokens;
+			return;
 
 		if ( user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own') )
-			return tokens;
+			return;
 
 		const regexes = this.context.get('__filter:block-terms');
 		if ( ! regexes )
-			return tokens;
+			return;
 
 		if ( regexes.remove ) {
 			tokens = blocked_process(tokens, msg, regexes.remove, true, haltable);
@@ -863,7 +815,7 @@ export const AutomoddedTerms = {
 
 	process(tokens, msg, user, haltable) {
 		if ( ! tokens || ! tokens.length || ! msg.flags || ! Array.isArray(msg.flags.list) )
-			return tokens;
+			return;
 
 		const cats = msg.flags.preferences,
 			flagged = msg.flags.list.filter(x => {
@@ -882,7 +834,7 @@ export const AutomoddedTerms = {
 			f_length = flagged.length;
 
 		if ( ! f_length )
-			return tokens;
+			return;
 
 		const out = [];
 		let idx = 0,
@@ -898,7 +850,7 @@ export const AutomoddedTerms = {
 			msg.ffz_removed = true;
 			if ( haltable )
 				msg.ffz_halt_tokens = true;
-			return tokens;
+			return;
 		}
 
 		for(const token of tokens) {
@@ -1050,13 +1002,13 @@ export const CheerEmotes = {
 
 	process(tokens, msg) {
 		if ( ! tokens || ! tokens.length || ! msg.bits )
-			return tokens;
+			return;
 
 		const room = this.getRoom(msg.roomID, msg.roomLogin, true),
 			actions = room && room.bitsConfig;
 
 		if ( ! actions )
-			return tokens;
+			return;
 
 		const matcher = new RegExp(`^(${Object.keys(actions).join('|')})(\\d+)$`, 'i');
 
@@ -1464,10 +1416,10 @@ export const AddonEmotes = {
 
 	process(tokens, msg) {
 		if ( ! tokens || ! tokens.length )
-			return tokens;
+			return;
 
 		if ( this.context.get('chat.emotes.enabled') !== 2 )
-			return tokens;
+			return;
 
 		const emotes = this.emotes.getEmotes(
 			msg.user.id,
@@ -1477,7 +1429,7 @@ export const AddonEmotes = {
 		);
 
 		if ( ! emotes )
-			return tokens;
+			return;
 
 		const big = this.context.get('chat.emotes.2x'),
 			anim = this.context.get('chat.emotes.animated'),
@@ -1508,12 +1460,14 @@ export const AddonEmotes = {
 					// Is this emote a modifier?
 					if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
 						if ( last_token.modifiers.indexOf(emote.token) === -1 ) {
-							if ( big )
-								last_token.modifiers.push(Object.assign({
-									big
-								}, emote.token));
-							else
-								last_token.modifiers.push(emote.token);
+							last_token.modifiers.push(
+								Object.assign({
+										big,
+										anim
+									},
+									emote.token
+								)
+							);
 						}
 
 						continue;
@@ -1574,14 +1528,15 @@ export const Emoji = {
 
 	process(tokens) {
 		if ( ! tokens || ! tokens.length )
-			return tokens;
+			return;
 
 		const splitter = this.emoji.splitter,
-			style = this.context.get('chat.emoji.style'),
-			out = [];
+			style = this.context.get('chat.emoji.style');
 
 		if ( style === 0 )
-			return tokens;
+			return;
+
+		const out = [];
 
 		for(const token of tokens) {
 			if ( ! token )
@@ -1648,10 +1603,10 @@ export const TwitchEmotes = {
 
 	process(tokens, msg) {
 		if ( ! msg.ffz_emotes )
-			return tokens;
+			return;
 
 		if ( this.context.get('chat.emotes.enabled') < 1 )
-			return tokens;
+			return;
 
 		const data = msg.ffz_emotes,
 			anim = this.context.get('chat.emotes.animated'),
@@ -1666,11 +1621,12 @@ export const TwitchEmotes = {
 					emotes.push([emote_id, match.startIndex, match.endIndex + 1]);
 			}
 
-		const out = [],
-			e_length = emotes.length;
+		const e_length = emotes.length;
 
 		if ( ! e_length )
-			return tokens;
+			return;
+
+		const out = [];
 
 		emotes.sort((a,b) => a[1] !== b[1] ? a[1] - b[1] : b[0] - a[0]);
 

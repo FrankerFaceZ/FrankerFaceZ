@@ -1534,6 +1534,30 @@ export default class ChatHook extends Module {
 						if ( msg.type === types.RewardGift && ! t.chat.context.get('chat.bits.show-rewards') )
 							return;
 
+						if ( msg.type === types.CommunityIntroduction ) {
+							// TODO: Make this better.
+							msg = {
+								type: types.Message,
+								badgeDynamicData: {},
+								badges: {},
+								id: msg.id,
+								isFirstMsg: true,
+								message: msg.message,
+								messageBody: msg.message,
+								messageParts: [
+									{type: 0, content: msg.message}
+								],
+								messageType: 0,
+								channel: msg.channel,
+								timestamp: new Date(),
+								user: {
+									userDisplayName: msg.displayName,
+									userLogin: msg.login,
+									userID: msg.userID
+								}
+							};
+						}
+
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
 								cont = inst._ffz_connector ?? inst.ffzGetConnector();
@@ -2010,6 +2034,21 @@ export default class ChatHook extends Module {
 	}
 
 
+	scheduleMystery(mystery) { // eslint-disable-line class-methods-use-this
+		if ( ! mystery.line )
+			return;
+
+		if ( mystery._timer )
+			return;
+
+		mystery._timer = setTimeout(() => requestAnimationFrame(() => {
+			mystery._timer = null;
+			if ( mystery.line )
+				mystery.line.forceUpdate();
+		}), 250);
+	}
+
+
 	wrapChatService(cls) {
 		const t = this,
 			old_mount = cls.prototype.componentDidMount,
@@ -2213,7 +2252,7 @@ export default class ChatHook extends Module {
 									mysteries[key] = null;
 
 								if ( mystery.line )
-									mystery.line.forceUpdate();
+									t.scheduleMystery(mystery);
 
 								return;
 							}
@@ -2242,6 +2281,15 @@ export default class ChatHook extends Module {
 					}
 				}
 
+				/*this.onCommunityIntroductionEvent = function(e) {
+					try {
+
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+					}
+				}*/
+
 				const old_anonsubgift = this.onAnonSubscriptionGiftEvent;
 				this.onAnonSubscriptionGiftEvent = function(e) {
 					try {
@@ -2265,7 +2313,7 @@ export default class ChatHook extends Module {
 									mysteries[key] = null;
 
 								if ( mystery.line )
-									mystery.line.forceUpdate();
+									t.scheduleMystery(mystery);
 
 								return;
 							}
