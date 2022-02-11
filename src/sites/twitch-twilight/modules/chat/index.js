@@ -139,7 +139,9 @@ const CHAT_TYPES = make_enum(
 	'ChannelPointsReward',
 	'CommunityChallengeContribution',
 	'CelebrationPurchase',
-	'LiveMessageSeparator'
+	'LiveMessageSeparator',
+	'RestrictedLowTrustUserMessage',
+	'CommunityIntroduction'
 );
 
 
@@ -292,6 +294,7 @@ export default class ChatHook extends Module {
 				data: () => Object
 					.keys(this.chat_types)
 					.filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key))
+					.sort()
 			}
 		});
 
@@ -887,32 +890,20 @@ export default class ChatHook extends Module {
 			this.CalloutSelector.forceUpdate();
 		}, this);
 
+		this.chat.context.getChanges('chat.emotes.2x', val =>
+			this.css_tweaks.toggle('big-emoji', val > 1));
+
 		this.chat.context.getChanges('chat.input.show-mod-view', val =>
 			this.css_tweaks.toggleHide('mod-view', ! val));
-
-		/*this.chat.context.on('changed:chat.input.show-mod-view', val => this.css_tweaks.toggleHide('mod-view', ! val));
-		this.css_tweaks.toggleHide('mod-view', ! this.chat.context.get('chat.input.show-mod-view'));*/
 
 		this.chat.context.getChanges('chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));
 
-		/*this.chat.context.on('changed:chat.lines.padding', val =>
-			this.css_tweaks.toggle('chat-padding', val));
-		this.css_tweaks.toggle('chat-padding', this.chat.context.get('chat.lines.padding'));*/
-
 		this.chat.context.getChanges('chat.bits.show', val =>
 			this.css_tweaks.toggle('hide-bits', !val));
 
-		/*this.chat.context.on('changed:chat.bits.show', val =>
-			this.css_tweaks.toggle('hide-bits', !val));
-		this.css_tweaks.toggle('hide-bits', !this.chat.context.get('chat.bits.show'));*/
-
 		this.chat.context.getChanges('chat.bits.show-pinned', val =>
 			this.css_tweaks.toggleHide('pinned-cheer', !val));
-
-		/*this.chat.context.on('changed:chat.bits.show-pinned', val =>
-			this.css_tweaks.toggleHide('pinned-cheer', !val));
-		this.css_tweaks.toggleHide('pinned-cheer', !this.chat.context.get('chat.bits.show-pinned'));*/
 
 		this.chat.context.getChanges('chat.filtering.deleted-style', val => {
 			this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
@@ -922,34 +913,16 @@ export default class ChatHook extends Module {
 		this.chat.context.getChanges('chat.filtering.clickable-mentions', val =>
 			this.css_tweaks.toggle('clickable-mentions', val));
 
-		/*this.chat.context.on('changed:chat.filtering.clickable-mentions', val =>
-			this.css_tweaks.toggle('clickable-mentions', val));
-		this.css_tweaks.toggle('clickable-mentions', this.chat.context.get('chat.filtering.clickable-mentions'));*/
-
 		this.chat.context.getChanges('chat.filtering.bold-mentions', val =>
 			this.css_tweaks.toggle('chat-mention-no-bold', ! val));
 
-		/*this.chat.context.on('changed:chat.filtering.bold-mentions', val =>
-			this.css_tweaks.toggle('chat-mention-no-bold', ! val));
-		this.css_tweaks.toggle('chat-mention-no-bold', ! this.chat.context.get('chat.filtering.bold-mentions'));*/
-
 		this.chat.context.getChanges('chat.hide-community-highlights', val =>
 			this.css_tweaks.toggleHide('community-highlights', val));
-
-		/*this.chat.context.on('changed:chat.hide-community-highlights', val =>
-			this.css_tweaks.toggleHide('community-highlights', val));
-		this.css_tweaks.toggleHide('community-highlights', this.chat.context.get('chat.hide-community-highlights'));*/
 
 		this.chat.context.getChanges('chat.lines.alternate', val => {
 			this.css_tweaks.toggle('chat-rows', val);
 			this.updateMentionCSS();
 		});
-
-		/*this.chat.context.on('changed:chat.lines.alternate', val => {
-			this.css_tweaks.toggle('chat-rows', val);
-			this.updateMentionCSS();
-		});
-		this.css_tweaks.toggle('chat-rows', this.chat.context.get('chat.lines.alternate'));*/
 
 		this.updateChatCSS();
 		this.updateColors();
@@ -1534,30 +1507,6 @@ export default class ChatHook extends Module {
 						if ( msg.type === types.RewardGift && ! t.chat.context.get('chat.bits.show-rewards') )
 							return;
 
-						if ( msg.type === types.CommunityIntroduction ) {
-							// TODO: Make this better.
-							msg = {
-								type: types.Message,
-								badgeDynamicData: {},
-								badges: {},
-								id: msg.id,
-								isFirstMsg: true,
-								message: msg.message,
-								messageBody: msg.message,
-								messageParts: [
-									{type: 0, content: msg.message}
-								],
-								messageType: 0,
-								channel: msg.channel,
-								timestamp: new Date(),
-								user: {
-									userDisplayName: msg.displayName,
-									userLogin: msg.login,
-									userID: msg.userID
-								}
-							};
-						}
-
 						if ( msg.type === types.Message ) {
 							const m = t.chat.standardizeMessage(msg),
 								cont = inst._ffz_connector ?? inst.ffzGetConnector();
@@ -2082,6 +2031,7 @@ export default class ChatHook extends Module {
 				const event = new FFZEvent({
 					message: msg,
 					extra,
+					context: t.chat.context,
 					channel: inst.props.channelLogin,
 					addMessage,
 					sendMessage
@@ -2281,14 +2231,21 @@ export default class ChatHook extends Module {
 					}
 				}
 
-				/*this.onCommunityIntroductionEvent = function(e) {
+				const old_communityintro = this.onCommunityIntroductionEvent;
+				this.onCommunityIntroductionEvent = function(e) {
 					try {
-
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('CommunityIntroduction') ) {
+							const out = i.convertMessage(e);
+							return i.postMessageToCurrentChannel(e, out);
+						}
 
 					} catch(err) {
 						t.log.capture(err, {extra: e});
+						t.log.error(err);
 					}
-				}*/
+
+					return old_communityintro.call(this, e);
+				}
 
 				const old_anonsubgift = this.onAnonSubscriptionGiftEvent;
 				this.onAnonSubscriptionGiftEvent = function(e) {
@@ -2487,7 +2444,7 @@ export default class ChatHook extends Module {
 
 			// For certain message types, the message is contained within
 			// a message sub-object.
-			if ( message.type === t.chat_types.ChannelPointsReward )
+			if ( message.type === t.chat_types.ChannelPointsReward || message.type === t.chat_types.CommunityIntroduction || (message.message?.user & message.message?.badgeDynamicData) )
 				message = message.message;
 
 			if ( original.channel ) {

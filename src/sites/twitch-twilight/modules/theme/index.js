@@ -19,6 +19,8 @@ const COLORS = [
 	0.08, 0.151, 0.212, 0.271, 0.31, 0.351 // 10-15
 ];
 
+const NO_AUTO_DARK = `:root{color-scheme: only light}`;
+
 
 const ACCENT_COLORS = {
 	//dark: {'c':{'accent': 9,'background-accent':8,'background-accent-alt':7,'background-accent-alt-2':6,'background-button':7,'background-button-active':7,'background-button-focus':8,'background-button-hover':8,'background-button-primary-active':7,'background-button-primary-default':9,'background-button-primary-hover':8,'background-graph':2,'background-graph-fill':8,'background-input-checkbox-checked':9,'background-input-checked':8,'background-interactable-active':9,'background-interactable-selected':9,'background-interactable-hover':8,'background-progress-countdown-status':9,'background-progress-status':9,'background-range-fill':9,'background-subscriber-stream-tag-active':4,'background-subscriber-stream-tag-default':4,'background-subscriber-stream-tag-hover':3,'background-toggle-checked':9,/*'background-tooltip':1,*/'background-top-nav':6,'border-brand':9,'border-button':7,'border-button-active':8,'border-button-focus':9,'border-button-hover':8,'border-input-checkbox-checked':9,'border-input-checkbox-focus':9,'border-input-focus':9,'border-interactable-selected':10,'border-subscriber-stream-tag':5,'border-tab-active':11,'border-tab-focus':11,'border-tab-hover':11,'border-toggle-focus':7,'border-toggle-hover':7,'border-whisper-incoming':10,'fill-brand':9,'text-button-text':10,'text-button-text-focus':'o1','text-button-text-hover':'o1','text-link':10,'text-link-active':10,'text-link-focus':10,'text-link-hover':10,'text-link-visited':10,'text-overlay-link-active':13,'text-overlay-link-focus':13,'text-overlay-link-hover':13,'text-tab-active':11,'background-chat':1,'background-chat-alt':3,'background-chat-header':2,'background-modal':3,'text-button-text-active':'o2'/*,'text-tooltip':1*/},'s':{'button-active':[8,'0 0 6px 0',''],'button-focus':[8,'0 0 6px 0',''],'input-focus':[8,'0 0 10px -2px',''],'interactable-focus':[8,'0 0 6px 0',''],'tab-focus':[11,'0 4px 6px -4px',''],'input':[5,'inset 0 0 0 1px','']}},
@@ -43,6 +45,21 @@ export default class ThemeEngine extends Module {
 		this.inject('site.router');
 
 		this.should_enable = true;
+
+
+		// Tweaks
+
+		this.settings.add('theme.disable-auto-dark', {
+			default: false,
+			ui: {
+				path: 'Appearance > Theme >> Tweaks @{"sort": 10}',
+				title: 'Disable Auto Dark Theme',
+				component: 'setting-check-box',
+				description: 'Enabling this will attempt to disable a browser\'s built-in automatic dark theme conversion for websites, which is unnecessary on Twitch and can cause display issues. This may not apply depending on your web browser and settings.'
+			},
+			changed: () => this.updateCSS()
+		});
+
 
 		// Font
 
@@ -320,6 +337,11 @@ export default class ThemeEngine extends Module {
 
 	updateCSS() {
 		//this.updateOldCSS();
+
+		if ( this.settings.get('theme.disable-auto-dark') )
+			this.css_tweaks.set('nodark', NO_AUTO_DARK);
+		else
+			this.css_tweaks.delete('nodark');
 
 		this.css_tweaks.setVariable('border-color', 'var(--color-border-base)');
 

@@ -249,9 +249,17 @@ export default renderTokens;
 // Token Type: Reference
 // ============================================================================
 
+function resolveToken(token, ctx) {
+	if ( token?.type === 'ref' ) {
+		return ctx.fragments?.[token.name] ?? null;
+	}
+
+	return token;
+}
+
 TOKEN_TYPES.ref = function(token, createElement, ctx) {
 	const frag = ctx.fragments?.[token.name];
-	if (frag )
+	if ( frag )
 		return renderTokens(frag, createElement, ctx);
 }
 
@@ -561,9 +569,10 @@ function header_vue(token, h, ctx) {
 		]
 	}, content);
 
-	let imtok = token.sfw_image;
-	if ( token.image && canShowImage(token.image, ctx) )
-		imtok = token.image;
+	let imtok = resolveToken(token.sfw_image, ctx);
+	const nsfw_token = resolveToken(token.image, ctx);
+	if ( nsfw_token && canShowImage(nsfw_token, ctx) )
+		imtok = nsfw_token;
 
 	if ( imtok ) {
 		const aspect = imtok.aspect;
@@ -651,9 +660,10 @@ function header_normal(token, createElement, ctx) {
 		className: `tw-flex tw-full-width tw-overflow-hidden ${token.compact ? 'ffz--rich-header ffz--compact-header tw-align-items-center' : 'tw-justify-content-center tw-flex-column tw-flex-grow-1'}`
 	}, content);
 
-	let imtok = token.sfw_image;
-	if ( token.image && canShowImage(token.image, ctx) )
-		imtok = token.image;
+	let imtok = resolveToken(token.sfw_image, ctx);
+	const nsfw_token = resolveToken(token.image, ctx);
+	if ( nsfw_token && canShowImage(nsfw_token, ctx) )
+		imtok = nsfw_token;
 
 	if ( imtok ) {
 		const aspect = imtok.aspect;
@@ -839,6 +849,9 @@ TOKEN_TYPES.i18n = function(token, createElement, ctx) {
 // ============================================================================
 
 TOKEN_TYPES.link = function(token, createElement, ctx) {
+	if ( token.content === undefined )
+		token.content = token.url;
+
 	const content = renderTokens(token.content, createElement, ctx, token.markdown);
 
 	const klass = [];

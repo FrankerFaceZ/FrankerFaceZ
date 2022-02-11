@@ -59,6 +59,7 @@ export const UPDATE_TOKEN_SETTINGS = [
 	'chat.emotes.2x',
 	'chat.emotes.animated',
 	'chat.emoji.style',
+	'chat.emoji.replace-joiner',
 	'chat.bits.stack',
 	'chat.rich.enabled',
 	'chat.rich.want-mid',

@@ -47,7 +47,9 @@ export const SKIN_TONES = {
 	4: '1f3fe',
 	5: '1f3ff'
 };
+
 export const JOINER_REPLACEMENT = /(?<!\u{E0002})\u{E0002}/gu;
+export const ZWD_REPLACEMENT = /\u{200D}/gu;
 export const EMOJI_JOINER = '\u{E0002}';
 
 export const IMAGE_PATHS = {
@@ -77,6 +79,21 @@ export default class Emoji extends Module {
 
 		this.inject('..emotes');
 		this.inject('settings');
+
+		this.settings.add('chat.emoji.replace-joiner', {
+			default: 2,
+			ui: {
+				path: 'Chat > Behavior >> Emoji',
+				title: 'Emoji Joiner Workaround',
+				description: 'This feature is intended to allow the use of combined emoji in supported clients. This is required due to a bug in TMI that strips ZWJ characters from chat messages. [Visit the original issue](https://github.com/FrankerFaceZ/FrankerFaceZ/issues/1147) for more details.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Display Only'},
+					{value: 2, title: 'Display and Send'}
+				]
+			}
+		});
 
 		this.settings.add('chat.emoji.style', {
 			default: 'twitter',
@@ -110,6 +127,13 @@ export default class Emoji extends Module {
 	}
 
 	onEnable() {
+		this.on('chat:pre-send-message', event => {
+			if (event.context.get('chat.emoji.replace-joiner') < 2)
+				return;
+
+			event.message = event.message.replace(ZWD_REPLACEMENT, EMOJI_JOINER);
+		});
+
 		this.loadEmojiData();
 	}
 

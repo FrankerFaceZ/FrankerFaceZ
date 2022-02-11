@@ -1431,7 +1431,7 @@ export const AddonEmotes = {
 		if ( ! emotes )
 			return;
 
-		const big = this.context.get('chat.emotes.2x'),
+		const big = this.context.get('chat.emotes.2x') > 0,
 			anim = this.context.get('chat.emotes.animated'),
 			out = [];
 
@@ -1531,6 +1531,7 @@ export const Emoji = {
 			return;
 
 		const splitter = this.emoji.splitter,
+			replace = this.context.get('chat.emoji.replace-joiner') > 0,
 			style = this.context.get('chat.emoji.style');
 
 		if ( style === 0 )
@@ -1547,7 +1548,9 @@ export const Emoji = {
 				continue;
 			}
 
-			const text = token.text.replace(JOINER_REPLACEMENT, "\u200d");
+			const text = replace ?
+				token.text.replace(JOINER_REPLACEMENT, "\u200d") :
+				token.text;
 
 			splitter.lastIndex = 0;
 			let idx = 0, match;
@@ -1610,7 +1613,7 @@ export const TwitchEmotes = {
 
 		const data = msg.ffz_emotes,
 			anim = this.context.get('chat.emotes.animated'),
-			big = this.context.get('chat.emotes.2x'),
+			big = this.context.get('chat.emotes.2x') > 0,
 			use_replacements = this.context.get('chat.fix-bad-emotes'),
 			emotes = [];
 

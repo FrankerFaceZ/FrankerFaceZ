@@ -103,12 +103,22 @@ export default class Emotes extends Module {
 		});
 
 		this.settings.add('chat.emotes.2x', {
-			default: false,
+			default: 0,
+			process(ctx, val) {
+				if ( val === true ) return 1;
+				else if ( val === false ) return 0;
+				return val;
+			},
 			ui: {
 				path: 'Chat > Appearance >> Emotes',
 				title: 'Larger Emotes',
 				description: 'This setting will make emotes appear twice as large in chat. It\'s good for use with larger fonts or just if you really like emotes.',
-				component: 'setting-check-box'
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Emotes'},
+					{value: 2, title: 'Emotes and Emoji'}
+				]
 			}
 		});
 

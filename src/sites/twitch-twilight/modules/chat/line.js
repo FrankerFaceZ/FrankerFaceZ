@@ -37,6 +37,114 @@ export default class ChatLine extends Module {
 		this.inject('chat.actions');
 		this.inject('chat.overrides');
 
+		/*this.line_types = {};
+
+		this.line_types.sub_mystery = (msg, u, r, inst, e) => {
+			const mystery = msg.mystery;
+			if ( mystery )
+				mystery.line = this;
+
+			const sub_msg = this.i18n.tList('chat.sub.gift', "{user} is gifting {count, plural, one {# Tier {tier} Sub} other {# Tier {tier} Subs}} to {channel}'s community! ", {
+				user: (msg.sub_anon || msg.user.username === 'ananonymousgifter') ?
+					this.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
+					e('span', {
+						role: 'button',
+						className: 'chatter-name',
+						onClick: inst.ffz_user_click_handler
+					}, e('span', {
+						className: 'tw-c-text-base tw-strong'
+					}, msg.user.displayName)),
+				count: msg.sub_count,
+				tier: SUB_TIERS[msg.sub_plan] || 1,
+				channel: msg.roomLogin
+			});
+
+			if ( msg.sub_total === 1 )
+				sub_msg.push(this.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));
+			else if ( msg.sub_total > 1 )
+				sub_msg.push(this.i18n.t('chat.sub.gift-total', "They've gifted {count} Subs in the channel!", {
+					count: msg.sub_total
+				}));
+
+			if ( ! inst.ffz_click_expand )
+				inst.ffz_click_expand = () => {
+					inst.setState({
+						ffz_expanded: ! inst.state.ffz_expanded
+					});
+				}
+
+			const expanded = this.chat.context.get('chat.subs.merge-gifts-visibility') ?
+				! inst.state.ffz_expanded : inst.state.ffz_expanded;
+
+			let sub_list = null;
+			if( expanded && mystery && mystery.recipients && mystery.recipients.length > 0 ) {
+				const the_list = [];
+				for(const x of mystery.recipients) {
+					if ( the_list.length )
+						the_list.push(', ');
+
+					the_list.push(e('span', {
+						role: 'button',
+						className: 'ffz--giftee-name',
+						onClick: inst.ffz_user_click_handler,
+						'data-user': JSON.stringify(x)
+					}, e('span', {
+						className: 'tw-c-text-base tw-strong'
+					}, x.displayName)));
+				}
+
+				sub_list = e('div', {
+					className: 'tw-mg-t-05 tw-border-t tw-pd-t-05 tw-c-text-alt-2'
+				}, the_list);
+			}
+
+			const extra_ts = this.chat.context.get('chat.extra-timestamps');
+
+			return inst.ffzDrawLine(
+				msg,
+				`ffz-notice-line user-notice-line tw-pd-y-05 ffz--subscribe-line`,
+				[
+					e('div', {
+						className: 'tw-flex tw-c-text-alt-2',
+						onClick: inst.ffz_click_expand
+					}, [
+						this.chat.context.get('chat.subs.compact') ? null :
+							e('figure', {
+								className: `ffz-i-star${msg.sub_anon ? '-empty' : ''} tw-mg-r-05`
+							}),
+						e('div', null, [
+							extra_ts && (inst.props.showTimestamps || inst.props.isHistorical) && e('span', {
+								className: 'chat-line__timestamp'
+							}, this.chat.formatTime(msg.timestamp)),
+							msg.sub_anon ? null : this.actions.renderInline(msg, inst.props.showModerationIcons, u, r, e),
+							sub_msg
+						]),
+						mystery ? e('div', {
+							className: 'tw-pd-l-05 tw-font-size-4'
+						}, e('figure', {
+							className: `ffz-i-${expanded ? 'down' : 'right'}-dir tw-pd-y-1`
+						})) : null
+					]),
+					sub_list
+				],
+				[
+					e('button', {
+						className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
+						'data-title': 'Test'
+					}, e('span', {
+						className: 'tw-button-icon__icon'
+					}, e('figure', {className: 'ffz-i-threads'}))),
+					e('button', {
+						className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
+						'data-title': 'Thing'
+					}, e('span', {
+						className: 'tw-button-icon__icon'
+					}, e('figure', {className: 'ffz-i-cog'})))
+				],
+				null
+			);
+		}*/
+
 		this.ChatLine = this.fine.define(
 			'chat-line',
 			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && !has(n.props, 'hasModPermissions'),
@@ -315,6 +423,139 @@ export default class ChatLine extends Module {
 					] : user_block)
 				]);
 			}
+
+			cls.prototype.ffzDrawLine = function(msg, cls, out, hover_actions, bg_css) {
+				const anim_hover = t.chat.context.get('chat.emotes.animated') === 2;
+
+				if (hover_actions) {
+					cls = `${cls} tw-relative`;
+					out = [
+						e('div', {
+							className: 'chat-line__message-highlight tw-absolute tw-border-radius-medium tw-top-0 tw-bottom-0 tw-right-0 tw-left-0',
+							'data-test-selector': 'chat-message-highlight'
+						}),
+						e('div', {
+							className: 'chat-line__message-container tw-relative'
+						}, out),
+						e('div', {
+							className: 'chat-line__reply-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
+						}, hover_actions)
+					];
+				}
+
+				return e('div', {
+					className: `${cls}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
+					style: {backgroundColor: bg_css},
+					'data-room-id': msg.roomId,
+					'data-room': msg.roomLogin,
+					'data-user-id': msg.user.userID,
+					'data-user': msg.user.userLogin && msg.user.userLogin.toLowerCase(),
+					onMouseOver: anim_hover ? t.chat.emotes.animHover : null,
+					onMouseOut: anim_hover ? t.chat.emotes.animLeave : null
+				}, out);
+			}
+
+			/*cls.prototype.new_render = function() { try {
+				this._ffz_no_scan = true;
+
+				const msg = t.chat.standardizeMessage(this.props.message),
+					reply_mode = t.chat.context.get('chat.replies.style');
+
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
+					room_id = msg.roomId ? msg.roomId : this.props.channelID;
+
+				if ( ! room && room_id ) {
+					const r = t.chat.getRoom(room_id, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
+
+				if ( ! room_id && room ) {
+					const r = t.chat.getRoom(null, room, true);
+					if ( r && r.id )
+						room_id = msg.roomId = r.id;
+				}
+
+				const u = t.site.getUser(),
+					r = {id: room_id, login: room};
+
+				const has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
+					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
+					can_reply = can_replies && u && u.login !== msg.user?.login && ! msg.reply,
+					twitch_clickable = reply_mode === 1 && can_replies && (!!msg.reply || can_reply);
+
+				if ( u ) {
+					u.moderator = this.props.isCurrentUserModerator;
+					u.staff = this.props.isCurrentUserStaff;
+					u.can_reply = reply_mode === 2 && can_reply;
+				}
+
+				if ( ! this.ffz_open_reply )
+					this.ffz_open_reply = this.ffzOpenReply.bind(this);
+
+				if ( ! this.ffz_user_click_handler ) {
+					if ( this.props.onUsernameClick )
+						this.ffz_user_click_handler = event => {
+							if ( this.isKeyboardEvent(event) && event.keyCode !== KEYS.Space && event.keyCode !== KEYS.Enter )
+								return;
+
+							const target = event.currentTarget,
+								ds = target && target.dataset;
+							let target_user = msg.user;
+
+							if ( ds && ds.user ) {
+								try {
+									target_user = JSON.parse(ds.user);
+								} catch(err) { /* nothing~! * / }
+							}
+
+							const fe = new FFZEvent({
+								inst: this,
+								event,
+								message: msg,
+								user: target_user,
+								room: r
+							});
+
+							t.emit('chat:user-click', fe);
+
+							if ( fe.defaultPrevented )
+								return;
+
+							this.props.onUsernameClick(target_user.login, 'chat_message', msg.id, target.getBoundingClientRect().bottom);
+						}
+					else
+						this.ffz_user_click_handler = this.openViewerCard || this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
+				}
+
+				// Do we have a special renderer?
+				if ( msg.ffz_type && t.line_types[msg.ffz_type] )
+					return t.line_types[msg.ffz_type](msg, u, r, this, e);
+
+				return this.ffz_old_render();
+
+			} catch(err) {
+				t.log.error(err);
+				t.log.capture(err, {
+					extra: {
+						props: this.props
+					}
+				});
+
+				try {
+					console.log('trying old 1');
+					return old_render.call(this);
+				} catch(e2) {
+					t.log.error('An error in Twitch shit.', e2);
+					t.log.capture(e2, {
+						extra: {
+							props: this.props
+						}
+					});
+
+					return 'An error occurred rendering this chat line.';
+				}
+			} };*/
 
 			cls.prototype.render = function() { try {
 				this._ffz_no_scan = true;
@@ -932,7 +1173,19 @@ other {# messages were deleted by a moderator.}
 					}
 				});
 
-				return old_render.call(this);
+
+				try {
+					return old_render.call(this);
+				} catch(e2) {
+					t.log.error('An error in Twitch rendering.', e2);
+					t.log.capture(e2, {
+						extra: {
+							props: this.props
+						}
+					});
+
+					return 'An error occurred rendering this chat line.';
+				}
 			} }
 
 			// Do this after a short delay to hopefully reduce the chance of React
