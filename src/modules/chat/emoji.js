@@ -48,7 +48,17 @@ export const SKIN_TONES = {
 	5: '1f3ff'
 };
 
-export const JOINER_REPLACEMENT = /(?<!\u{E0002})\u{E0002}/gu;
+let enable_replace_joiner = true;
+
+let joiner;
+try {
+	joiner = new RegExp('(?<!\\u{E0002})\\u{E0002}', 'gu');
+} catch(err) {
+	enable_replace_joiner = false;
+	joiner = null;
+}
+
+export const JOINER_REPLACEMENT = joiner; // /(?<!\u{E0002})\u{E0002}/gu;
 export const ZWD_REPLACEMENT = /\u{200D}/gu;
 export const EMOJI_JOINER = '\u{E0002}';
 
@@ -80,20 +90,28 @@ export default class Emoji extends Module {
 		this.inject('..emotes');
 		this.inject('settings');
 
-		this.settings.add('chat.emoji.replace-joiner', {
-			default: 2,
-			ui: {
-				path: 'Chat > Behavior >> Emoji',
-				title: 'Emoji Joiner Workaround',
-				description: 'This feature is intended to allow the use of combined emoji in supported clients. This is required due to a bug in TMI that strips ZWJ characters from chat messages. [Visit the original issue](https://github.com/FrankerFaceZ/FrankerFaceZ/issues/1147) for more details.',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'Display Only'},
-					{value: 2, title: 'Display and Send'}
-				]
-			}
-		});
+		if (enable_replace_joiner)
+			this.settings.add('chat.emoji.replace-joiner', {
+				default: 2,
+				ui: {
+					path: 'Chat > Behavior >> Emoji',
+					title: 'Emoji Joiner Workaround',
+					description: 'This feature is intended to allow the use of combined emoji in supported clients. This is required due to a bug in TMI that strips ZWJ characters from chat messages. [Visit the original issue](https://github.com/FrankerFaceZ/FrankerFaceZ/issues/1147) for more details.',
+					component: 'setting-select-box',
+					data: [
+						{value: 0, title: 'Disabled'},
+						{value: 1, title: 'Display Only'},
+						{value: 2, title: 'Display and Send'}
+					]
+				}
+			});
+		else {
+			this.log.warn('This browser does not support regexp lookbehind. The "Emoji Joiner Workaround" feature will be disabled.');
+
+			this.settings.add('chat.emoji.replace-joiner', {
+				process() { return 0 }
+			});
+		}
 
 		this.settings.add('chat.emoji.style', {
 			default: 'twitter',
