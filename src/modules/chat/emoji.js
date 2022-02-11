@@ -47,6 +47,8 @@ export const SKIN_TONES = {
 	4: '1f3fe',
 	5: '1f3ff'
 };
+export const JOINER_REPLACEMENT = /(?<!\u{E0002})\u{E0002}/gu;
+export const EMOJI_JOINER = '\u{E0002}';
 
 export const IMAGE_PATHS = {
 	google: 'noto',
