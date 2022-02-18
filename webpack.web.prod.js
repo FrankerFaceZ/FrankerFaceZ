@@ -54,7 +54,7 @@ module.exports = merge(common, {
 			publicPath: '',
 			map: data => {
 				if ( data.name.endsWith('.scss') )
-					data.name = `${data.name.substr(0,data.name.length - 5)}.css`;
+					data.name = `${data.name.slice(0, -5)}.css`;
 
 				return data;
 			}
