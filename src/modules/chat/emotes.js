@@ -122,6 +122,16 @@ export default class Emotes extends Module {
 			}
 		});
 
+		this.settings.add('chat.emotes.limit-size', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Emotes',
+				title: 'Limit Native Emote Size',
+				description: 'Sometimes, really obnoxiously large emotes slip through the cracks and wind up on Twitch. This limits the size of Twitch emotes to mitigate the issue.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.fix-bad-emotes', {
 			default: true,
 			ui: {

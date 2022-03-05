@@ -890,8 +890,13 @@ export default class ChatHook extends Module {
 			this.CalloutSelector.forceUpdate();
 		}, this);
 
-		this.chat.context.getChanges('chat.emotes.2x', val =>
-			this.css_tweaks.toggle('big-emoji', val > 1));
+		this.chat.context.getChanges('chat.emotes.2x', val => {
+			this.css_tweaks.toggle('big-emoji', val > 1);
+			this.toggleEmoteJail();
+		});
+
+		this.chat.context.getChanges('chat.emotes.limit-size', () =>
+			this.toggleEmoteJail());
 
 		this.chat.context.getChanges('chat.input.show-mod-view', val =>
 			this.css_tweaks.toggleHide('mod-view', ! val));
@@ -1330,6 +1335,13 @@ export default class ChatHook extends Module {
 			});
 	}
 
+	toggleEmoteJail() {
+		const bigger = this.chat.context.get('chat.emotes.2x'),
+			enabled = this.chat.context.get('chat.emotes.limit-size');
+
+		this.css_tweaks.toggle('big-emote-jail', enabled && ! bigger);
+		this.css_tweaks.toggle('bigger-emote-jail', enabled && bigger);
+	}
 
 	cleanHighlights() {
 		const types = {

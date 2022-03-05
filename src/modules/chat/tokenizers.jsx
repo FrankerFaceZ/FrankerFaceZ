@@ -1135,7 +1135,7 @@ const render_emote = (token, createElement, wrapped) => {
 
 	const mods = token.modifiers || [], ml = mods.length,
 		emote = createElement('img', {
-			class: `${EMOTE_CLASS} ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
+			class: `${EMOTE_CLASS} ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
 			attrs: {
 				src,
 				srcSet,
@@ -1214,7 +1214,7 @@ export const AddonEmotes = {
 
 		const mods = token.modifiers || [], ml = mods.length,
 			emote = (<img
-				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
+				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
 				src={src}
 				srcSet={srcSet}
 				height={(token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined}
