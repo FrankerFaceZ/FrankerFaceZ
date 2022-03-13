@@ -7,10 +7,11 @@ website at https://www.frankerfacez.com/terms
 
 ### Sentry
 
-This client uses Sentry.io for automatic error reporting. When an error occurs, a report
+This client uses [Sentry.io](https://sentry.io/terms/) for automatic error reporting. When an error occurs, a report
 is automatically sent to Sentry's API with information about the error and the state of
-the client at the time to assist us with reproducing and fixing the issue. We attempt to filter personal information such as API keys from error reports before they
-are submitted to Sentry.
+the client at the time to assist us with reproducing and fixing the issue. We attempt to
+filter personal information such as API keys from error reports before they are submitted
+to Sentry.
 
 To see an example of the submitted data or to opt-out of automatic error reporting, please
 view the settings available under `Data Management > Reporting`.
@@ -28,16 +29,16 @@ the data for clients to display.
 
 We use the APIs of the following services for scraping link information:
 
-* Discord ([Terms of Service](https://discordapp.com/terms), [Developer Terms of Service](https://discordapp.com/developers/docs/legal))
+* Discord ([Terms of Service](https://discord.com/terms), [Developer Terms of Service](https://discord.com/developers/docs/legal))
 * Gyazo ([Terms of Service](https://gyazo.com/doc/terms))
 * Imgur ([Terms of Service](https://imgur.com/tos))
 * Pretzel Rocks ([Terms of Service](https://www.pretzel.rocks/terms))
-* Splits.io
-* Strawpoll.me ([Terms of Service](https://www.curse.com/terms-of-service))
+* [Splits.io](https://splits.io/)
+* [Strawpoll.me](https://www.strawpoll.me/) ([Terms of Service](https://www.fandom.com/terms-of-use))
 * Twitch ([Terms of Service](https://www.twitch.tv/p/legal/terms-of-service/), [Developer Agreement](https://www.twitch.tv/p/legal/developer-agreement/))
-* Twitter ([Terms of Service](https://twitter.com/en/tos), [Developer Terms](https://developer.twitter.com/en/more/developer-terms.html))
-* xkcd
-* YouTube ([Terms of Service](https://www.youtube.com/t/terms), [Developer Terms of Service](https://developers.google.com/youtube/terms/developer-policies))
+* Twitter ([Terms of Service](https://twitter.com/tos), [Developer Terms](https://developer.twitter.com/developer-terms/agreement))
+* [xkcd](https://xkcd.com/)
+* YouTube ([Terms of Service](https://www.youtube.com/t/terms), [API Services Terms of Service](https://developers.google.com/youtube/terms/api-services-terms-of-service))
 
 In addition to scraping via APIs, our link information reads standard metadata tags from
 HTML responses to support a wide array of other websites.
