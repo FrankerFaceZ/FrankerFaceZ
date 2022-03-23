@@ -216,7 +216,7 @@ export default class ModView extends Module {
 		let channel = null, state = root?.return?.memoizedState, i = 0;
 		while(state != null && channel == null && i < 50 ) {
 			state = state?.next;
-			channel = state?.memoizedState?.current?.previousData?.result?.data?.channel;
+			channel = state?.memoizedState?.current?.previous?.result?.data?.channel;
 			i++;
 		}
 

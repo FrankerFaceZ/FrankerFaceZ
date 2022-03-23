@@ -389,6 +389,30 @@ export default class Channel extends Module {
 				el._ffz_links.innerHTML = '';
 		}
 
+		// This is awful, but it works.
+		let channel = null;
+		this.fine.searchNode(react, node => {
+			let state = node?.memoizedState, i = 0;
+			while(state != null && channel == null && i < 50 ) {
+				state = state?.next;
+				channel = state?.memoizedState?.current?.previous?.result?.data?.user;
+				if (!channel?.lastBroadcast?.game)
+					channel = null;
+				i++;
+			}
+			return channel != null;
+		});
+
+		const game = channel?.lastBroadcast?.game,
+			title = channel?.lastBroadcast?.title;
+
+		if (game?.id !== el._ffz_game_cache || title !== el._ffz_title_cache)
+			this.settings.updateContext({
+				category: game?.displayName,
+				categoryID: game?.id,
+				title
+			});
+
 		// TODO: See if we can read this data directly from Apollo's cache.
 		// Also, test how it works with videos and clips.
 		/*const raw_game = el.querySelector('a[data-a-target="stream-game-link"]')?.textContent;
@@ -405,7 +429,7 @@ export default class Channel extends Module {
 			}).catch(() => {
 				el._ffz_game_cache_updating = false;
 			});
-		}*/
+		}
 
 		const other_props = react.child.child?.child?.child?.child?.child?.child?.child?.child?.child?.memoizedProps,
 			title = other_props?.title;
@@ -415,7 +439,7 @@ export default class Channel extends Module {
 			this.settings.updateContext({
 				title
 			});
-		}
+		}*/
 
 		if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
 			this.setHost(props.channelID, props.channelLogin, null, null);

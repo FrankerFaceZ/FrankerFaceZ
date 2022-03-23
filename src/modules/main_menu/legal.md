@@ -37,7 +37,7 @@ We use the APIs of the following services for scraping link information:
 * Twitch ([Terms of Service](https://www.twitch.tv/p/legal/terms-of-service/), [Developer Agreement](https://www.twitch.tv/p/legal/developer-agreement/))
 * Twitter ([Terms of Service](https://twitter.com/en/tos), [Developer Terms](https://developer.twitter.com/en/more/developer-terms.html))
 * xkcd
-* YouTube ([Terms of Service](https://www.youtube.com/t/terms), [Developer Terms of Service](https://developers.google.com/youtube/terms/developer-policies))
+* YouTube ([Terms of Service](https://www.youtube.com/t/terms), [Developer Terms of Service](https://developers.google.com/youtube/terms/developer-policies), [Privacy Policy](https://policies.google.com/privacy))
 
 In addition to scraping via APIs, our link information reads standard metadata tags from
 HTML responses to support a wide array of other websites.
