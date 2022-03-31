@@ -2120,6 +2120,12 @@ export default class ChatHook extends Module {
 					return old_action.call(i, e);
 				}*/
 
+				const old_announce = this.onAnnouncementEvent;
+				this.onAnnouncementEvent = function(e) {
+					console.log('announcement', e);
+					return old_announce.call(this, e);
+				}
+
 
 				const old_sub = this.onSubscriptionEvent;
 				this.onSubscriptionEvent = function(e) {
@@ -2456,8 +2462,9 @@ export default class ChatHook extends Module {
 
 			// For certain message types, the message is contained within
 			// a message sub-object.
-			if ( message.type === t.chat_types.ChannelPointsReward || message.type === t.chat_types.CommunityIntroduction || (message.message?.user & message.message?.badgeDynamicData) )
+			if ( message.type === t.chat_types.ChannelPointsReward || message.type === t.chat_types.CommunityIntroduction || (message.message?.user & message.message?.badgeDynamicData) ) {
 				message = message.message;
+			}
 
 			if ( original.channel ) {
 				let chan = message.channel = original.channel.toLowerCase();
@@ -2485,10 +2492,12 @@ export default class ChatHook extends Module {
 						this.props.isCurrentUserModerator = true;
 				}
 
-				if ( typeof original.action === 'string' )
-					message.message = original.action;
-				else
-					message.message = original.message.body;
+				if (! message.message || typeof message.message === 'string') {
+					if ( typeof original.action === 'string' )
+						message.message = original.action;
+					else
+						message.message = original.message.body;
+				}
 			}
 
 			this.addMessage(original_msg);

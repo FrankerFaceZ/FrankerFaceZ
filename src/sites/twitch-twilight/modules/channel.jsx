@@ -314,12 +314,12 @@ export default class Channel extends Module {
 		}
 
 		if ( ! el._ffz_cont ) {
-			const report = el.querySelector('.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"]');
+			const report = el.querySelector('.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"],button[data-a-target="report-button-more-button"]');
 			let cont = report && (report.closest('.tw-flex-wrap.tw-justify-content-end') || report.closest('.tw-justify-content-end'));
 
 			if ( ! cont && report ) {
 				cont = report.parentElement?.parentElement;
-				if ( cont && cont.parentElement?.childElementCount === 2 )
+				if ( cont && cont.parentElement?.childElementCount === 2 && report.dataset.aTarget !== 'report-button-more-button' )
 					cont = cont.parentElement.firstElementChild;
 			}
 
