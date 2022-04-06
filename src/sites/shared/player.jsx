@@ -1304,7 +1304,7 @@ export default class PlayerBase extends Module {
 			return;
 		}
 
-		let icon, tip, extra, ff_el, btn, cont = container.querySelector('.ffz--player-comp');
+		let icon, tip, extra, btn, cont = container.querySelector('.ffz--player-comp');
 		if ( ! has_comp || this.areControlsDisabled(inst) ) {
 			if ( cont )
 				cont.remove();
@@ -1329,7 +1329,6 @@ export default class PlayerBase extends Module {
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="ffz--p-extra tw-pd-t-05 ffz--tooltip-explain" />)}
-						{ff_el = IS_FIREFOX ? (<div class="ffz--p-ff tw-pd-t-05 ffz--tooltip-explain" />) : null}
 					</div>
 				</div>
 			</div>);
@@ -1356,9 +1355,6 @@ export default class PlayerBase extends Module {
 
 		if ( can_apply && this._shortcut_bound )
 			label = `${label} (${this._shortcut_bound})`;
-
-		if ( ff_el )
-			ff_el.textContent += `\n${this.i18n.t('player.comp_button.firefox', 'Playback Speed controls will not function for Firefox users when the Compressor has been enabled.')}`;
 
 		icon.classList.toggle('ffz-i-comp-on', comp_active);
 		icon.classList.toggle('ffz-i-comp-off', ! comp_active);
