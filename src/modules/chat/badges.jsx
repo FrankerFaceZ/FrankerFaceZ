@@ -223,12 +223,24 @@ export default class Badges extends Module {
 		});
 
 		this.settings.add('chat.badges.clickable', {
-			default: true,
+			default: 2,
+			process(ctx, val) {
+				if (val === true)
+					return 2;
+				else if (val === false)
+					return 0;
+				return val;
+			},
 			ui: {
 				path: 'Chat > Badges >> Behavior',
 				title: 'Allow clicking badges.',
 				description: 'Certain badges, such as Prime Gaming, act as links when this is enabled.',
-				component: 'setting-check-box'
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Legacy (Open URLs)'},
+					{value: 2, title: 'Open Badge Card'}
+				]
 			}
 		});
 
@@ -534,7 +546,8 @@ export default class Badges extends Module {
 
 
 	handleClick(event) {
-		if ( ! this.parent.context.get('chat.badges.clickable') )
+		const mode = this.parent.context.get('chat.badges.clickable');
+		if ( ! mode )
 			return;
 
 		const target = event.target;
@@ -544,6 +557,7 @@ export default class Badges extends Module {
 			return;
 
 		let url = null;
+		let click_badge = null;
 
 		for(const d of ds.data) {
 			const p = d.provider;
@@ -553,14 +567,14 @@ export default class Badges extends Module {
 				if ( ! bd )
 					continue;
 
-				if ( bd.click_url )
+				if ( mode == 1 && bd.click_url )
 					url = bd.click_url;
-				else if ( global_badge.click_url )
+				else if ( mode == 1 && global_badge.click_url )
 					url = global_badge.click_url;
-				else if ( (bd.click_action === 'sub' || global_badge.click_action === 'sub') && ds.room_login )
+				else if ( mode == 1 && (bd.click_action === 'sub' || global_badge.click_action === 'sub') && ds.room_login )
 					url = `https://www.twitch.tv/subs/${ds.room_login}`;
 				else
-					continue;
+					click_badge = bd;
 
 				break;
 
@@ -574,6 +588,17 @@ export default class Badges extends Module {
 				if ( badge?.click_url ) {
 					url = badge.click_url;
 					break;
+				}
+			}
+		}
+
+		if (click_badge) {
+			const fine = this.resolve('site.fine');
+			if (fine) {
+				const line = fine.searchParent(target, n => n.openBadgeDetails && n.props?.message);
+				if (line) {
+					line.openBadgeDetails(click_badge, event);
+					return;
 				}
 			}
 		}

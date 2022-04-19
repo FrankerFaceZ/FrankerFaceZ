@@ -191,7 +191,7 @@ export class TranslationManager extends Module {
 				},
 				data: () => {
 					const out = [], now = new Date;
-					for (const [key,fmt] of Object.entries(this._.formats.date)) {
+					for (const [key, fmt] of Object.entries(this._.formats.date)) {
 						out.push({
 							value: key, title: `${this.formatDate(now, key)} (${key})`
 						})
@@ -815,6 +815,28 @@ export class TranslationManager extends Module {
 const DOLLAR_REGEX = /\$/g;
 const REPLACE = String.prototype.replace;
 
+const FORMAT_REGEX = /^\s*([^(]+?)\s*(?:\(\s*([^)]+?)\s*\))?\s*$/;
+
+export function parseFormatters(fmt) {
+	if (!fmt || ! fmt.length)
+		return;
+
+	const result = [];
+
+	for(const token of fmt.split(/\|/g)) {
+		const match = FORMAT_REGEX.exec(token);
+		if (!match)
+			continue;
+
+		result.push({
+			fmt: match[1],
+			extra: match[2]
+		});
+	}
+
+	return result;
+}
+
 export function transformPhrase(phrase, substitutions, locale, token_regex, formatters) {
 	const is_array = Array.isArray(phrase);
 	if ( substitutions == null )
@@ -828,14 +850,23 @@ export function transformPhrase(phrase, substitutions, locale, token_regex, form
 
 	if ( typeof result === 'string' )
 		result = REPLACE.call(result, token_regex, (expr, arg, fmt) => {
-			let val = get(arg, options);
+			let val = get(arg.trim(), options);
 			if ( val == null )
 				return '';
 
-			const formatter = formatters[fmt];
-			if ( typeof formatter === 'function' )
-				val = formatter(val, locale, options);
-			else if ( typeof val === 'string' )
+			const fmts = parseFormatters(fmt);
+			let formatted = false;
+			if (fmts) {
+				for(const format of fmts) {
+					const formatter = formatters[format.fmt];
+					if (typeof formatter === 'function') {
+						val = formatter(val, locale, options, format.extra);
+						formatted = true;
+					}
+				}
+			}
+
+			if (! formatted && typeof val === 'string' )
 				val = REPLACE.call(val, DOLLAR_REGEX, '$$');
 
 			return val;

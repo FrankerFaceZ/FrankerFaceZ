@@ -379,6 +379,7 @@
 						:value="edit_data.options"
 						:defaults="action_def.defaults"
 						:vars="vars"
+						:fmts="fmts"
 						@input="onChangeAction($event)"
 					/>
 				</section>
@@ -491,6 +492,20 @@ export default {
 
 		has_modifiers() {
 			return this.modifiers
+		},
+
+		fmts() {
+			const out = [];
+
+			out.push('word(start)');
+			out.push('word(start,end)');
+			out.push('upper');
+			out.push('lower');
+			out.push('snakecase');
+			out.push('slugify');
+			out.push('slugify(separator)');
+
+			return out.join(', ');
 		},
 
 		vars() {

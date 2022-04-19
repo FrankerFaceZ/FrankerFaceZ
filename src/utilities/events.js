@@ -12,9 +12,27 @@ const SNAKE_CAPS = /([a-z])([A-Z])/g,
 	SNAKE_SPACE = /[ \t\W]/g,
 	SNAKE_TRIM = /^_+|_+$/g;
 
+String.prototype.toSlug = function(separator = '-') {
+	let result = this;
+	if (result.normalize)
+		result = result.normalize('NFD');
+
+	return result
+		.replace(/[\u0300-\u036f]/g, '')
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9 ]/g, '')
+		.replace(/\s+/g, separator);
+}
 
 String.prototype.toSnakeCase = function() {
-	return this
+	let result = this;
+	if (result.normalize)
+		result = result.normalize('NFD');
+
+	return result
+		.replace(/[\u0300-\u036f]/g, '')
+		.trim()
 		.replace(SNAKE_CAPS, '$1_$2')
 		.replace(SNAKE_SPACE, '_')
 		.replace(SNAKE_TRIM, '')

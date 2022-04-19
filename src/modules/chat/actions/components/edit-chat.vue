@@ -17,6 +17,10 @@
 				{{ t('setting.actions.variables', 'Available Variables: {vars}', {vars}) }}
 			</div>
 
+			<div class="tw-c-text-alt-2 tw-mg-b-1">
+				{{ t('setting.actions.formats', 'Available Formatters: {fmts}', {fmts}) }}
+			</div>
+
 			<div class="ffz-checkbox">
 				<input
 					:id="'chat-paste$' + id"
@@ -41,7 +45,7 @@
 let last_id = 0;
 
 export default {
-	props: ['value', 'defaults', 'vars'],
+	props: ['value', 'defaults', 'vars', 'fmts'],
 
 	data() {
 		return {

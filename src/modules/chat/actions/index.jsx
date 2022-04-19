@@ -245,7 +245,79 @@ export default class Actions extends Module {
 			data,
 			this.i18n.locale,
 			VAR_REPLACE,
-			{}
+			{
+				upper(val) {
+					return val.toString().toUpperCase();
+				},
+				uppercase(val) {
+					return val.toString().toUpperCase();
+				},
+				lower(val) {
+					return val.toString().toLowerCase();
+				},
+				lowercase(val) {
+					return val.toString().toLowerCase();
+				},
+				snakecase(val) {
+					return val.toString().toSnakeCase();
+				},
+				slugify(val, locale, options, extra) {
+					return val.toString().toSlug(extra && extra.length ? extra : '-');
+				},
+				word(val, locale, options, extra) {
+					if (! extra || ! extra.length)
+						return val;
+
+					let start, end;
+					const bits = extra.split(',');
+
+					try {
+						start = parseInt(bits[0], 10);
+						if (isNaN(start) || !isFinite(start))
+							return val;
+					} catch (err) {
+						this.log.warn('Invalid value for word(start)', bits[0]);
+						return val;
+					}
+
+					if (bits.length > 1) {
+						const bit = bits[1].trim();
+						if (! bit.length )
+							end = -1;
+						else
+							try {
+								end = parseInt(bits[1], 10);
+								if (isNaN(end) || !isFinite(end))
+									return val;
+							} catch(err) {
+								this.log.warn('Invalid value for word(end)', bits[1]);
+								return val;
+							}
+					}
+
+					const words = val.split(/\s+/);
+
+					if (start < 0)
+						start = words.length + start;
+					if (start < 0)
+						start = 0;
+					if (start >= words.length)
+						start = words.length - 1;
+
+					if (end != null) {
+						if (end < 0)
+							end = words.length + end;
+						if (end < start)
+							end = start;
+						if (end > words.length)
+							end = words.length;
+
+						return words.slice(start, end + 1).join(' ');
+					}
+
+					return words[start];
+				}
+			}
 		);
 	}
 

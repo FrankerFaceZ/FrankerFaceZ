@@ -1027,9 +1027,9 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 		this._last_id = 0;
 
 		const frame = this.frame = document.createElement('iframe');
-		frame.src = this.manager.root.host === 'twitch' ?
-			'//www.twitch.tv/p/ffz_bridge/' :
-			'//www.youtube.com/__ffz_bridge/';
+		frame.src = this.manager.root.host === 'youtube' ?
+			'//www.youtube.com/__ffz_bridge/' :
+			'//www.twitch.tv/p/ffz_bridge/';
 		frame.id = 'ffz-settings-bridge';
 		frame.style.width = 0;
 		frame.style.height = 0;
@@ -1041,7 +1041,7 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 
 	// Static Properties
 
-	static supported(manager) { return manager.root.host === 'twitch' ? NOT_WWW_TWITCH : NOT_WWW_YT; }
+	static supported() { return NOT_WWW_TWITCH && NOT_WWW_YT; }
 	static hasContent(manager) { return CrossOriginStorageBridge.supported(manager); }
 
 	static key = 'cosb';
