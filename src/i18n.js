@@ -451,6 +451,10 @@ export class TranslationManager extends Module {
 	}
 
 
+	get dayjsLocale() {
+		return this._?._dayjs_locale;
+	}
+
 	get locale() {
 		return this._ && this._.locale;
 	}
@@ -661,6 +665,9 @@ export class TranslationManager extends Module {
 
 
 	async loadLocale(locale, chunk = null) {
+		// Normalize the locale.
+		locale = locale.toLowerCase();
+
 		if ( locale === 'en' )
 			return {};
 
@@ -710,11 +717,12 @@ export class TranslationManager extends Module {
 	}
 
 	async setLocale(new_locale) {
+		// Normalize the locale.
+		new_locale = new_locale.toLowerCase();
+
 		const old_locale = this._.locale;
 		if ( new_locale === old_locale )
 			return [];
-
-		await this.loadDayjsLocale(new_locale);
 
 		this._.locale = new_locale;
 		this._.clear();
@@ -726,14 +734,26 @@ export class TranslationManager extends Module {
 			// All the built-in messages are English. We don't need special
 			// logic to load the translations.
 			this.emit(':loaded', []);
+			this._._dayjs_locale = 'en';
 			return [];
 		}
 
 		const data = this.localeData[new_locale];
 		const phrases = await this.loadLocale(data?.id || new_locale);
 
+		let djs;
+		try {
+			djs = data?.dayjs_override || new_locale;
+			await this.loadDayjsLocale(djs);
+		} catch (err) {
+			this.log.warn(`Unable to load DayJS locale for ${new_locale}`);
+			djs = 'en';
+		}
+
 		if ( this._.locale !== new_locale )
 			throw new Error('locale has changed since we started loading');
+
+		this._._dayjs_locale = djs;
 
 		const added = this._.extend(phrases);
 		if ( added.length ) {

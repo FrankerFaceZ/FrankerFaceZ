@@ -1541,14 +1541,30 @@ export default class PlayerBase extends Module {
 
 			src.connect(ctx.destination);
 
-			comp = video._ffz_compressor = ctx.createDynamicsCompressor();
+			try {
+				comp = video._ffz_compressor = new DynamicsCompressorNode(ctx);
+			} catch (err) {
+				this.log.info('Unable to uew new DynamicsCompressorNode. Falling back to old method.');
+				comp = video._ffz_compressor = ctx.createDynamicsCompressor();
+			}
 
 			if ( this.settings.get('player.gain.enable') ) {
-				const gain = video._ffz_gain = ctx.createGain();
+				let gain;
 				let value = video._ffz_gain_value;
 				if ( value == null )
 					value = this.settings.get('player.gain.default');
-				gain.gain.value = value;
+
+				try {
+					gain = video._ffz_gain = new GainNode(ctx, {
+						gain: value
+					});
+
+				} catch(err) {
+					this.log.info('Unable to uew new GainNode. Falling back to old method.');
+					gain = video._ffz_gain = ctx.createGain();
+					gain.gain.value = value;
+				}
+
 				comp.connect(gain);
 			}
 

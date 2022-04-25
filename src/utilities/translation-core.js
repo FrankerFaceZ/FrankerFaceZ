@@ -204,6 +204,7 @@ export default class TranslationCore {
 
 		this.warn = options.warn;
 		this._locale = options.locale || 'en';
+		this._dayjs_locale = options.dayjsLocale || 'en';
 		this.defaultLocale = options.defaultLocale || this._locale;
 		this.transformation = null;
 
@@ -250,7 +251,7 @@ export default class TranslationCore {
 			without_suffix = f === 'plain';
 
 		try {
-			return d.locale(this._locale).fromNow(without_suffix);
+			return d.locale(this._dayjs_locale).fromNow(without_suffix);
 		} catch(err) {
 			return d.fromNow(without_suffix);
 		}
@@ -286,7 +287,7 @@ export default class TranslationCore {
 		if ( format && ! this.formats.date[format] ) {
 			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(format);
+				return d.locale(this._dayjs_locale).format(format);
 			} catch(err) {
 				return d.format(format);
 			}
@@ -305,7 +306,7 @@ export default class TranslationCore {
 		if ( format && ! this.formats.time[format] ) {
 			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(format);
+				return d.locale(this._dayjs_locale).format(format);
 			} catch(err) {
 				return d.format(format);
 			}
@@ -324,7 +325,7 @@ export default class TranslationCore {
 		if ( format && ! this.formats.datetime[format] ) {
 			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(format);
+				return d.locale(this._dayjs_locale).format(format);
 			} catch(err) {
 				return d.format(format);
 			}
