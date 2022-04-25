@@ -1533,15 +1533,33 @@ export default class PlayerBase extends Module {
 		return true;
 	}
 
-	createCompressor(inst, video) {
+	createCompressor(inst, video, _cmp) {
 		if ( ! this.canCompress(inst) )
 			return;
 
 		let comp = video._ffz_compressor;
 		if ( ! comp ) {
-			const ctx = new AudioContext();
+			const ctx = _cmp || new AudioContext();
 			if ( ! IS_FIREFOX && ctx.state === 'suspended' ) {
-				this.log.info('Aborting due to browser auto-play policy.');
+				let timer;
+				const evt = () => {
+					clearTimeout(timer);
+					ctx.removeEventListener('statechange', evt);
+					if (ctx.state === 'suspended') {
+						this.log.info('Aborting due to browser auto-play policy.');
+						return;
+					}
+
+					this.createCompressor(inst, video, comp);
+				}
+
+				this.log.info('Attempting to resume suspended AudioContext.');
+				timer = setTimeout(evt, 100);
+				try {
+					ctx.addEventListener('statechange', evt);
+					ctx.resume();
+				} catch(err) { }
+
 				return;
 			}
 
