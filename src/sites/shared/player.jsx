@@ -1419,12 +1419,21 @@ export default class PlayerBase extends Module {
 			return;
 
 		if ( want_gain && ! gain ) {
-			gain = video._ffz_gain = ctx.createGain();
 			let value = video._ffz_gain_value;
 			if ( value == null )
 				value = this.settings.get('player.gain.default');
 
-			gain.gain.value = value;
+			try {
+				gain = video._ffz_gain = new GainNode(ctx, {
+					gain: value
+				});
+
+			} catch(err) {
+				this.log.info('Unable to use new GainNode. Falling back to old method.');
+				gain = video._ffz_gain = ctx.createGain();
+				gain.gain.value = value;
+			}
+
 			comp.connect(gain);
 
 			if ( compressed ) {
@@ -1537,14 +1546,22 @@ export default class PlayerBase extends Module {
 			}
 
 			video._ffz_context = ctx;
-			const src = video._ffz_source = ctx.createMediaElementSource(video);
+			let src;
+			try {
+				src = video._ffz_source = new MediaElementAudioSourceNode(ctx, {
+					mediaElement: video
+				});
+			} catch(err) {
+				this.log.info('Unable to use new MediaElementAudioSourceNode. Falling back to old method.');
+				src = video._ffz_source = ctx.createMediaElementSource(video);
+			}
 
 			src.connect(ctx.destination);
 
 			try {
 				comp = video._ffz_compressor = new DynamicsCompressorNode(ctx);
 			} catch (err) {
-				this.log.info('Unable to uew new DynamicsCompressorNode. Falling back to old method.');
+				this.log.info('Unable to use new DynamicsCompressorNode. Falling back to old method.');
 				comp = video._ffz_compressor = ctx.createDynamicsCompressor();
 			}
 
@@ -1560,7 +1577,7 @@ export default class PlayerBase extends Module {
 					});
 
 				} catch(err) {
-					this.log.info('Unable to uew new GainNode. Falling back to old method.');
+					this.log.info('Unable to use new GainNode. Falling back to old method.');
 					gain = video._ffz_gain = ctx.createGain();
 					gain.gain.value = value;
 				}
