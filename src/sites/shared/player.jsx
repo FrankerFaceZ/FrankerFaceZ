@@ -118,6 +118,17 @@ export default class PlayerBase extends Module {
 				}
 			});
 
+			this.settings.add('player.compressor.force-legacy', {
+				default: false,
+				ui: {
+					path: 'Player > Compressor >> Advanced',
+					title: 'Force use of legacy browser API.',
+					description: 'This setting forces FrankerFaceZ to attempt to use an older browser API to create the compressor. Please reset your player after changing this setting.',
+					component: 'setting-check-box',
+					force_seen: true
+				}
+			});
+
 			this.settings.add('player.compressor.shortcut', {
 				default: null,
 				requires: ['player.compressor.enable'],
@@ -1424,6 +1435,9 @@ export default class PlayerBase extends Module {
 				value = this.settings.get('player.gain.default');
 
 			try {
+				if (this.settings.get('player.compressor.force-legacy'))
+					throw new Error();
+
 				gain = video._ffz_gain = new GainNode(ctx, {
 					gain: value
 				});
@@ -1566,6 +1580,9 @@ export default class PlayerBase extends Module {
 			video._ffz_context = ctx;
 			let src;
 			try {
+				if (this.settings.get('player.compressor.force-legacy'))
+					throw new Error();
+
 				src = video._ffz_source = new MediaElementAudioSourceNode(ctx, {
 					mediaElement: video
 				});
@@ -1577,6 +1594,9 @@ export default class PlayerBase extends Module {
 			src.connect(ctx.destination);
 
 			try {
+				if (this.settings.get('player.compressor.force-legacy'))
+					throw new Error();
+
 				comp = video._ffz_compressor = new DynamicsCompressorNode(ctx);
 			} catch (err) {
 				this.log.info('Unable to use new DynamicsCompressorNode. Falling back to old method.');
@@ -1590,6 +1610,9 @@ export default class PlayerBase extends Module {
 					value = this.settings.get('player.gain.default');
 
 				try {
+					if (this.settings.get('player.compressor.force-legacy'))
+						throw new Error();
+
 					gain = video._ffz_gain = new GainNode(ctx, {
 						gain: value
 					});

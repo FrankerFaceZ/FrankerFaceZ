@@ -742,6 +742,7 @@ other {# messages were deleted by a moderator.}
 
 				const user_bits = [
 					t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+					this.renderInlineHighlight ? this.renderInlineHighlight() : null,
 					e('span', {
 						className: 'chat-line__message--badges'
 					}, t.chat.badges.render(msg, e)),
