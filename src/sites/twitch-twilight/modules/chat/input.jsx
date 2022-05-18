@@ -147,7 +147,7 @@ export default class Input extends Module {
 
 		this.EmoteSuggestions = this.fine.define(
 			'tab-emote-suggestions',
-			n => n && n.getMatchedEmotes,
+			n => n && n.getMatches && n.autocompleteType === 'emote',
 			Twilight.CHAT_ROUTES
 		);
 
