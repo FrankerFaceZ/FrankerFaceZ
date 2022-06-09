@@ -359,9 +359,24 @@ export default class Layout extends Module {
 				game = stream?.game?.displayName,
 				offline = props?.offline ?? false;
 
+			let should_hide = false;
+			if ( game && blocked_games.includes(game) )
+				should_hide = true;
+			if ( props.isPromoted && this.settings.get('directory.hide-promoted') )
+				should_hide = true;
+			else {
+				const regexes = this.settings.get('__filter:directory.block-titles');
+				const title = stream?.broadcaster?.broadcastSettings?.title;
+				if ( regexes && title &&
+					(( regexes[0] && regexes[0].test(title) ) ||
+					( regexes[1] && regexes[1].test(title) ))
+				)
+					should_hide = true;
+			}
+
 			card.classList.toggle('ffz--side-nav-card-rerun', rerun);
 			card.classList.toggle('ffz--side-nav-card-offline', offline);
-			card.classList.toggle('tw-hide', game ? blocked_games.includes(game) : false);
+			card.classList.toggle('tw-hide', should_hide);
 		}
 	}
 

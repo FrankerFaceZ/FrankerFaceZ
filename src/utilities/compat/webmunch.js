@@ -222,7 +222,12 @@ export default class WebMunch extends Module {
 		if ( modules )
 			this.processModulesV4(modules, false);
 
-		this._checked_module = {};
+		for(const [key,val] of Object.entries(this._checked_module)) {
+			if (val == true)
+				this._checked_module[key] = null;
+		}
+
+		//this._checked_module = {};
 		const res = this._original_loader.apply(this._original_store, arguments); // eslint-disable-line prefer-rest-params
 		this.emit(':loaded', chunk_ids, names, modules);
 		return res;
@@ -375,7 +380,7 @@ export default class WebMunch extends Module {
 			return null;
 
 		let ids;
-		if ( this._original_store && predicate.chunks ) {
+		if ( this._original_store && predicate.chunks && this._chunk_names && Object.keys(this._chunk_names).length ) {
 			const chunk_pred = typeof predicate.chunks === 'function';
 			if ( ! chunk_pred && ! Array.isArray(predicate.chunks) )
 				predicate.chunks = [predicate.chunks];
@@ -429,7 +434,7 @@ export default class WebMunch extends Module {
 			return null;
 
 		let ids = this._known_ids;
-		if ( this._original_store && predicate.chunks ) {
+		if ( this._original_store && predicate.chunks && this._chunk_names && Object.keys(this._chunk_names).length ) {
 			const chunk_pred = typeof predicate.chunks === 'function';
 			if ( ! chunk_pred && ! Array.isArray(predicate.chunks) )
 				predicate.chunks = [predicate.chunks];
@@ -498,9 +503,19 @@ export default class WebMunch extends Module {
 	}
 
 
-	_checkModule(id) {
-		const fn = this._require?.m?.[id];
+	_checkModule(id, checked = null) {
+		if (checked) {
+			if (checked.has(id))
+				return (this._checked_module[id] ?? false);
+
+			checked.add(id);
+		}
+
+		let fn = this._require?.m?.[id];
 		if ( fn ) {
+			if ( fn.original )
+				fn = fn.original;
+
 			let reqs = fn[Requires],
 				banned = false;
 
@@ -543,12 +558,40 @@ export default class WebMunch extends Module {
 
 			} else if ( reqs ) {
 				for(const mod_id of reqs)
-					if ( ! this._require.m[mod_id] )
+					if ( ! this._require.m[mod_id] ) {
 						banned = true;
+						break;
+					}
+			}
+
+			if ( ! banned && reqs ) {
+				if ( ! checked ) {
+					checked = new Set();
+					checked.add(id);
+				}
+
+				for(const mod_id of reqs) {
+					let val = this._checked_module[mod_id];
+					if (val == null && ! checked.has(mod_id))
+						try {
+							val = this._checkModule(mod_id, checked);
+						} catch (err) {
+							this.log.verbose(`Recursion error checking module ${id} (${mod_id})`);
+							val = true;
+						}
+
+					if ( val ) {
+						this.log.verbose(`Unable to load module ${id} due to unable to load dependency ${mod_id}`);
+						banned = true;
+						break;
+					}
+				}
 			}
 
 			return this._checked_module[id] = banned;
 		}
+
+		return this._checked_module[id] = true;
 	}
 
 
@@ -604,7 +647,7 @@ export default class WebMunch extends Module {
 		const loader = require.e && require.e.toString();
 		let modules;
 		if ( loader && loader.indexOf('Loading chunk') !== -1 ) {
-			const data = this.v4 ? /assets\/"\+\(({1:.*?})/.exec(loader) : /({0:.*?})/.exec(loader);
+			const data = this.v4 ? /assets\/"\+\(?({1:.*?})/.exec(loader) : /({0:.*?})/.exec(loader);
 			if ( data )
 				try {
 					modules = JSON.parse(data[1].replace(/(\d+):/g, '"$1":'))
@@ -612,7 +655,7 @@ export default class WebMunch extends Module {
 
 		} else if ( require.u ) {
 			const builder = require.u.toString(),
-				match = /assets\/"\+({\d+:.*?})/.exec(builder),
+				match = /assets\/"\+\(?({\d+:.*?})/.exec(builder),
 				data = match ? match[1].replace(/([\de]+):/g, (_, m) => {
 					if ( /^\d+e\d+$/.test(m) ) {
 						const bits = m.split('e');

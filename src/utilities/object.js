@@ -1,6 +1,6 @@
 'use strict';
 
-import {BAD_HOTKEYS, TWITCH_EMOTE_V2} from 'utilities/constants';
+import {BAD_HOTKEYS, TWITCH_EMOTE_V2, WORD_SEPARATORS} from 'utilities/constants';
 
 const HOP = Object.prototype.hasOwnProperty;
 
@@ -536,6 +536,11 @@ export function pick_random(obj) {
 
 export const escape_regex = RegExp.escape || function escape_regex(str) {
 	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+export function addWordSeparators(str) {
+	return `(^|.*?${WORD_SEPARATORS})(?:${str})(?=$|${WORD_SEPARATORS})`
 }
 
 

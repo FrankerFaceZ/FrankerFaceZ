@@ -7,7 +7,7 @@
 import {SiteModule} from 'utilities/module';
 import {duration_to_string} from 'utilities/time';
 import {createElement} from 'utilities/dom';
-import {get} from 'utilities/object';
+import {get, glob_to_regex, escape_regex, addWordSeparators} from 'utilities/object';
 
 import Game from './game';
 
@@ -18,6 +18,15 @@ export const CARD_CONTEXTS = ((e ={}) => {
 	return e;
 })();
 
+function formatTerms(data, flags) {
+	if ( data[0].length )
+		data[1].push(addWordSeparators(data[0].join('|')));
+
+	if ( ! data[1].length )
+		return null;
+
+	return new RegExp(data[1].join('|'), flags);
+}
 
 //const CREATIVE_ID = 488191;
 
@@ -173,6 +182,58 @@ export default class Directory extends SiteModule {
 			},
 
 			changed: () => this.DirectoryShelf.forceUpdate()
+		});
+
+		this.settings.add('directory.block-titles', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Block by Title',
+				component: 'basic-terms'
+			}
+		});
+
+		this.settings.add('__filter:directory.block-titles', {
+			requires: ['directory.block-titles'],
+			equals: 'requirements',
+			process(ctx) {
+				const val = ctx.get('directory.block-titles');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [
+					[ // sensitive
+						[], [] // word
+					],
+					[
+						[], []
+					]
+				];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out[item.s ? 0 : 1][item.w ? 0 : 1].push(v);
+				}
+
+				return [
+					formatTerms(out[0], 'g'),
+					formatTerms(out[1], 'gi')
+				];
+			},
+
+			changed: () => this.updateCards()
 		});
 
 		/*this.settings.add('directory.hide-viewing-history', {
@@ -339,9 +400,23 @@ export default class Directory extends SiteModule {
 			}
 		}
 
-		const should_hide = bad_tag || (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
-			(props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game)) ||
-			((props.isPromotion || props.sourceType === 'COMMUNITY_BOOST' || props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted'));
+		let should_hide = false;
+		if ( bad_tag )
+			should_hide = true;
+		else if ( props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts') )
+			should_hide = true;
+		else if ( props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game) )
+			should_hide = true;
+		else if ( (props.isPromotion || props.sourceType === 'COMMUNITY_BOOST' || props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted') )
+			should_hide = true;
+		else {
+			const regexes = this.settings.get('__filter:directory.block-titles');
+			if ( regexes &&
+				(( regexes[0] && regexes[0].test(props.title) ) ||
+				( regexes[1] && regexes[1].test(props.title) ))
+			)
+				should_hide = true;
+		}
 
 		let hide_container = el.closest('.tw-tower > div');
 		if ( ! hide_container )

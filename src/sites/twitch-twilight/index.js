@@ -249,7 +249,7 @@ Twilight.KNOWN_MODULES = {
 	}
 }
 
-const VEND_CHUNK = n => n && n.includes('vendor');
+const VEND_CHUNK = n => ! n || n.includes('vendor');
 
 Twilight.KNOWN_MODULES.core.use_result = true;
 //Twilight.KNOWN_MODULES.core.chunks = 'core';
@@ -263,7 +263,7 @@ Twilight.KNOWN_MODULES['gql-printer'].chunks = VEND_CHUNK;
 
 Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CHUNK;
 
-const CHAT_CHUNK = n => n && n.includes('chat');
+const CHAT_CHUNK = n => ! n || n.includes('chat');
 
 Twilight.KNOWN_MODULES['chat-types'].use_result = true;
 Twilight.KNOWN_MODULES['chat-types'].chunks = CHAT_CHUNK;
