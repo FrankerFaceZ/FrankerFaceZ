@@ -362,7 +362,7 @@ export default class Layout extends Module {
 			let should_hide = false;
 			if ( game && blocked_games.includes(game) )
 				should_hide = true;
-			if ( props.isPromoted && this.settings.get('directory.hide-promoted') )
+			if ( props?.isPromoted && this.settings.get('directory.hide-promoted') )
 				should_hide = true;
 			else {
 				const regexes = this.settings.get('__filter:directory.block-titles');

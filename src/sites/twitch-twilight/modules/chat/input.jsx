@@ -219,7 +219,7 @@ export default class Input extends Module {
 				try {
 					const above = t.chat.context.get('chat.actions.room-above'),
 						state = t.chat.context.get('context.chat_state') || {},
-						container = above ? out : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');
+						container = above ? findReactFragment(out, n => n.props && Array.isArray(n.props.children))  : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');
 					if ( ! container || ! container.props || ! container.props.children )
 						return out;
 

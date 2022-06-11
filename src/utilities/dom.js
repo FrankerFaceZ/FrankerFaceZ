@@ -58,23 +58,30 @@ export function findReactFragment(frag, criteria, depth = 25, current = 0, visit
 
 	visited.add(frag);
 
-	if ( frag && frag.props && Array.isArray(frag.props.children) )
-		for(const child of frag.props.children) {
-			if ( ! child )
-				continue;
+	if ( frag && frag.props && frag.props.children ) {
+		if ( Array.isArray(frag.props.children) ) {
+			for(const child of frag.props.children) {
+				if ( ! child )
+					continue;
 
-			if ( Array.isArray(child) ) {
-				for(const f of child) {
-					const out = findReactFragment(f, criteria, depth, current + 1, visited);
+				if ( Array.isArray(child) ) {
+					for(const f of child) {
+						const out = findReactFragment(f, criteria, depth, current + 1, visited);
+						if ( out )
+							return out;
+					}
+				} else {
+					const out = findReactFragment(child, criteria, depth, current + 1, visited);
 					if ( out )
 						return out;
 				}
-			} else {
-				const out = findReactFragment(child, criteria, depth, current + 1, visited);
-				if ( out )
-					return out;
 			}
+		} else {
+			const out = findReactFragment(frag.props.children, criteria, depth, current + 1, visited);
+			if ( out )
+				return out;
 		}
+	}
 
 	return null;
 }
