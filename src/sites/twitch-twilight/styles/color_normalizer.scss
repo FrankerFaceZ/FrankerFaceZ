@@ -35,6 +35,7 @@
 
 	.whispers-list-item:hover .whispers-list-item__archive-button:hover,
 	.clmgr-table__row:hover,
+	.last-x-events_collapsed_item,
 	.thread-header__title-bar-container.thread-header__title-bar-container--focused,
 	.whispers-list-item:hover,
 	.side-nav-card__link:hover {
@@ -48,6 +49,11 @@
 		&:hover {
 			background-color: var(--color-background-button-hover) !important;
 		}
+	}
+
+	.last-x-events_expanded_item_detail_icon,
+	.last-x-events_collapsed_item_detail {
+		background-color: var(--color-background-brand);
 	}
 
 	.top-stats-tab,

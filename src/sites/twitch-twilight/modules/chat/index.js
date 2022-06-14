@@ -341,6 +341,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.last-events', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow the Support Activity Feed to be displayed in chat.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.banners.hype-train', {
 			default: true,
 			ui: {
@@ -897,6 +906,9 @@ export default class ChatHook extends Module {
 
 		this.chat.context.getChanges('chat.emotes.limit-size', () =>
 			this.toggleEmoteJail());
+
+		this.chat.context.getChanges('chat.banners.last-events', val =>
+			this.css_tweaks.toggleHide('last-x-events', ! val));
 
 		this.chat.context.getChanges('chat.input.show-mod-view', val =>
 			this.css_tweaks.toggleHide('mod-view', ! val));
