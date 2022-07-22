@@ -53,7 +53,7 @@ export default class VideoChatHook extends Module {
 
 		this.VideoChatController = this.fine.define(
 			'video-chat-controller',
-			n => n.onMessageScrollAreaMount && n.createReply,
+			n => n.onMessageScrollAreaMount && n.focusedCommentCallback,
 			['user-video', 'user-clip', 'video']
 		);
 
@@ -65,7 +65,7 @@ export default class VideoChatHook extends Module {
 
 		this.VideoChatLine = this.fine.define(
 			'video-chat-line',
-			n => n.onReplyClickHandler && n.shouldFocusMessage,
+			n => n.onTimestampClickHandler && n.shouldFocusMessage,
 			['user-video', 'user-clip', 'video']
 		);
 
@@ -126,63 +126,6 @@ export default class VideoChatHook extends Module {
 			React = await this.web_munch.findModule('react');
 		if ( ! React )
 			return;
-
-		/*this.MessageMenu = class FFZMessageMenu extends React.Component {
-			constructor(props) {
-				super(props);
-
-				this.onClick = () => this.setState({open: ! this.state.open});
-				this.onClickOutside = () => this.state.open && this.setState({open: false});
-
-				this.element = null;
-				this.saveRef = element => this.element = element;
-
-				this.state = {
-					open: false
-				}
-			}
-
-			componentDidMount() {
-				if ( this.element )
-					this._clicker = new ClickOutside(this.element, this.onClickOutside);
-			}
-
-			componentWillUnmount() {
-				this._clicker.destroy();
-				this._clicker = null;
-			}
-
-			render() {
-				const is_open = this.state.open;
-
-				return (<div ref={this.saveRef} data-test-selector="menu-options-wrapper" class={`tw-flex-shrink-0 video-chat__message-menu${is_open ? ' video-chat__message-menu--force-visible' : ''}`}>
-					<div class="tw-relative">
-						<button class="tw-interactive tw-button-icon tw-button-icon--secondary tw-button-icon--small" data-test-selector="menu-button" onClick={this.onClick}>
-							<span class="tw-button-icon__icon">
-								<figure class="ffz-i-ellipsis-vert" />
-							</span>
-						</button>
-						<div class={`tw-absolute ffz-balloon ffz-balloon--down ffz-balloon--right ffz-balloon--sm ${is_open ? 'tw-block' : 'tw-hide'}`}>
-							<div class="tw-absolute ffz-balloon__tail tw-overflow-hidden">
-								<div class="tw-absolute ffz-balloon__tail-symbol tw-border-b tw-border-l tw-border-r tw-border-t tw-c-background-base" />
-							</div>
-							<div class="tw-border-b tw-border-l tw-border-r tw-border-radius-medium tw-border-t tw-c-background-base tw-elevation-1 tw-pd-y-1">
-								<button class="ffz-interactable ffz-interactable--inverted tw-full-width tw-pd-y-05 tw-pd-x-1">{
-									t.i18n.t('video-chat.copy-link', 'Copy Link')
-								}</button>
-								<button class="ffz-interactable ffz-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
-									t.i18n.t('video-chat.delete', 'Delete')
-								}</button>
-								<div class="tw-mg-1 tw-border-b" />
-								<button class="ffz-interactable ffz-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
-									t.i18n.t('video-chat.ban', 'Ban User')
-								}</button>
-							</div>
-						</div>
-					</div>
-				</div>)
-			}
-		}*/
 
 		const createElement = React.createElement,
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
@@ -404,7 +347,7 @@ export default class VideoChatHook extends Module {
 				try {
 					this._ffz_no_scan = true;
 
-					if ( this.state.showReplyForm || ! t.chat.context.get('chat.video-chat.enabled') )
+					if ( this.state?.showReplyForm || ! t.chat.context.get('chat.video-chat.enabled') )
 						return old_render.call(this);
 
 					const context = this.props.messageContext,
@@ -441,7 +384,7 @@ export default class VideoChatHook extends Module {
 						<div class="tw-full-width">
 							{ main_message }
 							{ this.props.isExpandedLayout && this.ffzRenderExpanded(msg) }
-							{ context.replies.length > 0 && (<div class="qa-vod-chat-reply tw-mg-l-05 tw-mg-y-05 vod-message__reply">
+							{ context.replies && context.replies.length > 0 && (<div class="qa-vod-chat-reply tw-mg-l-05 tw-mg-y-05 vod-message__reply">
 								{ context.comment.moreReplies && (<div class="tw-inline-block vod-message__show-more-replies">
 									<button class="tw-interactive tw-button tw-button--text" onClick={this.onLoadMoreRepliesClickHandler}>
 										<span class="tw-button__text" data-a-target="tw-button-text">{
@@ -543,7 +486,7 @@ export default class VideoChatHook extends Module {
 				type: author.type
 			},
 			roomLogin: room && room.login,
-			roomID: room && room.id,
+			roomID: room && room.id || comment.channelId,
 			ffz_badges: this.chat.badges.getBadges(author.id, author.login, room?.id, room?.login),
 			badges: comment.userBadges,
 			messageParts: comment.message.tokens,
