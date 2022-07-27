@@ -53,19 +53,19 @@ export default class VideoChatHook extends Module {
 
 		this.VideoChatController = this.fine.define(
 			'video-chat-controller',
-			n => n.onMessageScrollAreaMount && n.focusedCommentCallback,
+			n => n.onError && n.videoData && n.props?.comments,
 			['user-video', 'user-clip', 'video']
 		);
 
-		this.VideoChatMenu = this.fine.define(
+		/*this.VideoChatMenu = this.fine.define(
 			'video-chat-menu',
 			n => n.onToggleMenu && n.getContent && n.props && has(n.props, 'isExpandedLayout'),
 			['user-video', 'user-clip', 'video']
-		);
+		);*/
 
 		this.VideoChatLine = this.fine.define(
 			'video-chat-line',
-			n => n.onTimestampClickHandler && n.shouldFocusMessage,
+			n => n.onTimestampClickHandler && n.props?.messageContext,
 			['user-video', 'user-clip', 'video']
 		);
 
@@ -165,10 +165,10 @@ export default class VideoChatHook extends Module {
 			}
 
 			render() {
-				if ( ! t.VideoChatMenu._class )
+				//if ( ! t.VideoChatMenu._class )
 					return null;
 
-				return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
+				/*return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
 					<t.VideoChatMenu._class
 						context={this.props.context}
 						isCurrentUserModerator={this.props.isCurrentUserModerator}
@@ -179,7 +179,7 @@ export default class VideoChatHook extends Module {
 						onOpen={this.onOpen}
 						onReplyClick={this.props.onReplyClick}
 					/>
-				</div>);
+				</div>);*/
 			}
 		}
 
