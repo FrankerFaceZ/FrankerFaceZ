@@ -176,6 +176,7 @@
 				v-model="rules"
 				:filters="filters"
 				:context="test_context"
+				:preview="true"
 			/>
 		</div>
 	</div>

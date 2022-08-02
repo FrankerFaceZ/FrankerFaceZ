@@ -37,6 +37,10 @@ function sortPriorityColorTerms(list) {
 
 const TERM_FLAGS = ['g', 'gi'];
 
+const UNBLOCKABLE_TOKENS = [
+	'filter_test'
+];
+
 function formatTerms(data) {
 	const out = [];
 
@@ -438,6 +442,29 @@ export default class Chat extends Module {
 					{value: 60000, title: 'Why??? (1m)'},
 					{value: 788400000000, title: 'The CBenni Option (Literally 25 Years)'}
 				]
+			}
+		});
+
+		this.settings.add('chat.filtering.hidden-tokens', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			process(ctx, val) {
+				const out = new Set;
+				for(const v of val)
+					if ( v?.v || ! UNBLOCKABLE_TOKENS.includes(v.v) )
+						out.add(v.v);
+
+				return out;
+			},
+
+			ui: {
+				path: 'Chat > Appearance >> Hidden Token Types @{"description":"This filter allows you to prevent specific content token types from appearing chat messages, such as hiding all cheers or emotes."}',
+				component: 'blocked-types',
+				data: () => Object
+					.keys(this.tokenizers)
+					.filter(key => ! UNBLOCKABLE_TOKENS.includes(key) && this.tokenizers[key]?.render)
+					.sort()
 			}
 		});
 
@@ -1978,12 +2005,14 @@ export default class Chat extends Module {
 			tokenizers = this.tokenizers,
 			l = tokens.length;
 
+		const hidden = this.context.get('chat.filtering.hidden-tokens');
+
 		for(let i=0; i < l; i++) {
 			const token = tokens[i],
 				type = token.type,
 				tk = tokenizers[type];
 
-			if ( token.hidden )
+			if ( token.hidden || hidden.has(type) )
 				continue;
 
 			let res;

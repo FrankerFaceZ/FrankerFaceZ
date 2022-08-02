@@ -13,6 +13,9 @@ import { getFontsList, useFont } from 'utilities/fonts';
 
 const STYLE_VALIDATOR = createElement('span');
 
+const LEFT_CONTROLS = '.video-player__default-player .player-controls__left-control-group';
+const RIGHT_CONTROLS = '.video-player__default-player .player-controls__right-control-group';
+
 const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null,
 	HAS_GAIN = HAS_COMPRESSOR && window.GainNode != null;
 
@@ -74,6 +77,9 @@ export default class PlayerBase extends Module {
 		this.inject('site.css_tweaks');
 
 		this.onShortcut = this.onShortcut.bind(this);
+
+		this.LEFT_CONTROLS = LEFT_CONTROLS;
+		this.RIGHT_CONTROLS = RIGHT_CONTROLS;
 
 		this.registerSettings();
 	}
@@ -1171,7 +1177,7 @@ export default class PlayerBase extends Module {
 	addGainSlider(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
-			container = outer && outer.querySelector('.video-player__default-player .player-controls__left-control-group');
+			container = outer && outer.querySelector(LEFT_CONTROLS);
 		let gain = video != null && video._ffz_compressed && video._ffz_gain;
 
 		if ( this.areControlsDisabled(inst) )
@@ -1302,7 +1308,7 @@ export default class PlayerBase extends Module {
 	addCompressorButton(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
-			container = outer && outer.querySelector('.video-player__default-player .player-controls__left-control-group'),
+			container = outer && outer.querySelector(LEFT_CONTROLS),
 			has_comp = HAS_COMPRESSOR && video != null && this.settings.get('player.compressor.enable');
 
 		if ( ! container ) {
@@ -1730,7 +1736,7 @@ export default class PlayerBase extends Module {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
 			is_fs = video && document.fullscreenElement && document.fullscreenElement.contains(video),
-			container = outer && outer.querySelector('.video-player__default-player .player-controls__right-control-group'),
+			container = outer && outer.querySelector(RIGHT_CONTROLS),
 			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
 
 		if ( ! container ) {
@@ -1833,7 +1839,7 @@ export default class PlayerBase extends Module {
 
 	addResetButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			container = outer && outer.querySelector('.video-player__default-player .player-controls__right-control-group'),
+			container = outer && outer.querySelector(RIGHT_CONTROLS),
 			has_reset = this.settings.get('player.button.reset');
 
 		if ( ! container ) {
@@ -2055,7 +2061,7 @@ export default class PlayerBase extends Module {
 				return;
 
 			const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-				container = outer && outer.querySelector('.video-player__default-player .player-controls__right-control-group');
+				container = outer && outer.querySelector(RIGHT_CONTROLS);
 
 			if ( ! container )
 				return;

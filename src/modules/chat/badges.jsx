@@ -44,7 +44,10 @@ const CSS_BADGES = {
 		turbo: { 1: { color: '#59399A' } },
 		premium: { 1: { color: '#00A0D6' } },
 		'anonymous-cheerer': { 1: { color: '#4B367C' } },
-		'clip-champ': { 1: { color: '#9146FF' } }
+		'clip-champ': { 1: { color: '#9146FF' } },
+		'artist-badge': { 1: { color: '#1e69ff' } },
+		'no_audio': { 1: { color: '#323239' } },
+		'no_video': { 1: { color: '#323239' } }
 	}
 }
 

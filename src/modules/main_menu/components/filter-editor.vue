@@ -10,6 +10,7 @@
 				:key="rule.id"
 				:value="rule"
 				:filters="filters"
+				:preview="preview"
 				:context="context"
 				:data-id="rule.id"
 				@input="updateRule(rule.id, $event)"
@@ -61,9 +62,14 @@ export default {
 		value: Array,
 		filters: Object,
 		maxRules: {
-			tpye: Number,
+			type: Number,
 			required: false,
 			default: 0
+		},
+		preview: {
+			type: Boolean,
+			required: false,
+			default: true
 		},
 		context: {
 			type: Object,

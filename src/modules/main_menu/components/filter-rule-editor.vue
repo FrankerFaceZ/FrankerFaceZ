@@ -10,10 +10,11 @@
 			:type="type"
 			:filters="filters"
 			:context="context"
+			:preview="preview"
 		/>
 
 		<div
-			v-if="isShort"
+			v-if="isShort && preview"
 			class="tw-mg-l-1 tw-pd-x-1 tw-border-l tw-flex tw-align-items-center ffz--profile__icon tw-relative ffz-il-tooltip__container"
 		>
 			<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
@@ -31,7 +32,7 @@
 			:class="[isShort ? '' : 'tw-mg-l-1']"
 			class="tw-border-l tw-pd-l-1 tw-flex tw-flex-column tw-flex-wrap tw-justify-content-start tw-align-items-start"
 		>
-			<div v-if="! isShort" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative ffz-il-tooltip__container">
+			<div v-if="! isShort && preview" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative ffz-il-tooltip__container">
 				<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
 				<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 					<span v-if="passes">
@@ -80,6 +81,11 @@ export default {
 		context: {
 			type: Object,
 			required: false
+		},
+		preview: {
+			type: Boolean,
+			required: false,
+			default: true
 		}
 	},
 
@@ -93,7 +99,7 @@ export default {
 
 	computed: {
 		passes() {
-			return this.tester && this.tester(this.context);
+			return this.preview && this.tester && this.tester(this.context);
 		},
 
 		type() {
