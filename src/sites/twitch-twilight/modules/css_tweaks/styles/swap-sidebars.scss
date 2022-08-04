@@ -1,5 +1,5 @@
 .twilight-main { order: 2 }
-#sideNav,
+.top-nav + div > div:first-child:not(.celebration__overlay),
 .side-nav { order: 3 }
 .right-column {
 	order: 1;
@@ -14,7 +14,7 @@
 	width: unset !important;
 }
 
-#sideNav .collapse-toggle {
+.side-nav .collapse-toggle {
 	svg {
 		transform: rotate(180deg);
 	}
