@@ -472,7 +472,7 @@ export default class VideoChatHook extends Module {
 		if ( comment._ffz_message )
 			return comment._ffz_message;
 
-		const room = this.chat.getRoom(comment.channelId, null, true, true),
+		const room = this.chat.getRoom(this.channelId, null, true, true),
 			params = comment.message.userNoticeParams,
 			msg_id = params && params['msg-id'];
 
@@ -486,7 +486,7 @@ export default class VideoChatHook extends Module {
 				type: author.type
 			},
 			roomLogin: room && room.login,
-			roomID: room && room.id || comment.channelId,
+			roomID: room && room.id,
 			ffz_badges: this.chat.badges.getBadges(author.id, author.login, room?.id, room?.login),
 			badges: comment.userBadges,
 			messageParts: comment.message.tokens,
@@ -565,6 +565,8 @@ export default class VideoChatHook extends Module {
 
 		this.updateRoomBadges(chat, get('data.video.owner.broadcastBadges', props));
 		this.updateRoomBitsConfig(chat, props.bitsConfig);
+
+		this.channelId = props.data.video.owner.id;
 	}
 
 
