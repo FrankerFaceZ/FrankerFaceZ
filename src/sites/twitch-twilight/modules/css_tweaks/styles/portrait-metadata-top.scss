@@ -1,5 +1,5 @@
 .channel-root__scroll-area--theatre-mode {
-	.channel-info-content > div:first-child {
+	.channel-info-content > :first-child {
 		right: 40rem !important;
 		bottom: calc(10rem + var(--ffz-chat-height)) !important;
 	}

@@ -1,5 +1,5 @@
 .channel-root__scroll-area--theatre-mode {
-	.channel-info-content > div:first-child,
+	.channel-info-content > :first-child,
 	.channel-info-bar {
 		position: fixed;
 		bottom: 17rem;
@@ -24,7 +24,7 @@
 	}
 
 	&:hover {
-		.channel-info-content > div:first-child,
+		.channel-info-content > :first-child,
 		.channel-info-bar {
 			background-color: var(--color-background-base);
 			opacity: 0.75;
