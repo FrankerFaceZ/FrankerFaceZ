@@ -89,6 +89,8 @@ export default class VideoChatHook extends Module {
 				component: 'setting-check-box'
 			}
 		});
+
+		this.active_room = null;
 	}
 
 
@@ -472,7 +474,7 @@ export default class VideoChatHook extends Module {
 		if ( comment._ffz_message )
 			return comment._ffz_message;
 
-		const room = this.chat.getRoom(comment.channelId, null, true, true),
+		const room = this.active_room || this.chat.getRoom(comment.channelId, null, true, true),
 			params = comment.message.userNoticeParams,
 			msg_id = params && params['msg-id'];
 
@@ -561,6 +563,7 @@ export default class VideoChatHook extends Module {
 		if ( ! this.addRoom(chat, props) )
 			return;
 
+		this.active_room = chat._ffz_room;
 		this.chat.badges.updateTwitchBadges(get('data.badges', props));
 
 		this.updateRoomBadges(chat, get('data.video.owner.broadcastBadges', props));
@@ -605,6 +608,9 @@ export default class VideoChatHook extends Module {
 
 
 	chatUnmounted(chat) {
+		if (this.active_room === chat._ffz_room)
+			this.active_room = null;
+
 		this.removeRoom(chat);
 	}
 
