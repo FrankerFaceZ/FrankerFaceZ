@@ -26,6 +26,7 @@ const CLASSES = {
 	'modview-hide-info': '.modview-player-widget__hide-stream-info',
 
 	'community-highlights': '.community-highlight-stack__card',
+	'elevate-your-message': '.chat-input__input-icons button[aria-label="ElevatedMessage"]',
 
 	'prime-offers': '.top-nav__prime',
 	'discover-luna': '.top-nav__external-link[data-a-target="try-presto-link"]',
@@ -38,7 +39,7 @@ const CLASSES = {
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
-	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard',
+	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard,.channel-leaderboard-marquee',
 	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"],.whispers__pill',
 
 	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',

@@ -79,7 +79,7 @@ export default class Channel extends Module {
 			changed: () => this.updateLinks()
 		});
 
-		this.settings.add('channel.hosting.enable', {
+		/*this.settings.add('channel.hosting.enable', {
 			default: true,
 			ui: {
 				path: 'Channel > Behavior >> Hosting',
@@ -87,8 +87,7 @@ export default class Channel extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => ! val && this.InfoBar.each(el => this.updateBar(el))
-		});
-
+		});*/
 
 		this.ChannelPanels = this.fine.define(
 			'channel-panels',
@@ -116,7 +115,7 @@ export default class Channel extends Module {
 			{childNodes: true, subtree: true}, 1
 		);
 
-		const strip_host = resp => {
+		/*const strip_host = resp => {
 			if ( this.settings.get('channel.hosting.enable') )
 				return;
 
@@ -130,7 +129,7 @@ export default class Channel extends Module {
 		};
 
 		this.apollo.registerModifier('UseHosting', strip_host, false);
-		this.apollo.registerModifier('PlayerTrackingContextQuery', strip_host, false);
+		this.apollo.registerModifier('PlayerTrackingContextQuery', strip_host, false);*/
 	}
 
 	onEnable() {
@@ -162,7 +161,7 @@ export default class Channel extends Module {
 		this.InfoBar.on('unmount', this.removeBar, this);
 		this.InfoBar.each(el => this.updateBar(el));
 
-		this.subpump.on(':pubsub-message', this.onPubSub, this);
+		//this.subpump.on(':pubsub-message', this.onPubSub, this);
 
 		this.router.on(':route', this.checkNavigation, this);
 		this.checkNavigation();
@@ -230,7 +229,7 @@ export default class Channel extends Module {
 		}
 	}
 
-	setHost(channel_id, channel_login, target_id, target_login) {
+	/*setHost(channel_id, channel_login, target_id, target_login) {
 		const topic = `stream-chat-room-v1.${channel_id}`;
 
 		this.subpump.inject(topic, {
@@ -272,7 +271,7 @@ export default class Channel extends Module {
 			event.message.data.num_viewers = 0;
 			event.markChanged();
 		}
-	}
+	}*/
 
 
 	updateSubscription(login) {
@@ -441,8 +440,8 @@ export default class Channel extends Module {
 			});
 		}*/
 
-		if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
-			this.setHost(props.channelID, props.channelLogin, null, null);
+		//if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
+		//	this.setHost(props.channelID, props.channelLogin, null, null);
 
 		this.updateSubscription(props.channelLogin);
 		this.updateMetadata(el);
@@ -492,10 +491,10 @@ export default class Channel extends Module {
 					live_since: props.liveSince
 				},
 				props,
-				hosted: {
+				/*hosted: {
 					login: props.hostLogin,
 					display_name: props.hostDisplayName
-				},
+				},*/
 				el,
 				getViewerCount: () => {
 					const thing = cont.querySelector('p[data-a-target="animated-channel-viewers-count"]'),

@@ -84,6 +84,51 @@ export const edit_overrides = {
 
 
 // ============================================================================
+// Copy to Clipboard
+// ============================================================================
+
+export const copy_message = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-docs'
+		}
+	}],
+
+	defaults: {
+		format: '{{user.displayName}}: {{message.text}}'
+	},
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-copy.vue'),
+
+	required_context: ['user', 'message'],
+
+	title: 'Copy Message',
+	description: 'Allows you to quickly copy a chat message to your clipboard.',
+
+	can_self: true,
+
+	tooltip(data) {
+		const msg = this.replaceVariables(data.options.format, data);
+
+		return [
+			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+				this.i18n.t('chat.actions.copy_message', 'Copy Message')
+			}</div>),
+			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
+				msg
+			}</div>)
+		];
+	},
+
+	click(event, data) {
+		const msg = this.replaceVariables(data.options.format, data);
+		navigator.clipboard.writeText(msg);
+	}
+}
+
+
+// ============================================================================
 // Open URL
 // ============================================================================
 

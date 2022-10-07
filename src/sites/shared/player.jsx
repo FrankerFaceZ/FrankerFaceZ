@@ -559,6 +559,15 @@ export default class PlayerBase extends Module {
 			},
 			changed: val => this.css_tweaks.toggle('player-hide-mouse', val)
 		});
+
+		this.settings.add('player.single-click-pause', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Playback',
+				title: "Pause/Unpause the player by clicking.",
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	async onEnable() {
@@ -643,8 +652,6 @@ export default class PlayerBase extends Module {
 
 
 	onShortcut(e) {
-		this.log.info('Compressor Hotkey', e);
-
 		for(const inst of this.Player.instances)
 			this.compressPlayer(inst, e);
 	}
@@ -825,10 +832,14 @@ export default class PlayerBase extends Module {
 			if ( ! this._ffz_click_handler )
 				this._ffz_click_handler = this.ffzClickHandler.bind(this);
 
+			if ( ! this._ffz_dblclick_handler )
+				this._ffz_dblclick_handler = this.ffzDblClickHandler.bind(this);
+
 			if ( ! this._ffz_menu_handler )
 				this._ffz_menu_handler = this.ffzMenuHandler.bind(this);
 
 			on(cont, 'wheel', this._ffz_scroll_handler);
+			on(cont, 'dblclick', this._ffz_dblclick_handler);
 			on(cont, 'mousedown', this._ffz_click_handler);
 			on(cont, 'contextmenu', this._ffz_menu_handler);
 		}
@@ -853,7 +864,33 @@ export default class PlayerBase extends Module {
 				this._ffz_menu_handler = null;
 			}
 
+			if ( this._ffz_dblclick_handler ) {
+				off(cont, 'dblclick', this._ffz_dblclick_handler);
+				this._ffz_dblclick_handler = null;
+			}
+
 			this._ffz_listeners = false;
+		}
+
+		cls.prototype.ffzDelayPause = function() {
+			if ( this._ffz_pause_timer )
+				clearTimeout(this._ffz_pause_timer);
+
+			const player = this.props?.mediaPlayerInstance;
+			if (! player.isPaused())
+				this._ffz_pause_timer = setTimeout(() => {
+					const player = this.props?.mediaPlayerInstance;
+					if (!player.isPaused())
+						player.pause();
+				}, 500);
+		}
+
+		cls.prototype.ffzDblClickHandler = function(event) {
+			if ( ! event )
+				return;
+
+			if ( this._ffz_pause_timer )
+				clearTimeout(this._ffz_pause_timer);
 		}
 
 		cls.prototype.ffzClickHandler = function(event) {
@@ -862,14 +899,25 @@ export default class PlayerBase extends Module {
 
 			const vol_scroll = t.settings.get('player.volume-scroll'),
 				gain_scroll = t.settings.get('player.gain.scroll'),
+				click_pause = t.settings.get('player.single-click-pause'),
 
 				wants_rmb = wantsRMB(vol_scroll) || wantsRMB(gain_scroll);
 
+			// Left Click
+			if (click_pause && event.button === 0) {
+				if (! event.target || ! event.target.classList.contains('click-handler'))
+					return;
+
+				this.ffzDelayPause();
+			}
+
+			// Right Click
 			if ( wants_rmb && event.button === 2 ) {
 				this.ffz_rmb = true;
 				this.ffz_scrolled = false;
 			}
 
+			// Middle Click
 			if ( ! t.settings.get('player.mute-click') || event.button !== 1 )
 				return;
 

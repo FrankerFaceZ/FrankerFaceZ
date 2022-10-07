@@ -54,7 +54,7 @@ export default class Dashboard extends Module {
 		this.settings.updateContext({
 			channel: get('props.channelLogin', inst),
 			channelID: get('props.channelID', inst),
-			hosting: !! inst.props?.hostedChannel?.id
+			//hosting: !! inst.props?.hostedChannel?.id
 		});
 	}
 
@@ -62,7 +62,7 @@ export default class Dashboard extends Module {
 		this.settings.updateContext({
 			channel: null,
 			channelID: null,
-			hosting: false
+			//hosting: false
 		});
 	}
 

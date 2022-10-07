@@ -201,7 +201,7 @@ export default class ChatHook extends Module {
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.hostingHandler && n.onRoomStateUpdated,
+			n => n.parseOutgoingMessage && n.onRoomStateUpdated && n.renderNotifications,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -656,6 +656,15 @@ export default class ChatHook extends Module {
 				component: 'setting-check-box'
 			}
 		});
+
+		this.settings.add('chat.input.show-elevate-your-message', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Allow the "Elevate Your Message" button to be displayed.',
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	get currentChat() {
@@ -940,6 +949,9 @@ export default class ChatHook extends Module {
 			this.css_tweaks.toggle('chat-rows', val);
 			this.updateMentionCSS();
 		});
+
+		this.chat.context.getChanges('chat.input.show-elevate-your-message', val =>
+			this.css_tweaks.toggleHide('elevate-your-message', ! val));
 
 		this.updateChatCSS();
 		this.updateColors();
@@ -2441,7 +2453,7 @@ export default class ChatHook extends Module {
 					return old_points.call(i, e);
 				}
 
-				const old_host = this.onHostingEvent;
+				/*const old_host = this.onHostingEvent;
 				this.onHostingEvent = function (e, _t) {
 					t.emit('tmi:host', e, _t);
 					return old_host.call(i, e, _t);
@@ -2451,7 +2463,7 @@ export default class ChatHook extends Module {
 				this.onUnhostEvent = function (e, _t) {
 					t.emit('tmi:unhost', e, _t);
 					return old_unhost.call(i, e, _t);
-				}
+				}*/
 
 				const old_add = this.addMessage;
 				this.addMessage = function(e) {

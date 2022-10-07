@@ -196,7 +196,7 @@ export default class Player extends PlayerBase {
 
 
 	checkCarousel(inst) {
-		if ( this.settings.get('channel.hosting.enable') )
+		/*if ( this.settings.get('channel.hosting.enable') )
 			return;
 
 		if ( inst.props?.playerType === 'channel_home_carousel' ) {
@@ -211,7 +211,7 @@ export default class Player extends PlayerBase {
 				events = inst.props.playerEvents;
 
 			this.stopPlayer(player, events, inst);
-		}
+		}*/
 	}
 
 

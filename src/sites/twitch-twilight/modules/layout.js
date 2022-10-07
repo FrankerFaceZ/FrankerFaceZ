@@ -172,7 +172,7 @@ export default class Layout extends Module {
 		});
 
 		this.settings.add('layout.portrait-extra-height', {
-			requires: ['context.new_channel', 'context.squad_bar', 'context.hosting', 'context.ui.theatreModeEnabled', 'player.theatre.no-whispers', 'whispers.show', 'layout.minimal-navigation'],
+			requires: ['context.new_channel', 'context.squad_bar', /*'context.hosting',*/ 'context.ui.theatreModeEnabled', 'player.theatre.no-whispers', 'whispers.show', 'layout.minimal-navigation'],
 			process(ctx) {
 				let height = 0;
 				if ( ctx.get('context.ui.theatreModeEnabled') ) {
@@ -192,8 +192,8 @@ export default class Layout extends Module {
 
 					height += ctx.get('context.new_channel') ? 1 : 5;
 
-					if ( ctx.get('context.hosting') )
-						height += 4;
+					/*if ( ctx.get('context.hosting') )
+						height += 4;*/
 				}
 
 				return height;
