@@ -741,7 +741,7 @@ other {# messages were deleted by a moderator.}
 					Object.assign(user_props.style, msg.ffz_user_style);
 
 				const user_bits = [
-					t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+					t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e, this),
 					this.renderInlineHighlight ? this.renderInlineHighlight() : null,
 					e('span', {
 						className: 'chat-line__message--badges'
@@ -876,7 +876,7 @@ other {# messages were deleted by a moderator.}
 								out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
 									className: 'chat-line__timestamp'
 								}, t.chat.formatTime(msg.timestamp)),
-								(out || msg.sub_anon) ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+								(out || msg.sub_anon) ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e, this),
 								sub_msg
 							]),
 							mystery ? e('div', {
@@ -949,7 +949,7 @@ other {# messages were deleted by a moderator.}
 								out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
 									className: 'chat-line__timestamp'
 								}, t.chat.formatTime(msg.timestamp)),
-								(out || msg.sub_anon) ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+								(out || msg.sub_anon) ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e, this),
 								sub_msg
 							])
 						]),
@@ -1014,7 +1014,7 @@ other {# messages were deleted by a moderator.}
 									out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
 										className: 'chat-line__timestamp'
 									}, t.chat.formatTime(msg.timestamp)),
-									out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+									out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e, this),
 									sub_msg
 								])
 							]),
@@ -1073,7 +1073,7 @@ other {# messages were deleted by a moderator.}
 							out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
 								className: 'chat-line__timestamp'
 							}, t.chat.formatTime(msg.timestamp)),
-							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e, this),
 							out ?
 								t.i18n.tList('chat.points.redeemed', 'Redeemed {reward} {cost}', {reward, cost}) :
 								t.i18n.tList('chat.points.user-redeemed', '{user} redeemed {reward} {cost}', {
@@ -1102,7 +1102,7 @@ other {# messages were deleted by a moderator.}
 							out ? null : extra_ts && (this.props.showTimestamps || this.props.isHistorical) && e('span', {
 								className: 'chat-line__timestamp'
 							}, t.chat.formatTime(msg.timestamp)),
-							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e),
+							out ? null : t.actions.renderInline(msg, this.props.showModerationIcons, u, r, e, this),
 							t.i18n.tList('chat.bits-message', 'Cheered {count, plural, one {# Bit} other {# Bits}}', {count: msg.bits || 0})
 						]),
 						out && e('div', {
@@ -1140,17 +1140,33 @@ other {# messages were deleted by a moderator.}
 							this.props.repliesAppearancePreference && this.props.repliesAppearancePreference === 'expanded' ? this.renderReplyLine() : null,
 							out
 						]),
-						e('div', {
-							className: 'chat-line__reply-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
-						}, e('button', {
-							className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
-							'data-test-selector': 'chat-reply-button',
-							'aria-label': title,
-							'data-title': title,
-							onClick: this.ffz_open_reply
-						}, e('span', {
-							className: 'tw-button-icon__icon'
-						}, icon)))
+						/*e('div', {
+							className: 'chat-line__icons'
+						}, [*/
+							/*e('div', {
+								className: 'chat-line__pin-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
+							}, e('button', {
+								className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
+								'data-test-selector': 'chat-pin-button',
+								'aria-label': 'Pin This Message',
+								'data-title': 'Pin This Message',
+								onClick: this.onPinMessageClick
+							}, e('span', {
+								className: 'tw-button-icon__icon'
+							}, e('figure', {className: 'ffz-i-'})))),
+							//this.renderPinButton(),*/
+							e('div', {
+								className: 'chat-line__reply-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
+							}, e('button', {
+								className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
+								'data-test-selector': 'chat-reply-button',
+								'aria-label': title,
+								'data-title': title,
+								onClick: this.ffz_open_reply
+							}, e('span', {
+								className: 'tw-button-icon__icon'
+							}, icon)))
+						//])
 					];
 				}
 

@@ -743,7 +743,7 @@ export default class Actions extends Module {
 	}
 
 
-	renderInline(msg, mod_icons, current_user, current_room, createElement) {
+	renderInline(msg, mod_icons, current_user, current_room, createElement, instance = null) {
 		const actions = [];
 
 		const current_level = this.getUserLevel(current_room, current_user),
@@ -778,11 +778,11 @@ export default class Actions extends Module {
 			if ( is_self && ! act.can_self )
 				continue;
 
-			if ( maybe_call(act.hidden, this, data, msg, current_room, current_user, mod_icons) )
+			if ( maybe_call(act.hidden, this, data, msg, current_room, current_user, mod_icons, instance) )
 				continue;
 
 			if ( act.override_appearance ) {
-				const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons);
+				const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons, instance);
 				if ( out )
 					ap = out;
 			}
@@ -792,7 +792,7 @@ export default class Actions extends Module {
 				continue;
 
 			const has_color = def.colored && ap.color,
-				disabled = maybe_call(act.disabled, this, data, msg, current_room, current_user, mod_icons) || false,
+				disabled = maybe_call(act.disabled, this, data, msg, current_room, current_user, mod_icons, instance) || false,
 				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 				contents = def.render.call(this, ap, createElement, color);
 

@@ -4,6 +4,57 @@ import {createElement} from 'utilities/dom';
 
 
 // ============================================================================
+// Pin Message
+// ============================================================================
+
+export const pin = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-pin'
+		}
+	}],
+
+	required_context: ['message'],
+
+	title: 'Pin This Message',
+	description: 'Allows you to pin a chat message. Only functions in channels that have access to Twitch\'s pinned messages experiment.',
+
+	can_self: true,
+
+	tooltip() {
+		return this.i18n.t('chat.actions.pin', 'Pin This Message')
+	},
+
+	hidden(data, message, current_room, current_user, mod_icons, instance) {
+		let line = instance;
+
+		if ( ! line )
+			return true;
+
+		if ( ! line.props.isPinnable || ! line.onPinMessageClick )
+			return true;
+	},
+
+	click(event, data) {
+		let line = data.line;
+		if ( ! line ) {
+			const fine = this.resolve('site.fine');
+			line = fine ? fine.searchParent(event.target, n => n.setMessageTray && n.props && n.props.message) : null;
+		}
+
+		if ( ! line || ! line.props.isPinnable || ! line.onPinMessageClick )
+			return;
+
+		if ( line.props.pinnedMessage?.message?.id === data.message_id )
+			return;
+
+		line.onPinMessageClick();
+	}
+}
+
+
+// ============================================================================
 // Send Reply
 // ============================================================================
 
