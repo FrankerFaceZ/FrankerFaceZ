@@ -94,6 +94,17 @@ export default class PlayerBase extends Module {
 			}
 		});
 
+		this.settings.add('player.fade-pause-buffer', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Playback',
+				title: 'Fade the player when paused or buffering to make the UI easier to see.',
+				component: 'setting-check-box'
+			},
+
+			changed: val => this.css_tweaks.toggle('player-fade-paused', val)
+		});
+
 		if ( HAS_COMPRESSOR ) {
 			this.settings.add('player.compressor.enable', {
 				default: true,
@@ -578,6 +589,7 @@ export default class PlayerBase extends Module {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
+		this.css_tweaks.toggle('player-fade-paused', this.settings.get('player.fade-pause-buffer'));
 
 		this.installVisibilityHook();
 		this.updateHideExtensions();
@@ -706,6 +718,7 @@ export default class PlayerBase extends Module {
 
 			const events = this.props.playerEvents;
 			if ( events ) {
+				on(events, 'Buffering', this._ffzUpdateState);
 				on(events, 'Playing', this._ffzUpdateState);
 				on(events, 'PlayerError', this._ffzUpdateState);
 				on(events, 'PlayerError', this._ffzErrorReset);
@@ -818,6 +831,7 @@ export default class PlayerBase extends Module {
 
 			ds.ended = state === 'Ended';
 			ds.paused = state === 'Idle';
+			ds.buffering = state === 'Buffering';
 		}
 
 		cls.prototype.ffzAttachListeners = function() {

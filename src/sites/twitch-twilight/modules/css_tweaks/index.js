@@ -39,7 +39,7 @@ const CLASSES = {
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
-	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard,.channel-leaderboard-marquee',
+	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard,.channel-leaderboard-marquee,div[data-test-selector="channel-leaderboard-container"]',
 	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"],.whispers__pill',
 
 	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',
@@ -47,8 +47,12 @@ const CLASSES = {
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',
 	'celebration': 'body .celebration__overlay',
-	'mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
-	'last-x-events': '.last-x-events_container'
+
+	'last-x-events': '.last-x-events_container',
+
+	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
+	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]',
+	'ci-shield-mode': '.chat-input__buttons-container > div:last-child button[class|="ScCoreButton"]:not([data-highlight-selector]):not([data-a-target])'
 };
 
 

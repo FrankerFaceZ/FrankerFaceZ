@@ -4,6 +4,22 @@ import {load as loadFontAwesome} from 'utilities/font-awesome';
 
 
 // ============================================================================
+// Dynamic
+// ============================================================================
+
+export const dynamic = {
+	title: 'Dynamic',
+	title_i18n: 'setting.actions.appearance.dynamic',
+
+	colored: true,
+
+	render(data, createElement, color) {
+		return <figure style={{color}} class={`${data.icon||'ffz-i-zreknarf'}`} />;
+	}
+}
+
+
+// ============================================================================
 // Text
 // ============================================================================
 

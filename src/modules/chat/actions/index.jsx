@@ -67,6 +67,42 @@ export default class Actions extends Module {
 			}
 		});
 
+		this.settings.add('chat.actions.hover', {
+			process: (ctx, val) =>
+				val.filter(x => x.appearance &&
+					this.renderers[x.appearance.type] &&
+					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
+					(! x.action || this.actions[x.action])
+				),
+
+			default: [
+				{v: {action: 'pin', appearance: {type: 'icon', icon: 'ffz-i-pin'}, options: {}, display: {mod_icons: true}}},
+				{v: {action: 'reply', appearance: {type: 'dynamic'}, options: {}, display: {}}}
+			],
+
+			type: 'array_merge',
+			inherit_default: true,
+
+			ui: {
+				path: 'Chat > Actions > Message Hover @{"description": "Here, you can define custom actions that will appear on top of messages in chat when you hover over them. If you aren\'t seeing an action you\'ve defined here in chat, please make sure that you have enabled Mod Icons in the chat settings menu."}',
+				component: 'chat-actions',
+				context: ['user', 'room', 'message'],
+				inline: true,
+				modifiers: true,
+				hover_modifier: false,
+
+				data: () => {
+					const chat = this.resolve('site.chat');
+
+					return {
+						color: val => chat && chat.colors ? chat.colors.process(val) : val,
+						actions: deep_copy(this.actions),
+						renderers: deep_copy(this.renderers)
+					}
+				}
+			}
+		});
+
 		this.settings.add('chat.actions.inline', {
 			// Filter out actions
 			process: (ctx, val) =>
@@ -80,8 +116,7 @@ export default class Actions extends Module {
 				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
 				{v: {action: 'unban', appearance: {type: 'icon', icon: 'ffz-i-ok'}, options: {}, display: {mod: true, mod_icons: true, deleted: true}}},
 				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true, mod_icons: true}}},
-				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}},
-				{v: {action: 'reply', appearance: {type: 'icon', icon: 'ffz-i-reply'}, options: {}, display: {}}}
+				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}}
 			],
 
 			type: 'array_merge',
@@ -501,6 +536,8 @@ export default class Actions extends Module {
 			if ( ! data )
 				continue;
 
+			data.ctx = 'room';
+
 			const type = data.type;
 			if ( type ) {
 				if ( type === 'new-line' ) {
@@ -544,6 +581,12 @@ export default class Actions extends Module {
 
 			if ( maybe_call(act.hidden, this, data, null, current_room, current_user, mod_icons) )
 				continue;
+
+			if ( ap.type === 'dynamic' ) {
+				const out = act.dynamicAppearance && act.dynamicAppearance.call(this, Object.assign({}, ap), data, null, current_room, current_user, mod_icons);
+				if ( out )
+					ap = out;
+			}
 
 			if ( act.override_appearance ) {
 				const out = act.override_appearance.call(this, Object.assign({}, ap), data, null, current_room, current_user, mod_icons);
@@ -649,6 +692,8 @@ export default class Actions extends Module {
 				if ( ! data )
 					continue;
 
+				data.ctx = 'user_context';
+
 				if ( data.type === 'new-line' ) {
 					line = null;
 					continue;
@@ -684,6 +729,12 @@ export default class Actions extends Module {
 				if ( maybe_call(act.hidden, this, data, msg, r, u, mod_icons) )
 					continue;
 
+				if ( ap.type === 'dynamic' ) {
+					const out = act.dynamicAppearance && act.dynamicAppearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons);
+					if ( out )
+						ap = out;
+				}
+
 				if ( act.override_appearance ) {
 					const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons);
 					if ( out )
@@ -704,7 +755,7 @@ export default class Actions extends Module {
 
 				const btn = (<button
 					class={`ffz-tooltip ffz-tooltip--no-mouse tw-button tw-button--text${disabled ? ' tw-button--disabled disabled' : ''}`}
-					disabled={disabled}
+					//disabled={disabled}
 					data-tooltip-type="action"
 					data-action={data.action}
 					data-options={data.options ? JSON.stringify(data.options) : null}
@@ -743,6 +794,94 @@ export default class Actions extends Module {
 	}
 
 
+	renderHover(msg, mod_icons, current_user, current_room, createElement, instance = null) {
+		const actions = [];
+
+		const current_level = this.getUserLevel(current_room, current_user),
+			msg_level = this.getUserLevel(current_room, msg.user),
+			is_self = msg.user && current_user && current_user.login === msg.user.login;
+
+		if ( current_level < 3 )
+			mod_icons = false;
+
+		const chat = this.resolve('site.chat');
+
+		let had_action = false;
+
+		for(const data of this.parent.context.get('chat.actions.hover')) {
+			if ( ! data.action || ! data.appearance )
+				continue;
+
+			data.ctx = 'hover';
+
+			let ap = data.appearance || {};
+			const disp = data.display || {},
+				keys = disp.keys,
+				act = this.actions[data.action];
+
+			if ( ! act || disp.disabled ||
+				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
+				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
+				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
+				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
+				continue;
+
+			if ( is_self && ! act.can_self )
+				continue;
+
+			if ( maybe_call(act.hidden, this, data, msg, current_room, current_user, mod_icons, instance) )
+				continue;
+
+			if ( ap.type === 'dynamic' ) {
+				const out = act.dynamicAppearance && act.dynamicAppearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons, instance);
+				if ( out )
+					ap = out;
+			}
+
+			if ( act.override_appearance ) {
+				const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons, instance);
+				if ( out )
+					ap = out;
+			}
+
+			const def = this.renderers[ap.type];
+			if ( ! def )
+				continue;
+
+			const has_color = def.colored && ap.color,
+				disabled = maybe_call(act.disabled, this, data, msg, current_room, current_user, mod_icons, instance) || false,
+				color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
+				contents = def.render.call(this, ap, createElement, color);
+
+			had_action = true;
+			actions.push(<div class={`ffz-hover-action${keys ? ` ffz-has-modifier ffz-modifier-${keys}` : ''}`}>
+				<button
+					class={`ffz-tooltip ffz-mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}`}
+					//disabled={disabled}
+					data-tooltip-type="action"
+					data-action={data.action}
+					data-options={data.options ? JSON.stringify(data.options) : null}
+					data-tip={ap.tooltip}
+					onClick={this.handleClick}
+					onContextMenu={this.handleContext}
+				>
+					{contents}
+				</button>
+			</div>);
+		}
+
+		if ( ! had_action )
+			return null;
+
+		return (<div
+			class={`ffz--hover-actions ffz-action-data tw-mg-r-05`}
+			data-source="line"
+		>
+			{actions}
+		</div>);
+	}
+
+
 	renderInline(msg, mod_icons, current_user, current_room, createElement, instance = null) {
 		const actions = [];
 
@@ -762,6 +901,8 @@ export default class Actions extends Module {
 			if ( ! data.action || ! data.appearance )
 				continue;
 
+			data.ctx = 'inline';
+
 			let ap = data.appearance || {};
 			const disp = data.display || {},
 				keys = disp.keys,
@@ -780,6 +921,12 @@ export default class Actions extends Module {
 
 			if ( maybe_call(act.hidden, this, data, msg, current_room, current_user, mod_icons, instance) )
 				continue;
+
+			if ( ap.type === 'dynamic' ) {
+				const out = act.dynamicAppearance && act.dynamicAppearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons, instance);
+				if ( out )
+					ap = out;
+			}
 
 			if ( act.override_appearance ) {
 				const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, current_room, current_user, mod_icons, instance);
@@ -804,7 +951,7 @@ export default class Actions extends Module {
 			had_action = true;
 			list.push(<button
 				class={`ffz-tooltip mod-icon ffz-mod-icon tw-c-text-alt-2${disabled ? ' disabled' : ''}${has_color ? ' colored' : ''}${keys ? ` ffz-modifier-${keys}` : ''}${hover ? ' ffz-hover' : ''}`}
-				disabled={disabled}
+				//disabled={disabled}
 				data-tooltip-type="action"
 				data-action={data.action}
 				data-options={data.options ? JSON.stringify(data.options) : null}
@@ -818,14 +965,6 @@ export default class Actions extends Module {
 
 		if ( ! had_action )
 			return null;
-
-		/*const room = current_room && JSON.stringify(current_room),
-			user = msg.user && JSON.stringify({
-				login: msg.user.login,
-				displayName: msg.user.displayName,
-				id: msg.user.id,
-				type: msg.user.type
-			});*/
 
 		let out = null;
 		if ( actions.length )

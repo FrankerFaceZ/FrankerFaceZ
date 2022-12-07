@@ -453,3 +453,43 @@
 		}
 	}
 }
+
+.ffz--hover-actions {
+	position: absolute;
+	right: 0.5rem;
+	top: -1rem;
+	display: none;
+
+	--ffz-chat-actions-size: 2rem;
+
+	.chat-line__message:hover & {
+		display: block;
+	}
+}
+
+
+.ffz-hover-action {
+	display: inline-block;
+	margin-left: 0.5rem;
+	margin-bottom: 0.5rem;
+
+	box-shadow: var(--shadow-elevation-1);
+	background-color: var(--color-background-base);
+	border-radius: var(--border-radius-medium);
+
+	&.ffz-has-modifier {
+		display: none;
+	}
+
+	& > .ffz-mod-icon {
+		padding: 0.5rem;
+
+		background-color: var(--color-background-button-text-default);
+		color: var(--color-fill-button-icon);
+
+		&:hover {
+			background-color: var(--color-background-button-text-hover);
+			color: var(--color-fill-button-icon-hover);
+		}
+	}
+}

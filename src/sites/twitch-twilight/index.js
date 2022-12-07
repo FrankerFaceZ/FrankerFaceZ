@@ -67,6 +67,11 @@ export default class Twilight extends BaseSite {
 	onEnable() {
 		this.settings = this.resolve('settings');
 
+		this.web_munch.findModule('simplebar').then(sb => {
+			if (! window.ffzSimplebar && sb )
+				window.ffzSimplebar = sb;
+		}).catch(() => {});
+
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
 

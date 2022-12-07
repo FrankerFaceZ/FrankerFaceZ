@@ -207,8 +207,8 @@
 						<action-preview
 							v-else
 							:key="act.id"
-							:act="act.v"
-							:color="color(act.v.appearance.color)"
+							:act="maybeDynamic(act.v)"
+							:process-color="color"
 							:renderers="data.renderers"
 							tooltip="true"
 							pad="true"
@@ -291,7 +291,12 @@
 										<div class="tw-flex-grow-1 tw-mg-r-1">
 											{{ preset.title_i18n ? t(preset.title_i18n, preset.title, preset) : preset.title }}
 										</div>
-										<action-preview v-if="preset.appearance" :act="preset" :renderers="data.renderers" />
+										<action-preview
+											v-if="preset.appearance"
+											:act="maybeDynamic(preset)"
+											:process-color="color"
+											:renderers="data.renderers"
+											/>
 									</div>
 								</button>
 							</template>
@@ -357,7 +362,9 @@
 					:inline="item.inline"
 					:mod_icons="has_icons"
 					:context="item.context"
+					:vuectx="context"
 					:modifiers="item.modifiers"
+					:hover_modifier="item.hover_modifier"
 					@remove="remove(act)"
 					@save="save(act, $event)"
 				/>
@@ -737,6 +744,22 @@ export default {
 			}
 
 			return true;
+		},
+
+		maybeDynamic(data) {
+			let ap = data.appearance;
+			if (ap?.type === 'dynamic') {
+				const act = this.data.actions[data.action],
+					ffz = this.context.getFFZ(),
+					actions = ffz && ffz.resolve('chat.actions');
+
+				const out = actions && act?.dynamicAppearance && act.dynamicAppearance
+					.call(actions, deep_copy(ap), data, this.sample_message, this.sample_room, this.sample_user, this.with_mod_icons);
+				if ( out )
+					return Object.assign({}, data, {appearance: out});
+			}
+
+			return data;
 		},
 
 		color(input) {

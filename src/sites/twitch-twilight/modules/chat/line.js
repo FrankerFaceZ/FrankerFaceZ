@@ -352,7 +352,8 @@ export default class ChatLine extends Module {
 					props.message !== this.props.message ||
 					props.isCurrentUserModerator !== this.props.isCurrentUserModerator ||
 					props.showModerationIcons !== this.props.showModerationIcons ||
-					props.showTimestamps !== this.props.showTimestamps;
+					props.showTimestamps !== this.props.showTimestamps ||
+					(props.pinnedMessage?.message?.id === props.message?.id) !== (this.props.pinnedMessage?.message?.id === this.props.message?.id);
 			}
 
 			cls.prototype.ffzOpenReply = function() {
@@ -360,6 +361,22 @@ export default class ChatLine extends Module {
 					this.setOPCardTray(this.props.reply);
 					return;
 				}
+
+				if ( this.props.hasReply ) {
+					const msg = this.props.message;
+					if (msg?.user) {
+						this.setOPCardTray({
+							parentMsgId: msg.id,
+							parentUid: msg.user.userID,
+							parentUserLogin: msg.user.userLogin,
+							parentDeleted: msg.deleted,
+							parentDisplayName: msg.user.userDisplayName,
+							parentMessageBody: msg.messageBody
+						});
+						return;
+					}
+				}
+
 
 				const old_render_author = this.renderMessageAuthor;
 				this.renderMessageAuthor = () => this.ffzReplyAuthor();
@@ -487,7 +504,8 @@ export default class ChatLine extends Module {
 				if ( u ) {
 					u.moderator = this.props.isCurrentUserModerator;
 					u.staff = this.props.isCurrentUserStaff;
-					u.can_reply = reply_mode === 2 && can_reply;
+					u.reply_mode = reply_mode;
+					u.can_reply = can_reply;
 				}
 
 				if ( ! this.ffz_open_reply )
@@ -663,22 +681,22 @@ other {# messages were deleted by a moderator.}
 						room_id = msg.roomId = r.id;
 				}
 
-				//if ( ! msg.message && msg.messageParts )
-				//	t.chat.detokenizeMessage(msg);
-
 				const u = t.site.getUser(),
 					r = {id: room_id, login: room};
 
 				const has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
 					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
-					can_reply = can_replies && u && u.login !== msg.user?.login && ! msg.reply,
-					twitch_clickable = reply_mode === 1 && can_replies && (!!msg.reply || can_reply);
+					can_reply = can_replies && (has_replies || (u && u.login !== msg.user?.login));
 
 				if ( u ) {
 					u.moderator = this.props.isCurrentUserModerator;
 					u.staff = this.props.isCurrentUserStaff;
-					u.can_reply = reply_mode === 2 && can_reply;
+					u.reply_mode = reply_mode;
+					u.can_reply = can_reply;
 				}
+
+				const hover_actions = t.actions.renderHover(msg, this.props.showModerationIcons, u, r, e, this),
+					twitch_clickable = hover_actions != null;
 
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, u),
 					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg),
@@ -762,8 +780,6 @@ other {# messages were deleted by a moderator.}
 						(this.props.showTimestamps || this.props.isHistorical) && e('span', {
 							className: 'chat-line__timestamp'
 						}, t.chat.formatTime(msg.timestamp)),
-						//twitch_clickable ?
-						//	e('div', {className: 'chat-line__username-container tw-inline-block'}, user_bits) :
 						user_bits,
 						e('span', {'aria-hidden': true}, is_action ? ' ' : ': '),
 						show && has_replies && reply_tokens ?
@@ -785,19 +801,6 @@ other {# messages were deleted by a moderator.}
 						show && rich_content && e(FFZRichContent, rich_content),
 
 						mod_action,
-
-						/*this.state.renderDebug === 2 && e('div', {
-							className: 'border mg-t-05'
-						}, old_render.call(this)),
-
-						this.state.renderDebug === 1 && e('div', {
-							className: 'message--debug',
-							style: {
-								fontFamily: 'monospace',
-								whiteSpace: 'pre-wrap',
-								lineHeight: '1.1em'
-							}
-						}, JSON.stringify([tokens, msg.emotes], null, 2))*/
 					] : null;
 
 				if ( out == null )
@@ -1136,37 +1139,11 @@ other {# messages were deleted by a moderator.}
 						}),
 						e('div', {
 							className: 'chat-line__message-container tw-relative'
-						}, [
+						}, reply_mode == 1 ? [
 							this.props.repliesAppearancePreference && this.props.repliesAppearancePreference === 'expanded' ? this.renderReplyLine() : null,
 							out
-						]),
-						/*e('div', {
-							className: 'chat-line__icons'
-						}, [*/
-							/*e('div', {
-								className: 'chat-line__pin-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
-							}, e('button', {
-								className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
-								'data-test-selector': 'chat-pin-button',
-								'aria-label': 'Pin This Message',
-								'data-title': 'Pin This Message',
-								onClick: this.onPinMessageClick
-							}, e('span', {
-								className: 'tw-button-icon__icon'
-							}, e('figure', {className: 'ffz-i-'})))),
-							//this.renderPinButton(),*/
-							e('div', {
-								className: 'chat-line__reply-icon tw-absolute tw-border-radius-medium tw-c-background-base tw-elevation-1'
-							}, e('button', {
-								className: 'tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip ffz-tooltip--no-mouse',
-								'data-test-selector': 'chat-reply-button',
-								'aria-label': title,
-								'data-title': title,
-								onClick: this.ffz_open_reply
-							}, e('span', {
-								className: 'tw-button-icon__icon'
-							}, icon)))
-						//])
+						] : out),
+						hover_actions
 					];
 				}
 

@@ -652,7 +652,25 @@ export default class ChatHook extends Module {
 			default: true,
 			ui: {
 				path: 'Chat > Input >> Appearance',
-				title: 'Display the Mod View button in relevant channels.',
+				title: 'Allow the "Mod View" button to appear in relevant channels.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.input.show-highlight', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Allow the "Chat Highlight Settings" button to appear in relevant channels.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.input.show-shield', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Allow the "Shield Mode" button to appear in relevant channels.',
 				component: 'setting-check-box'
 			}
 		});
@@ -920,7 +938,13 @@ export default class ChatHook extends Module {
 			this.css_tweaks.toggleHide('last-x-events', ! val));
 
 		this.chat.context.getChanges('chat.input.show-mod-view', val =>
-			this.css_tweaks.toggleHide('mod-view', ! val));
+			this.css_tweaks.toggleHide('ci-mod-view', ! val));
+
+		this.chat.context.getChanges('chat.input.show-highlight', val =>
+			this.css_tweaks.toggleHide('ci-highlight-settings', !val));
+
+		this.chat.context.getChanges('chat.input.show-shield', val =>
+			this.css_tweaks.toggleHide('ci-shield-mode', ! val));
 
 		this.chat.context.getChanges('chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));

@@ -40,6 +40,7 @@ export const RERENDER_SETTINGS = [
 	'chat.subs.show',
 	'chat.subs.compact',
 	'chat.actions.inline',
+	'chat.actions.hover',
 	'chat.timestamp-format',
 	'chat.points.allow-highlight',
 	'chat.filtering.display-deleted',

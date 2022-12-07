@@ -104,5 +104,7 @@ export default [
 	"reply",
 	"threads",
 	"right-open",
-	"list-bullet"
+	"list-bullet",
+	"mastodon",
+	"volume-up"
 ];

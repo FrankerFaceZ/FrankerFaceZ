@@ -108,6 +108,11 @@ export default class Scroller extends Module {
 				this.use_keys = true;
 				break;
 			}
+		for(const act of this.chat.context.get('chat.actions.hover'))
+			if ( act && act.display && act.display.keys ) {
+				this.use_keys = true;
+				break;
+			}
 
 		if ( this.use_keys !== old_use ) {
 			for(const inst of this.ChatScroller.instances)

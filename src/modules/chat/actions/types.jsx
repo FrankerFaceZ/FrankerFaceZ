@@ -18,12 +18,24 @@ export const pin = {
 	required_context: ['message'],
 
 	title: 'Pin This Message',
-	description: 'Allows you to pin a chat message. Only functions in channels that have access to Twitch\'s pinned messages experiment.',
+	description: "Allows you to pin a chat message if you're a moderator.",
 
 	can_self: true,
 
-	tooltip() {
+	tooltip(data) {
+		const pinned = data.line?.props?.pinnedMessage?.message?.id === data.message_id;
+		if (pinned)
+			return this.i18n.t('chat.actions.pin.already', 'This message is already pinned.');
+
 		return this.i18n.t('chat.actions.pin', 'Pin This Message')
+	},
+
+	disabled(data, message, current_room, current_user, mod_icons, instance) {
+		const line = instance ?? data.line,
+			props = line?.props,
+			pinned = props?.pinnedMessage?.message?.id === message.id && message.id != null;
+
+		return pinned;
 	},
 
 	hidden(data, message, current_room, current_user, mod_icons, instance) {
@@ -61,19 +73,37 @@ export const pin = {
 export const reply = {
 	presets: [{
 		appearance: {
-			type: 'icon',
-			icon: 'ffz-i-reply'
+			type: 'dynamic'
 		}
 	}],
 
 	required_context: ['message'],
+	supports_dynamic: true,
 
 	title: 'Reply to Message',
-	description: 'Allows you to directly reply to another user\'s message. Only functions when the Chat Replies Style is "FrankerFaceZ".',
+	description: "Allows you to directly reply to another user's message.",
 
 	can_self: true,
 
-	tooltip() {
+	dynamicAppearance(ap, data, message, current_room, current_user, mod_icons, instance) {
+		const line = instance ?? data.line,
+			props = line?.props,
+			has_reply = props?.hasReply || props?.reply;
+
+		return {
+			type: 'icon',
+			icon: has_reply ? 'ffz-i-threads' : 'ffz-i-reply',
+			color: ap.color
+		}
+	},
+
+	tooltip(data) {
+		const props = data.line?.props,
+			has_reply = props?.hasReply || props?.reply;
+
+		if (has_reply)
+			return this.i18n.t('chat.actions.reply.thread', 'Open Thread');
+
 		return this.i18n.t('chat.actions.reply', 'Reply to Message')
 	},
 
@@ -82,10 +112,16 @@ export const reply = {
 		if ( typeof id !== 'string' || ! /^[0-9a-f]+-[0-9a-f]+/.test(id) )
 			return true;
 
-		if ( ! message.message || message.deleted || (current_user && current_user.login === message.user?.login) || ! current_user?.can_reply )
+		// Users must be able to reply.
+		if ( ! current_user?.can_reply )
 			return true;
 
-		if ( message?.reply )
+		// If reply mode is set to 0 (Disabled), don't show the action.
+		if ( current_user?.reply_mode === 0 )
+			return true;
+
+		// If the message is empty or deleted, don't show the action.
+		if ( ! message.message || message.deleted )
 			return true;
 	},
 

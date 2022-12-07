@@ -769,24 +769,24 @@ export default class EmoteMenu extends Module {
 				if ( renews > 0 ) {
 					calendar = {
 						icon: 'calendar',
-						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews in {seconds,humantime}.', {seconds: renews})
+						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews {seconds,humantime}.', {seconds: renews})
 					}
 
 				} else if ( ends ) {
 					if ( data.prime )
 						calendar = {
 							icon: 'crown',
-							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime Gaming.\nIt ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime Gaming.\nIt ends {seconds,humantime}.', {seconds: ends})
 						}
 					else if ( data.gift )
 						calendar = {
 							icon: 'gift',
-							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends {seconds,humantime}.', {seconds: ends})
 						}
 					else
 						calendar = {
 							icon: 'calendar-empty',
-							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends {seconds,humantime}.', {seconds: ends})
 						}
 				}
 

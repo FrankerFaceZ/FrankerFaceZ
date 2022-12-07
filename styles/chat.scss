@@ -373,7 +373,12 @@
 	&[data-meta="true"][data-alt="true"][data-ctrl="true"] .ffz-modifier-13,
 	&[data-meta="true"][data-alt="true"][data-shift="true"] .ffz-modifier-14,
 	&[data-meta="true"][data-alt="true"][data-ctrl="true"][data-shift="true"] .ffz-modifier-15 {
+
 		display: inline-flex;
+
+		&:ffz-hover-action {
+			display: inline-block;
+		}
 	}
 }
 
