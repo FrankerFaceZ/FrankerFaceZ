@@ -80,6 +80,7 @@ export default {
 	data() {
 		return {
 			adding: false,
+			resetting: false,
 			editing: this.copyValue()
 		}
 	},
@@ -91,9 +92,16 @@ export default {
 	},
 
 	watch: {
+		value() {
+			this.resetting = true;
+			this.editing = this.copyValue();
+		},
+
 		editing: {
 			handler() {
-				this.$emit('input', this.editing)
+				if (!this.resetting)
+					this.$emit('input', this.editing)
+				this.resetting = false;
 			},
 			deep: true
 		}

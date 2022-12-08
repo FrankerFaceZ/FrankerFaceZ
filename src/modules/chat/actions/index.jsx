@@ -658,16 +658,17 @@ export default class Actions extends Module {
 		const u = site.getUser(),
 			r = {id: line.props.channelID, login: room};
 
-		const has_replies = line.chatRepliesTreatment ? line.chatRepliesTreatment !== 'control' : false,
-			can_replies = has_replies && ! msg.deleted && ! line.props.disableReplyClick,
-			can_reply = can_replies && u.login !== msg.user?.login && ! msg.reply;
+		const has_replies = !!(line.props.hasReply || line.props.reply || ! line.props.replyRestrictedReason),
+			can_replies = has_replies && msg.message && ! msg.deleted && ! line.props.disableReplyClick,
+			can_reply = can_replies && (has_replies || (u && u.login !== msg.user?.login));
 
 		msg.roomId = r.id;
 
 		if ( u ) {
 			u.moderator = line.props.isCurrentUserModerator;
 			u.staff = line.props.isCurrentUserStaff;
-			u.can_reply = this.parent.context.get('chat.replies.style') === 2 && can_reply;
+			u.reply_mode = this.parent.context.get('chat.replies.style'),
+			u.can_reply = can_reply;
 		}
 
 		const current_level = this.getUserLevel(r, u),
@@ -726,17 +727,17 @@ export default class Actions extends Module {
 					(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 					continue;
 
-				if ( maybe_call(act.hidden, this, data, msg, r, u, mod_icons) )
+				if ( maybe_call(act.hidden, this, data, msg, r, u, mod_icons, chat_line) )
 					continue;
 
 				if ( ap.type === 'dynamic' ) {
-					const out = act.dynamicAppearance && act.dynamicAppearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons);
+					const out = act.dynamicAppearance && act.dynamicAppearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons, chat_line);
 					if ( out )
 						ap = out;
 				}
 
 				if ( act.override_appearance ) {
-					const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons);
+					const out = act.override_appearance.call(this, Object.assign({}, ap), data, msg, r, u, mod_icons, chat_line);
 					if ( out )
 						ap = out;
 				}
@@ -746,7 +747,7 @@ export default class Actions extends Module {
 					continue;
 
 				const has_color = def.colored && ap.color,
-					disabled = maybe_call(act.disabled, this, data, msg, r, u, mod_icons) || false,
+					disabled = maybe_call(act.disabled, this, data, msg, r, u, mod_icons, chat_line) || false,
 					color = has_color && (chat && chat.colors ? chat.colors.process(ap.color) : ap.color),
 					contents = def.render.call(this, ap, createElement, color);
 

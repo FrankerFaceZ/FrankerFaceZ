@@ -557,6 +557,9 @@ export default {
 			if ( this.action.t === 'inherit' )
 				return this.t('setting.inheritance', 'Inheritance Point');
 
+			if ( this.action.t === 'skip' )
+				return this.t('setting.inheritance.skip', 'Not Inheriting');
+
 			else if ( ! this.display )
 				return this.t('setting.unknown', 'Unknown Value');
 
@@ -590,7 +593,10 @@ export default {
 
 		description() {
 			if ( this.action.t === 'inherit' )
-				return this.t('setting.inheritance.desc', 'Inherit values from lower priority profiles at this position.');
+				return this.t('setting.inheritance.desc', 'Inherit values from lower priority profiles or the default values at this position.');
+
+			if ( this.action.t === 'skip' )
+				return this.t('setting.inheritance.skip.desc', 'This profile does not inherit values from lower priority profiles or the default values, despite having no values of its own.');
 
 			const type = this.display && this.display.type;
 

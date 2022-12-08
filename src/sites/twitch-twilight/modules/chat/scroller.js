@@ -684,6 +684,16 @@ export default class Scroller extends Module {
 		this.off('tooltips:mousemove', inst.ffzTooltipHover, inst);
 		this.off('tooltips:leave', inst.ffzTooltipLeave, inst);
 
+		if ( inst._ffz_hover_timer ) {
+			clearInterval(inst._ffz_hover_timer);
+			inst._ffz_hover_timer = null;
+		}
+
+		if ( inst._ffz_outside_timer ) {
+			clearTimeout(inst._ffz_outside_timer);
+			inst._ffz_outside_timer = null;
+		}
+
 		window.removeEventListener('keydown', inst.ffzHandleKey);
 		window.removeEventListener('keyup', inst.ffzHandleKey);
 	}

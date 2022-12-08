@@ -45,23 +45,23 @@
 			</div>
 
 			<template v-if="deleting">
-				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="$emit('delete')">
-					<span class="tw-button__text ffz-i-trash" />
-					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
-						{{ t('setting.delete', 'Delete') }}
-					</div>
-				</button>
 				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
-					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
+					</div>
+				</button>
+				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="$emit('delete')">
+					<span class="tw-button__text ffz-i-trash" />
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
+						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
 			</template>
 			<template v-else>
 				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
