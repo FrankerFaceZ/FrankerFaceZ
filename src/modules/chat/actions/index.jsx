@@ -258,8 +258,12 @@ export default class Actions extends Module {
 
 		this.actions[key] = data;
 
-		for(const ctx of this.settings.__contexts)
+		for(const ctx of this.settings.__contexts) {
 			ctx.update('chat.actions.inline');
+			ctx.update('chat.actions.hover');
+			ctx.update('chat.actions.user-context');
+			ctx.update('chat.actions.room');
+		}
 	}
 
 
@@ -269,8 +273,13 @@ export default class Actions extends Module {
 
 		this.renderers[key] = data;
 
-		for(const ctx of this.settings.__contexts)
+		for(const ctx of this.settings.__contexts) {
 			ctx.update('chat.actions.inline');
+			ctx.update('chat.actions.inline');
+			ctx.update('chat.actions.hover');
+			ctx.update('chat.actions.user-context');
+			ctx.update('chat.actions.room');
+		}
 	}
 
 
