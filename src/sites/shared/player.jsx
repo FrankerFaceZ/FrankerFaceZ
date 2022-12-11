@@ -1600,13 +1600,15 @@ export default class PlayerBase extends Module {
 		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( ! video )
 			return false;
+		
+		if ( ! video.src && ! video.srcObject )
+			return false;
 
 		if ( video.src ) {
 			const url = new URL(video.src);
 			if ( url.protocol !== 'blob:' )
 				return false;
-		} else
-			return false;
+		}
 
 		return true;
 	}
