@@ -366,15 +366,15 @@ export default {
 	},
 
 	beforeDestroy() {
-		this.chat.off('chat:update-link-resolver', this.checkRefreshRaw, this);
-		this.settings.off(':changed:debug.link-resolver.source', this.changeProvider, this);
-		this.chat = null;
-		this.settings = null;
-
 		if (this.es) {
 			this.es.close();
 			this.es = null;
 		}
+
+		this.chat.off('chat:update-link-resolver', this.checkRefreshRaw, this);
+		this.settings.off(':changed:debug.link-resolver.source', this.changeProvider, this);
+		this.chat = null;
+		this.settings = null;
 	},
 
 	methods: {

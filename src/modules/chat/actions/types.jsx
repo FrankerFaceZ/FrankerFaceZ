@@ -46,6 +46,10 @@ export const pin = {
 
 		if ( ! line.props.isPinnable || ! line.onPinMessageClick )
 			return true;
+
+		// If the message is empty or deleted, we can't pin it.
+		if ( ! message.message || ! message.message.length || message.deleted )
+			return true;
 	},
 
 	click(event, data) {

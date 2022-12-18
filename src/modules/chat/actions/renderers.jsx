@@ -37,6 +37,21 @@ export const text = {
 	}
 }
 
+// ============================================================================
+// Emote
+// ============================================================================
+
+export const emote = {
+	title: 'Emote',
+	title_i18n: 'setting.actions.appearance.emote',
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-emote.vue'),
+
+	component: () => import(/* webpackChunkName: 'main-menu' */ './components/preview-emote.vue'),
+	render(data, createElement) {
+		return <figure class="mod-icon__image"><img src={data.src} /></figure>;
+	}
+}
 
 // ============================================================================
 // Icon

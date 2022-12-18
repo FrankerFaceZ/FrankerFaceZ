@@ -38,6 +38,18 @@ export default class Actions extends Module {
 			}
 		});
 
+		this.settings.add('chat.actions.hover-size', {
+			default: 30,
+			ui: {
+				path: 'Chat > Actions > Message Hover >> Appearance',
+				title: 'Action Size',
+				description: "How tall hover actions should be, in pixels. This may be affected by your browser's zoom and font size settings.",
+				component: 'setting-text-box',
+				process: 'to_int',
+				bounds: [1]
+			}
+		});
+
 		this.settings.add('chat.actions.reasons', {
 			default: [
 				{v: {text: 'One-Man Spam', i18n: 'chat.reasons.spam'}},

@@ -460,8 +460,10 @@
 	top: -1rem;
 	display: none;
 
-	--ffz-chat-actions-size: 2rem;
+	--ffz-chat-actions-size: var(--ffz-chat-actions-hover-size);
+	--ffz-chat-actions-padding: var(--ffz-chat-actions-hover-padding);
 
+	.ffz-notice-line:hover &,
 	.chat-line__message:hover & {
 		display: block;
 	}
@@ -477,12 +479,16 @@
 	background-color: var(--color-background-base);
 	border-radius: var(--border-radius-medium);
 
+	figure {
+		line-height: 1em;
+	}
+
 	&.ffz-has-modifier {
 		display: none;
 	}
 
 	& > .ffz-mod-icon {
-		padding: 0.5rem;
+		padding: var(--ffz-chat-actions-padding);
 
 		background-color: var(--color-background-button-text-default);
 		color: var(--color-fill-button-icon);

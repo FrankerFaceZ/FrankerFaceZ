@@ -69,24 +69,48 @@ export class Logger {
 		return this.invoke(Logger.VERBOSE, args);
 	}
 
+	verboseColor(msg, colors, ...args) {
+		return this.invokeColor(Logger.VERBOSE, msg, colors, args);
+	}
+
 	debug(...args) {
 		return this.invoke(Logger.DEBUG, args);
+	}
+
+	debugColor(msg, colors, ...args) {
+		return this.invokeColor(Logger.DEBUG, msg, colors, args);
 	}
 
 	info(...args) {
 		return this.invoke(Logger.INFO, args);
 	}
 
+	infoColor(msg, colors, ...args) {
+		return this.invokeColor(Logger.INFO, msg, colors, args);
+	}
+
 	warn(...args) {
 		return this.invoke(Logger.WARN, args);
+	}
+
+	warnColor(msg, colors, ...args) {
+		return this.invokeColor(Logger.WARN, msg, colors, args);
 	}
 
 	warning(...args) {
 		return this.invoke(Logger.WARN, args);
 	}
 
+	warningColor(msg, colors, ...args) {
+		return this.invokeColor(Logger.WARN, msg, colors, args);
+	}
+
 	error(...args) {
 		return this.invoke(Logger.ERROR, args);
+	}
+
+	errorColor(msg, colors, ...args) {
+		return this.invokeColor(Logger.ERROR, msg, colors, args);
 	}
 
 	crumb(...args) {
@@ -105,6 +129,62 @@ export class Logger {
 
 		if ( args.length )
 			return this.error(...args);
+	}
+
+	invokeColor(level, msg, colors, args) {
+		if ( ! this.enabled || level < this.level )
+			return;
+
+		if ( ! Array.isArray(colors) )
+			colors = [colors];
+
+		const message = args ? Array.prototype.slice.call(args) : [];
+
+		if ( level !== Logger.VERBOSE ) {
+			const out = msg.replace(/%c/g, '') + ' ' + message.join(' ');
+
+			if ( this.root.init )
+				this.root.captured_init.push({
+					time: Date.now(),
+					category: this.name,
+					message: out,
+					level: RAVEN_LEVELS[level] || level
+				});
+
+			this.crumb({
+				message: out,
+				category: this.name,
+				level: RAVEN_LEVELS[level] || level
+			});
+		}
+
+		message.unshift(msg);
+
+		if ( this.name ) {
+			message[0] = `%c${this.root.label} [%c${this.name}%c]:%c ${message[0]}`;
+			colors.unshift('color:#755000; font-weight:bold', '', 'color:#755000; font-weight:bold', '');
+
+		} else {
+			message[0] = `%c${this.root.label}:%c ${message[0]}`;
+			colors.unshift('color:#755000; font-weight:bold', '');
+		}
+
+		message.splice(1, 0, ...colors);
+
+		if ( level === Logger.DEBUG || level === Logger.VERBOSE )
+			console.debug(...message);
+
+		else if ( level === Logger.INFO )
+			console.info(...message);
+
+		else if ( level === Logger.WARN )
+			console.warn(...message);
+
+		else if ( level === Logger.ERROR )
+			console.error(...message);
+
+		else
+			console.log(...message);
 	}
 
 	/* eslint no-console: "off" */

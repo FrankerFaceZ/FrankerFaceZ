@@ -20,6 +20,7 @@ import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import Input from './input';
 import ViewerCards from './viewer_card';
+import { isHighlightedReward } from './points';
 
 
 /*const REGEX_EMOTES = {
@@ -274,6 +275,13 @@ export default class ChatHook extends Module {
 		);
 
 		// Settings
+
+		this.settings.addUI('debug.chat-test', {
+			path: 'Debugging > Chat >> Chat',
+			component: 'chat-tester',
+			getChat: () => this,
+			force_seen: true
+		});
 
 		this.settings.add('chat.filtering.blocked-types', {
 			default: [],
@@ -751,10 +759,14 @@ export default class ChatHook extends Module {
 
 		const width = this.chat.context.get('chat.effective-width'),
 			action_size = this.chat.context.get('chat.actions.size'),
+			hover_action_size = this.chat.context.get('chat.actions.hover-size'),
 			ts_size = this.chat.context.get('chat.timestamp-size'),
 			size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
 			lh = Math.round((20/12) * size);
+
+		const hover_action_icon = Math.round(hover_action_size * (2/3)),
+			hover_action_padding = hover_action_size - hover_action_icon;
 
 		let font = this.chat.context.get('chat.font-family') || 'inherit';
 		const [processed, unloader] = useFont(font);
@@ -774,6 +786,8 @@ export default class ChatHook extends Module {
 			this.css_tweaks.delete('ts-size');
 
 		this.css_tweaks.setVariable('chat-actions-size', `${action_size/10}rem`);
+		this.css_tweaks.setVariable('chat-actions-hover-size', `${hover_action_icon/10}rem`);
+		this.css_tweaks.setVariable('chat-actions-hover-padding', `${hover_action_padding/20}rem`);
 		this.css_tweaks.setVariable('chat-font-size', `${size/10}rem`);
 		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
 		this.css_tweaks.setVariable('chat-font-family', font);
@@ -899,6 +913,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.effective-width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.actions.size', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.actions.hover-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.timestamp-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
@@ -1332,6 +1347,7 @@ export default class ChatHook extends Module {
 					type: this.chat_types.Message,
 					ffz_type: 'points',
 					ffz_reward: reward,
+					ffz_reward_highlight: isHighlightedReward(reward),
 					messageParts: [],
 					user: {
 						id: data.user.id,
@@ -2465,6 +2481,7 @@ export default class ChatHook extends Module {
 
 							out.ffz_type = 'points';
 							out.ffz_reward = reward;
+							out.ffz_reward_highlight = isHighlightedReward(reward);
 
 							return i.postMessageToCurrentChannel(e, out);
 						}

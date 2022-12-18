@@ -722,6 +722,7 @@ export default class Input extends Module {
 			return {emotes: [], length: 0};
 
 		const out = [],
+			seen = new Set,
 			anim = this.chat.context.get('chat.emotes.animated') > 0,
 			hidden_sets = this.settings.provider.get('emote-menu.hidden-sets'),
 			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0,
@@ -760,8 +761,10 @@ export default class Input extends Module {
 				const id = emote.id,
 					token = KNOWN_CODES[emote.token] || emote.token;
 
-				if ( ! token )
+				if ( ! token || seen.has(token) )
 					continue;
+
+				seen.add(token);
 
 				const replacement = REPLACEMENTS[id];
 				let srcSet;
