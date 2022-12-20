@@ -11,7 +11,7 @@ const USER_URL = /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([^/]+)$/;
 
 const BAD_USERS = [
 	'directory', '_deck', 'p', 'downloads', 'jobs', 'turbo', 'settings', 'friends',
-	'subscriptions', 'inventory', 'wallet'
+	'subscriptions', 'drops', 'inventory', 'wallet'
 ];
 
 import GET_CLIP from './clip_info.gql';
