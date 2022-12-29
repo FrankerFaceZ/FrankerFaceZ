@@ -188,6 +188,15 @@ export default class EmoteMenu extends Module {
 			}
 		});
 
+		this.settings.add('chat.emote-menu.clear-search', {
+			default: false,
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Reset search when closing the Emote Menu.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.emote-menu.enabled', {
 			default: true,
 			ui: {
@@ -760,24 +769,24 @@ export default class EmoteMenu extends Module {
 				if ( renews > 0 ) {
 					calendar = {
 						icon: 'calendar',
-						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews in {seconds,humantime}.', {seconds: renews})
+						message: t.i18n.t('emote-menu.sub-renews', 'This sub renews {seconds,humantime}.', {seconds: renews})
 					}
 
 				} else if ( ends ) {
 					if ( data.prime )
 						calendar = {
 							icon: 'crown',
-							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime Gaming.\nIt ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime Gaming.\nIt ends {seconds,humantime}.', {seconds: ends})
 						}
 					else if ( data.gift )
 						calendar = {
 							icon: 'gift',
-							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-gift-ends', 'This gifted sub ends {seconds,humantime}.', {seconds: ends})
 						}
 					else
 						calendar = {
 							icon: 'calendar-empty',
-							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends in {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-ends', 'This sub ends {seconds,humantime}.', {seconds: ends})
 						}
 				}
 
@@ -1078,6 +1087,7 @@ export default class EmoteMenu extends Module {
 					reducedPadding: t.chat.context.get('chat.emote-menu.reduced-padding'),
 					combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
 					showSearch: t.chat.context.get('chat.emote-menu.show-search'),
+					clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
 					tone: t.settings.provider.get('emoji-tone', null)
 				}
 
@@ -1226,6 +1236,7 @@ export default class EmoteMenu extends Module {
 				t.chat.context.on('changed:chat.emote-menu.show-heading', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.combine-tabs', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.show-search', this.updateSettingState, this);
+				t.chat.context.on('changed:chat.emote-menu.clear-search', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.tall', this.updateSettingState, this);
 
 				window.ffz_menu = this;
@@ -1241,6 +1252,7 @@ export default class EmoteMenu extends Module {
 				t.chat.context.off('changed:chat.emote-menu.reduced-padding', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.combine-tabs', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.show-search', this.updateSettingState, this);
+				t.chat.context.off('changed:chat.emote-menu.clear-search', this.updateSettingState, this);
 				t.chat.context.off('changed:chat.emote-menu.tall', this.updateSettingState, this);
 
 				if ( window.ffz_menu === this )
@@ -1256,6 +1268,7 @@ export default class EmoteMenu extends Module {
 					reducedPadding: t.chat.context.get('chat.emote-menu.reduced-padding'),
 					combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
 					showSearch: t.chat.context.get('chat.emote-menu.show-search'),
+					clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
 					tall: t.chat.context.get('chat.emote-menu.tall')
 				});
 			}
@@ -2307,6 +2320,13 @@ export default class EmoteMenu extends Module {
 				if ( this.props.visible && ! old_props.visible ) {
 					this.loadData();
 					return;
+				}
+
+				if ( ! this.props.visible && old_props.visible ) {
+					if ( this.state.clearSearch ) {
+						this.setState(this.filterState('', this.state));
+						return;
+					}
 				}
 
 				const cd = this.props.channel_data,

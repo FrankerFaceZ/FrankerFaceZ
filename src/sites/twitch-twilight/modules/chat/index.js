@@ -20,6 +20,7 @@ import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import Input from './input';
 import ViewerCards from './viewer_card';
+import { isHighlightedReward } from './points';
 
 
 /*const REGEX_EMOTES = {
@@ -201,7 +202,7 @@ export default class ChatHook extends Module {
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.hostingHandler && n.onRoomStateUpdated,
+			n => n.parseOutgoingMessage && n.onRoomStateUpdated && n.renderNotifications,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -274,6 +275,13 @@ export default class ChatHook extends Module {
 		);
 
 		// Settings
+
+		this.settings.addUI('debug.chat-test', {
+			path: 'Debugging > Chat >> Chat',
+			component: 'chat-tester',
+			getChat: () => this,
+			force_seen: true
+		});
 
 		this.settings.add('chat.filtering.blocked-types', {
 			default: [],
@@ -652,7 +660,34 @@ export default class ChatHook extends Module {
 			default: true,
 			ui: {
 				path: 'Chat > Input >> Appearance',
-				title: 'Display the Mod View button in relevant channels.',
+				title: 'Allow the "Mod View" button to appear in relevant channels.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.input.show-highlight', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Allow the "Chat Highlight Settings" button to appear in relevant channels.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.input.show-shield', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Allow the "Shield Mode" button to appear in relevant channels.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.input.show-elevate-your-message', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Allow the "Elevate Your Message" button to be displayed.',
 				component: 'setting-check-box'
 			}
 		});
@@ -724,10 +759,14 @@ export default class ChatHook extends Module {
 
 		const width = this.chat.context.get('chat.effective-width'),
 			action_size = this.chat.context.get('chat.actions.size'),
+			hover_action_size = this.chat.context.get('chat.actions.hover-size'),
 			ts_size = this.chat.context.get('chat.timestamp-size'),
 			size = this.chat.context.get('chat.font-size'),
 			emote_alignment = this.chat.context.get('chat.lines.emote-alignment'),
 			lh = Math.round((20/12) * size);
+
+		const hover_action_icon = Math.round(hover_action_size * (2/3)),
+			hover_action_padding = hover_action_size - hover_action_icon;
 
 		let font = this.chat.context.get('chat.font-family') || 'inherit';
 		const [processed, unloader] = useFont(font);
@@ -747,6 +786,8 @@ export default class ChatHook extends Module {
 			this.css_tweaks.delete('ts-size');
 
 		this.css_tweaks.setVariable('chat-actions-size', `${action_size/10}rem`);
+		this.css_tweaks.setVariable('chat-actions-hover-size', `${hover_action_icon/10}rem`);
+		this.css_tweaks.setVariable('chat-actions-hover-padding', `${hover_action_padding/20}rem`);
 		this.css_tweaks.setVariable('chat-font-size', `${size/10}rem`);
 		this.css_tweaks.setVariable('chat-line-height', `${lh/10}rem`);
 		this.css_tweaks.setVariable('chat-font-family', font);
@@ -872,6 +913,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.effective-width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.actions.size', this.updateChatCSS, this);
+		this.chat.context.on('changed:chat.actions.hover-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.timestamp-size', this.updateChatCSS, this);
 		this.chat.context.on('changed:chat.font-family', this.updateChatCSS, this);
@@ -911,7 +953,13 @@ export default class ChatHook extends Module {
 			this.css_tweaks.toggleHide('last-x-events', ! val));
 
 		this.chat.context.getChanges('chat.input.show-mod-view', val =>
-			this.css_tweaks.toggleHide('mod-view', ! val));
+			this.css_tweaks.toggleHide('ci-mod-view', ! val));
+
+		this.chat.context.getChanges('chat.input.show-highlight', val =>
+			this.css_tweaks.toggleHide('ci-highlight-settings', !val));
+
+		this.chat.context.getChanges('chat.input.show-shield', val =>
+			this.css_tweaks.toggleHide('ci-shield-mode', ! val));
 
 		this.chat.context.getChanges('chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));
@@ -940,6 +988,9 @@ export default class ChatHook extends Module {
 			this.css_tweaks.toggle('chat-rows', val);
 			this.updateMentionCSS();
 		});
+
+		this.chat.context.getChanges('chat.input.show-elevate-your-message', val =>
+			this.css_tweaks.toggleHide('elevate-your-message', ! val));
 
 		this.updateChatCSS();
 		this.updateColors();
@@ -1296,6 +1347,7 @@ export default class ChatHook extends Module {
 					type: this.chat_types.Message,
 					ffz_type: 'points',
 					ffz_reward: reward,
+					ffz_reward_highlight: isHighlightedReward(reward),
 					messageParts: [],
 					user: {
 						id: data.user.id,
@@ -2429,6 +2481,7 @@ export default class ChatHook extends Module {
 
 							out.ffz_type = 'points';
 							out.ffz_reward = reward;
+							out.ffz_reward_highlight = isHighlightedReward(reward);
 
 							return i.postMessageToCurrentChannel(e, out);
 						}
@@ -2441,7 +2494,7 @@ export default class ChatHook extends Module {
 					return old_points.call(i, e);
 				}
 
-				const old_host = this.onHostingEvent;
+				/*const old_host = this.onHostingEvent;
 				this.onHostingEvent = function (e, _t) {
 					t.emit('tmi:host', e, _t);
 					return old_host.call(i, e, _t);
@@ -2451,7 +2504,7 @@ export default class ChatHook extends Module {
 				this.onUnhostEvent = function (e, _t) {
 					t.emit('tmi:unhost', e, _t);
 					return old_unhost.call(i, e, _t);
-				}
+				}*/
 
 				const old_add = this.addMessage;
 				this.addMessage = function(e) {

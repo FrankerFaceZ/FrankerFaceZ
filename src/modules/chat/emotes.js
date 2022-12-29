@@ -513,7 +513,7 @@ export default class Emotes extends Module {
 				return;
 
 			const line = fine.searchParent(target, n => n.props && n.props.message),
-				opener = fine.searchParent(target, n => n.onShowEmoteCard, 200);
+				opener = fine.searchParent(target, n => n.onShowEmoteCard, 250);
 
 			if ( ! line || ! opener )
 				return;

@@ -48,6 +48,8 @@ export default class ExperimentManager extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.get = this.getAssignment;
+
 		this.inject('settings');
 
 		this.settings.addUI('experiments', {

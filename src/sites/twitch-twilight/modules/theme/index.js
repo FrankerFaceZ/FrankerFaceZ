@@ -271,6 +271,7 @@ export default class ThemeEngine extends Module {
 			`--color-background-input-focus:${color.toCSS()};`,
 			`--color-background-base:${hsla._l(luma + (dark ? 0.05 : -0.05)).toCSS()};`,
 			`--color-background-alt:${hsla._l(luma + (dark ? 0.1 : -0.1)).toCSS()};`,
+			`--color-background-float:var(--color-background-alt);`,
 			`--color-background-alt-2:${hsla._l(luma + (dark ? 0.15 : -0.15)).toCSS()};`
 		].join('');
 	}

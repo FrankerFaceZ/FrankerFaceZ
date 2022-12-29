@@ -1,4 +1,12 @@
 {
+	"line_renderer": {
+		"name": "Modular Chat Line Rendering",
+		"description": "Enable a newer, modular chat line renderer.",
+		"groups": [
+			{"value": true, "weight": 0},
+			{"value": false, "weight": 100}
+		]
+	},
 	"api_load": {
 		"name": "New API Stress Testing",
 		"description": "Send duplicate requests to the new API server for load testing.",

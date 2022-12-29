@@ -802,8 +802,13 @@ function render_image(token, createElement, ctx) {
 	const image = createElement('img', {
 		className: `${token.class || ''} ${round}`,
 		src: token.url,
+		alt: token.alt || token.title || '',
 		title: token.title || '',
-		onLoad: ctx.onload
+		onLoad: ctx.onload,
+		style: {
+			width: token.width,
+			height: token.height
+		}
 	});
 
 	if ( ! aspect )

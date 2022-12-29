@@ -20,6 +20,7 @@ import Room from './room';
 import User from './user';
 import * as TOKENIZERS from './tokenizers';
 import * as RICH_PROVIDERS from './rich_providers';
+import * as LINK_PROVIDERS from './link_providers';
 
 import Actions from './actions';
 import { getFontsList } from 'src/utilities/fonts';
@@ -98,6 +99,9 @@ export default class Chat extends Module {
 
 		this.rich_providers = {};
 		this.__rich_providers = [];
+
+		this.link_providers = {};
+		this.__link_providers = [];
 
 		this._hl_reasons = {};
 		this.addHighlightReason('mention', 'Mentioned');
@@ -1241,6 +1245,8 @@ export default class Chat extends Module {
 	onEnable() {
 		this.socket = this.resolve('socket');
 
+		this.on('site.subpump:pubsub-message', this.onPubSub, this);
+
 		if ( this.context.get('chat.filtering.color-mentions') )
 			this.createColorCache().then(() => this.emit(':update-line-tokens'));
 
@@ -1251,6 +1257,47 @@ export default class Chat extends Module {
 		for(const key in RICH_PROVIDERS)
 			if ( has(RICH_PROVIDERS, key) )
 				this.addRichProvider(RICH_PROVIDERS[key]);
+
+		for(const key in LINK_PROVIDERS)
+			if ( has(LINK_PROVIDERS, key) )
+				this.addLinkProvider(LINK_PROVIDERS[key]);
+	}
+
+
+	onPubSub(event) {
+		if ( event.prefix === 'stream-chat-room-v1' && event.message.type === 'chat_rich_embed' ) {
+			const data = event.message.data,
+				url = data.request_url,
+
+				providers = this.__link_providers;
+
+			// Don't re-cache.
+			if ( this._link_info[url] )
+				return;
+
+			for(const provider of providers) {
+				const match = provider.test.call(this, url);
+				if ( match ) {
+					const processed = provider.receive ? provider.receive.call(this, match, data) : data;
+					let result = provider.process.call(this, match, processed);
+
+					if ( !(result instanceof Promise) )
+						result = Promise.resolve(result);
+
+					result.then(value => {
+						// If something is already running, don't override it.
+						let info = this._link_info[url];
+						if ( info )
+							return;
+
+						// Save the value.
+						this._link_info[url] = [true, Date.now() + 120000, value];
+					});
+
+					return;
+				}
+			}
+		}
 	}
 
 
@@ -1855,6 +1902,11 @@ export default class Chat extends Module {
 
 	addTokenizer(tokenizer) {
 		const type = tokenizer.type;
+		if ( has(this.tokenizers, type) ) {
+			this.log.warn(`Tried adding tokenizer of type '${type}' when one was already present.`);
+			return;
+		}
+
 		this.tokenizers[type] = tokenizer;
 		if ( tokenizer.priority == null )
 			tokenizer.priority = 0;
@@ -1894,8 +1946,48 @@ export default class Chat extends Module {
 		return tokenizer;
 	}
 
+	addLinkProvider(provider) {
+		const type = provider.type;
+		if ( has(this.link_providers, type) ) {
+			this.log.warn(`Tried adding link provider of type '${type}' when one was already present.`);
+			return;
+		}
+
+		this.link_providers[type] = provider;
+		if ( provider.priority == null )
+			provider.priority = 0;
+
+		this.__link_providers.push(provider);
+		this.__link_providers.sort((a,b) => {
+			if ( a.priority > b.priority ) return -1;
+			if ( a.priority < b.priority ) return 1;
+			return a.type < b.type;
+		});
+	}
+
+	removeLinkProvider(provider) {
+		let type;
+		if ( typeof provider === 'string' ) type = provider;
+		else type = provider.type;
+
+		provider = this.link_providers[type];
+		if ( ! provider )
+			return null;
+
+		const idx = this.__link_providers.indexOf(provider);
+		if ( idx !== -1 )
+			this.__link_providers.splice(idx, 1);
+
+		return provider;
+	}
+
 	addRichProvider(provider) {
 		const type = provider.type;
+		if ( has(this.rich_providers, type) ) {
+			this.log.warn(`Tried adding rich provider of type '${type}' when one was already present.`);
+			return;
+		}
+
 		this.rich_providers[type] = provider;
 		if ( provider.priority == null )
 			provider.priority = 0;
@@ -2106,6 +2198,17 @@ export default class Chat extends Module {
 				if ( callbacks )
 					for(const cbs of callbacks)
 						cbs[success ? 0 : 1](data);
+			}
+
+			// Try using a link provider.
+			for(const lp of this.__link_providers) {
+				const match = lp.test.call(this, url);
+				if ( match ) {
+					timeout(lp.process.call(this, match), 15000)
+						.then(data => handle(true, data))
+						.catch(err => handle(false, err));
+					return;
+				}
 			}
 
 			let provider = this.settings.get('debug.link-resolver.source');

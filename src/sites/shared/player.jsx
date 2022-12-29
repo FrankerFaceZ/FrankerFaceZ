@@ -94,6 +94,17 @@ export default class PlayerBase extends Module {
 			}
 		});
 
+		this.settings.add('player.fade-pause-buffer', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Playback',
+				title: 'Fade the player when paused or buffering to make the UI easier to see.',
+				component: 'setting-check-box'
+			},
+
+			changed: val => this.css_tweaks.toggle('player-fade-paused', val)
+		});
+
 		if ( HAS_COMPRESSOR ) {
 			this.settings.add('player.compressor.enable', {
 				default: true,
@@ -559,6 +570,15 @@ export default class PlayerBase extends Module {
 			},
 			changed: val => this.css_tweaks.toggle('player-hide-mouse', val)
 		});
+
+		this.settings.add('player.single-click-pause', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Playback',
+				title: "Pause/Unpause the player by clicking.",
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	async onEnable() {
@@ -569,6 +589,7 @@ export default class PlayerBase extends Module {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
+		this.css_tweaks.toggle('player-fade-paused', this.settings.get('player.fade-pause-buffer'));
 
 		this.installVisibilityHook();
 		this.updateHideExtensions();
@@ -643,8 +664,6 @@ export default class PlayerBase extends Module {
 
 
 	onShortcut(e) {
-		this.log.info('Compressor Hotkey', e);
-
 		for(const inst of this.Player.instances)
 			this.compressPlayer(inst, e);
 	}
@@ -699,6 +718,7 @@ export default class PlayerBase extends Module {
 
 			const events = this.props.playerEvents;
 			if ( events ) {
+				on(events, 'Buffering', this._ffzUpdateState);
 				on(events, 'Playing', this._ffzUpdateState);
 				on(events, 'PlayerError', this._ffzUpdateState);
 				on(events, 'PlayerError', this._ffzErrorReset);
@@ -811,6 +831,7 @@ export default class PlayerBase extends Module {
 
 			ds.ended = state === 'Ended';
 			ds.paused = state === 'Idle';
+			ds.buffering = state === 'Buffering';
 		}
 
 		cls.prototype.ffzAttachListeners = function() {
@@ -825,10 +846,14 @@ export default class PlayerBase extends Module {
 			if ( ! this._ffz_click_handler )
 				this._ffz_click_handler = this.ffzClickHandler.bind(this);
 
+			if ( ! this._ffz_dblclick_handler )
+				this._ffz_dblclick_handler = this.ffzDblClickHandler.bind(this);
+
 			if ( ! this._ffz_menu_handler )
 				this._ffz_menu_handler = this.ffzMenuHandler.bind(this);
 
 			on(cont, 'wheel', this._ffz_scroll_handler);
+			on(cont, 'dblclick', this._ffz_dblclick_handler);
 			on(cont, 'mousedown', this._ffz_click_handler);
 			on(cont, 'contextmenu', this._ffz_menu_handler);
 		}
@@ -853,7 +878,33 @@ export default class PlayerBase extends Module {
 				this._ffz_menu_handler = null;
 			}
 
+			if ( this._ffz_dblclick_handler ) {
+				off(cont, 'dblclick', this._ffz_dblclick_handler);
+				this._ffz_dblclick_handler = null;
+			}
+
 			this._ffz_listeners = false;
+		}
+
+		cls.prototype.ffzDelayPause = function() {
+			if ( this._ffz_pause_timer )
+				clearTimeout(this._ffz_pause_timer);
+
+			const player = this.props?.mediaPlayerInstance;
+			if (! player.isPaused())
+				this._ffz_pause_timer = setTimeout(() => {
+					const player = this.props?.mediaPlayerInstance;
+					if (!player.isPaused())
+						player.pause();
+				}, 500);
+		}
+
+		cls.prototype.ffzDblClickHandler = function(event) {
+			if ( ! event )
+				return;
+
+			if ( this._ffz_pause_timer )
+				clearTimeout(this._ffz_pause_timer);
 		}
 
 		cls.prototype.ffzClickHandler = function(event) {
@@ -862,14 +913,25 @@ export default class PlayerBase extends Module {
 
 			const vol_scroll = t.settings.get('player.volume-scroll'),
 				gain_scroll = t.settings.get('player.gain.scroll'),
+				click_pause = t.settings.get('player.single-click-pause'),
 
 				wants_rmb = wantsRMB(vol_scroll) || wantsRMB(gain_scroll);
 
+			// Left Click
+			if (click_pause && event.button === 0) {
+				if (! event.target || ! event.target.classList.contains('click-handler'))
+					return;
+
+				this.ffzDelayPause();
+			}
+
+			// Right Click
 			if ( wants_rmb && event.button === 2 ) {
 				this.ffz_rmb = true;
 				this.ffz_scrolled = false;
 			}
 
+			// Middle Click
 			if ( ! t.settings.get('player.mute-click') || event.button !== 1 )
 				return;
 
@@ -1321,7 +1383,7 @@ export default class PlayerBase extends Module {
 			return;
 		}
 
-		let icon, tip, extra, ff_el, btn, cont = container.querySelector('.ffz--player-comp');
+		let icon, tip, extra, btn, cont = container.querySelector('.ffz--player-comp');
 		if ( ! has_comp || this.areControlsDisabled(inst) ) {
 			if ( cont )
 				cont.remove();
@@ -1346,7 +1408,6 @@ export default class PlayerBase extends Module {
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="ffz--p-extra tw-pd-t-05 ffz--tooltip-explain" />)}
-						{ff_el = IS_FIREFOX ? (<div class="ffz--p-ff tw-pd-t-05 ffz--tooltip-explain" />) : null}
 					</div>
 				</div>
 			</div>);
@@ -1373,9 +1434,6 @@ export default class PlayerBase extends Module {
 
 		if ( can_apply && this._shortcut_bound )
 			label = `${label} (${this._shortcut_bound})`;
-
-		if ( ff_el )
-			ff_el.textContent += `\n${this.i18n.t('player.comp_button.firefox', 'Playback Speed controls will not function for Firefox users when the Compressor has been enabled.')}`;
 
 		icon.classList.toggle('ffz-i-comp-on', comp_active);
 		icon.classList.toggle('ffz-i-comp-off', ! comp_active);
@@ -1543,12 +1601,16 @@ export default class PlayerBase extends Module {
 		if ( ! video )
 			return false;
 
+		if ( ! video.src && ! video.srcObject )
+			return false;
+
 		if ( video.src ) {
 			const url = new URL(video.src);
 			if ( url.protocol !== 'blob:' )
 				return false;
-		} else
-			return false;
+		}
+
+		// TODO: Validation for srcObject (if we need it)
 
 		return true;
 	}

@@ -48,7 +48,6 @@ export default class Directory extends SiteModule {
 		this.inject('i18n');
 		this.inject('settings');
 
-		//this.inject(Following);
 		this.inject(Game);
 
 		this.DirectoryCard = this.elemental.define(

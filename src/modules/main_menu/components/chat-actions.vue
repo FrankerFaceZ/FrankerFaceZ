@@ -207,8 +207,8 @@
 						<action-preview
 							v-else
 							:key="act.id"
-							:act="act.v"
-							:color="color(act.v.appearance.color)"
+							:act="maybeDynamic(act.v)"
+							:process-color="color"
 							:renderers="data.renderers"
 							tooltip="true"
 							pad="true"
@@ -291,7 +291,12 @@
 										<div class="tw-flex-grow-1 tw-mg-r-1">
 											{{ preset.title_i18n ? t(preset.title_i18n, preset.title, preset) : preset.title }}
 										</div>
-										<action-preview v-if="preset.appearance" :act="preset" :renderers="data.renderers" />
+										<action-preview
+											v-if="preset.appearance"
+											:act="maybeDynamic(preset)"
+											:process-color="color"
+											:renderers="data.renderers"
+											/>
 									</div>
 								</button>
 							</template>
@@ -300,7 +305,7 @@
 				</balloon>
 			</div>
 			<button
-				v-if="! maybe_clear && val.length"
+				v-if="! maybe_clear && strip_skip_val.length"
 				class="tw-mg-l-1 tw-button tw-button--text ffz-il-tooltip__container"
 				@click="maybe_clear = true"
 			>
@@ -333,7 +338,7 @@
 				</span>
 			</button>
 			<button
-				v-if="! val.length && has_default"
+				v-if="! strip_skip_val.length && has_default"
 				class="tw-mg-l-1 tw-button tw-button--text ffz-il-tooltip__container"
 				@click="populate"
 			>
@@ -349,6 +354,20 @@
 		<div ref="list" class="ffz--action-list">
 			<div v-if="! val.length" class="tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-c-text-alt-2 tw-pd-1">
 				{{ t('setting.actions.no-actions', 'no actions are defined in this profile') }}
+
+				<div class="tw-mg-t-1">
+					<button
+						class="tw-button tw-button--text ffz-il-tooltip__container"
+						@click="addSkip"
+					>
+						<span class="tw-button__text ffz-i-block">
+							{{ t('setting.actions.do-not-inherit', 'Do Not Inherit') }}
+						</span>
+						<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center">
+							{{ t('setting.actions.do-not-inherit.desc', 'Do not inherit values from lower priority profiles or the defaults.') }}
+						</span>
+					</button>
+				</div>
 			</div>
 			<section v-for="act in val" :key="act.id">
 				<action-editor
@@ -357,7 +376,9 @@
 					:inline="item.inline"
 					:mod_icons="has_icons"
 					:context="item.context"
+					:vuectx="context"
 					:modifiers="item.modifiers"
+					:hover_modifier="item.hover_modifier"
 					@remove="remove(act)"
 					@save="save(act, $event)"
 				/>
@@ -404,6 +425,14 @@ export default {
 		hasInheritance() {
 			for(const val of this.val)
 				if ( val.t === 'inherit' )
+					return true;
+
+			return false;
+		},
+
+		hasSkip() {
+			for(const val of this.val)
+				if ( val.t === 'skip' )
 					return true;
 
 			return false;
@@ -560,6 +589,10 @@ export default {
 			return out;
 		},
 
+		strip_skip_val() {
+			return this.val.filter(x => x.t !== 'skip');
+		},
+
 		val() {
 			if ( ! this.has_value )
 				return [];
@@ -657,8 +690,28 @@ export default {
 			this.set(deep_copy(this.default_value));
 		},
 
+		addSkip() {
+			const vals = Array.from(this.val);
+			if(vals.length > 0)
+				return;
+
+			vals.push({
+				t: 'skip'
+			});
+
+			this.set(deep_copy(vals));
+		},
+
 		add(val) {
 			const vals = Array.from(this.val);
+
+			// Remove any skip entry.
+			let i = vals.length;
+			while(i--) {
+				if (vals[i]?.t === 'skip')
+					vals.splice(i, 1);
+			}
+
 			vals.push(val);
 			this.set(deep_copy(vals));
 			this.add_open = false;
@@ -737,6 +790,22 @@ export default {
 			}
 
 			return true;
+		},
+
+		maybeDynamic(data) {
+			let ap = data.appearance;
+			if (ap?.type === 'dynamic') {
+				const act = this.data.actions[data.action],
+					ffz = this.context.getFFZ(),
+					actions = ffz && ffz.resolve('chat.actions');
+
+				const out = actions && act?.dynamicAppearance && act.dynamicAppearance
+					.call(actions, deep_copy(ap), data, this.sample_message, this.sample_room, this.sample_user, this.with_mod_icons);
+				if ( out )
+					return Object.assign({}, data, {appearance: out});
+			}
+
+			return data;
 		},
 
 		color(input) {

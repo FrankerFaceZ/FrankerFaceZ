@@ -67,6 +67,11 @@ export default class Twilight extends BaseSite {
 	onEnable() {
 		this.settings = this.resolve('settings');
 
+		this.web_munch.findModule('simplebar').then(sb => {
+			if (! window.ffzSimplebar && sb )
+				window.ffzSimplebar = sb;
+		}).catch(() => {});
+
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
 
@@ -249,19 +254,20 @@ Twilight.KNOWN_MODULES = {
 	}
 }
 
-const VEND_CHUNK = n => ! n || n.includes('vendor');
+//const VEND_CHUNK = n => ! n || n.includes('vendor');
+const VEND_CORE = n => ! n || n.includes('vendor') || n.includes('core');
 
 Twilight.KNOWN_MODULES.core.use_result = true;
 //Twilight.KNOWN_MODULES.core.chunks = 'core';
 
-Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CHUNK;
-Twilight.KNOWN_MODULES.react.chunks = VEND_CHUNK;
-Twilight.KNOWN_MODULES.cookie.chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CORE;
+Twilight.KNOWN_MODULES.react.chunks = VEND_CORE;
+Twilight.KNOWN_MODULES.cookie.chunks = VEND_CORE;
 
 Twilight.KNOWN_MODULES['gql-printer'].use_result = true;
-Twilight.KNOWN_MODULES['gql-printer'].chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES['gql-printer'].chunks = VEND_CORE;
 
-Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CORE;
 
 const CHAT_CHUNK = n => ! n || n.includes('chat');
 

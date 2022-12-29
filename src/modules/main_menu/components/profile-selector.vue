@@ -26,7 +26,7 @@
 				@focusin="focus"
 				@focusout="blur"
 			>
-				<div class="scrollable-area tw-border-b" data-simplebar>
+				<div ref="scroller" class="scrollable-area tw-border-b" data-simplebar>
 					<div class="simplebar-scroll-content">
 						<div ref="popup" class="simplebar-content">
 							<div
@@ -111,7 +111,22 @@ export default {
 		}
 	},
 
+	watch: {
+		opened() {
+			if (this.opened)
+				this.$nextTick(() => this.updateScroller());
+		}
+	},
+
 	methods: {
+		updateScroller() {
+			const scroller = this.$refs.scroller;
+			if (!scroller || ! window.ffzSimplebar || scroller.SimpleBar)
+				return;
+
+			new ffzSimplebar(scroller, ffzSimplebar.getElOptions(scroller));
+		},
+
 		openConfigure() {
 			this.hide();
 			this.$emit('navigate', 'data_management.profiles');

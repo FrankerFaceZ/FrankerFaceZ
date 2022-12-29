@@ -722,6 +722,7 @@ export default class Input extends Module {
 			return {emotes: [], length: 0};
 
 		const out = [],
+			seen = new Set,
 			anim = this.chat.context.get('chat.emotes.animated') > 0,
 			hidden_sets = this.settings.provider.get('emote-menu.hidden-sets'),
 			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0,
@@ -760,8 +761,10 @@ export default class Input extends Module {
 				const id = emote.id,
 					token = KNOWN_CODES[emote.token] || emote.token;
 
-				if ( ! token )
+				if ( ! token || seen.has(token) )
 					continue;
+
+				seen.add(token);
 
 				const replacement = REPLACEMENTS[id];
 				let srcSet;
@@ -942,18 +945,18 @@ export default class Input extends Module {
 
 
 	getEmoteSuggestions(input, inst) {
+		if ( ! inst._ffz_channel_login ) {
+			const parent = this.fine.searchParent(inst, 'chat-input', 50);
+			if ( parent )
+				this.updateEmoteCompletion(parent, inst);
+		}
+
 		const user = inst._ffz_user,
 			channel_id = inst._ffz_channel_id,
 			channel_login = inst._ffz_channel_login;
 
-		if ( ! channel_login ) {
-			const parent = this.fine.searchParent(inst, 'chat-input', 50);
-			if ( parent )
-				this.updateEmoteCompletion(parent, inst);
-
-			if ( ! channel_login )
-				return [];
-		}
+		if ( ! channel_login )
+			return [];
 
 		let cache = inst.ffz_ffz_cache;
 		if ( ! cache || cache.user_id !== user?.id || cache.user_login !== user?.login || cache.channel_id !== channel_id || cache.channel_login !== channel_login )

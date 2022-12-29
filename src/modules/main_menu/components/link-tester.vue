@@ -366,6 +366,11 @@ export default {
 	},
 
 	beforeDestroy() {
+		if (this.es) {
+			this.es.close();
+			this.es = null;
+		}
+
 		this.chat.off('chat:update-link-resolver', this.checkRefreshRaw, this);
 		this.settings.off(':changed:debug.link-resolver.source', this.changeProvider, this);
 		this.chat = null;
