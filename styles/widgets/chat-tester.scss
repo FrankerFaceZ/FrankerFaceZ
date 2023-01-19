@@ -1,0 +1,54 @@
+.ffz-ct--obj-open,
+.ffz-ct--obj-close {
+	&[depth="1"], &[depth="5"], &[depth="9"] {
+		color: var(--color-text-alt-2);
+	}
+
+	&[depth="2"], &[depth="6"], &[depth="10"] {
+		color: var(--color-text-error);
+	}
+
+	&[depth="3"], &[depth="7"], &[depth="11"] {
+		color: var(--color-text-prime);
+	}
+
+	&[depth="4"], &[depth="8"] {
+		color: var(--color-text-success);
+	}
+}
+
+
+.ffz-ct--obj-sep,
+.ffz-ct--obj-key-sep,
+
+.ffz-ct--params,
+.ffz-ct--prefix,
+.ffz-ct--tags {
+	color: var(--color-text-alt-2);
+}
+
+.ffz-ct--obj-key,
+.ffz-ct--command,
+.ffz-ct--tag {
+	color: var(--color-text-warn);
+}
+
+.ffz-ct--channel,
+.ffz-ct--user {
+	color: var(--color-text-success);
+}
+
+.ffz-ct--literal,
+.ffz-ct--param {
+	color: var(--color-text-prime);
+}
+
+.ffz-ct--string,
+.ffz-ct--tag-value {
+	color: var(--color-text-base);
+}
+
+.ffz-ct--tags,
+.ffz-ct--params {
+	overflow-wrap: anywhere;
+}

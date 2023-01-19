@@ -132,6 +132,36 @@ export class EventEmitter {
 			this.__dead_events++;
 	}
 
+	offContext(event, ctx) {
+		if ( event == null ) {
+			for(const evt in Object.keys(this.__listeners)) {
+				if ( ! this.__running.has(evt) )
+					this.offContext(evt, ctx);
+			}
+
+			return;
+		}
+
+		if ( this.__running.has(event) )
+			throw new Error(`concurrent modification: tried removing event listener while event is running`);
+
+		let list = this.__listeners[event];
+		if ( ! list )
+			return;
+
+		if ( ! fn )
+			list = null;
+		else {
+			list = list.filter(x => x && x[1] !== ctx);
+			if ( ! list.length )
+				list = null;
+		}
+
+		this.__listeners[event] = list;
+		if ( ! list )
+			this.__dead_events++;
+	}
+
 	events() {
 		this.__cleanListeners();
 		return Object.keys(this.__listeners);

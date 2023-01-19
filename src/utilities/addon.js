@@ -8,6 +8,13 @@ export class Addon extends Module {
 		this.inject('settings');
 	}
 
+	__processModule(module, name) {
+		if ( module.getAddonProxy )
+			return module.getAddonProxy(this);
+
+		return module;
+	}
+
 	static register(id, info) {
 		if ( typeof id === 'object' ) {
 			info = id;

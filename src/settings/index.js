@@ -942,10 +942,44 @@ export default class SettingsManager extends Module {
 
 
 	// ========================================================================
+	// Add-On Proxy
+	// ========================================================================
+
+	getAddonProxy(module) {
+		const path = module.__path;
+
+		const add = (key, definition) => {
+			return this.add(key, definition, path);
+		}
+
+		const addUI = (key, definition) => {
+			return this.addUI(key, definition, path);
+		}
+
+		const addClearable = (key, definition) => {
+			return this.addClearable(key, definition, path);
+		}
+
+		const handler = {
+			get(obj, prop) {
+				if ( prop === 'add' )
+					return add;
+				if ( prop === 'addUI' )
+					return addUI;
+				if ( prop === 'addClearable' )
+					return addClearable;
+				return Reflect.get(...arguments);
+			}
+		}
+
+		return new Proxy(this, handler);
+	}
+
+	// ========================================================================
 	// Definitions
 	// ========================================================================
 
-	add(key, definition) {
+	add(key, definition, source) {
 		if ( typeof key === 'object' ) {
 			for(const k in key)
 				if ( has(key, k) )
@@ -959,6 +993,8 @@ export default class SettingsManager extends Module {
 
 		definition.required_by = required_by;
 		definition.requires = definition.requires || [];
+
+		definition.__source = source;
 
 		for(const req_key of definition.requires) {
 			const req = this.definitions.get(req_key);
@@ -1007,7 +1043,42 @@ export default class SettingsManager extends Module {
 	}
 
 
-	addUI(key, definition) {
+	remove(key) {
+		const definition = this.definitions.get(key);
+		if ( ! definition )
+			return;
+
+		// If the definition is an array, we're already not defined.
+		if ( Array.isArray(definition) )
+			return;
+
+		// Remove this definition from the definitions list.
+		if ( Array.isArray(definition.required_by) && definition.required_by.length > 0 )
+			this.definitions.set(key, definition.required_by);
+		else
+			this.definitions.delete(key);
+
+		// Remove it from all the things it required.
+		if ( Array.isArray(definition.requires) )
+			for(const req_key of definition.requires) {
+				let req = this.definitions.get(req_key);
+				if ( req.required_by )
+					req = req.required_by;
+				if ( Array.isArray(req) ) {
+					const idx = req.indexOf(key);
+					if ( idx !== -1 )
+						req.splice(idx, 1);
+				}
+			}
+
+		if ( definition.changed )
+			this.off(`:changed:${key}`, definition.changed);
+
+		this.emit(':removed-definition', key, definition);
+	}
+
+
+	addUI(key, definition, source) {
 		if ( typeof key === 'object' ) {
 			for(const k in key)
 				if ( has(key, k) )
@@ -1017,6 +1088,8 @@ export default class SettingsManager extends Module {
 
 		if ( ! definition.ui )
 			definition = {ui: definition};
+
+		definition.__source = source;
 
 		const ui = definition.ui;
 		ui.path_tokens = ui.path_tokens ?
@@ -1038,13 +1111,15 @@ export default class SettingsManager extends Module {
 	}
 
 
-	addClearable(key, definition) {
+	addClearable(key, definition, source) {
 		if ( typeof key === 'object' ) {
 			for(const k in key)
 				if ( has(key, k) )
-					this.addClearable(k, key[k]);
+					this.addClearable(k, key[k], source);
 			return;
 		}
+
+		definition.__source = source;
 
 		this.clearables[key] = definition;
 	}

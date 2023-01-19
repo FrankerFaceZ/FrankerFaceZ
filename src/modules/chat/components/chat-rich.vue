@@ -23,6 +23,7 @@ export default {
 			full: null,
 			unsafe: false,
 			urls: null,
+			i18n_prefix: null,
 			allow_media: false,
 			allow_unsafe: false
 		}
@@ -114,6 +115,7 @@ export default {
 			this.fragments = {};
 			this.unsafe = false;
 			this.urls = null;
+			this.i18n_prefix = null;
 			this.allow_media = false;
 			this.allow_unsafe = false;
 			this.load(refresh);
@@ -179,6 +181,7 @@ export default {
 			this.fragments = data.fragments ?? {};
 			this.unsafe = data.unsafe;
 			this.urls = data.urls;
+			this.i18n_prefix = data.i18n_prefix;
 			this.allow_media = data.allow_media;
 			this.allow_unsafe = data.allow_unsafe;
 		},
@@ -238,6 +241,7 @@ export default {
 					i18n: this.getI18n(),
 
 					fragments: this.fragments,
+					i18n_prefix: this.i18n_prefix,
 
 					allow_media: this.forceMedia ?? this.allow_media,
 					allow_unsafe: this.forceUnsafe ?? this.allow_unsafe

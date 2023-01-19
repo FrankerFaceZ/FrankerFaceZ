@@ -48,6 +48,70 @@
 	margin-right: -0.5rem;
 }
 
+.ffz--chat-card {
+	--ffz-rich-header-outline: var(--color-background-base);
+	.ffz--rich-header--background {
+		margin: 0; // overflow hidden is in play
+	}
+}
+
+.ffz__tooltip {
+	--ffz-rich-header-outline: var(--color-background-tooltip);
+	.ffz--rich-header--background {
+		margin: -.8rem;
+	}
+}
+
+.ffz--rich-header--background {
+	position: relative;
+	overflow: hidden;
+
+	--ffz-rich-header-outline: #000;
+	--color-background-base: #000;
+	--color-text-base: #efeff1;
+	--color-text-alt: #dedee3;
+	--color-text-alt-2: #adadb8;
+
+	--color-background-tooltip: var(--color-background-base);
+	--color-text-tooltip: var(--color-text-base);
+	--color-text-tooltip-alt: var(--color-text-alt);
+	--color-text-tooltip-alt-2: var(--color-text-alt-2);
+
+	padding: 1rem;
+
+	margin: -1rem;
+	margin-bottom: 0 !important;
+
+	background: var(--color-background-base);
+
+	text-shadow: -1px 1px 2px var(--ffz-rich-header-outline),
+		1px 1px 2px var(--ffz-rich-header-outline),
+		1px -1px 0 var(--ffz-rich-header-outline),
+		-1px -1px 0 var(--ffz-rich-header-outline);
+
+	& > * {
+		position: relative;
+		z-index: 1;
+	}
+
+	.ffz--rich-header__background {
+		position: absolute !important;
+		z-index: 0 !important;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+
+		opacity: 0.5;
+
+		& > img {
+			height: 100%;
+			width: 100%;
+			object-fit: cover;
+		}
+	}
+}
+
 .ffz--overlay {
 	position: relative;
 
@@ -132,6 +196,11 @@
 	height: 4.8rem;
 	max-width: 25%;
 
+	figure {
+		line-height: 4.8rem;
+		font-size: 2.4rem;
+	}
+
 	img {
 		object-fit: contain;
 		height: 100%;
@@ -145,6 +214,12 @@
 
 .ffz--compact-header .ffz--header-image {
 	height: 2.4rem;
+
+	figure {
+		line-height: 2.4rem;
+		font-size: 1.6rem;
+	}
+
 }
 
 .ffz--rich-gallery, .ffz--compact-header {
@@ -200,6 +275,18 @@
 		width: unset;
 		min-width: 150px;
 	}
+
+	.ffz--field-icon {
+		position: relative;
+		padding-left: 2.5rem;
+	}
+}
+
+.ffz--field__icon {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	left: 0;
 }
 
 .ffz--twitter-badge {

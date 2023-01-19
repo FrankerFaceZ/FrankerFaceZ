@@ -106,5 +106,10 @@ export default [
 	"right-open",
 	"list-bullet",
 	"mastodon",
-	"volume-up"
+	"volume-up",
+	"unmod",
+	"mod",
+	"flag",
+	"mange-suspicious",
+	"doc-text"
 ];

@@ -197,8 +197,8 @@ export default class Emotes extends Module {
 			for(const set_id in this.emote_sets)
 				if ( has(this.emote_sets, set_id) ) {
 					const emote_set = this.emote_sets[set_id];
-					if ( emote_set && emote_set.pending_css ) {
-						this.style.set(`es--${set_id}`, emote_set.pending_css + (emote_set.css || ''));
+					if ( emote_set && (emote_set.pending_css || emote_set.css) ) {
+						this.style.set(`es--${set_id}`, (emote_set.pending_css || '') + (emote_set.css || ''));
 						emote_set.pending_css = null;
 					}
 				}
@@ -816,6 +816,166 @@ export default class Emotes extends Module {
 	}
 
 
+	processEmote(emote, set_id) {
+		if ( ! emote.id || ! emote.name || ! emote.urls )
+			return null;
+
+		emote.set_id = set_id;
+		emote.src = emote.urls[1];
+		emote.srcSet = `${emote.urls[1]} 1x`;
+		if ( emote.urls[2] )
+			emote.srcSet += `, ${emote.urls[2]} 2x`;
+		if ( emote.urls[4] )
+			emote.srcSet += `, ${emote.urls[4]} 4x`;
+
+		if ( emote.urls[2] ) {
+			emote.can_big = true;
+			emote.src2 = emote.urls[2];
+			emote.srcSet2 = `${emote.urls[2]} 1x`;
+			if ( emote.urls[4] )
+				emote.srcSet2 += `, ${emote.urls[4]} 2x`;
+		}
+
+		if ( emote.animated?.[1] ) {
+			emote.animSrc = emote.animated[1];
+			emote.animSrcSet = `${emote.animated[1]} 1x`;
+			if ( emote.animated[2] ) {
+				emote.animSrcSet += `, ${emote.animated[2]} 2x`;
+				emote.animSrc2 = emote.animated[2];
+				emote.animSrcSet2 = `${emote.animated[2]} 1x`;
+
+				if ( emote.animated[4] ) {
+					emote.animSrcSet += `, ${emote.animated[4]} 4x`;
+					emote.animSrcSet2 += `, ${emote.animated[4]} 2x`;
+				}
+			}
+		}
+
+		emote.token = {
+			type: 'emote',
+			id: emote.id,
+			set: set_id,
+			provider: 'ffz',
+			src: emote.src,
+			srcSet: emote.srcSet,
+			can_big: !! emote.urls[2],
+			src2: emote.src2,
+			srcSet2: emote.srcSet2,
+			animSrc: emote.animSrc,
+			animSrcSet: emote.animSrcSet,
+			animSrc2: emote.animSrc2,
+			animSrcSet2: emote.animSrcSet2,
+			text: emote.hidden ? '???' : emote.name,
+			length: emote.name.length,
+			height: emote.height
+		};
+
+		if ( has(MODIFIERS, emote.id) )
+			Object.assign(emote, MODIFIERS[emote.id]);
+
+		return emote;
+	}
+
+
+	addEmoteToSet(set_id, emote) {
+		const set = this.emote_sets[set_id];
+		if ( ! set )
+			throw new Error(`Invalid emote set "${set_id}"`);
+
+		let processed = this.processEmote(emote, set_id);
+		if ( ! processed )
+			throw new Error("Invalid emote data object.");
+
+		// Are we removing an existing emote?
+		const old_emote = set.emotes[processed.id],
+			old_css = old_emote && this.generateEmoteCSS(old_emote);
+
+		// Store the emote.
+		set.emotes[processed.id] = processed;
+		if ( ! old_emote )
+			set.count++;
+
+		// Now we need to update the CSS. If we had old emote CSS, then we
+		// will need to totally rebuild the CSS.
+		const style_key = `es--${set_id}`;
+
+		if ( old_css && old_css.length ) {
+			const css = [];
+			for(const em of Object.values(set.emotes)) {
+				const emote_css = this.generateEmoteCSS(em);
+				if ( emote_css && emote_css.length )
+					css.push(emote_css);
+			}
+
+			if ( this.style && (css.length || set.css) )
+				this.style.set(style_key, css.join('') + (set.css || ''));
+			else if ( css.length )
+				set.pending_css = css.join('');
+
+		} else {
+			const emote_css = this.generateEmoteCSS(processed);
+			if ( emote_css && emote_css.length ) {
+				if ( this.style )
+					this.style.set(style_key, (this.style.get(style_key) || '') + emote_css);
+				else
+					set.pending_css = (set.pending_css || '') + emote_css;
+			}
+		}
+
+		// Send a loaded event because this emote set changed.
+		this.emit(':loaded', set_id, set);
+	}
+
+
+	removeEmoteFromSet(set_id, emote_id) {
+		const set = this.emote_sets[set_id];
+		if ( ! set )
+			throw new Error(`Invalid emote set "${set_id}"`);
+
+		if ( emote_id && emote_id.id )
+			emote_id = emote_id.id;
+
+		const emote = set.emotes[emote_id];
+		if ( ! emote )
+			return;
+
+		const emote_css = this.generateEmoteCSS(emote);
+		const css = (emote_css && emote_css.length) ? [] : null;
+
+		// Rebuild the emotes object to avoid gaps.
+		const new_emotes = {};
+		let count = 0;
+
+		for(const em of Object.values(set.emotes)) {
+			if ( em.id == emote_id )
+				continue;
+
+			new_emotes[em.id] = em;
+			count++;
+
+			if ( css != null) {
+				const em_css = this.generateEmoteCSS(em);
+				if ( em_css && em_css.length )
+					css.push(em_css);
+			}
+		}
+
+		set.emotes = new_emotes;
+		set.count = count;
+
+		if ( css != null ) {
+			const style_key = `es--${set_id}`;
+			if ( this.style && (css.length || set.css) )
+				this.style.set(style_key, css.join('') + (set.css || ''));
+			else if ( css.length )
+				set.pending_css = css.join('');
+		}
+
+		// Send a loaded event because this emote set changed.
+		this.emit(':loaded', set_id, set);
+	}
+
+
 	loadSetData(set_id, data, suppress_log = false) {
 		const old_set = this.emote_sets[set_id];
 		if ( ! data ) {
@@ -838,70 +998,18 @@ export default class Emotes extends Module {
 		const bad_emotes = [];
 
 		for(const emote of ems) {
-			if ( ! emote.id || ! emote.name || ! emote.urls ) {
+			let processed = this.processEmote(emote, set_id);
+			if ( ! processed ) {
 				bad_emotes.push(emote);
 				continue;
 			}
 
-			emote.set_id = set_id;
-			emote.src = emote.urls[1];
-			emote.srcSet = `${emote.urls[1]} 1x`;
-			if ( emote.urls[2] )
-				emote.srcSet += `, ${emote.urls[2]} 2x`;
-			if ( emote.urls[4] )
-				emote.srcSet += `, ${emote.urls[4]} 4x`;
-
-			if ( emote.urls[2] ) {
-				emote.can_big = true;
-				emote.src2 = emote.urls[2];
-				emote.srcSet2 = `${emote.urls[2]} 1x`;
-				if ( emote.urls[4] )
-					emote.srcSet2 += `, ${emote.urls[4]} 2x`;
-			}
-
-			if ( emote.animated?.[1] ) {
-				emote.animSrc = emote.animated[1];
-				emote.animSrcSet = `${emote.animated[1]} 1x`;
-				if ( emote.animated[2] ) {
-					emote.animSrcSet += `, ${emote.animated[2]} 2x`;
-					emote.animSrc2 = emote.animated[2];
-					emote.animSrcSet2 = `${emote.animated[2]} 1x`;
-
-					if ( emote.animated[4] ) {
-						emote.animSrcSet += `, ${emote.animated[4]} 4x`;
-						emote.animSrcSet2 += `, ${emote.animated[4]} 2x`;
-					}
-				}
-			}
-
-			emote.token = {
-				type: 'emote',
-				id: emote.id,
-				set: set_id,
-				provider: 'ffz',
-				src: emote.src,
-				srcSet: emote.srcSet,
-				can_big: !! emote.urls[2],
-				src2: emote.src2,
-				srcSet2: emote.srcSet2,
-				animSrc: emote.animSrc,
-				animSrcSet: emote.animSrcSet,
-				animSrc2: emote.animSrc2,
-				animSrcSet2: emote.animSrcSet2,
-				text: emote.hidden ? '???' : emote.name,
-				length: emote.name.length,
-				height: emote.height
-			};
-
-			if ( has(MODIFIERS, emote.id) )
-				Object.assign(emote, MODIFIERS[emote.id]);
-
-			const emote_css = this.generateEmoteCSS(emote);
+			const emote_css = this.generateEmoteCSS(processed);
 			if ( emote_css )
 				css.push(emote_css);
 
 			count++;
-			new_ems[emote.id] = emote;
+			new_ems[processed.id] = processed;
 		}
 
 		if ( bad_emotes.length )

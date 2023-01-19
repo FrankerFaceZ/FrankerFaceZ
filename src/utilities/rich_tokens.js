@@ -8,7 +8,7 @@ import {has} from 'utilities/object';
 import Markdown from 'markdown-it';
 import MILA from 'markdown-it-link-attributes';
 
-export const VERSION = 6;
+export const VERSION = 7;
 
 export const TOKEN_TYPES = {};
 
@@ -282,6 +282,34 @@ TOKEN_TYPES.box = function(token, createElement, ctx) {
 		style['--ffz-lines'] = token.lines;
 	}
 
+	if ( token.border )
+		classes.push('tw-border');
+
+	if ( token.rounding ) {
+		const round = getRoundClass(token.rounding);
+		if ( round )
+			classes.push(round);
+	}
+
+	if ( token.background ) {
+		if ( token.background === 'text' )
+			style.backgroundColor = `var(--color-text-base)`;
+		else if ( token.background === 'text-alt' )
+			style.backgroundColor = `var(--color-text-alt)`;
+		else if ( token.background === 'text-alt-2' )
+			style.backgroundColor = `var(--color-text-alt-2)`;
+		else if ( VALID_COLORS.includes(token.background) )
+			classes.push(`tw-c-background-${token.background}`);
+		else
+			style.backgroundColor = token.background;
+	}
+
+	if ( token.width )
+		style.width = token.width;
+
+	if ( token.height )
+		style.height = token.height;
+
 	applySpacing('pd', token, classes, style);
 	applySpacing('mg', token, classes, style);
 
@@ -338,7 +366,8 @@ TOKEN_TYPES.fieldset = function(token, createElement, ctx) {
 
 
 		const name = renderTokens(field.name, createElement, ctx, token.markdown),
-			value = renderTokens(field.value, createElement, ctx, token.markdown);
+			value = renderTokens(field.value, createElement, ctx, token.markdown),
+			icon = renderTokens(field.icon, createElement, ctx, token.markdown);
 
 		if ( name == null || value == null )
 			continue;
@@ -347,20 +376,19 @@ TOKEN_TYPES.fieldset = function(token, createElement, ctx) {
 			fields.push(createElement('div', {
 				class: [
 					'ffz--field',
-					field.inline ? 'ffz--field-inline' : false
+					field.inline ? 'ffz--field-inline' : false,
+					icon ? 'ffz--field-icon' : false
 				]
 			}, [
-				createElement('div', {
-					class: 'ffz--field__name tw-semibold'
-				}, name),
-				createElement('div', {
-					class: 'ffz--field__value tw-c-text-alt'
-				}, value)
+				createElement('div', {class: 'ffz--field__icon'}, icon),
+				createElement('div', {class: 'ffz--field__name tw-semibold'}, name),
+				createElement('div', {class: 'ffz--field__value tw-c-text-alt'}, value)
 			]));
 		else
 			fields.push(createElement('div', {
-				className: `ffz--field ${field.inline ? 'ffz--field-inline' : ''}`
+				className: `ffz--field ${field.inline ? 'ffz--field-inline' : ''} ${icon ? 'ffz--field-icon' : ''}`
 			}, [
+				createElement('div', {className: 'ffz--field__icon'}, icon),
 				createElement('div', {className: 'ffz--field__name tw-semibold'}, name),
 				createElement('div', {className: 'ffz--field__value tw-c-text-alt'}, value)
 			]));
@@ -531,6 +559,7 @@ TOKEN_TYPES.gallery = function(token, createElement, ctx) {
 
 function header_vue(token, h, ctx) {
 	let content = [];
+	let background;
 
 	if ( token.title ) {
 		const out = renderWithCapture(token.title, h, ctx, token.markdown);
@@ -569,6 +598,25 @@ function header_vue(token, h, ctx) {
 		]
 	}, content);
 
+	let bgtoken = resolveToken(token.sfw_background, ctx);
+	const nsfw_bg_token = resolveToken(token.background, ctx);
+	if ( nsfw_bg_token && canShowImage(nsfw_bg_token, ctx) )
+		bgtoken = nsfw_bg_token;
+
+	if ( bgtoken ) {
+		if ( bgtoken.type === 'image' )
+			background = render_image({
+				...bgtoken,
+				aspect: undefined
+			}, h, ctx);
+		else if ( bgtoken.type === 'icon' )
+			background = h('figure', {
+				class: `ffz-i-${bgtoken.name}`
+			});
+		else
+			background = renderWithCapture(token.background, h, ctx, token.markdown).content;
+	}
+
 	let imtok = resolveToken(token.sfw_image, ctx);
 	const nsfw_token = resolveToken(token.image, ctx);
 	if ( nsfw_token && canShowImage(nsfw_token, ctx) )
@@ -576,11 +624,19 @@ function header_vue(token, h, ctx) {
 
 	if ( imtok ) {
 		const aspect = imtok.aspect;
+		let image;
 
-		let image = render_image({
-			...imtok,
-			aspect: undefined
-		}, h, ctx);
+		if ( imtok.type === 'image' )
+			image = render_image({
+				...imtok,
+				aspect: undefined
+			}, h, ctx);
+
+		if ( imtok.type === 'icon' )
+			image = h('figure', {
+				class: `ffz-i-${imtok.name}`
+			});
+
 		const right = token.image_side === 'right';
 
 		if ( image ) {
@@ -626,11 +682,24 @@ function header_vue(token, h, ctx) {
 			content
 		]);
 
+	if ( background )
+		content = h('div', {
+			class: 'ffz--rich-header--background'
+		}, [
+			h('div', {
+				class: 'ffz--rich-header__background'
+			}, [
+				background
+			]),
+			content
+		]);
+
 	return content;
 }
 
 function header_normal(token, createElement, ctx) {
 	let content = [];
+	let background;
 
 	if ( token.title ) {
 		const out = renderWithCapture(token.title, createElement, ctx, token.markdown);
@@ -656,6 +725,25 @@ function header_normal(token, createElement, ctx) {
 		}, out.content));
 	}
 
+	let bgtoken = resolveToken(token.sfw_background, ctx);
+	const nsfw_bg_token = resolveToken(token.background, ctx);
+	if ( nsfw_bg_token && canShowImage(nsfw_bg_token, ctx) )
+		bgtoken = nsfw_bg_token;
+
+	if ( bgtoken ) {
+		if ( bgtoken.type === 'image' )
+			background = render_image({
+				...bgtoken,
+				aspect: undefined
+			}, createElement, ctx);
+		else if ( bgtoken.type === 'icon' )
+			background = createElement('figure', {
+				className: `ffz-i-${bgtoken.name}`
+			});
+		else
+			background = renderWithCapture(token.background, createElement, ctx, token.markdown).content;
+	}
+
 	content = createElement('div', {
 		className: `tw-flex tw-full-width tw-overflow-hidden ${token.compact ? 'ffz--rich-header ffz--compact-header tw-align-items-center' : 'tw-justify-content-center tw-flex-column tw-flex-grow-1'}`
 	}, content);
@@ -668,10 +756,19 @@ function header_normal(token, createElement, ctx) {
 	if ( imtok ) {
 		const aspect = imtok.aspect;
 
-		let image = render_image({
-			...imtok,
-			aspect: undefined
-		}, createElement, ctx);
+		let image;
+
+		if ( imtok.type === 'image' )
+			image = render_image({
+				...imtok,
+				aspect: undefined
+			}, createElement, ctx);
+
+		if ( imtok.type === 'icon' )
+			image = createElement('figure', {
+				className: `ffz-i-${imtok.name}`
+			});
+
 		const right = token.image_side === 'right';
 
 		if ( image ) {
@@ -715,6 +812,16 @@ function header_normal(token, createElement, ctx) {
 			className: 'tw-flex ffz--rich-header'
 		}, [
 			createElement('div', {className: 'ffz--header-image tw-mg-x-05'}),
+			content
+		]);
+
+	if ( background )
+		content = createElement('div', {
+			className: 'ffz--rich-header--background'
+		}, [
+			createElement('div', {
+				className: 'ffz--rich-header__background'
+			}, background),
 			content
 		]);
 
@@ -783,6 +890,9 @@ function render_image(token, createElement, ctx) {
 			}
 		};
 
+		if ( token.contain )
+			stuff.style.objectFit = 'contain';
+
 		if ( ctx.onload )
 			stuff.on = {load: ctx.onload};
 
@@ -810,6 +920,9 @@ function render_image(token, createElement, ctx) {
 			height: token.height
 		}
 	});
+
+	if ( token.contain )
+		image.style.objectFit = 'contain';
 
 	if ( ! aspect )
 		return image;
@@ -840,8 +953,12 @@ TOKEN_TYPES.i18n = function(token, createElement, ctx) {
 		return null;
 	}
 
+	let key = token.key;
+	if ( ctx.i18n_prefix )
+		key = `${ctx.i18n_prefix}.${key}`;
+
 	return renderTokens(
-		ctx.i18n.tList(token.key, token.phrase, token.content),
+		ctx.i18n.tList(key, token.phrase, token.content),
 		createElement,
 		ctx,
 		token.markdown

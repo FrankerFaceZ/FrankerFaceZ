@@ -1668,6 +1668,10 @@ export default class Chat extends Module {
 				b[item.setID] = item.version;
 		}
 
+		// Validate User Type
+		if ( user.type == null && msg.badges && msg.badges.moderator )
+			user.type = 'mod';
+
 		// Standardize Timestamp
 		if ( ! msg.timestamp && msg.sentAt )
 			msg.timestamp = new Date(msg.sentAt).getTime();
@@ -2235,6 +2239,9 @@ export default class Chat extends Module {
 	}
 
 	fixLinkInfo(data) {
+		if ( ! data )
+			return data;
+
 		if ( data.error && data.message )
 			data.error = data.message;
 

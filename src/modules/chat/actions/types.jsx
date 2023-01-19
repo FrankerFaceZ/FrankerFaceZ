@@ -500,6 +500,84 @@ export const untimeout = {
 
 
 // ============================================================================
+// Mod and Unmod User
+// ============================================================================
+
+export const mod = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-mod'
+		}
+	}],
+
+	required_context: ['room', 'user'],
+
+	title: 'Mod User',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.mod.tooltip', 'Mod {user.login}', {user: data.user});
+	},
+
+	hidden(data, message, current_room, current_user, mod_icons, instance) {
+		// You cannot mod mods.
+		if ( message.user.type === 'mod' )
+			return true;
+
+		// You cannot mod the broadcaster.
+		if ( message.user.id === current_room.id )
+			return true;
+
+		// Only the broadcaster can mod, otherwise.
+		return current_room.id !== current_user.id;
+	},
+
+	click(event, data) {
+		this.sendMessage(data.room.login, `/mod ${data.user.login}`);
+	}
+};
+
+
+export const unmod = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-unmod'
+		}
+	}],
+
+	required_context: ['room', 'user'],
+
+	title: 'Un-Mod User',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.unmod.tooltip', 'Un-Mod {user.login}', {user: data.user});
+	},
+
+	hidden(data, message, current_room, current_user, mod_icons, instance) {
+		// You can only un-mod mods.
+		if ( message.user.type !== 'mod' )
+			return true;
+
+		// You can unmod yourself.
+		if ( message.user.id === current_user.id )
+			return false;
+
+		// You cannot unmod the broadcaster.
+		if ( message.user.id === current_room.id )
+			return false;
+
+		// Only the broadcaster can unmod, otherwise.
+		return current_room.id !== current_user.id;
+	},
+
+	click(event, data) {
+		this.sendMessage(data.room.login, `/unmod ${data.user.login}`);
+	}
+};
+
+
+// ============================================================================
 // Whisper
 // ============================================================================
 

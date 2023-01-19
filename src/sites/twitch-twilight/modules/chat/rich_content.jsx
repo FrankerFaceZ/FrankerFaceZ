@@ -192,6 +192,7 @@ export default class RichContent extends Module {
 							i18n: t.i18n,
 
 							fragments: this.state.fragments,
+							i18n_prefix: this.state.i18n_prefix,
 
 							allow_media: t.chat.context.get('tooltip.link-images'),
 							allow_unsafe: t.chat.context.get('tooltip.link-nsfw-images')

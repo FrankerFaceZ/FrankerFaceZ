@@ -111,6 +111,13 @@ export class Module extends EventEmitter {
 		return this.__disable(args, this.__path, []);
 	}
 
+	canUnload() {
+		return this.__canUnload(this.__path, []);
+	}
+
+	canDisable() {
+		return this.__canDisable(this.__path, []);
+	}
 
 	__load(args, initial, chain) {
 		const path = this.__path || this.name,
@@ -172,6 +179,43 @@ export class Module extends EventEmitter {
 	}
 
 
+	__canUnload(initial, chain) {
+		const path = this.__path || this.name,
+			state = this.__load_state;
+
+		if ( chain.includes(this) )
+			throw new CyclicDependencyError(`cyclic load requirements when checking if can unload ${initial}`, [...chain, this]);
+		else if ( this.load_dependents ) {
+			chain.push(this);
+
+			for(const dep of this.load_dependents) {
+				const module = this.resolve(dep);
+				if ( module ) {
+					if ( chain.includes(module) )
+						throw new CyclicDependencyError(`cyclic load requirements when checking if can unload ${initial}`, [...chain, this, module]);
+
+					if ( ! module.__canUnload(initial, Array.from(chain)) )
+						return false;
+				}
+			}
+		}
+
+		if ( state === State.UNLOADING )
+			return true;
+
+		else if ( state === State.UNLOADED )
+			return true;
+
+		else if ( this.onLoad && ! this.onUnload )
+			return false;
+
+		else if ( state === State.LOADING )
+			return false;
+
+		return true;
+	}
+
+
 	__unload(args, initial, chain) {
 		const path = this.__path || this.name,
 			state = this.__load_state;
@@ -193,7 +237,7 @@ export class Module extends EventEmitter {
 		else if ( state === State.UNLOADED )
 			return Promise.resolve();
 
-		else if ( ! this.onUnload )
+		else if ( this.onLoad && ! this.onUnload )
 			return Promise.reject(new ModuleError(`attempted to unload module ${path} but module cannot be unloaded`));
 
 		else if ( state === State.LOADING )
@@ -220,7 +264,9 @@ export class Module extends EventEmitter {
 			}
 
 			this.__time('unload-self');
-			return this.onUnload(...args);
+			if ( this.onUnload )
+				return this.onUnload(...args);
+			return null;
 
 		})().then(ret => {
 			this.__load_state = State.UNLOADED;
@@ -304,6 +350,40 @@ export class Module extends EventEmitter {
 			this.__time('enable-end');
 			throw err;
 		});
+	}
+
+
+	__canDisable(initial, chain) {
+		const path = this.__path || this.name,
+			state = this.__state;
+
+		if ( chain.includes(this) )
+			throw new CyclicDependencyError(`cyclic load requirements when checking if can disable ${initial}`, [...chain, this]);
+		else if ( this.dependents ) {
+			chain.push(this);
+
+			for(const dep of this.dependents) {
+				const module = this.resolve(dep);
+				if ( module ) {
+					if ( chain.includes(module) )
+						throw new CyclicDependencyError(`cyclic load requirements when checking if can disable ${initial}`, [...chain, this, module]);
+
+					if ( ! module.__canDisable(initial, Array.from(chain)) )
+						return false;
+				}
+			}
+		}
+
+		if ( state === State.DISABLING || state === State.DISABLED )
+			return true;
+
+		else if ( ! this.onDisable )
+			return false;
+
+		else if ( state === State.ENABLING )
+			return false;
+
+		return true;
 	}
 
 
@@ -516,6 +596,11 @@ export class Module extends EventEmitter {
 		if ( this.enabled && ! module.enabled )
 			module.enable();
 
+		module.references.push([this.__path, name]);
+
+		if ( this.__processModule )
+			module = this.__processModule(module, name);
+
 		return this[name] = module;
 	}
 
@@ -569,8 +654,14 @@ export class Module extends EventEmitter {
 		if ( require )
 			requires.push(module.abs_path('.'));
 
+
 		if ( this.enabled && ! module.enabled )
 			module.enable();
+
+		module.references.push([this.__path, variable]);
+
+		if ( this.__processModule )
+			module = this.__processModule(module, name);
 
 		return this[variable] = module;
 	}
@@ -600,6 +691,7 @@ export class Module extends EventEmitter {
 
 		inst.dependents = dependents[0];
 		inst.load_dependents = dependents[1];
+		inst.references = dependents[2];
 
 		if ( inst instanceof SiteModule && ! requires.includes('site') )
 			requires.push('site');

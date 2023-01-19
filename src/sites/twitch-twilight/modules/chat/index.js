@@ -276,6 +276,24 @@ export default class ChatHook extends Module {
 
 		// Settings
 
+		this.settings.add('chat.disable-handling', {
+			default: null,
+			requires: ['context.disable-chat-processing'],
+			process(ctx, val) {
+				if ( val != null )
+					return ! val;
+				if ( ctx.get('context.disable-chat-processing') )
+					return true;
+				return false;
+			},
+			ui: {
+				path: 'Debugging > Chat >> Processing',
+				title: 'Enable processing of chat messages.',
+				component: 'setting-check-box',
+				force_seen: true
+			}
+		});
+
 		this.settings.addUI('debug.chat-test', {
 			path: 'Debugging > Chat >> Chat',
 			component: 'chat-tester',
@@ -887,6 +905,11 @@ export default class ChatHook extends Module {
 	}
 
 
+	updateDisableHandling() {
+		this.disable_handling = this.chat.context.get('chat.disable-handling');
+	}
+
+
 	onEnable() {
 		this.on('site.web_munch:loaded', this.grabTypes);
 		this.on('site.web_munch:loaded', this.defineClasses);
@@ -908,6 +931,8 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.drops', this.cleanHighlights, this);
+
+		this.chat.context.on('changed:chat.disable-handling', this.updateDisableHandling, this);
 
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.effective-width', this.updateChatCSS, this);
@@ -992,6 +1017,7 @@ export default class ChatHook extends Module {
 		this.chat.context.getChanges('chat.input.show-elevate-your-message', val =>
 			this.css_tweaks.toggleHide('elevate-your-message', ! val));
 
+		this.updateDisableHandling();
 		this.updateChatCSS();
 		this.updateColors();
 		this.updateLineBorders();
@@ -1325,7 +1351,7 @@ export default class ChatHook extends Module {
 		});
 
 		this.subpump.on(':pubsub-message', event => {
-			if ( event.prefix !== 'community-points-channel-v1' )
+			if ( event.prefix !== 'community-points-channel-v1' || this.disable_handling )
 				return;
 
 			const service = this.ChatService.first,
@@ -2186,7 +2212,7 @@ export default class ChatHook extends Module {
 
 				const old_announce = this.onAnnouncementEvent;
 				this.onAnnouncementEvent = function(e) {
-					console.log('announcement', e);
+					//console.log('announcement', e);
 					return old_announce.call(this, e);
 				}
 
@@ -2196,6 +2222,9 @@ export default class ChatHook extends Module {
 					try {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('Subscription') )
 							return;
+
+						if ( t.disable_handling )
+							return old_sub.call(i, e);
 
 						if ( t.chat.context.get('chat.subs.show') < 3 )
 							return;
@@ -2236,6 +2265,9 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('Resubscription') )
 							return;
 
+						if ( t.disable_handling )
+							return old_resub.call(i, e);
+
 						if ( t.chat.context.get('chat.subs.show') < 2 && ! e.body )
 							return;
 
@@ -2266,6 +2298,9 @@ export default class ChatHook extends Module {
 					try {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('SubGift') )
 							return;
+
+						if ( t.disable_handling )
+							return old_subgift.call(i, e);
 
 						const key = `${e.channel}:${e.user.userID}`,
 							mystery = mysteries[key];
@@ -2316,6 +2351,9 @@ export default class ChatHook extends Module {
 				const old_communityintro = this.onCommunityIntroductionEvent;
 				this.onCommunityIntroductionEvent = function(e) {
 					try {
+						if ( t.disable_handling )
+							return old_communityintro.call(this, e);
+
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('CommunityIntroduction') ) {
 							const out = i.convertMessage(e);
 							return i.postMessageToCurrentChannel(e, out);
@@ -2334,6 +2372,9 @@ export default class ChatHook extends Module {
 					try {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('AnonSubGift') )
 							return;
+
+						if ( t.disable_handling )
+							return old_anonsubgift.call(i, e);
 
 						const key = `${e.channel}:ANON`,
 							mystery = mysteries[key];
@@ -2388,6 +2429,9 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('SubMysteryGift') )
 							return;
 
+						if ( t.disable_handling )
+							return old_submystery.call(i, e);
+
 						let mystery = null;
 						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
 							const key = `${e.channel}:${e.user.userID}`;
@@ -2423,6 +2467,9 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('AnonSubMysteryGift') )
 							return;
 
+						if ( t.disable_handling )
+							return old_anonsubmystery.call(i, e);
+
 						let mystery = null;
 						if ( e.massGiftCount > t.chat.context.get('chat.subs.merge-gifts') ) {
 							const key = `${e.channel}:ANON`;
@@ -2457,6 +2504,9 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('Ritual') )
 							return;
 
+						if ( t.disable_handling )
+							return old_ritual.call(i, e);
+
 						const out = i.convertMessage(e);
 						out.ffz_type = 'ritual';
 						out.ritual = e.type;
@@ -2474,6 +2524,9 @@ export default class ChatHook extends Module {
 					try {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') )
 							return;
+
+						if ( t.disable_handling )
+							return old_points.call(i, e);
 
 						const reward = e.rewardID && get(e.rewardID, i.props.rewardMap);
 						if ( reward ) {

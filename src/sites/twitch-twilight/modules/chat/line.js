@@ -39,6 +39,12 @@ export default class ChatLine extends Module {
 
 		this.line_types = {};
 
+		this.line_types.unknown = {
+			renderNotice: (msg, current_user, room, inst, e) => {
+				return `Unknown message type: ${msg.ffz_type}`
+			}
+		};
+
 		this.line_types.cheer = {
 			renderNotice: (msg, current_user, room, inst, e) => {
 				return this.i18n.tList(
@@ -740,6 +746,9 @@ other {# messages were deleted by a moderator.}
 				let type = msg.ffz_type && t.line_types[msg.ffz_type];
 				if ( ! type && msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') )
 					type = t.line_types.cheer;
+
+				if ( ! type && msg.ffz_type )
+					type = t.line_types.unknown;
 
 				if ( type ) {
 					if ( type.render )

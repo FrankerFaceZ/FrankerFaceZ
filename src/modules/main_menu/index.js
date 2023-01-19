@@ -215,7 +215,12 @@ export default class MainMenu extends Module {
 		this.on('settings:added-definition', (key, definition) => {
 			this._addDefinitionToTree(key, definition);
 			this.scheduleUpdate();
-		})
+		});
+
+		this.on('settings:removed-definition', key => {
+			this._removeDefinitionFromTree(key);
+			this.scheduleUpdate();
+		});
 
 		this.on('socket:command:new_version', version => {
 			if ( version === window.FrankerFaceZ.version_info.commit )
@@ -361,6 +366,7 @@ export default class MainMenu extends Module {
 				this.log.info('Context proxy gone.');
 				this.updateContext({proxied: false});
 			}
+
 		});
 
 		try {
@@ -507,6 +513,58 @@ export default class MainMenu extends Module {
 			this._addDefinitionToTree(key, def);
 	}
 
+
+	_removeDefinitionFromTree(key) {
+		if ( ! this._settings_tree )
+			return;
+
+		let page;
+		for(const val of Object.values(this._settings_tree)) {
+			if ( ! val || ! Array.isArray(val.settings) )
+				continue;
+
+			for(let i = 0; i < val.settings.length; i++) {
+				const entry = val.settings[i];
+				if ( entry && entry[0] === key ) {
+					val.settings.splice(i, 1);
+					page = val;
+					break;
+				}
+			}
+
+			if ( page )
+				break;
+		}
+
+		// Was it found?
+		if ( ! page )
+			return;
+
+		this._maybeDeleteSection(page);
+	}
+
+	_maybeDeleteSection(page) {
+		// Is the section empty?
+		if ( page.settings && page.settings.length )
+			return;
+
+		const id = page.full_key;
+
+		// Check for children.
+		for(const val of Object.values(this._settings_tree)) {
+			if ( val.parent === id )
+				return;
+		}
+
+		// Nope~
+		delete this._settings_tree[id];
+
+		if ( page.parent ) {
+			const parent = this._settings_tree[page.parent];
+			if ( parent )
+				this._maybeDeleteSection(parent);
+		}
+	}
 
 	_addDefinitionToTree(key, def) {
 		if ( ! def.ui || ! this._settings_tree )
