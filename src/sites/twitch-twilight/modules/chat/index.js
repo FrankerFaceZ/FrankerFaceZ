@@ -104,9 +104,6 @@ const CHAT_TYPES = make_enum(
 	'Connected',
 	'Disconnected',
 	'Reconnect',
-	'Hosting',
-	'Unhost',
-	'Hosted',
 	'Subscription',
 	'Resubscription',
 	'GiftPaidUpgrade',
@@ -121,7 +118,6 @@ const CHAT_TYPES = make_enum(
 	'RoomState',
 	'Raid',
 	'Unraid',
-	'Ritual',
 	'Notice',
 	'Info',
 	'BadgesUpdated',
@@ -139,10 +135,16 @@ const CHAT_TYPES = make_enum(
 	'InlinePrivateCallout',
 	'ChannelPointsReward',
 	'CommunityChallengeContribution',
-	'CelebrationPurchase',
 	'LiveMessageSeparator',
 	'RestrictedLowTrustUserMessage',
-	'CommunityIntroduction'
+	'CommunityIntroduction',
+	'Shoutout',
+	'AnnouncementMessage',
+	'MidnightSquid',
+	'CharityDonation',
+	'MessageIdUpdate',
+	'PinnedChat',
+	'ViewerMilestone'
 );
 
 

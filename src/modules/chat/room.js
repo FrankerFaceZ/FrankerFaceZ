@@ -6,7 +6,7 @@
 
 import User from './user';
 
-import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/constants';
+import {NEW_API, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet, set_equals} from 'utilities/object';
@@ -260,7 +260,7 @@ export default class Room {
 
 		let response, data;
 		try {
-			response = await fetch(`${API_SERVER}/v1/room/${this.id ? `id/${this.id}` : this.login}`);
+			response = await fetch(`${this.manager.staging.api}/v1/room/${this.id ? `id/${this.id}` : this.login}`);
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )

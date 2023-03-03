@@ -47,6 +47,7 @@ export default class VideoChatHook extends Module {
 		this.inject('site.web_munch');
 
 		this.inject('chat');
+		this.inject('chat.emotes');
 		this.inject('chat.overrides');
 		this.injectAs('site_chat', 'site.chat');
 		this.inject('site.chat.chat_line.rich_content');
@@ -104,6 +105,7 @@ export default class VideoChatHook extends Module {
 		this.on('chat:update-line-tokens', this.updateLineTokens, this);
 		this.on('chat:update-line-badges', this.updateLineBadges, this);
 		this.on('i18n:update', this.rerenderLines, this);
+		this.on('chat.emotes:update-effects', this.checkEffects, this);
 
 		for(const setting of RERENDER_SETTINGS)
 			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
@@ -462,6 +464,21 @@ export default class VideoChatHook extends Module {
 				context.comment._ffz_message = null;
 				inst.forceUpdate();
 			}
+		}
+	}
+
+
+	checkEffects() {
+		for(const inst of this.VideoChatLine.instances) {
+			const context = inst.props.messageContext,
+				msg = context?.comment?._ffz_message,
+				tokens = msg?.ffz_tokens;
+
+			if ( tokens )
+				for(const token of tokens) {
+					if ( token.type === 'emote' && token.modifier_flags )
+						this.emotes.ensureEffect(token.modifier_flags);
+				}
 		}
 	}
 

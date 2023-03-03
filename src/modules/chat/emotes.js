@@ -6,8 +6,8 @@
 
 import Module from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
-import {get, has, timeout, SourcedSet} from 'utilities/object';
-import {NEW_API, API_SERVER, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS} from 'utilities/constants';
+import {get, has, timeout, SourcedSet, make_enum_flags} from 'utilities/object';
+import {NEW_API, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS} from 'utilities/constants';
 
 import GET_EMOTE from './emote_info.gql';
 import GET_EMOTE_SET from './emote_set_info.gql';
@@ -16,6 +16,148 @@ const HoverRAF = Symbol('FFZ:Hover:RAF');
 const HoverState = Symbol('FFZ:Hover:State');
 
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
+
+export const MODIFIER_FLAGS = make_enum_flags(
+	'Hidden',
+	'FlipX',
+	'FlipY',
+	'GrowX',
+	'GrowY',
+	'ShrinkX',
+	'ShrinkY',
+	'Rotate45',
+	'Rotate90',
+	'Greyscale',
+	'Sepia',
+	'Rainbow',
+	'HyperRed',
+	'Shake',
+	'Photocopy'
+);
+
+export const MODIFIER_KEYS = Object.values(MODIFIER_FLAGS).filter(x => typeof x === 'number');
+
+const MODIFIER_FLAG_CSS = {
+	FlipX: {
+		title: 'Flip Horizontal',
+		transform: 'scaleX(-1)'
+	},
+	FlipY: {
+		title: 'Flip Vertical',
+		transform: 'scaleY(-1)'
+	},
+	ShrinkX: {
+		title: 'Squish Horizontal',
+		transform: 'scaleX(0.5)'
+	},
+	GrowX: {
+		title: 'Stretch Horizontal',
+		transform: 'scaleX(2)'
+	},
+	ShrinkY: {
+		title: 'Squish Vertical',
+		transform: 'scaleY(0.5)'
+	},
+	GrowY: {
+		title: 'Stretch Vertical',
+		transform: 'scaleY(2)'
+	},
+	Rotate45: {
+		title: 'Rotate 45 Degrees',
+		transform: 'rotate(45deg)'
+	},
+	Rotate90: {
+		title: 'Rotate 90 Degrees',
+		transform: 'rotate(90deg)'
+	},
+	Greyscale: {
+		title: 'Grayscale',
+		filter: 'grayscale(1)'
+	},
+	Sepia: {
+		title: 'Sepia',
+		filter: 'sepia(1)'
+	},
+	Rainbow: {
+		title: 'Rainbow Animation',
+		animation: 'ffz-effect-rainbow 2s linear infinite',
+		animationFilter: 'ffz-effect-rainbow-filter 2s linear infinite',
+		raw: `@keyframes ffz-effect-rainbow {
+0% { filter: hue-rotate(0deg) }
+100% { filter: hue-rotate(360deg) }
+}
+@keyframes ffz-effect-rainbow-filter {
+0% { filter: var(--ffz-effect-filters) hue-rotate(0deg) }
+100% { filter: var(--ffz-effect-filters) hue-rotate(360deg) }
+}`
+	},
+	HyperRed: {
+		title: 'Hyper Red',
+		filter: 'brightness(0.2) sepia(1) brightness(2.2) contrast(3) saturate(8)'
+	},
+	Shake: {
+		title: 'Hyper Shake Animation',
+		animation: 'ffz-effect-shake 0.1s linear infinite',
+		animationTransform: 'ffz-effect-shake-transform 0.1s linear infinite',
+		raw: `@keyframes ffz-effect-shake-transform {
+0% { transform: var(--ffz-effect-transforms) translate(1px, 1px); }
+10% { transform: var(--ffz-effect-transforms) translate(-1px, -2px); }
+20% { transform: var(--ffz-effect-transforms) translate(-3px, 0px); }
+30% { transform: var(--ffz-effect-transforms) translate(3px, 2px); }
+40% { transform: var(--ffz-effect-transforms) translate(1px, -1px); }
+50% { transform: var(--ffz-effect-transforms) translate(-1px, 2px); }
+60% { transform: var(--ffz-effect-transforms) translate(-3px, 1px); }
+70% { transform: var(--ffz-effect-transforms) translate(3px, 1px); }
+80% { transform: var(--ffz-effect-transforms) translate(-1px, -1px); }
+90% { transform: var(--ffz-effect-transforms) translate(1px, 2px); }
+100% { transform: var(--ffz-effect-transforms) translate(1px, -2px); }
+}
+@keyframes ffz-effect-shake {
+0% { transform: translate(1px, 1px); }
+10% { transform: translate(-1px, -2px); }
+20% { transform: translate(-3px, 0px); }
+30% { transform: translate(3px, 2px); }
+40% { transform: translate(1px, -1px); }
+50% { transform: translate(-1px, 2px); }
+60% { transform: translate(-3px, 1px); }
+70% { transform: translate(3px, 1px); }
+80% { transform: translate(-1px, -1px); }
+90% { transform: translate(1px, 2px); }
+100% { transform: translate(1px, -2px); }
+}`
+	},
+	Photocopy: {
+		title: 'Photocopy',
+		filter: 'grayscale(1) brightness(0.65) contrast(5)'
+	}
+};
+
+
+function generateBaseFilterCss() {
+	console.log('flags', MODIFIER_FLAGS);
+	console.log('css', MODIFIER_FLAG_CSS);
+
+	const out = [
+		`.modified-emote[data-effects] > img {
+	--ffz-effect-filters: none;
+	--ffz-effect-transforms: initial;
+	--ffz-effect-animations: initial;
+}`/*,
+		`.modified-emote[data-effects] > img {
+	filter: var(--ffz-effect-filters);
+	transform: var(--ffz-effect-transforms);
+	animation: var(--ffz-effect-animations);
+}`*/
+	];
+
+	for(const [key, val] of Object.entries(MODIFIER_FLAG_CSS)) {
+		if ( val.raw )
+			out.push(val.raw);
+	}
+
+	return out.join('\n');
+}
+
 
 const MODIFIERS = {
 	59847: {
@@ -62,13 +204,24 @@ export default class Emotes extends Module {
 		super(...args);
 
 		this.EmoteTypes = EmoteTypes;
+		this.ModifierFlags = MODIFIER_FLAGS;
 
 		this.inject('settings');
 		this.inject('experiments');
+		this.inject('staging');
 
 		this.twitch_inventory_sets = new Set; //(EXTRA_INVENTORY);
 		this.__twitch_emote_to_set = {};
 		this.__twitch_set_to_channel = {};
+
+		// Bulk data structure for collections applied to a lot of users.
+		// This lets us avoid allocating lots of individual user
+		// objects when we don't need to do so.
+		this.bulk = new Map;
+
+		this.effects_enabled = {};
+		this.pending_effects = new Set();
+		this.applyEffects = this.applyEffects.bind(this);
 
 		this.default_sets = new SourcedSet;
 		this.global_sets = new SourcedSet;
@@ -170,6 +323,42 @@ export default class Emotes extends Module {
 			}
 		});
 
+		this.settings.add('chat.effects.enable', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Effects >> General',
+				title: 'Enable the use of emote effects.',
+				description: 'Emote Effects are special effects that can be applied to some emotes using special modifiers.',
+				component: 'setting-check-box'
+			}
+		});
+
+		for(const [key, val] of Object.entries(MODIFIER_FLAG_CSS)) {
+			const setting = {
+				default: val.animation
+					? null
+					: true,
+				ui: {
+					path: 'Chat > Emote Effects >> Specific Effect @{"description": "**Note:** Animated effects are, by default, only enabled when [Animated Emotes](~chat.appearance.emotes) are enabled."}',
+					title: `Enable the effect "${val.title ?? key}".`,
+					component: 'setting-check-box',
+					force_seen: true
+				}
+			};
+
+			if ( val.animation ) {
+				setting.default = null;
+				setting.requires = ['chat.emotes.animated'];
+				setting.process = function(ctx, val) {
+					if ( val == null )
+						return ctx.get('chat.emotes.animated') === 1;
+					return val;
+				};
+			}
+
+			this.settings.add(`chat.effects.${key}`, setting);
+		}
+
 		// Because this may be used elsewhere.
 		this.handleClick = this.handleClick.bind(this);
 		this.animHover = this.animHover.bind(this);
@@ -178,6 +367,16 @@ export default class Emotes extends Module {
 
 	onEnable() {
 		this.style = new ManagedStyle('emotes');
+		this.effect_style = new ManagedStyle('effects');
+
+		// Generate the base filter CSS.
+		this.base_effect_css = generateBaseFilterCss();
+
+		this.parent.context.on('changed:chat.effects.enable', this.updateEffects, this);
+		for(const key of Object.keys(MODIFIER_FLAG_CSS))
+			this.parent.context.on(`changed:chat.effects.${key}`, this.updateEffects, this);
+
+		this.updateEffects();
 
 		// Fix numeric Twitch favorite IDs.
 		const favs = this.getFavorites('twitch');
@@ -207,6 +406,103 @@ export default class Emotes extends Module {
 		this.on('socket:command:follow_sets', this.updateFollowSets, this);
 
 		this.loadGlobalSets();
+	}
+
+
+	// ========================================================================
+	// Load Modifier Effects
+	// ========================================================================
+
+	ensureEffect(flags) {
+		if ( ! this.effect_style.has(`${flags}`) ) {
+			this.pending_effects.add(flags);
+			if ( ! this._effect_timer )
+				this._effect_timer = requestAnimationFrame(this.applyEffects);
+		}
+	}
+
+	applyEffects() {
+		this._effect_timer = null;
+		const effects = this.pending_effects;
+		this.pending_effects = new Set;
+
+		for(const flags of effects) {
+			const result = this.generateFilterCss(flags);
+			this.effect_style.set(`${flags}`, result ?? '');
+		}
+	}
+
+	generateFilterCss(flags) {
+		if ( ! this.parent.context.get('chat.effects.enable') )
+			return null;
+
+		let filter, transform, animation, animations = [];
+
+		for(const key of MODIFIER_KEYS) {
+			if ( (flags & key) !== key || ! this.effects_enabled[key] )
+				continue;
+
+			const input = MODIFIER_FLAG_CSS[MODIFIER_FLAGS[key]];
+			if ( ! input )
+				continue;
+
+			if ( input.animation )
+				animations.push(input);
+
+			if ( input.filter )
+				filter = filter
+					? `${filter} ${input.filter}`
+					: input.filter;
+
+			if ( input.transform )
+				transform = transform
+					? `${transform} ${input.transform}`
+					: input.transform;
+		}
+
+		if ( animations.length )
+			for(const input of animations) {
+				if ( filter && input.animationFilter )
+					animation = animation
+						? `${animation}, ${input.animationFilter}`
+						: input.animationFilter;
+				else if ( transform && input.animationTransform )
+					animation = animation
+						? `${animation}, ${input.animationTransform}`
+						: input.animationTransform;
+				else
+					animation = animation
+						? `${animation}, ${input.animation}`
+						: input.animation;
+			}
+
+		if ( ! filter && ! transform && ! animation )
+			return null;
+
+		return `.modified-emote[data-effects="${flags}"] > img {${filter ? `
+	--ffz-effect-filters: ${filter};
+	filter: var(--ffz-effect-filters);` : ''}${transform ? `
+	--ffz-effect-transforms: ${transform};
+	transform: var(--ffz-effect-transforms);` : ''}${animation ? `
+	--ffz-effect-animations: ${animation};
+	animation: var(--ffz-effect-animations);` : ''}
+}`;
+	}
+
+	updateEffects() {
+		// TODO: Smarter logic so it does less work.
+		const enabled = this.parent.context.get('chat.effects.enable');
+
+		this.effects_enabled = {};
+		for(const key of Object.keys(MODIFIER_FLAG_CSS))
+			this.effects_enabled[MODIFIER_FLAGS[key]] = this.effects_enabled[key] = this.parent.context.get(`chat.effects.${key}`);
+
+		this.effect_style.clear();
+		if ( ! enabled )
+			return;
+
+		this.effect_style.set('base', this.base_effect_css);
+		this.emit(':update-effects');
 	}
 
 
@@ -513,7 +809,7 @@ export default class Emotes extends Module {
 				return;
 
 			const line = fine.searchParent(target, n => n.props && n.props.message),
-				opener = fine.searchParent(target, n => n.onShowEmoteCard, 250);
+				opener = fine.searchParent(target, n => n.onShowEmoteCard, 500);
 
 			if ( ! line || ! opener )
 				return;
@@ -545,11 +841,21 @@ export default class Emotes extends Module {
 			room_user = room && room.getUser(user_id, user_login, true),
 			user = this.parent.getUser(user_id, user_login, true);
 
-		return (user?.emote_sets ? user.emote_sets._cache : []).concat(
+		const out = (user?.emote_sets ? user.emote_sets._cache : []).concat(
 			room_user?.emote_sets ? room_user.emote_sets._cache : [],
 			room?.emote_sets ? room.emote_sets._cache : [],
 			this.default_sets._cache
 		);
+
+		if ( this.bulk.size ) {
+			const str_user = String(user_id);
+			for(const [set_id, users] of this.bulk) {
+				if ( users?._cache.has(str_user) )
+					out.push(set_id);
+			}
+		}
+
+		return out;
 	}
 
 	getSets(user_id, user_login, room_id, room_login) {
@@ -621,6 +927,20 @@ export default class Emotes extends Module {
 		if ( user )
 			this._withSources(out, seen, user.emote_sets);
 
+		if ( this.bulk.size ) {
+			const str_user = String(user_id);
+			for(const [set_id, users] of this.bulk) {
+				if ( ! seen.has(set_id) && users?._cache.has(str_user) ) {
+					for(const [provider, data] of users._sources) {
+						if ( data && data.includes(str_user) ) {
+							out.push([set_id, provider]);
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		return out;
 	}
 
@@ -631,10 +951,21 @@ export default class Emotes extends Module {
 
 	getGlobalSetIDs(user_id, user_login) {
 		const user = this.parent.getUser(user_id, user_login, true);
-		if ( ! user?.emote_sets )
-			return this.default_sets._cache;
 
-		return user.emote_sets._cache.concat(this.default_sets._cache);
+		const out = (user?.emote_sets ? user.emote_sets._cache : []).concat(
+			this.default_sets._cache
+		);
+
+		if ( this.bulk.size ) {
+			const str_user = String(user_id);
+			for(const [set_id, users] of this.bulk) {
+				if ( users?._cache.has(str_user) )
+					out.push(set_id);
+			}
+		}
+
+		return out;
+
 	}
 
 	getGlobalSets(user_id, user_login) {
@@ -651,6 +982,52 @@ export default class Emotes extends Module {
 						emotes[emote.name] = emote;
 
 		return emotes;
+	}
+
+	// ========================================================================
+	// Bulk Management
+	// ========================================================================
+
+	setBulk(source, set_id, entries) {
+		let set = this.bulk.get(set_id);
+		if ( ! set )
+			this.bulk.set(set_id, set = new SourcedSet(true));
+
+		const size = set._cache.size;
+		set.set(source, entries);
+		const new_size = set._cache.size;
+
+		if ( ! size && new_size )
+			this.refSet(set_id);
+	}
+
+	deleteBulk(source, set_id) {
+		const set = this.bulk.get(set_id);
+		if ( ! set )
+			return;
+
+		const size = set._cache.size;
+		set.delete(source);
+		const new_size = set._cache.size;
+
+		if ( size && ! new_size )
+			this.unrefSet(set_id);
+	}
+
+	extendBulk(source, set_id, entries) {
+		let set = this.bulk.get(set_id);
+		if ( ! set )
+			this.bulk.set(set_id, set = new SourcedSet(true));
+
+		if ( ! Array.isArray(entries) )
+			entries = [entries];
+
+		const size = set._cache.size;
+		set.extend(source, ...entries);
+		const new_size = set._cache.size;
+
+		if ( ! size && new_size )
+			this.refSet(set_id);
 	}
 
 	// ========================================================================
@@ -724,7 +1101,7 @@ export default class Emotes extends Module {
 			} catch(err) { /* do nothing */ }
 
 		try {
-			response = await fetch(`${API_SERVER}/v1/set/global`)
+			response = await fetch(`${this.staging.api}/v1/set/global${this.staging.active ? '/ids' : ''}`)
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
@@ -753,7 +1130,9 @@ export default class Emotes extends Module {
 			if ( has(sets, set_id) )
 				this.loadSetData(set_id, sets[set_id]);
 
-		if ( data.users )
+		if ( data.user_ids )
+			this.loadSetUserIds(data.user_ids);
+		else if ( data.users )
 			this.loadSetUsers(data.users);
 
 		return true;
@@ -769,7 +1148,7 @@ export default class Emotes extends Module {
 			} catch(err) { /* do nothing */ }
 
 		try {
-			response = await fetch(`${API_SERVER}/v1/set/${set_id}`)
+			response = await fetch(`${this.staging.api}/v1/set/${set_id}${this.staging.active ? '/ids' : ''}`)
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
@@ -793,10 +1172,25 @@ export default class Emotes extends Module {
 		if ( set )
 			this.loadSetData(set.id, set, suppress_log);
 
-		if ( data.users )
+		if ( data.user_ids )
+			this.loadSetUserIds(data.user_ids);
+		else if ( data.users )
 			this.loadSetUsers(data.users);
 
 		return true;
+	}
+
+
+	loadSetUserIds(data, suppress_log = false) {
+		for(const set_id in data)
+			if ( has(data, set_id) ) {
+				const emote_set = this.emote_sets[set_id],
+					users = data[set_id];
+
+				this.setBulk('ffz-global', set_id, users.map(x => String(x)));
+				if ( ! suppress_log )
+					this.log.info(`Added "${emote_set ? emote_set.title : set_id}" emote set to ${users.length} users.`);
+			}
 	}
 
 
@@ -867,7 +1261,8 @@ export default class Emotes extends Module {
 			animSrcSet2: emote.animSrcSet2,
 			text: emote.hidden ? '???' : emote.name,
 			length: emote.name.length,
-			height: emote.height
+			height: emote.height,
+			source_modifier_flags: emote.modifier_flags ?? 0
 		};
 
 		if ( has(MODIFIERS, emote.id) )

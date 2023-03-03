@@ -4,7 +4,7 @@
 // Badge Handling
 // ============================================================================
 
-import {NEW_API, SERVER, API_SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {has, maybe_call, SourcedSet} from 'utilities/object';
@@ -184,6 +184,7 @@ export default class Badges extends Module {
 		this.inject('settings');
 		this.inject('tooltips');
 		this.inject('experiments');
+		this.inject('staging');
 
 		this.style = new ManagedStyle('badges');
 
@@ -958,7 +959,7 @@ export default class Badges extends Module {
 			} catch(err) { /* do nothing */ }
 
 		try {
-			response = await fetch(`${API_SERVER}/v1/badges/ids`);
+			response = await fetch(`${this.staging.api}/v1/badges/ids`);
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )

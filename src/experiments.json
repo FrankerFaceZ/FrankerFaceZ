@@ -3,8 +3,8 @@
 		"name": "Modular Chat Line Rendering",
 		"description": "Enable a newer, modular chat line renderer.",
 		"groups": [
-			{"value": true, "weight": 0},
-			{"value": false, "weight": 100}
+			{"value": true, "weight": 20},
+			{"value": false, "weight": 80}
 		]
 	},
 	"api_load": {

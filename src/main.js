@@ -17,6 +17,7 @@ import SocketClient from './socket';
 //import PubSubClient from './pubsub';
 import Site from 'site';
 import Vue from 'utilities/vue';
+import StagingSelector from './staging';
 //import Timing from 'utilities/timing';
 
 class FrankerFaceZ extends Module {
@@ -56,6 +57,7 @@ class FrankerFaceZ extends Module {
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
+		this.inject('staging', StagingSelector);
 		this.inject('socket', SocketClient);
 		//this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);

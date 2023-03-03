@@ -36,6 +36,7 @@ export default class ChatLine extends Module {
 
 		this.inject('chat.actions');
 		this.inject('chat.overrides');
+		this.inject('chat.emotes');
 
 		this.line_types = {};
 
@@ -349,6 +350,7 @@ export default class ChatLine extends Module {
 		this.on('chat:update-line-tokens', this.updateLineTokens, this);
 		this.on('chat:update-line-badges', this.updateLineBadges, this);
 		this.on('i18n:update', this.rerenderLines, this);
+		this.on('chat.emotes:update-effects', this.checkEffects, this);
 
 		this.on('experiments:changed:line_renderer', () => {
 			const value = this.experiments.get('line_renderer'),
@@ -1763,6 +1765,31 @@ other {# messages were deleted by a moderator.}
 			// freaking out on us.
 			setTimeout(() => this.ExtensionLine.forceUpdate());
 		})
+	}
+
+
+	checkEffects() {
+		for(const inst of this.ChatLine.instances) {
+			const msg = inst.props.message,
+				tokens = msg?.ffz_tokens;
+
+			if ( tokens )
+				for(const token of tokens) {
+					if ( token.type === 'emote' && token.modifier_flags )
+						this.emotes.ensureEffect(token.modifier_flags);
+				}
+		}
+
+		for(const inst of this.WhisperLine.instances) {
+			const msg = inst.props.message?._ffz_message,
+				tokens = msg?.ffz_tokens;
+
+			if ( tokens )
+				for(const token of tokens) {
+					if ( token.type === 'emote' && token.modifier_flags )
+						this.emotes.ensureEffect(token.modifier_flags);
+				}
+		}
 	}
 
 

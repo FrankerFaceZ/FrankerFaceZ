@@ -1242,6 +1242,10 @@ export const AddonEmotes = {
 			return (<div class="ffz--inline" data-test-selector="emote-button">{emote}</div>);
 		}
 
+		const effects = token.modifier_flags;
+		if ( effects )
+			this.emotes.ensureEffect(effects);
+
 		return (<div
 			class="ffz--inline ffz--pointer-events modified-emote"
 			data-test-selector="emote-button"
@@ -1249,10 +1253,17 @@ export const AddonEmotes = {
 			data-id={token.id}
 			data-set={token.set}
 			data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
+			data-effects={effects ? effects : undefined}
 			onClick={this.emotes.handleClick}
 		>
 			{emote}
-			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement, true)}</span>)}
+			{mods.map(t => {
+				if ( (t.source_modifier_flags & 1) === 1)
+					return null;
+				return <span key={t.text}>
+					{this.tokenizers.emote.render.call(this, t, createElement, true)}
+				</span>
+			})}
 		</div>);
 	},
 
@@ -1443,8 +1454,10 @@ export const AddonEmotes = {
 
 			if ( token.type !== 'text' ) {
 				if ( token.type === 'emote' ) {
-					if ( ! token.modifiers )
+					if ( ! token.modifiers ) {
 						token.modifiers = [];
+						token.modifier_flags = 0;
+					}
 				}
 
 				out.push(token);
@@ -1461,6 +1474,9 @@ export const AddonEmotes = {
 					// Is this emote a modifier?
 					if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
 						if ( last_token.modifiers.indexOf(emote.token) === -1 ) {
+							if ( emote.modifier_flags )
+								last_token.modifier_flags |= emote.modifier_flags;
+
 							last_token.modifiers.push(
 								Object.assign({
 										big,
@@ -1486,6 +1502,7 @@ export const AddonEmotes = {
 
 					const t = Object.assign({
 						modifiers: [],
+						modifier_flags: 0,
 						big,
 						anim
 					}, emote.token);
@@ -1582,7 +1599,8 @@ export const Emoji = {
 
 					text: match[0],
 					length,
-					modifiers: []
+					modifiers: [],
+					modifier_flags: 0
 				});
 
 				idx = start + match[0].length;
@@ -1734,7 +1752,8 @@ export const TwitchEmotes = {
 					can_big,
 					height: 28, // Not always accurate but close enough.
 					text: text.slice(e_start - t_start, e_end - t_start).join(''),
-					modifiers: []
+					modifiers: [],
+					modifier_flags: 0
 				});
 
 				idx = e_end;

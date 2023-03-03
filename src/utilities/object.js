@@ -66,6 +66,22 @@ export function make_enum(...array) {
 	return out;
 }
 
+export function make_enum_flags(...array) {
+	const out = {};
+
+	out.None = 0;
+	out[0] = 'None';
+
+	for(let i = 0; i < array.length; i++) {
+		const word = array[i],
+			value = Math.pow(2, i);
+		out[word] = value;
+		out[value] = word;
+	}
+
+	return out;
+}
+
 
 export function timeout(promise, delay) {
 	return new Promise((resolve, reject) => {

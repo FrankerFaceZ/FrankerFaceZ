@@ -271,11 +271,20 @@ export class ManagedStyle {
 		this._style = null;
 	}
 
+	clear() {
+		this._blocks = {};
+		this._style.innerHTML = '';
+	}
+
 	get(key) {
 		const block = this._blocks[key];
 		if ( block )
 			return block.textContent;
 		return undefined;
+	}
+
+	has(key) {
+		return !! this._blocks[key];
 	}
 
 	set(key, value, force) {

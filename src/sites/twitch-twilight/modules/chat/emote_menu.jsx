@@ -373,6 +373,7 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:update-default-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-user-sets', this.maybeUpdate, this);
 		this.on('chat.emotes:update-room-sets', this.maybeUpdate, this);
+		this.on('chat.emotes:loaded', this.maybeUpdate, this);
 		this.on('chat.emotes:change-favorite', this.maybeUpdate, this);
 		this.on('chat.emotes:change-hidden', this.maybeUpdate, this);
 		this.on('chat.emoji:populated', this.maybeUpdate, this);

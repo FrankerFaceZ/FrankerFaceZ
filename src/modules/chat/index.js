@@ -70,6 +70,7 @@ export default class Chat extends Module {
 		this.inject('i18n');
 		this.inject('tooltips');
 		this.inject('experiments');
+		this.inject('staging');
 
 		this.inject(Badges);
 		this.inject(Emotes);

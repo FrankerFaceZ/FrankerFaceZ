@@ -8,6 +8,14 @@
 	margin: -.5rem 0;
 }
 
+.modified-emote {
+	margin: -.5rem 0;
+
+	& > .chat-line__message--emote {
+		margin: 0;
+	}
+}
+
 .chat-author__display-name,
 .chat-author__intl-login {
 	cursor: pointer;
