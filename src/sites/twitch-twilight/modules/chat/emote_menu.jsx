@@ -150,6 +150,7 @@ export default class EmoteMenu extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.inject('staging');
 		this.inject('settings');
 		this.inject('i18n');
 		this.inject('chat');
@@ -793,7 +794,7 @@ export default class EmoteMenu extends Module {
 
 				let source = data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source;
 				if ( source == null )
-					source = 'FrankerFaceZ';
+					source = 'FFZ';
 
 				return (<section ref={this.saveRef} data-key={data.key} class={filtered ? 'filtered' : ''} onMouseEnter={this.mouseEnter}>
 					{show_heading ? (<heading tabindex="0" class="tw-pd-1 tw-border-b tw-flex tw-flex-nowrap" onKeyDown={this.keyHeading} onClick={this.clickHeading}>
@@ -833,7 +834,9 @@ export default class EmoteMenu extends Module {
 						let sellout = '';
 
 						if ( emote_lock ) {
-							if ( emote_lock.id === 'cheer' ) {
+							if ( emote_lock.id === 'subwoofer' ) {
+								sellout = t.i18n.t('emote-menu.emote-subwoofer', 'Become an FFZ Subwoofer to unlock this emote.');
+							} else if ( emote_lock.id === 'cheer' ) {
 								sellout = t.i18n.t('emote-menu.emote-cheer', 'Cheer an additional {bits_remaining, plural, one {# bit} other {# bits}} to unlock this emote.', emote_lock);
 							} else if ( emote_lock.id === 'follower' ) {
 								sellout = t.i18n.t('emote-menu.emote-follower', 'Follow {user} to unlock this emote in their channel.', emote_lock);
@@ -886,6 +889,7 @@ export default class EmoteMenu extends Module {
 					data-set={emote.set_id}
 					data-code={emote.code}
 					data-modifiers={modifiers}
+					data-effects={emote.effects}
 					data-variant={emote.variant}
 					data-no-source={source}
 					data-name={emote.name}
@@ -917,16 +921,27 @@ export default class EmoteMenu extends Module {
 				if ( ! data.all_locked || ! data.locks )
 					return null;
 
-				const lock = data.locks[this.state.unlocked],
-					locks = Object.values(data.locks).filter(x => x.id !== 'cheer');
+				let lock = data.locks[this.state.unlocked],
+					locks = Object.values(data.locks).filter(x => x.id !== 'cheer'),
+					has_ffz = locks.filter(x => x.is_ffz).length > 0;
+
+				if ( ! lock && data.locks.length === 1 )
+					lock = data.locks[0];
 
 				if ( ! locks.length )
 					return null;
 
 				return (<div class="tw-mg-1 tw-border-t tw-pd-t-1 tw-mg-b-0">
-					{lock ?
-						t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count, plural, one {# emote} other {# emotes}}', {price: lock.price, count: lock.emotes.size}) :
-						t.i18n.t('emote-menu.sub-basic', 'Subscribe to unlock some emotes')}
+					{has_ffz
+						? t.i18n.t('emote-menu.ffz-unlock', 'This feature is available to FFZ Subwoofers.')
+						: (lock
+							? t.i18n.t('emote-menu.sub-unlock', 'Subscribe for {price} to unlock {count, plural, one {# emote} other {# emotes}}', {price: lock.price, count: lock.emotes.size})
+							: t.i18n.t('emote-menu.sub-basic', 'Subscribe to unlock some emotes')
+						)
+					}
+					{has_ffz && this.props.ffz_sub_data?.has_free_sub
+						? <div class="tw-pd-y-1">{t.i18n.t('emote-menu.free-sub.about', 'As thanks for supporting us in the past, you can get one month of FFZ Subwoofer for free.')}</div>
+						: null}
 					<div class="ffz--sub-buttons tw-mg-t-05">
 						{locks.map(lock => lock.hide_button ? null : (<a
 							key={lock.price}
@@ -939,7 +954,10 @@ export default class EmoteMenu extends Module {
 							onMouseLeave={this.onMouseLeave}
 						>
 							<span class="tw-button__text">
-								{lock.price}
+								{has_ffz && this.props.ffz_sub_data?.has_free_sub
+									? t.i18n.t('emote-menu.free-sub', 'Use My Free Month')
+									: lock.price
+								}
 							</span>
 						</a>))}
 					</div>
@@ -1092,8 +1110,13 @@ export default class EmoteMenu extends Module {
 					tone: t.settings.provider.get('emoji-tone', null)
 				}
 
-				if ( props.visible )
+				if ( props.visible ) {
 					this.loadData();
+					if ( this.state.wants_plan_info )
+						this.loadFFZPlanData();
+					if ( this.state.wants_resub_info )
+						this.loadFFZSubData();
+				}
 
 				this.rebuildData();
 
@@ -1310,6 +1333,9 @@ export default class EmoteMenu extends Module {
 						case 'channel':
 							sets = this.state.filtered_channel_sets;
 							break;
+						case 'effects':
+							sets = this.state.filtered_effect_sets;
+							break;
 						case 'emoji':
 							sets = this.state.filtered_emoji_sets;
 							break;
@@ -1437,6 +1463,46 @@ export default class EmoteMenu extends Module {
 				return true;
 			}
 
+			loadFFZPlanData(force = false, props, state) {
+				state = state || this.state;
+				if ( ! state || state.ffz_plan_loading )
+					return false;
+
+				if ( state.ffz_sub_data && ! force )
+					return false;
+
+				this.setState({ffz_plan_loading: true}, () => {
+					t.getFFZSubPrices().then(d => {
+						this.setState(this.filterState(this.state.filter, this.buildState(
+							this.props,
+							Object.assign({}, this.state, {ffz_plan_data: d, ffz_plan_loading: false})
+						)));
+					})
+				});
+
+				return true;
+			}
+
+			loadFFZSubData(force = false, props, state) {
+				state = state || this.state;
+				if ( ! state || state.ffz_loading )
+					return false;
+
+				if ( state.ffz_sub_data && ! force )
+					return false;
+
+				this.setState({ffz_loading: true}, () => {
+					t.getFFZSubData().then(d => {
+						this.setState(this.filterState(this.state.filter, this.buildState(
+							this.props,
+							Object.assign({}, this.state, {ffz_sub_data: d, ffz_loading: false})
+						)));
+					})
+				});
+
+				return true;
+			}
+
 			filterState(input, old_state, visibility_control) {
 				const state = Object.assign({}, old_state);
 
@@ -1449,6 +1515,7 @@ export default class EmoteMenu extends Module {
 				state.filtered = input && input.length > 0 && input !== ':' || false;
 
 				state.filtered_channel_sets = this.filterSets(input, state.channel_sets, visibility_control);
+				state.filtered_effect_sets = this.filterSets(input, state.effect_sets, visibility_control);
 				state.filtered_all_sets = this.filterSets(input, state.all_sets, visibility_control);
 				state.filtered_fav_sets = this.filterSets(input, state.fav_sets, visibility_control);
 				state.filtered_emoji_sets = this.filterSets(input, state.emoji_sets, visibility_control);
@@ -1619,6 +1686,13 @@ export default class EmoteMenu extends Module {
 				return state;
 			}
 
+			getAllSets() {
+				return [
+					...(this.state.channel_sets || []),
+					...(this.state.effect_sets || []),
+					...(this.state.all_sets || [])
+				];
+			}
 
 			getSorter() { // eslint-disable-line class-methods-use-this
 				return EMOTE_SORTERS[t.chat.context.get('chat.emote-menu.sort-emotes')] || EMOTE_SORTERS[0] || (() => 0);
@@ -1631,6 +1705,7 @@ export default class EmoteMenu extends Module {
 					modifiers = state.emote_modifiers = {},
 					channel = state.channel_sets = [],
 					all = state.all_sets = [],
+					effects = state.effect_sets = [],
 					favorites = state.favorites = [];
 
 				// If we're still loading, don't set any data.
@@ -1987,8 +2062,8 @@ export default class EmoteMenu extends Module {
 									hide_button: true,
 									emotes: lock_set = new Set()
 								}
-							else
-								section.all_locked = false;
+							/*else
+								section.all_locked = false;*/
 
 							let order = 0;
 							for(const emote of local.emotes) {
@@ -2178,56 +2253,106 @@ export default class EmoteMenu extends Module {
 					}
 				}
 
+				let wants_resub_info = false,
+					wants_plan_info = false;
 
 				// Finally, emotes added by FrankerFaceZ.
 				if ( t.chat.context.get('chat.emotes.enabled') > 1 ) {
 					const me = t.site.getUser();
-					if ( me ) {
-						const ffz_room = t.emotes.getRoomSetsWithSources(me.id, me.login, props.channel_id, null),
-							ffz_global = t.emotes.getGlobalSetsWithSources(me.id, me.login),
-							seen_favorites = {};
 
-						let grouped_sets = {};
+					const ffz_room = t.emotes.getRoomSetsWithSources(me?.id, me?.login, props.channel_id, null),
+						ffz_subs = t.emotes.getSubSetsWithSources(),
+						ffz_global = t.emotes.getGlobalSetsWithSources(me?.id, me?.login),
+						seen_sets = new Set(),
+						seen_favorites = {};
 
-						for(const [emote_set, provider] of ffz_room) {
-							const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
-							if ( section ) {
-								section.emotes.sort(sort_emotes);
+					let grouped_sets = {};
 
-								if ( ! channel.includes(section) )
-									channel.push(section);
-							}
+					for(const [emote_set, provider] of ffz_room) {
+						if ( seen_sets.has(emote_set) )
+							continue;
+						seen_sets.add(emote_set);
+
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
+						if ( section ) {
+							section.emotes.sort(sort_emotes);
+
+							if ( ! channel.includes(section) )
+								channel.push(section);
 						}
+					}
 
-						grouped_sets = {};
+					grouped_sets = {};
 
-						for(const [emote_set, provider] of ffz_global) {
-							const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
-							if ( section ) {
-								section.emotes.sort(sort_emotes);
+					const global_set_ids = ffz_global.map(x => x?.[0]?.id);
 
-								if ( ! all.includes(section) )
-									all.push(section);
+					for(const [emote_set, provider] of ffz_subs) {
+						if ( seen_sets.has(emote_set) )
+							continue;
+						seen_sets.add(emote_set);
 
-								if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
-									channel.push(section);
-							}
+						const locked = ! global_set_ids.includes(emote_set.id);
+
+						wants_resub_info = true;
+
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked, state);
+						if ( section ) {
+							section.emotes.sort(sort_emotes);
+
+							if ( ! effects.includes(section) && section.has_effects )
+								effects.push(section);
+							else if ( ! all.includes(section) )
+								all.push(section);
+						}
+					}
+
+					grouped_sets = {};
+
+					for(const [emote_set, provider] of ffz_global) {
+						if ( seen_sets.has(emote_set) )
+							continue;
+						seen_sets.add(emote_set);
+
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
+						if ( section ) {
+							section.emotes.sort(sort_emotes);
+
+							if ( ! effects.includes(section) && section.has_effects )
+								effects.push(section);
+
+							else if ( ! all.includes(section) )
+								all.push(section);
+
+							if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
+								channel.push(section);
 						}
 					}
 				}
 
+				// Load FFZ sub data.
+				state.wants_resub_info = wants_resub_info;
+				state.wants_plan_info = wants_plan_info;
+
+				if ( this.props.visible ) {
+					if ( wants_plan_info )
+						this.loadFFZPlanData();
+					if ( wants_resub_info )
+						this.loadFFZSubData();
+				}
 
 				// Sort Sets
 				channel.sort(sort_sets);
+				effects.sort(sort_sets);
 				all.sort(sort_sets);
 
 				state.has_channel_tab = channel.length > 0;
+				state.has_effect_Tab = effects.length > 0;
 
 				return this.buildEmoji(state);
 			}
 
 
-			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets) { // eslint-disable-line class-methods-use-this
+			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state) { // eslint-disable-line class-methods-use-this
 				if ( ! emote_set || ! emote_set.emotes )
 					return null;
 
@@ -2242,7 +2367,7 @@ export default class EmoteMenu extends Module {
 						(pdata.i18n_key ?
 							t.i18n.t(pdata.i18n_key, pdata.name, pdata) :
 							pdata.name) :
-						emote_set.source || 'FrankerFaceZ',
+						emote_set.source || 'FFZ',
 
 					title = provider === 'main' ?
 						t.i18n.t('emote-menu.main-set', 'Channel Emotes') :
@@ -2252,7 +2377,7 @@ export default class EmoteMenu extends Module {
 				if ( sort_key == null )
 					sort_key = emote_set.title.toLowerCase().includes('global') ? 100 : 0;
 
-				let section, emotes;
+				let section, emotes, locks;
 
 				if ( grouped_sets[key] ) {
 					section = grouped_sets[key];
@@ -2277,9 +2402,30 @@ export default class EmoteMenu extends Module {
 						title,
 						source,
 						emotes,
-						force_global: emote_set.force_global
+						force_global: emote_set.force_global,
+						all_locked: true
 					}
 				}
+
+				// Try to get resub info.
+				const resub = (state || this.state)?.ffz_sub_data?.sets?.[emote_set.id];
+				if ( resub ) {
+					section.renews = resub.next_bill_date;
+					section.ends = resub.expires_at;
+				}
+
+				if ( locked ) {
+					section.locks = section.locks || {};
+					section.locks[emote_set.id] = {
+						set_id: emote_set.id,
+						id: 'subwoofer',
+						is_ffz: true,
+						price: 'More Info',
+						url: 'https://www.frankerfacez.com/subscribe',
+						emotes: locks = new Set()
+					}
+				} else
+					section.all_locked = false;
 
 				for(const emote of Object.values(emote_set.emotes))
 					if ( ! emote.hidden ) {
@@ -2292,18 +2438,27 @@ export default class EmoteMenu extends Module {
 								srcSet: emote.srcSet,
 								animSrc: emote.animSrc,
 								animSrcSet: emote.animSrcSet,
+								effects: emote.modifier ? emote.modifier_flags : 0,
 								name: emote.name,
 								favorite: is_fav,
+								locked: locked,
 								hidden: known_hidden.includes(emote.id),
 								height: emote.height,
 								width: emote.width
 							};
 
 						emotes.push(em);
-						if ( is_fav && ! seen_favs.has(emote.id) ) {
+
+						if ( ! locked && is_fav && ! seen_favs.has(emote.id) ) {
 							favorites.push(em);
 							seen_favs.add(emote.id);
 						}
+
+						if ( locked )
+							locks.add(emote.id);
+
+						if ( emote.modifier && emote.modifier_flags )
+							section.has_effects = true;
 					}
 
 				if ( emotes.length )
@@ -2320,7 +2475,11 @@ export default class EmoteMenu extends Module {
 			componentDidUpdate(old_props) {
 				if ( this.props.visible && ! old_props.visible ) {
 					this.loadData();
-					return;
+
+					if ( this.state.wants_plan_info )
+						this.loadFFZPlanData();
+					if ( this.state.wants_resub_info )
+						this.loadFFZSubData();
 				}
 
 				if ( ! this.props.visible && old_props.visible ) {
@@ -2406,23 +2565,25 @@ export default class EmoteMenu extends Module {
 				if ( ! loading )
 					this.loadedOnce = true;
 
-				let tab, sets, is_emoji, is_favs;
+				let tab, sets, is_emoji, is_favs, is_effect;
 
 				if ( no_tabs ) {
 					sets = [
 						this.state.filtered_fav_sets,
 						this.state.filtered_channel_sets,
+						this.state.filtered_effect_sets,
 						this.state.filtered_all_sets,
 						this.state.filtered_emoji_sets
 					].flat();
 
 				} else {
 					tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab');
-					if ( (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
+					if ( (tab === 'effect' && ! this.state.has_effect_Tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
 						tab = 'all';
 
 					is_emoji = tab === 'emoji';
 					is_favs = tab === 'fav';
+					is_effect = tab === 'effect';
 
 					switch(tab) {
 						case 'fav':
@@ -2430,6 +2591,9 @@ export default class EmoteMenu extends Module {
 							break;
 						case 'channel':
 							sets = this.state.filtered_channel_sets;
+							break;
+						case 'effect':
+							sets = this.state.filtered_effect_sets;
 							break;
 						case 'emoji':
 							sets = this.state.filtered_emoji_sets;
@@ -2467,6 +2631,7 @@ export default class EmoteMenu extends Module {
 														key: data.key,
 														idx,
 														data,
+														ffz_sub_data: this.state.ffz_sub_data,
 														emote_modifiers: this.state.emote_modifiers,
 														animated: this.state.animated,
 														combineTabs: this.state.combineTabs,
@@ -2606,6 +2771,20 @@ export default class EmoteMenu extends Module {
 												</div>
 											</button>
 										</div>}
+										{this.state.has_effect_Tab && <div class={`emote-picker-tab-item${tab === 'effect' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+											<button
+												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'effect' ? ' ffz-interactable--selected' : ''}`}
+												id="emote-picker__effect"
+												data-tab="effect"
+												data-tooltip-type="html"
+												data-title={t.i18n.t('emote-menu.effects', 'Emote Effects')}
+												onClick={this.clickTab}
+											>
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+													<figure class="ffz-i-fx" />
+												</div>
+											</button>
+										</div>}
 										<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 											<button
 												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'all' ? ' ffz-interactable--selected' : ''}`}
@@ -2657,6 +2836,105 @@ export default class EmoteMenu extends Module {
 		}
 
 		this.fine.wrap('ffz-emote-menu', this.MenuComponent);
+	}
+
+
+	async getFFZSubPrices() {
+		let result;
+		try {
+			result = await fetch(`${this.staging.api}/payment/plans`)
+				.then(r => r.ok ? r.json() : null);
+		} catch(err) {
+			this.log.error('Unable to load subscription prices from server.', err);
+			result = null;
+		}
+
+		// We only care about:
+		// 1. What collections are granted by the available plan.
+		// 2. How much they cost.
+
+		const out = {
+			sets: {}
+		};
+
+		for(const plan of Object.values(result.plans)) {
+			if ( ! Array.isArray(plan.temporary_collections) )
+				continue;
+
+			let prices;
+			for(const gw_plan of Object.values(result.gateway_plans)) {
+				if ( gw_plan.plan_id === plan.id && gw_plan.months === 1 ) {
+					prices = gw_plan.prices;
+					break;
+				}
+			}
+
+			if ( prices )
+				for(const set_id of plan.temporary_collections) {
+					out.sets[set_id] = {
+						plan_id: plan.id,
+						prices
+					}
+				}
+		}
+
+		return out;
+	}
+
+
+	async getFFZSubData() {
+		const me = this.resolve('site').getUser();
+		if ( ! me )
+			return null;
+
+		const token = await this.resolve('socket').getBareAPIToken();
+		if ( ! token )
+			return null;
+
+		let result;
+		try {
+			result = await fetch(`${this.staging.api}/v2/subscription/status?include=plan`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			})
+				.then(r => r.ok ? r.json() : null);
+		} catch(err) {
+			this.log.error('Unable to load subscription status from server.', err);
+			result = null;
+		}
+
+		// We only care about:
+		// 1. If the user has a free sub available
+		// 2. What collections can expire/renew
+		// 3. When they expire/renew
+
+		if ( ! result )
+			return null;
+
+		const out = {
+			has_free_sub: result.user?.bonus_month_eligible ?? false,
+			sets: {}
+		};
+
+		if ( result.user?.active_subs )
+			for(const entry of Object.values(result.user.active_subs)) {
+				const plan = result.plans?.[entry.id];
+				if ( Array.isArray(plan?.temporary_collections) ) {
+					for(const set_id of plan.temporary_collections)
+						out.sets[set_id] = {
+							plan_id: entry.id,
+							expires_at: entry.expires_at
+								? new Date(entry.expires_at)
+								: null,
+							next_bill_date: entry.next_bill_date
+								? new Date(entry.next_bill_date)
+								: null
+						};
+				}
+			}
+
+		return out;
 	}
 
 

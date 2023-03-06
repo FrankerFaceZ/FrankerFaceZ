@@ -13,6 +13,7 @@ import SettingsManager from './settings/index';
 import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
+import StagingSelector from './staging';
 import Site from './sites/player';
 
 class FrankerFaceZ extends Module {
@@ -49,6 +50,7 @@ class FrankerFaceZ extends Module {
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
+		this.inject('staging', StagingSelector);
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
 

@@ -1,3 +1,13 @@
+.message > .modified-emote > .chat-line__message--emote {
+	vertical-align: bottom !important;
+}
+
+.message > .scaled-modified-emote {
+	vertical-align: baseline;
+
+	& > .chat-line__message--emote { vertical-align: unset !important; }
+}
+
 .message > div > .chat-line__message--emote {
 	vertical-align: baseline;
 	padding-top: 5px;

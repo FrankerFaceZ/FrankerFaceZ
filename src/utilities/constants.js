@@ -162,7 +162,7 @@ export const WS_CLUSTERS = {
 	],
 
 	Development: [
-		['wss://127.0.0.1:8003/', 1]
+		['ws://127.0.0.1:7999/', 1]
 	]
 }
 

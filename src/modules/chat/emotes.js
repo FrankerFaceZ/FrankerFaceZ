@@ -11,6 +11,7 @@ import {NEW_API, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWI
 
 import GET_EMOTE from './emote_info.gql';
 import GET_EMOTE_SET from './emote_set_info.gql';
+import { FFZEvent } from 'src/utilities/events';
 
 const HoverRAF = Symbol('FFZ:Hover:RAF');
 const HoverState = Symbol('FFZ:Hover:State');
@@ -32,7 +33,9 @@ export const MODIFIER_FLAGS = make_enum_flags(
 	'Rainbow',
 	'HyperRed',
 	'Shake',
-	'Photocopy'
+	'Photocopy',
+	'Jam',
+	'Bounce'
 );
 
 export const MODIFIER_KEYS = Object.values(MODIFIER_FLAGS).filter(x => typeof x === 'number');
@@ -48,19 +51,19 @@ const MODIFIER_FLAG_CSS = {
 	},
 	ShrinkX: {
 		title: 'Squish Horizontal',
-		transform: 'scaleX(0.5)'
+		//transform: 'scaleX(0.5)'
 	},
 	GrowX: {
 		title: 'Stretch Horizontal',
-		transform: 'scaleX(2)'
+		//transform: 'scaleX(2) translateX(25%)'
 	},
 	ShrinkY: {
 		title: 'Squish Vertical',
-		transform: 'scaleY(0.5)'
+		//transform: 'scaleY(0.5)'
 	},
 	GrowY: {
 		title: 'Stretch Vertical',
-		transform: 'scaleY(2)'
+		//transform: 'scaleY(2) translateY(25%)'
 	},
 	Rotate45: {
 		title: 'Rotate 45 Degrees',
@@ -127,27 +130,89 @@ const MODIFIER_FLAG_CSS = {
 }`
 	},
 	Photocopy: {
-		title: 'Photocopy',
-		filter: 'grayscale(1) brightness(0.65) contrast(5)'
+		title: 'Cursed',
+		filter: 'grayscale(1) brightness(0.7) contrast(2.5)'
+	},
+	Jam: {
+		title: 'Jam Animation',
+		animation: 'ffz-effect-jam 0.6s linear infinite',
+		animationTransform: 'ffz-effect-jam-transform 0.6s linear infinite',
+		raw: `@keyframes ffz-effect-jam {
+0% { transform: translate(-2px, -2px) rotate(-6deg); }
+10% { transform: translate(-1.5px, -2px) rotate(-8deg); }
+20% { transform: translate(1px, -1.5px) rotate(-8deg); }
+30% { transform: translate(3px, 2.5px) rotate(-6deg); }
+40% { transform: translate(3px, 4px) rotate(-2deg); }
+50% { transform: translate(2px, 4px) rotate(3deg); }
+60% { transform: translate(1px, 4px) rotate(3deg); }
+70% { transform: translate(-0.5px, 3px) rotate(2deg); }
+80% { transform: translate(-1.25px, 1px) rotate(0deg); }
+90% { transform: translate(-1.75px, -0.5px) rotate(-2deg); }
+100% { transform: translate(-2px, -2px) rotate(-5deg); }
+}
+@keyframes ffz-effect-jam-transform {
+0% { transform: var(--ffz-effect-transforms) translate(-2px, -2px) rotate(-6deg); }
+10% { transform: var(--ffz-effect-transforms) translate(-1.5px, -2px) rotate(-8deg); }
+20% { transform: var(--ffz-effect-transforms) translate(1px, -1.5px) rotate(-8deg); }
+30% { transform: var(--ffz-effect-transforms) translate(3px, 2.5px) rotate(-6deg); }
+40% { transform: var(--ffz-effect-transforms) translate(3px, 4px) rotate(-2deg); }
+50% { transform: var(--ffz-effect-transforms) translate(2px, 4px) rotate(3deg); }
+60% { transform: var(--ffz-effect-transforms) translate(1px, 4px) rotate(3deg); }
+70% { transform: var(--ffz-effect-transforms) translate(-0.5px, 3px) rotate(2deg); }
+80% { transform: var(--ffz-effect-transforms) translate(-1.25px, 1px) rotate(0deg); }
+90% { transform: var(--ffz-effect-transforms) translate(-1.75px, -0.5px) rotate(-2deg); }
+100% { transform: var(--ffz-effect-transforms) translate(-2px, -2px) rotate(-5deg); }
+}`,
+	},
+	Bounce: {
+		animation: 'ffz-effect-bounce 0.5s linear infinite',
+		animationTransform: 'ffz-effect-bounce-transform 0.5s linear infinite',
+		transformOrigin: 'bottom center',
+		raw: `@keyframes ffz-effect-bounce {
+0% { transform: scale(0.8, 1); }
+10% { transform: scale(0.9, 0.8); }
+20% { transform: scale(1, 0.4); }
+25% { transform: scale(1.2, 0.3); }
+25.001% { transform: scale(-1.2, 0.3); }
+30% { transform: scale(-1, 0.4); }
+40% { transform: scale(-0.9, 0.8); }
+50% { transform: scale(-0.8, 1); }
+60% { transform: scale(-0.9, 0.8); }
+70% { transform: scale(-1, 0.4); }
+75% { transform: scale(-1.2, 0.3); }
+75.001% { transform: scale(1.2, 0.3); }
+80% { transform: scale(1, 0.4); }
+90% { transform: scale(0.9, 0.8); }
+100% { transform: scale(0.8, 1); }
+}
+@keyframes ffz-effect-bounce-transform {
+0% { transform: scale(0.8, 1) var(--ffz-effect-transforms); }
+10% { transform: scale(0.9, 0.8) var(--ffz-effect-transforms); }
+20% { transform: scale(1, 0.4) var(--ffz-effect-transforms); }
+25% { transform: scale(1.2, 0.3) var(--ffz-effect-transforms); }
+25.001% { transform: scale(-1.2, 0.3) var(--ffz-effect-transforms); }
+30% { transform: scale(-1, 0.4) var(--ffz-effect-transforms); }
+40% { transform: scale(-0.9, 0.8) var(--ffz-effect-transforms); }
+50% { transform: scale(-0.8, 1) var(--ffz-effect-transforms); }
+60% { transform: scale(-0.9, 0.8) var(--ffz-effect-transforms); }
+70% { transform: scale(-1, 0.4) var(--ffz-effect-transforms); }
+75% { transform: scale(-1.2, 0.3) var(--ffz-effect-transforms); }
+75.001% { transform: scale(1.2, 0.3) var(--ffz-effect-transforms); }
+80% { transform: scale(1, 0.4) var(--ffz-effect-transforms); }
+90% { transform: scale(0.9, 0.8) var(--ffz-effect-transforms); }
+100% { transform: scale(0.8, 1) var(--ffz-effect-transforms); }
+}`
 	}
 };
 
 
 function generateBaseFilterCss() {
-	console.log('flags', MODIFIER_FLAGS);
-	console.log('css', MODIFIER_FLAG_CSS);
-
 	const out = [
 		`.modified-emote[data-effects] > img {
 	--ffz-effect-filters: none;
 	--ffz-effect-transforms: initial;
 	--ffz-effect-animations: initial;
-}`/*,
-		`.modified-emote[data-effects] > img {
-	filter: var(--ffz-effect-filters);
-	transform: var(--ffz-effect-transforms);
-	animation: var(--ffz-effect-animations);
-}`*/
+}`
 	];
 
 	for(const [key, val] of Object.entries(MODIFIER_FLAG_CSS)) {
@@ -223,6 +288,7 @@ export default class Emotes extends Module {
 		this.pending_effects = new Set();
 		this.applyEffects = this.applyEffects.bind(this);
 
+		this.sub_sets = new SourcedSet;
 		this.default_sets = new SourcedSet;
 		this.global_sets = new SourcedSet;
 
@@ -436,7 +502,7 @@ export default class Emotes extends Module {
 		if ( ! this.parent.context.get('chat.effects.enable') )
 			return null;
 
-		let filter, transform, animation, animations = [];
+		let filter, transformOrigin, transform, animation, animations = [];
 
 		for(const key of MODIFIER_KEYS) {
 			if ( (flags & key) !== key || ! this.effects_enabled[key] )
@@ -453,6 +519,9 @@ export default class Emotes extends Module {
 				filter = filter
 					? `${filter} ${input.filter}`
 					: input.filter;
+
+			if ( input.transformOrigin )
+				transformOrigin = input.transformOrigin;
 
 			if ( input.transform )
 				transform = transform
@@ -481,7 +550,8 @@ export default class Emotes extends Module {
 
 		return `.modified-emote[data-effects="${flags}"] > img {${filter ? `
 	--ffz-effect-filters: ${filter};
-	filter: var(--ffz-effect-filters);` : ''}${transform ? `
+	filter: var(--ffz-effect-filters);` : ''}${transformOrigin ? `
+	transform-origin: ${transformOrigin};` : ''}${transform ? `
 	--ffz-effect-transforms: ${transform};
 	transform: var(--ffz-effect-transforms);` : ''}${animation ? `
 	--ffz-effect-animations: ${animation};
@@ -694,7 +764,6 @@ export default class Emotes extends Module {
 			this.settings.provider.set(key, favs);
 	}
 
-
 	handleClick(event) {
 		const target = event.target,
 			ds = target && target.dataset;
@@ -710,7 +779,7 @@ export default class Emotes extends Module {
 			let url;
 
 			if ( provider === 'twitch' ) {
-				url = `https://twitchemotes.com/emotes/${ds.id}`;
+				url = null; // = `https://twitchemotes.com/emotes/${ds.id}`;
 
 				if ( click_sub ) {
 					const apollo = this.resolve('site.apollo');
@@ -803,6 +872,16 @@ export default class Emotes extends Module {
 			return true;
 		}
 
+		const evt = new FFZEvent({
+			provider,
+			id: ds.id,
+			source: event
+		});
+
+		this.emit('chat.emotes:click', evt);
+		if ( evt.defaultPrevented )
+			return true;
+
 		if ( provider === 'twitch' && this.parent.context.get('chat.emote-dialogs') ) {
 			const fine = this.resolve('site.fine');
 			if ( ! fine )
@@ -835,6 +914,55 @@ export default class Emotes extends Module {
 	// ========================================================================
 	// Access
 	// ========================================================================
+
+	getTargetEmote() {
+		const me = this.resolve('site').getUser(),
+			Input = me ? this.resolve('site.chat.input') : null,
+			entered = Input ? Input.getInput() : null;
+
+		const menu = this.resolve('site.chat.emote_menu')?.MenuWrapper?.first,
+			emote_sets = menu?.getAllSets?.(),
+			emotes = emote_sets
+				? emote_sets.map(x => x.emotes).flat().filter(x => ! x.effects)
+				: null;
+
+		if ( entered && emotes ) {
+			// Okay this is gonna be oof.
+			const name_map = {};
+			for(let i = 0; i < emotes.length; i++)
+				if ( ! name_map[emotes[i].name] )
+					name_map[emotes[i].name] = i;
+
+			const words = entered.split(' ');
+			let i = words.length;
+			while(i--) {
+				const word = words[i];
+				if ( name_map[word] != null )
+					return emotes[name_map[word]];
+			}
+		}
+
+		// Random emote
+		if ( emotes && emotes.length ) {
+			const idx = Math.floor(Math.random() * emotes.length),
+				emote = emotes[idx];
+
+			return emote;
+		}
+
+		// Return LaterSooner
+		return {
+			provider: 'ffz',
+			set_id: 3,
+			id: 149346,
+			name: 'LaterSooner',
+			src: 'https://cdn.frankerfacez.com/emote/149346/1',
+			srcSet: 'https://cdn.frankerfacez.com/emote/149346/1 1x, https://cdn.frankerfacez.com/emote/149346/2 2x, https://cdn.frankerfacez.com/emote/149346/4 4x',
+			width: 25,
+			height: 32
+		}
+	}
+
 
 	getSetIDs(user_id, user_login, room_id, room_login) {
 		const room = this.parent.getRoom(room_id, room_login, true),
@@ -948,6 +1076,21 @@ export default class Emotes extends Module {
 		return this.getGlobalSetIDsWithSources(user_id, user_login)
 			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
 	}
+
+
+	getSubSetIDsWithSources() {
+		const out = [], seen = new Set;
+
+		this._withSources(out, seen, this.sub_sets);
+
+		return out;
+	}
+
+	getSubSetsWithSources() {
+		return this.getSubSetIDsWithSources()
+			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
+	}
+
 
 	getGlobalSetIDs(user_id, user_login) {
 		const user = this.parent.getUser(user_id, user_login, true);
@@ -1073,6 +1216,45 @@ export default class Emotes extends Module {
 		return false;
 	}
 
+	addSubSet(provider, set_id, data) {
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
+		let changed = false, added = false;
+		if ( ! this.sub_sets.sourceIncludes(provider, set_id) ) {
+			changed = ! this.sub_sets.includes(set_id);
+			this.sub_sets.push(provider, set_id);
+			added = true;
+		}
+
+		if ( data )
+			this.loadSetData(set_id, data);
+
+		if ( changed ) {
+			this.refSet(set_id);
+			this.emit(':update-sub-sets', provider, set_id, true);
+		}
+
+		return added;
+	}
+
+	removeSubSet(provider, set_id) {
+		if ( typeof set_id === 'number' )
+			set_id = `${set_id}`;
+
+		if ( this.sub_sets.sourceIncludes(provider, set_id) ) {
+			this.sub_sets.remove(provider, set_id);
+			if ( ! this.sub_sets.includes(set_id) ) {
+				this.unrefSet(set_id);
+				this.emit(':update-sub-sets', provider, set_id, false);
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
 	refSet(set_id) {
 		this._set_refs[set_id] = (this._set_refs[set_id] || 0) + 1;
 		if ( this._set_timers[set_id] ) {
@@ -1101,7 +1283,7 @@ export default class Emotes extends Module {
 			} catch(err) { /* do nothing */ }
 
 		try {
-			response = await fetch(`${this.staging.api}/v1/set/global${this.staging.active ? '/ids' : ''}`)
+			response = await fetch(`${this.staging.api}/v1/set/global/ids`)
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
@@ -1127,8 +1309,12 @@ export default class Emotes extends Module {
 			this.addDefaultSet('ffz-global', set_id);
 
 		for(const set_id in sets)
-			if ( has(sets, set_id) )
+			if ( has(sets, set_id) ) {
+				const id = sets[set_id]?.id;
 				this.loadSetData(set_id, sets[set_id]);
+				if ( id && ! data.default_sets.includes(id) )
+					this.addSubSet('ffz-global', set_id);
+			}
 
 		if ( data.user_ids )
 			this.loadSetUserIds(data.user_ids);
@@ -1262,6 +1448,7 @@ export default class Emotes extends Module {
 			text: emote.hidden ? '???' : emote.name,
 			length: emote.name.length,
 			height: emote.height,
+			width: emote.width,
 			source_modifier_flags: emote.modifier_flags ?? 0
 		};
 

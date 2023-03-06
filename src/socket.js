@@ -168,7 +168,7 @@ export default class SocketClient extends Module {
 			if ( ! user || ! user.id )
 				return fail(new Error('Unable to get current user or not logged in.'));
 
-			const es = new EventSource(`https://api-test.frankerfacez.com/auth/ext_verify/${user.id}`);
+			const es = new EventSource(`https://api.frankerfacez.com/auth/ext_verify/${user.id}`);
 
 			on(es, 'challenge', event => {
 				const conn = this.resolve('site.chat')?.ChatService?.first?.client?.connection;

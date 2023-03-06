@@ -800,6 +800,10 @@ export class TranslationManager extends Module {
 		return this._.formatNumber(...args);
 	}
 
+	formatCurrency(...args) {
+		return this._.formatCurrency(...args);
+	}
+
 	formatDuration(...args) {
 		return this._.formatDuration(...args);
 	}

@@ -16,6 +16,17 @@
 	}
 }
 
+.scaled-modified-emote {
+	display: inline-block;
+	vertical-align: middle;
+
+	& > .chat-line__message--emote {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+}
+
 .chat-author__display-name,
 .chat-author__intl-login {
 	cursor: pointer;
@@ -335,6 +346,11 @@
 		.emote-picker__nav-content-overflow-whisper {
 			height: 18rem !important;
 		}
+	}
+
+	.emote-picker__tab-content {
+		height: unset !important;
+		max-height: 30.5rem;
 	}
 
 	&.ffz--emote-picker__tall {

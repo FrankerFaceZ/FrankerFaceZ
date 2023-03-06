@@ -1013,6 +1013,18 @@ export default class Input extends Module {
 		return results;*/
 	}
 
+	getInput() {
+		for(const inst of this.ChatInput.instances) {
+			if ( ! inst.autocompleteInputRef || ! inst.state )
+				continue;
+
+			if ( inst.state.value )
+				return inst.state.value;
+		}
+
+		return null;
+	}
+
 	pasteMessage(room, message) {
 		for(const inst of this.ChatInput.instances) {
 			if ( inst?.props?.channelLogin !== room )

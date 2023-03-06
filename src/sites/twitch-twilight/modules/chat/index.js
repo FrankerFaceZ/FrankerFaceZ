@@ -2177,41 +2177,6 @@ export default class ChatHook extends Module {
 						}
 				}
 
-				/*const old_chat = this.onChatMessageEvent;
-				this.onChatMessageEvent = function(e) {
-					/*if ( e && e.sentByCurrentUser ) {
-						try {
-							e.message.user.emotes = findEmotes(
-								e.message.body,
-								i.ffzGetEmotes()
-							);
-
-						} catch(err) {
-							t.log.capture(err, {extra: e});
-						}
-					}* /
-
-					return old_chat.call(i, e);
-				}
-
-
-				const old_action = this.onChatActionEvent;
-				this.onChatActionEvent = function(e) {
-					/*if ( e && e.sentByCurrentUser ) {
-						try {
-							e.message.user.emotes = findEmotes(
-								e.message.body,
-								i.ffzGetEmotes()
-							);
-
-						} catch(err) {
-							t.log.capture(err, {extra: e});
-						}
-					}* /
-
-					return old_action.call(i, e);
-				}*/
-
 				const old_announce = this.onAnnouncementEvent;
 				this.onAnnouncementEvent = function(e) {
 					//console.log('announcement', e);

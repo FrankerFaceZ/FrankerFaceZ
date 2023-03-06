@@ -1443,6 +1443,47 @@ export default class PlayerBase extends Module {
 		tip.textContent = label;
 	}
 
+	replaceVideoElement(player, video) {
+		const new_vid = createElement('video'),
+			vol = video?._ffz_pregain_volume ?? video?.volume ?? player.getVolume(),
+			muted = player.isMuted();
+
+		new_vid._ffz_gain_value = video._ffz_gain_value;
+		new_vid._ffz_state = video._ffz_state;
+		new_vid._ffz_toggled = video._ffz_toggled;
+		new_vid._ffz_maybe_compress = video._ffz_compressed;
+		new_vid.volume = vol;
+		if ( muted )
+			new_vid.muted = true;
+		new_vid.playsInline = true;
+
+		this.installPlaybackRate(new_vid);
+		video.replaceWith(new_vid);
+		player.attachHTMLVideoElement(new_vid);
+		return new_vid;
+	}
+
+	hookPlayerLoad(player) {
+		if ( ! player || player._ffz_load )
+			return;
+
+		player._ffz_load = player.load;
+
+		player.load = (...args) => {
+			try {
+				const video = player.getHTMLVideoElement();
+				if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
+					this.log.info('Recreating video element due to player load with compressor installed.');
+					this.replaceVideoElement(player, video);
+				}
+			} catch(err) {
+				t.log.error('Error while handling player load.', err);
+			}
+
+			return player._ffz_load(...args);
+		}
+	}
+
 	compressPlayer(inst, e) {
 		const player = inst.props.mediaPlayerInstance,
 			core = player.core || player,
@@ -1450,6 +1491,21 @@ export default class PlayerBase extends Module {
 
 		if ( ! video || ! HAS_COMPRESSOR )
 			return;
+
+		// Backup the player load method.
+		this.hookPlayerLoad(player);
+
+		// Backup and replace the setSrc method.
+		if ( ! inst._ffz_setSrc ) {
+			inst._ffz_setSrc = inst.setSrc;
+			inst.setSrc = async function(...args) {
+				console.log('setSrc', args);
+				const vid = inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+				if ( vid && vid._ffz_compressor )
+					await this.resetPlayer(inst);
+				return inst._ffz_setSrc(...args);
+			}
+		}
 
 		// Backup the setVolume method.
 		if ( ! core._ffz_setVolume ) {
@@ -2028,7 +2084,7 @@ export default class PlayerBase extends Module {
 	}
 
 
-	resetPlayer(inst, e) {
+	async resetPlayer(inst, e) {
 		const player = inst ? ((inst.mediaSinkManager || inst.core?.mediaSinkManager) ? inst : inst?.props?.mediaPlayerInstance) : null;
 
 		if ( e ) {
@@ -2064,39 +2120,19 @@ export default class PlayerBase extends Module {
 
 		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
-			const new_vid = createElement('video'),
-				vol = video?._ffz_pregain_volume ?? video?.volume ?? player.getVolume(),
-				muted = player.isMuted();
-
-			new_vid._ffz_gain_value = video._ffz_gain_value;
-			new_vid._ffz_state = video._ffz_state;
-			new_vid._ffz_toggled = video._ffz_toggled;
+			const new_vid = this.replaceVideoElement(player, video);
 			new_vid._ffz_maybe_compress = true;
-			new_vid.volume = muted ? 0 : vol;
-			new_vid.playsInline = true;
-
-			this.installPlaybackRate(new_vid);
-			video.replaceWith(new_vid);
-			player.attachHTMLVideoElement(new_vid);
-			setTimeout(() => {
-				player.setVolume(vol);
-				player.setMuted(muted);
-
-				//localStorage.volume = vol;
-				//localStorage.setItem('video-muted', JSON.stringify({default: muted}));
-			}, 0);
 		}
 
 		this.PlayerSource.check();
 		for(const inst of this.PlayerSource.instances) {
 			if ( ! player || player === inst.props?.mediaPlayerInstance )
-				inst.setSrc({isNewMediaPlayerInstance: false});
+				await inst.setSrc({isNewMediaPlayerInstance: false});
 		}
 
 		if ( position > 0 )
 			setTimeout(() => player.seekTo(position), 250);
 	}
-
 
 	addMetadata(inst) {
 		if ( ! this.metadata )

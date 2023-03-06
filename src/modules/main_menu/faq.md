@@ -13,7 +13,7 @@ Due to performance problems with our current website, we have to use caching on 
 
 * *I don't want the `FFZ Supporter` badge.*
 
-Users can toggle the visibility of their supporter badge at: [https://www.frankerfacez.com/donate](https://www.frankerfacez.com/donate)
+Users can toggle the visibility of their FFZ badges at: [https://www.frankerfacez.com/settings/profile](https://www.frankerfacez.com/settings/profile)
 
 * *I can see my emotes, but someone in chat said they can't.*
 

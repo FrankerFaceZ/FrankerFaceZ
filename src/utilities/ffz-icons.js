@@ -111,5 +111,6 @@ export default [
 	"mod",
 	"flag",
 	"mange-suspicious",
-	"doc-text"
+	"doc-text",
+	"fx"
 ];

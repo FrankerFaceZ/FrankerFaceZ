@@ -68,6 +68,20 @@ export const DEFAULT_TYPES = {
 		return this.formatNumber(val, node.f);
 	},
 
+	currency(val, node) {
+		if ( typeof val !== 'number' ) {
+			let new_val = parseFloat(val);
+			if ( isNaN(new_val) || ! isFinite(new_val) )
+				new_val = parseInt(val, 10);
+			if ( isNaN(new_val) || ! isFinite(new_val) )
+				return val;
+
+			val = new_val;
+		}
+
+		return this.formatCurrency(val, node.f);
+	},
+
 	date(val, node) {
 		return this.formatDate(val, node.f);
 	},
@@ -216,6 +230,7 @@ export default class TranslationCore {
 		this.cache = new Map;
 
 		this.numberFormats = new Map;
+		this.currencyFormats = new Map;
 
 		this.formats = Object.assign({}, DEFAULT_FORMATS);
 		if ( options.formats )
@@ -237,6 +252,7 @@ export default class TranslationCore {
 		if ( val !== this._locale ) {
 			this._locale = val;
 			this.numberFormats.clear();
+			this.currencyFormats.clear();
 		}
 	}
 
@@ -255,6 +271,20 @@ export default class TranslationCore {
 		} catch(err) {
 			return d.fromNow(without_suffix);
 		}
+	}
+
+	formatCurrency(value, currency) {
+		let formatter = this.currencyFormats.get(currency);
+		if ( ! formatter ) {
+			formatter = new Intl.NumberFormat(navigator.languages, {
+				style: 'currency',
+				currency
+			});
+
+			this.currencyFormats.set(currency, formatter);
+		}
+
+		return formatter.format(value);
 	}
 
 	formatNumber(value, format) {

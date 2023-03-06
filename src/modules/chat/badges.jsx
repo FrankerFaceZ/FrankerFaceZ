@@ -995,7 +995,7 @@ export default class Badges extends Module {
 						name = badge?.name;
 					let c = 0;
 
-					if ( name === 'supporter' || name === 'bot' ) {
+					if ( name === 'supporter' || name === 'subwoofer' || name === 'bot' ) {
 						this.setBulk('ffz-global', badge_id, data.users[badge_id].map(x => String(x)));
 						/*this.supporter_id = badge_id;
 						for(const user_id of data.users[badge_id])
@@ -1032,8 +1032,8 @@ export default class Badges extends Module {
 				data.replaces = true;
 			}
 
-			if ( ! data.addon && (data.name === 'developer' || data.name === 'supporter') )
-				data.click_url = 'https://www.frankerfacez.com/donate';
+			if ( ! data.addon && (data.name === 'developer' || data.name === 'subwoofer' || data.name === 'supporter') )
+				data.click_url = 'https://www.frankerfacez.com/subscribe';
 		}
 
 		if ( generate_css )
