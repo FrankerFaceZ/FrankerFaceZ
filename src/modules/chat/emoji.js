@@ -92,7 +92,12 @@ export default class Emoji extends Module {
 
 		if (enable_replace_joiner)
 			this.settings.add('chat.emoji.replace-joiner', {
-				default: 2,
+				default: 1,
+				process(ctx, val) {
+					if ( val === 2 )
+						return 1;
+					return val;
+				},
 				ui: {
 					path: 'Chat > Behavior >> Emoji',
 					title: 'Emoji Joiner Workaround',
@@ -101,7 +106,7 @@ export default class Emoji extends Module {
 					data: [
 						{value: 0, title: 'Disabled'},
 						{value: 1, title: 'Display Only'},
-						{value: 2, title: 'Display and Send'}
+						{value: 3, title: 'Display and Send'}
 					]
 				}
 			});

@@ -287,12 +287,21 @@ export default class EmoteMenu extends Module {
 				data: [
 					{value: 'fav', title: 'Favorites'},
 					{value: 'channel', title: 'Channel'},
+					{value: 'effect', title: 'Emote Effects'},
 					{value: 'all', title: 'My Emotes'},
 					{value: 'emoji', title: 'Emoji'}
 				]
 			}
 		});
 
+		this.settings.add('chat.emote-menu.effect-tab', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Menu >> General',
+				title: 'Display Emote Effects in their own tab.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.emote-menu.show-emoji', {
 			default: true,
@@ -391,6 +400,7 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.modifiers', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.show-emoji', rebuild);
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.effect-tab', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
 
@@ -678,7 +688,12 @@ export default class EmoteMenu extends Module {
 				if ( t.emotes.handleClick(event) )
 					return;
 
-				this.props.onClickToken(event.currentTarget.dataset.name)
+				// Check for magic.
+				let prefix = '';
+				if ( event.currentTarget.dataset.effects != '0' && t.emotes.target_emote )
+					prefix = `${t.emotes.target_emote.name} `;
+
+				this.props.onClickToken(`${prefix}${event.currentTarget.dataset.name}`);
 			}
 
 			keyHeading(event) {
@@ -1520,6 +1535,8 @@ export default class EmoteMenu extends Module {
 				state.filtered_fav_sets = this.filterSets(input, state.fav_sets, visibility_control);
 				state.filtered_emoji_sets = this.filterSets(input, state.emoji_sets, visibility_control);
 
+				state.has_effect_tab = state.filtered_effect_sets.length > 0;
+
 				return state;
 			}
 
@@ -2260,6 +2277,8 @@ export default class EmoteMenu extends Module {
 				if ( t.chat.context.get('chat.emotes.enabled') > 1 ) {
 					const me = t.site.getUser();
 
+					const use_effect_tab = t.chat.context.get('chat.emote-menu.effect-tab');
+
 					const ffz_room = t.emotes.getRoomSetsWithSources(me?.id, me?.login, props.channel_id, null),
 						ffz_subs = t.emotes.getSubSetsWithSources(),
 						ffz_global = t.emotes.getGlobalSetsWithSources(me?.id, me?.login),
@@ -2299,7 +2318,7 @@ export default class EmoteMenu extends Module {
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
 
-							if ( ! effects.includes(section) && section.has_effects )
+							if ( use_effect_tab && ! effects.includes(section) && section.has_effects )
 								effects.push(section);
 							else if ( ! all.includes(section) )
 								all.push(section);
@@ -2317,7 +2336,7 @@ export default class EmoteMenu extends Module {
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
 
-							if ( ! effects.includes(section) && section.has_effects )
+							if ( use_effect_tab && ! effects.includes(section) && section.has_effects )
 								effects.push(section);
 
 							else if ( ! all.includes(section) )
@@ -2346,7 +2365,7 @@ export default class EmoteMenu extends Module {
 				all.sort(sort_sets);
 
 				state.has_channel_tab = channel.length > 0;
-				state.has_effect_Tab = effects.length > 0;
+				state.has_effect_tab = effects.length > 0;
 
 				return this.buildEmoji(state);
 			}
@@ -2578,7 +2597,7 @@ export default class EmoteMenu extends Module {
 
 				} else {
 					tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab');
-					if ( (tab === 'effect' && ! this.state.has_effect_Tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
+					if ( (tab === 'effect' && ! this.state.has_effect_tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
 						tab = 'all';
 
 					is_emoji = tab === 'emoji';
@@ -2771,7 +2790,7 @@ export default class EmoteMenu extends Module {
 												</div>
 											</button>
 										</div>}
-										{this.state.has_effect_Tab && <div class={`emote-picker-tab-item${tab === 'effect' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+										{this.state.has_effect_tab && <div class={`emote-picker-tab-item${tab === 'effect' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 											<button
 												class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'effect' ? ' ffz-interactable--selected' : ''}`}
 												id="emote-picker__effect"

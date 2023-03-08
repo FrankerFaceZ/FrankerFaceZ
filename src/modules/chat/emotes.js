@@ -18,7 +18,7 @@ const HoverState = Symbol('FFZ:Hover:State');
 
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
 
-export const MODIFIER_FLAGS = make_enum_flags(
+const Flags = make_enum_flags(
 	'Hidden',
 	'FlipX',
 	'FlipY',
@@ -33,177 +33,211 @@ export const MODIFIER_FLAGS = make_enum_flags(
 	'Rainbow',
 	'HyperRed',
 	'Shake',
-	'Photocopy',
+	'Cursed',
 	'Jam',
 	'Bounce'
 );
 
+export const MODIFIER_FLAGS = Flags;
+
 export const MODIFIER_KEYS = Object.values(MODIFIER_FLAGS).filter(x => typeof x === 'number');
 
-const MODIFIER_FLAG_CSS = {
-	FlipX: {
+const EFFECT_STYLES = [
+	{
+		setting: 'FlipX',
+		flags: Flags.FlipX,
 		title: 'Flip Horizontal',
 		transform: 'scaleX(-1)'
 	},
-	FlipY: {
+	{
+		setting: 'FlipY',
+		flags: Flags.FlipY,
 		title: 'Flip Vertical',
 		transform: 'scaleY(-1)'
 	},
-	ShrinkX: {
-		title: 'Squish Horizontal',
-		//transform: 'scaleX(0.5)'
+	{
+		setting: 'ShrinkX',
+		flags: Flags.ShrinkX,
+		title: 'Squish Horizontal'
 	},
-	GrowX: {
-		title: 'Stretch Horizontal',
-		//transform: 'scaleX(2) translateX(25%)'
+	{
+		setting: 'GrowX',
+		flags: Flags.GrowX,
+		title: 'Stretch Horizontal'
 	},
-	ShrinkY: {
-		title: 'Squish Vertical',
-		//transform: 'scaleY(0.5)'
+	{
+		setting: 'ShrinkY',
+		flags: Flags.ShrinkY,
+		title: 'Squish Vertical'
 	},
-	GrowY: {
-		title: 'Stretch Vertical',
-		//transform: 'scaleY(2) translateY(25%)'
+	{
+		setting: 'GrowY',
+		flags: Flags.GrowY,
+		title: 'Stretch Vertical'
 	},
-	Rotate45: {
-		title: 'Rotate 45 Degrees',
-		transform: 'rotate(45deg)'
+	/*{
+		setting: 'Rotate45',
+		flags: MODIFIER_FLAGS.Rotate45,
+		title: 'Rotate 45 Degrees'
 	},
-	Rotate90: {
-		title: 'Rotate 90 Degrees',
-		transform: 'rotate(90deg)'
+	{
+		setting: 'Rotate90',
+		flags: MODIFIER_FLAGS.Rotate90,
+		title: 'Rotate 90 Degrees'
 	},
-	Greyscale: {
-		title: 'Grayscale',
+	{
+		setting: 'Greyscale',
+		flags: Flags.Greyscale,
 		filter: 'grayscale(1)'
 	},
-	Sepia: {
-		title: 'Sepia',
+	{
+		setting: 'Sepia',
+		flags: Flags.Sepia,
 		filter: 'sepia(1)'
-	},
-	Rainbow: {
+	},*/
+	{
+		setting: 'Rainbow',
+		flags: Flags.Rainbow,
 		title: 'Rainbow Animation',
 		animation: 'ffz-effect-rainbow 2s linear infinite',
 		animationFilter: 'ffz-effect-rainbow-filter 2s linear infinite',
 		raw: `@keyframes ffz-effect-rainbow {
-0% { filter: hue-rotate(0deg) }
-100% { filter: hue-rotate(360deg) }
+	0% { filter: hue-rotate(0deg) }
+	100% { filter: hue-rotate(360deg) }
 }
 @keyframes ffz-effect-rainbow-filter {
-0% { filter: var(--ffz-effect-filters) hue-rotate(0deg) }
-100% { filter: var(--ffz-effect-filters) hue-rotate(360deg) }
+	0% { filter: var(--ffz-effect-filters) hue-rotate(0deg) }
+	100% { filter: var(--ffz-effect-filters) hue-rotate(360deg) }
 }`
 	},
-	HyperRed: {
+	{
+		setting: 'HyperRed',
+		flags: Flags.HyperRed,
 		title: 'Hyper Red',
 		filter: 'brightness(0.2) sepia(1) brightness(2.2) contrast(3) saturate(8)'
 	},
-	Shake: {
+	{
+		setting: 'Shake',
+		flags: Flags.Shake,
 		title: 'Hyper Shake Animation',
 		animation: 'ffz-effect-shake 0.1s linear infinite',
 		animationTransform: 'ffz-effect-shake-transform 0.1s linear infinite',
 		raw: `@keyframes ffz-effect-shake-transform {
-0% { transform: var(--ffz-effect-transforms) translate(1px, 1px); }
-10% { transform: var(--ffz-effect-transforms) translate(-1px, -2px); }
-20% { transform: var(--ffz-effect-transforms) translate(-3px, 0px); }
-30% { transform: var(--ffz-effect-transforms) translate(3px, 2px); }
-40% { transform: var(--ffz-effect-transforms) translate(1px, -1px); }
-50% { transform: var(--ffz-effect-transforms) translate(-1px, 2px); }
-60% { transform: var(--ffz-effect-transforms) translate(-3px, 1px); }
-70% { transform: var(--ffz-effect-transforms) translate(3px, 1px); }
-80% { transform: var(--ffz-effect-transforms) translate(-1px, -1px); }
-90% { transform: var(--ffz-effect-transforms) translate(1px, 2px); }
-100% { transform: var(--ffz-effect-transforms) translate(1px, -2px); }
+	0% { transform: var(--ffz-effect-transforms) translate(1px, 1px); }
+	10% { transform: var(--ffz-effect-transforms) translate(-1px, -2px); }
+	20% { transform: var(--ffz-effect-transforms) translate(-3px, 0px); }
+	30% { transform: var(--ffz-effect-transforms) translate(3px, 2px); }
+	40% { transform: var(--ffz-effect-transforms) translate(1px, -1px); }
+	50% { transform: var(--ffz-effect-transforms) translate(-1px, 2px); }
+	60% { transform: var(--ffz-effect-transforms) translate(-3px, 1px); }
+	70% { transform: var(--ffz-effect-transforms) translate(3px, 1px); }
+	80% { transform: var(--ffz-effect-transforms) translate(-1px, -1px); }
+	90% { transform: var(--ffz-effect-transforms) translate(1px, 2px); }
+	100% { transform: var(--ffz-effect-transforms) translate(1px, -2px); }
 }
 @keyframes ffz-effect-shake {
-0% { transform: translate(1px, 1px); }
-10% { transform: translate(-1px, -2px); }
-20% { transform: translate(-3px, 0px); }
-30% { transform: translate(3px, 2px); }
-40% { transform: translate(1px, -1px); }
-50% { transform: translate(-1px, 2px); }
-60% { transform: translate(-3px, 1px); }
-70% { transform: translate(3px, 1px); }
-80% { transform: translate(-1px, -1px); }
-90% { transform: translate(1px, 2px); }
-100% { transform: translate(1px, -2px); }
+	0% { transform: translate(1px, 1px); }
+	10% { transform: translate(-1px, -2px); }
+	20% { transform: translate(-3px, 0px); }
+	30% { transform: translate(3px, 2px); }
+	40% { transform: translate(1px, -1px); }
+	50% { transform: translate(-1px, 2px); }
+	60% { transform: translate(-3px, 1px); }
+	70% { transform: translate(3px, 1px); }
+	80% { transform: translate(-1px, -1px); }
+	90% { transform: translate(1px, 2px); }
+	100% { transform: translate(1px, -2px); }
 }`
 	},
-	Photocopy: {
+	{
+		setting: 'Photocopy',
+		flags: Flags.Cursed,
 		title: 'Cursed',
 		filter: 'grayscale(1) brightness(0.7) contrast(2.5)'
 	},
-	Jam: {
+	{
+		setting: 'Jam',
+		flags: Flags.Jam,
 		title: 'Jam Animation',
 		animation: 'ffz-effect-jam 0.6s linear infinite',
 		animationTransform: 'ffz-effect-jam-transform 0.6s linear infinite',
 		raw: `@keyframes ffz-effect-jam {
-0% { transform: translate(-2px, -2px) rotate(-6deg); }
-10% { transform: translate(-1.5px, -2px) rotate(-8deg); }
-20% { transform: translate(1px, -1.5px) rotate(-8deg); }
-30% { transform: translate(3px, 2.5px) rotate(-6deg); }
-40% { transform: translate(3px, 4px) rotate(-2deg); }
-50% { transform: translate(2px, 4px) rotate(3deg); }
-60% { transform: translate(1px, 4px) rotate(3deg); }
-70% { transform: translate(-0.5px, 3px) rotate(2deg); }
-80% { transform: translate(-1.25px, 1px) rotate(0deg); }
-90% { transform: translate(-1.75px, -0.5px) rotate(-2deg); }
-100% { transform: translate(-2px, -2px) rotate(-5deg); }
+	0% { transform: translate(-2px, -2px) rotate(-6deg); }
+	10% { transform: translate(-1.5px, -2px) rotate(-8deg); }
+	20% { transform: translate(1px, -1.5px) rotate(-8deg); }
+	30% { transform: translate(3px, 2.5px) rotate(-6deg); }
+	40% { transform: translate(3px, 4px) rotate(-2deg); }
+	50% { transform: translate(2px, 4px) rotate(3deg); }
+	60% { transform: translate(1px, 4px) rotate(3deg); }
+	70% { transform: translate(-0.5px, 3px) rotate(2deg); }
+	80% { transform: translate(-1.25px, 1px) rotate(0deg); }
+	90% { transform: translate(-1.75px, -0.5px) rotate(-2deg); }
+	100% { transform: translate(-2px, -2px) rotate(-5deg); }
 }
 @keyframes ffz-effect-jam-transform {
-0% { transform: var(--ffz-effect-transforms) translate(-2px, -2px) rotate(-6deg); }
-10% { transform: var(--ffz-effect-transforms) translate(-1.5px, -2px) rotate(-8deg); }
-20% { transform: var(--ffz-effect-transforms) translate(1px, -1.5px) rotate(-8deg); }
-30% { transform: var(--ffz-effect-transforms) translate(3px, 2.5px) rotate(-6deg); }
-40% { transform: var(--ffz-effect-transforms) translate(3px, 4px) rotate(-2deg); }
-50% { transform: var(--ffz-effect-transforms) translate(2px, 4px) rotate(3deg); }
-60% { transform: var(--ffz-effect-transforms) translate(1px, 4px) rotate(3deg); }
-70% { transform: var(--ffz-effect-transforms) translate(-0.5px, 3px) rotate(2deg); }
-80% { transform: var(--ffz-effect-transforms) translate(-1.25px, 1px) rotate(0deg); }
-90% { transform: var(--ffz-effect-transforms) translate(-1.75px, -0.5px) rotate(-2deg); }
-100% { transform: var(--ffz-effect-transforms) translate(-2px, -2px) rotate(-5deg); }
-}`,
+	0% { transform: var(--ffz-effect-transforms) translate(-2px, -2px) rotate(-6deg); }
+	10% { transform: var(--ffz-effect-transforms) translate(-1.5px, -2px) rotate(-8deg); }
+	20% { transform: var(--ffz-effect-transforms) translate(1px, -1.5px) rotate(-8deg); }
+	30% { transform: var(--ffz-effect-transforms) translate(3px, 2.5px) rotate(-6deg); }
+	40% { transform: var(--ffz-effect-transforms) translate(3px, 4px) rotate(-2deg); }
+	50% { transform: var(--ffz-effect-transforms) translate(2px, 4px) rotate(3deg); }
+	60% { transform: var(--ffz-effect-transforms) translate(1px, 4px) rotate(3deg); }
+	70% { transform: var(--ffz-effect-transforms) translate(-0.5px, 3px) rotate(2deg); }
+	80% { transform: var(--ffz-effect-transforms) translate(-1.25px, 1px) rotate(0deg); }
+	90% { transform: var(--ffz-effect-transforms) translate(-1.75px, -0.5px) rotate(-2deg); }
+	100% { transform: var(--ffz-effect-transforms) translate(-2px, -2px) rotate(-5deg); }
+}`
 	},
-	Bounce: {
+	{
+		setting: 'Bounce',
+		flags: Flags.Bounce,
 		animation: 'ffz-effect-bounce 0.5s linear infinite',
 		animationTransform: 'ffz-effect-bounce-transform 0.5s linear infinite',
 		transformOrigin: 'bottom center',
 		raw: `@keyframes ffz-effect-bounce {
-0% { transform: scale(0.8, 1); }
-10% { transform: scale(0.9, 0.8); }
-20% { transform: scale(1, 0.4); }
-25% { transform: scale(1.2, 0.3); }
-25.001% { transform: scale(-1.2, 0.3); }
-30% { transform: scale(-1, 0.4); }
-40% { transform: scale(-0.9, 0.8); }
-50% { transform: scale(-0.8, 1); }
-60% { transform: scale(-0.9, 0.8); }
-70% { transform: scale(-1, 0.4); }
-75% { transform: scale(-1.2, 0.3); }
-75.001% { transform: scale(1.2, 0.3); }
-80% { transform: scale(1, 0.4); }
-90% { transform: scale(0.9, 0.8); }
-100% { transform: scale(0.8, 1); }
+	0% { transform: scale(0.8, 1); }
+	10% { transform: scale(0.9, 0.8); }
+	20% { transform: scale(1, 0.4); }
+	25% { transform: scale(1.2, 0.3); }
+	25.001% { transform: scale(-1.2, 0.3); }
+	30% { transform: scale(-1, 0.4); }
+	40% { transform: scale(-0.9, 0.8); }
+	50% { transform: scale(-0.8, 1); }
+	60% { transform: scale(-0.9, 0.8); }
+	70% { transform: scale(-1, 0.4); }
+	75% { transform: scale(-1.2, 0.3); }
+	75.001% { transform: scale(1.2, 0.3); }
+	80% { transform: scale(1, 0.4); }
+	90% { transform: scale(0.9, 0.8); }
+	100% { transform: scale(0.8, 1); }
 }
 @keyframes ffz-effect-bounce-transform {
-0% { transform: scale(0.8, 1) var(--ffz-effect-transforms); }
-10% { transform: scale(0.9, 0.8) var(--ffz-effect-transforms); }
-20% { transform: scale(1, 0.4) var(--ffz-effect-transforms); }
-25% { transform: scale(1.2, 0.3) var(--ffz-effect-transforms); }
-25.001% { transform: scale(-1.2, 0.3) var(--ffz-effect-transforms); }
-30% { transform: scale(-1, 0.4) var(--ffz-effect-transforms); }
-40% { transform: scale(-0.9, 0.8) var(--ffz-effect-transforms); }
-50% { transform: scale(-0.8, 1) var(--ffz-effect-transforms); }
-60% { transform: scale(-0.9, 0.8) var(--ffz-effect-transforms); }
-70% { transform: scale(-1, 0.4) var(--ffz-effect-transforms); }
-75% { transform: scale(-1.2, 0.3) var(--ffz-effect-transforms); }
-75.001% { transform: scale(1.2, 0.3) var(--ffz-effect-transforms); }
-80% { transform: scale(1, 0.4) var(--ffz-effect-transforms); }
-90% { transform: scale(0.9, 0.8) var(--ffz-effect-transforms); }
-100% { transform: scale(0.8, 1) var(--ffz-effect-transforms); }
+	0% { transform: scale(0.8, 1) var(--ffz-effect-transforms); }
+	10% { transform: scale(0.9, 0.8) var(--ffz-effect-transforms); }
+	20% { transform: scale(1, 0.4) var(--ffz-effect-transforms); }
+	25% { transform: scale(1.2, 0.3) var(--ffz-effect-transforms); }
+	25.001% { transform: scale(-1.2, 0.3) var(--ffz-effect-transforms); }
+	30% { transform: scale(-1, 0.4) var(--ffz-effect-transforms); }
+	40% { transform: scale(-0.9, 0.8) var(--ffz-effect-transforms); }
+	50% { transform: scale(-0.8, 1) var(--ffz-effect-transforms); }
+	60% { transform: scale(-0.9, 0.8) var(--ffz-effect-transforms); }
+	70% { transform: scale(-1, 0.4) var(--ffz-effect-transforms); }
+	75% { transform: scale(-1.2, 0.3) var(--ffz-effect-transforms); }
+	75.001% { transform: scale(1.2, 0.3) var(--ffz-effect-transforms); }
+	80% { transform: scale(1, 0.4) var(--ffz-effect-transforms); }
+	90% { transform: scale(0.9, 0.8) var(--ffz-effect-transforms); }
+	100% { transform: scale(0.8, 1) var(--ffz-effect-transforms); }
 }`
-	}
-};
+	},
+	{
+		setting: [
+			'Bounce',
+			'FlipY'
+		],
+		flags: Flags.Bounce | Flags.FlipY,
+		transform: 'translateY(100%)',
+	},
+];
 
 
 function generateBaseFilterCss() {
@@ -215,7 +249,8 @@ function generateBaseFilterCss() {
 }`
 	];
 
-	for(const [key, val] of Object.entries(MODIFIER_FLAG_CSS)) {
+	//for(const [key, val] of Object.entries(MODIFIER_FLAG_CSS)) {
+	for(const val of EFFECT_STYLES) {
 		if ( val.raw )
 			out.push(val.raw);
 	}
@@ -399,14 +434,17 @@ export default class Emotes extends Module {
 			}
 		});
 
-		for(const [key, val] of Object.entries(MODIFIER_FLAG_CSS)) {
+		for(const val of EFFECT_STYLES) {
+			if ( ! val.setting || Array.isArray(val.setting) )
+				continue;
+
 			const setting = {
 				default: val.animation
 					? null
 					: true,
 				ui: {
 					path: 'Chat > Emote Effects >> Specific Effect @{"description": "**Note:** Animated effects are, by default, only enabled when [Animated Emotes](~chat.appearance.emotes) are enabled."}',
-					title: `Enable the effect "${val.title ?? key}".`,
+					title: `Enable the effect "${val.title ?? val.setting}".`,
 					component: 'setting-check-box',
 					force_seen: true
 				}
@@ -422,7 +460,7 @@ export default class Emotes extends Module {
 				};
 			}
 
-			this.settings.add(`chat.effects.${key}`, setting);
+			this.settings.add(`chat.effects.${val.setting}`, setting);
 		}
 
 		// Because this may be used elsewhere.
@@ -439,8 +477,9 @@ export default class Emotes extends Module {
 		this.base_effect_css = generateBaseFilterCss();
 
 		this.parent.context.on('changed:chat.effects.enable', this.updateEffects, this);
-		for(const key of Object.keys(MODIFIER_FLAG_CSS))
-			this.parent.context.on(`changed:chat.effects.${key}`, this.updateEffects, this);
+		for(const input of EFFECT_STYLES)
+			if ( input.setting && ! Array.isArray(input.setting) )
+				this.parent.context.on(`changed:chat.effects.${input.setting}`, this.updateEffects, this);
 
 		this.updateEffects();
 
@@ -504,12 +543,8 @@ export default class Emotes extends Module {
 
 		let filter, transformOrigin, transform, animation, animations = [];
 
-		for(const key of MODIFIER_KEYS) {
-			if ( (flags & key) !== key || ! this.effects_enabled[key] )
-				continue;
-
-			const input = MODIFIER_FLAG_CSS[MODIFIER_FLAGS[key]];
-			if ( ! input )
+		for(const input of this.activeEffectStyles) {
+			if ( (flags & input.flags) !== input.flags )
 				continue;
 
 			if ( input.animation )
@@ -564,11 +599,31 @@ export default class Emotes extends Module {
 		const enabled = this.parent.context.get('chat.effects.enable');
 
 		this.effects_enabled = {};
-		for(const key of Object.keys(MODIFIER_FLAG_CSS))
-			this.effects_enabled[MODIFIER_FLAGS[key]] = this.effects_enabled[key] = this.parent.context.get(`chat.effects.${key}`);
+		this.activeEffectStyles = [];
+
+		for(const input of EFFECT_STYLES) {
+			if ( input.setting && ! Array.isArray(input.setting) )
+				this.effects_enabled[input.setting] = this.parent.context.get(`chat.effects.${input.setting}`);
+		}
+
+		for(const input of EFFECT_STYLES) {
+			let enabled = true;
+			if ( Array.isArray(input.setting) ) {
+				for(const setting of input.setting)
+					if ( ! this.effects_enabled[setting] ) {
+						enabled = false;
+						break;
+					}
+
+			} else if ( input.setting )
+				enabled = this.effects_enabled[input.setting];
+
+			if ( enabled )
+				this.activeEffectStyles.push(input);
+		}
 
 		this.effect_style.clear();
-		if ( ! enabled )
+		if ( ! enabled || ! this.activeEffectStyles.length )
 			return;
 
 		this.effect_style.set('base', this.base_effect_css);
@@ -916,6 +971,8 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	getTargetEmote() {
+		this.target_emote = null;
+
 		const me = this.resolve('site').getUser(),
 			Input = me ? this.resolve('site.chat.input') : null,
 			entered = Input ? Input.getInput() : null;
@@ -923,7 +980,7 @@ export default class Emotes extends Module {
 		const menu = this.resolve('site.chat.emote_menu')?.MenuWrapper?.first,
 			emote_sets = menu?.getAllSets?.(),
 			emotes = emote_sets
-				? emote_sets.map(x => x.emotes).flat().filter(x => ! x.effects)
+				? emote_sets.map(x => x.emotes).flat().filter(x => ! x.effects && ! x.locked)
 				: null;
 
 		if ( entered && emotes ) {
@@ -947,11 +1004,12 @@ export default class Emotes extends Module {
 			const idx = Math.floor(Math.random() * emotes.length),
 				emote = emotes[idx];
 
+			this.target_emote = emote;
 			return emote;
 		}
 
 		// Return LaterSooner
-		return {
+		return this.target_emote = {
 			provider: 'ffz',
 			set_id: 3,
 			id: 149346,

@@ -1228,9 +1228,24 @@ export const AddonEmotes = {
 
 		if ( effects ) {
 			this.emotes.ensureEffect(effects);
-			style = {
-				width: is_big ? token.width * 2 : token.width,
-				height: is_big ? token.height * 2 : token.height
+			let make_bigger = big;
+			if ( token.provider === 'emoji' ) {
+				const size = 1.5 * (this.context.get('chat.font-size') ?? 13);
+				style = {
+					width: size,
+					height: size
+				};
+				make_bigger = token.big_emoji;
+
+			} else
+				style = {
+					width: token.width,
+					height: token.height
+				};
+
+			if ( make_bigger ) {
+				style.width *= 2;
+				style.height *= 2;
 			}
 
 			if ( (effects & SHRINK_X) === SHRINK_X )
@@ -1248,10 +1263,8 @@ export const AddonEmotes = {
 				style.height = w;
 			}
 
-			if ( style.width > 128 )
-				style.width = 128;
-			if ( style.height > 40 )
-				style.height = 40;
+			style.width = Math.min(style.width, big ? 256 : 128);
+			style.height = Math.min(style.height, big ? 80 : 40);
 		}
 
 		const mods = token.modifiers || [], ml = mods.length,
@@ -1658,6 +1671,7 @@ export const Emoji = {
 			return;
 
 		const splitter = this.emoji.splitter,
+			big = this.context.get('chat.emotes.2x') > 1,
 			replace = this.context.get('chat.emoji.replace-joiner') > 0,
 			style = this.context.get('chat.emoji.style');
 
@@ -1702,6 +1716,8 @@ export const Emoji = {
 					provider: 'emoji',
 					code: key[0],
 					variant: key[1],
+
+					big_emoji: big,
 
 					src: this.emoji.getFullImage(variant.image, style),
 					srcSet: this.emoji.getFullImageSet(variant.image, style),
