@@ -309,6 +309,7 @@ export default class Emotes extends Module {
 		this.inject('settings');
 		this.inject('experiments');
 		this.inject('staging');
+		this.inject('load_tracker');
 
 		this.twitch_inventory_sets = new Set; //(EXTRA_INVENTORY);
 		this.__twitch_emote_to_set = {};
@@ -1333,6 +1334,8 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	async loadGlobalSets(tries = 0) {
+		this.load_tracker.schedule('chat-data', 'ffz-global');
+
 		let response, data;
 
 		if ( this.experiments.getAssignment('api_load') && tries < 1 )
@@ -1348,16 +1351,20 @@ export default class Emotes extends Module {
 				return setTimeout(() => this.loadGlobalSets(tries), 500 * tries);
 
 			this.log.error('Error loading global emote sets.', err);
+			this.load_tracker.notify('chat-data', 'ffz-global', false);
 			return false;
 		}
 
-		if ( ! response.ok )
+		if ( ! response.ok ) {
+			this.load_tracker.notify('chat-data', 'ffz-global', false);
 			return false;
+		}
 
 		try {
 			data = await response.json();
 		} catch(err) {
 			this.log.error('Error parsing global emote data.', err);
+			this.load_tracker.notify('chat-data', 'ffz-global', false);
 			return false;
 		}
 
@@ -1379,11 +1386,14 @@ export default class Emotes extends Module {
 		else if ( data.users )
 			this.loadSetUsers(data.users);
 
+		this.load_tracker.notify('chat-data', 'ffz-global');
 		return true;
 	}
 
 
 	async loadSet(set_id, suppress_log = false, tries = 0) {
+		const load_key = `ffz-${set_id}`;
+		this.load_tracker.schedule('chat-data', load_key);
 		let response, data;
 
 		if ( this.experiments.getAssignment('api_load') )
@@ -1399,16 +1409,20 @@ export default class Emotes extends Module {
 				return setTimeout(() => this.loadGlobalSets(tries), 500 * tries);
 
 			this.log.error(`Error loading data for set "${set_id}".`, err);
+			this.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
-		if ( ! response.ok )
+		if ( ! response.ok ) {
+			this.load_tracker.notify('chat-data', load_key, false);
 			return false;
+		}
 
 		try {
 			data = await response.json();
 		} catch(err) {
 			this.log.error(`Error parsing data for set "${set_id}".`, err);
+			this.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
@@ -1421,6 +1435,7 @@ export default class Emotes extends Module {
 		else if ( data.users )
 			this.loadSetUsers(data.users);
 
+		this.load_tracker.notify('chat-data', load_key, true);
 		return true;
 	}
 
@@ -1503,6 +1518,8 @@ export default class Emotes extends Module {
 			animSrcSet: emote.animSrcSet,
 			animSrc2: emote.animSrc2,
 			animSrcSet2: emote.animSrcSet2,
+			masked: !! emote.mask,
+			hidden: (emote.modifier_flags & 1) === 1,
 			text: emote.hidden ? '???' : emote.name,
 			length: emote.name.length,
 			height: emote.height,
@@ -1705,7 +1722,7 @@ export default class Emotes extends Module {
 	// ========================================================================
 
 	generateEmoteCSS(emote) { // eslint-disable-line class-methods-use-this
-		if ( ! emote.margins && ( ! emote.modifier || ( ! emote.modifier_offset && ! emote.extra_width && ! emote.shrink_to_fit ) ) && ! emote.css )
+		if ( ! emote.mask && ! emote.margins && ( ! emote.modifier || ( ! emote.modifier_offset && ! emote.extra_width && ! emote.shrink_to_fit ) ) && ! emote.css )
 			return '';
 
 		let output = '';
@@ -1726,6 +1743,13 @@ export default class Emotes extends Module {
 	${emote.shrink_to_fit ? `max-width: calc(100% - ${40 - m_left - m_right - (emote.extra_width||0)}px);` : ''}
 	margin: 0 !important;
 }`;
+		}
+
+		if ( emote.modifier && emote.mask?.[1] ) {
+			output = (output || '') + `.modified-emote[data-modifiers~="${emote.id}"] > img {
+	-webkit-mask-image: url("${emote.mask[1]}");
+	-webkit-mask-position: center center;
+}`
 		}
 
 		return `${output}.ffz-emote[data-id="${emote.id}"] {

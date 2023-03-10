@@ -502,13 +502,14 @@
 
 	span {
 		position: absolute;
-		top: -20px; bottom: -20px; left: -20px; right: -20px;
+		top: 0; bottom: 0; left: 0; right: 0; // -20px; bottom: -20px; left: -20px; right: -20px;
 		margin: auto;
 		pointer-events: none;
 
 		img {
 			position: absolute;
 			pointer-events: none !important;
+			margin: 0;
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%, -50%);

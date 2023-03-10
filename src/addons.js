@@ -24,6 +24,7 @@ export default class AddonManager extends Module {
 
 		this.inject('settings');
 		this.inject('i18n');
+		this.inject('load_tracker');
 
 		this.load_requires = ['settings'];
 
@@ -33,6 +34,8 @@ export default class AddonManager extends Module {
 		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = [];
+
+		this.load_tracker.schedule('chat-data', 'addon-initial');
 	}
 
 	onLoad() {
@@ -92,6 +95,7 @@ export default class AddonManager extends Module {
 						this.log.capture(err);
 					});
 
+			this.load_tracker.notify('chat-data', 'addon-initial');
 			this.emit(':ready');
 		});
 	}
@@ -431,11 +435,19 @@ export default class AddonManager extends Module {
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
 
+		if ( Array.isArray(addon.load_events) )
+			for(const event of addon.load_events)
+				this.load_tracker.schedule(event, `addon.${id}`);
+
 		await this.loadAddon(id);
 
 		const module = this.resolve(`addon.${id}`);
 		if ( module && ! module.enabled )
 			await module.enable();
+
+		if ( Array.isArray(addon.load_events) )
+		for(const event of addon.load_events)
+			this.load_tracker.notify(event, `addon.${id}`, false);
 	}
 
 	async loadAddon(id) {

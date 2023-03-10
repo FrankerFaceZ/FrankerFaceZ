@@ -690,7 +690,8 @@ export default class EmoteMenu extends Module {
 
 				// Check for magic.
 				let prefix = '';
-				if ( event.currentTarget.dataset.effects != '0' && t.emotes.target_emote )
+				const effects = event.currentTarget.dataset.effects;
+				if ( effects?.length > 0 && effects != '0' && t.emotes.target_emote )
 					prefix = `${t.emotes.target_emote.name} `;
 
 				this.props.onClickToken(`${prefix}${event.currentTarget.dataset.name}`);

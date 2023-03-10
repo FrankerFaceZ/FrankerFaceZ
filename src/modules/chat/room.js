@@ -253,6 +253,9 @@ export default class Room {
 		if ( this.destroyed )
 			return;
 
+		const load_key = `ffz-room-${this.id ? `id:${this.id}` : this.login}`;
+		this.manager.load_tracker.schedule('chat-data', load_key);
+
 		if ( this.manager.experiments.getAssignment('api_load') )
 			try {
 				fetch(`${NEW_API}/v1/room/${this.id ? `id/${this.id}` : this.login}`).catch(() => {});
@@ -267,16 +270,20 @@ export default class Room {
 				return setTimeout(() => this.load_data(tries), 500 * tries);
 
 			this.manager.log.error(`Error loading room data for ${this.id}:${this.login}`, err);
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
-		if ( ! response.ok )
+		if ( ! response.ok ) {
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
+		}
 
 		try {
 			data = await response.json();
 		} catch(err) {
 			this.manager.log.error(`Error parsing room data for ${this.id}:${this.login}`, err);
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
@@ -296,6 +303,7 @@ export default class Room {
 
 		} else if ( this._id !== id ) {
 			this.manager.log.warn(`Received data for ${this.id}:${this.login} with the wrong ID: ${id}`);
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
@@ -331,6 +339,7 @@ export default class Room {
 		this.buildModBadgeCSS();
 		this.buildVIPBadgeCSS();
 
+		this.manager.load_tracker.notify('chat-data', load_key);
 		return true;
 	}
 

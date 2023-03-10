@@ -1222,53 +1222,79 @@ export const AddonEmotes = {
 			hoverSrcSet = big ? token.animSrcSet2 : token.animSrcSet;
 		}
 
-		let style = undefined;
-		const effects = token.modifier_flags,
+		let style = undefined, outerStyle = undefined;
+		const mods = token.modifiers || [], ml = mods.length,
+			effects = token.modifier_flags,
 			is_big = (token.big && ! token.can_big && token.height);
 
-		if ( effects ) {
-			this.emotes.ensureEffect(effects);
-			let make_bigger = big;
+		if ( effects || ml ) {
+			// We need to calculate the size of the emote and the biggest
+			// modifier so that everything can be nicely centered.
 			if ( token.provider === 'emoji' ) {
-				const size = 1.5 * (this.context.get('chat.font-size') ?? 13);
+				const factor = token.big_emoji ? 2 : 1,
+					size = factor * 1.5 * (this.context.get('chat.font-size') ?? 13);
+
 				style = {
+					width: size,
+					height: size,
+				};
+				outerStyle = {
 					width: size,
 					height: size
 				};
-				make_bigger = token.big_emoji;
-
-			} else
+			} else {
+				const factor = big ? 2 : 1;
 				style = {
-					width: token.width,
-					height: token.height
+					width: token.width * factor,
+					height: token.height * factor
 				};
-
-			if ( make_bigger ) {
-				style.width *= 2;
-				style.height *= 2;
+				outerStyle = {
+					width: style.width,
+					height: style.height
+				};
 			}
 
-			if ( (effects & SHRINK_X) === SHRINK_X )
-				style.width *= 0.5;
-			if ( (effects & STRETCH_X) === STRETCH_X )
-				style.width *= 2;
-			if ( (effects  & SHRINK_Y) === SHRINK_Y )
-				style.height *= 0.5;
-			if ( (effects & STRETCH_Y) === STRETCH_Y )
-				style.height *= 2;
+			for(const mod of mods) {
+				if ( ! mod.hidden && mod.set !== 'info' ) {
+					const factor = mod.big ? 2 : 1,
+						width = mod.width * factor,
+						height = mod.height * factor;
 
-			if ( (effects & ROTATE_90) === ROTATE_90 ) {
-				const w = style.width;
-				style.width = style.height;
-				style.height = w;
+					if ( width > outerStyle.width )
+						outerStyle.width = width;
+					if ( height > outerStyle.height )
+						outerStyle.height = height;
+				}
 			}
 
-			style.width = Math.min(style.width, big ? 256 : 128);
-			style.height = Math.min(style.height, big ? 80 : 40);
+			if ( effects ) {
+				this.emotes.ensureEffect(effects);
+
+				if ( (effects & SHRINK_X) === SHRINK_X )
+					style.width *= 0.5;
+				if ( (effects & STRETCH_X) === STRETCH_X )
+					style.width *= 2;
+				if ( (effects  & SHRINK_Y) === SHRINK_Y )
+					style.height *= 0.5;
+				if ( (effects & STRETCH_Y) === STRETCH_Y )
+					style.height *= 2;
+
+				style.width = Math.min(style.width, big ? 256 : 128);
+				style.height = Math.min(style.height, big ? 80 : 40);
+
+				if ( style.width > outerStyle.width )
+					outerStyle.width = style.width;
+				if ( style.height > outerStyle.height )
+					outerStyle.height = style.height;
+			}
+
+			if ( style.width !== outerStyle.width )
+				style.marginLeft = (outerStyle.width - style.width) / 2;
+			if ( style.height !== outerStyle.height )
+				style.marginTop = (outerStyle.height - style.height) / 2;
 		}
 
-		const mods = token.modifiers || [], ml = mods.length,
-			emote = (<img
+		const emote = (<img
 				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
 				src={src}
 				srcSet={srcSet}
@@ -1303,14 +1329,14 @@ export const AddonEmotes = {
 			data-provider={token.provider}
 			data-id={token.id}
 			data-set={token.set}
-			style={style}
+			style={outerStyle}
 			data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
 			data-effects={effects ? effects : undefined}
 			onClick={this.emotes.handleClick}
 		>
 			{emote}
 			{mods.map(t => {
-				if ( (t.source_modifier_flags & 1) === 1)
+				if ( (t.source_modifier_flags & 1) === 1 || t.set === 'info')
 					return null;
 				return <span key={t.text}>
 					{this.tokenizers.emote.render.call(this, t, createElement, true)}
@@ -1331,6 +1357,12 @@ export const AddonEmotes = {
 
 		if ( modifiers && modifiers !== 'null' ) {
 			mods = JSON.parse(modifiers).map(([set_id, emote_id]) => {
+				if ( set_id === 'info' )
+					return (<span class="tw-mg-05">
+						{emote_id?.icon ? <img class="ffz__tooltip__mod-icon" src={emote_id.icon} /> : null}
+						{emote_id?.icon ? ` - ${emote_id?.label}` : emote_id?.label}
+					</span>);
+
 				const emote_set = this.emotes.emote_sets[set_id],
 					emote = emote_set && emote_set.emotes[emote_id];
 
@@ -1542,7 +1574,7 @@ export const AddonEmotes = {
 
 			ds.sellout && (<div class="tw-mg-t-05 tw-border-t tw-pd-t-05">{ds.sellout}</div>),
 
-			mods && (<div class="tw-pd-t-1">{mods}</div>),
+			mods && (<div class="tw-pd-t-1 tw-pd-b-05">{mods}</div>),
 
 			favorite && (<figure class="ffz--favorite ffz-i-star" />)
 		];
@@ -1795,6 +1827,15 @@ export const TwitchEmotes = {
 
 			while( eix < e_length ) {
 				const [e_id, e_start, e_end] = emotes[eix];
+
+				// Do not honor fake emotes that were created for the sake
+				// of WYSIWYG / autocompletion.
+				if ( typeof e_id === 'string' ) {
+					if ( e_id.startsWith('__FFZ__') || e_id.startsWith('__BTTV__') ) {
+						eix++;
+						continue;
+					}
+				}
 
 				// Does this emote go outside the bounds of this token?
 				if ( e_start > t_end || e_end > t_end ) {

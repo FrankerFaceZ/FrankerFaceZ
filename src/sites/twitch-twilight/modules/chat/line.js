@@ -352,6 +352,20 @@ export default class ChatLine extends Module {
 		this.on('i18n:update', this.rerenderLines, this);
 		this.on('chat.emotes:update-effects', this.checkEffects, this);
 
+		this.can_reprocess = true;
+
+		this.on('chat:room-add', () => this.can_reprocess = true);
+
+		this.on('load_tracker:complete:chat-data', () => {
+			const val = this.chat.context.get('chat.update-when-loaded');
+			if ( ! val || ! this.can_reprocess )
+				return;
+
+			this.can_reprocess = false;
+			this.log.info('Reprocessing chat lines due to data loads.');
+			this.updateLines();
+		});
+
 		this.on('experiments:changed:line_renderer', () => {
 			const value = this.experiments.get('line_renderer'),
 				cls = this.ChatLine._class;
@@ -552,6 +566,10 @@ export default class ChatLine extends Module {
 			}
 
 			cls.prototype.ffzOpenReply = function() {
+				if ( this.onMessageClick ) {
+					return this.onMessageClick();
+				}
+
 				if ( this.props.reply ) {
 					this.setOPCardTray(this.props.reply);
 					return;

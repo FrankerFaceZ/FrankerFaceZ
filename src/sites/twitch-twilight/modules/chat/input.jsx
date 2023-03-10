@@ -72,6 +72,16 @@ export default class Input extends Module {
 
 		// Settings
 
+		this.settings.add('chat.inline-preview.enabled', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Display in-line previews of FrankerFaceZ emotes when entering a chat message.',
+				description: '**Note:** This feature is tempermental. It may not display all emotes, and emote effects and overlay emotes are not displayed correctly. Once this setting has been enabled, it cannot be reasonably disabled and will remain active until you refresh the page.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.mru.enabled', {
 			default: true,
 			ui: {
@@ -203,6 +213,22 @@ export default class Input extends Module {
 				inst.canBeTriggeredByTab = !enabled;
 		});
 
+		this.use_previews = this.chat.context.get('chat.inline-preview.enabled');
+
+		this.chat.context.on('changed:chat.inline-preview.enabled', val => {
+			if ( this.use_previews )
+				return;
+
+			this.use_previews = val;
+			if ( val )
+				for(const inst of this.ChatInput.instances) {
+					this.installPreviewObserver(inst);
+					inst.ffzInjectEmotes();
+					inst.forceUpdate();
+					this.emit('site:dom-update', 'chat-input', inst);
+				}
+		});
+
 		const React = await this.web_munch.findModule('react'),
 			createElement = React && React.createElement;
 
@@ -266,6 +292,8 @@ export default class Input extends Module {
 				this.emit('site:dom-update', 'chat-input', inst);
 				this.updateEmoteCompletion(inst);
 				this.overrideChatInput(inst);
+				inst.ffzInjectEmotes();
+				this.installPreviewObserver(inst);
 			}
 		});
 
@@ -286,6 +314,10 @@ export default class Input extends Module {
 
 		this.ChatInput.on('update', this.updateEmoteCompletion, this);
 		this.ChatInput.on('mount', this.overrideChatInput, this);
+
+		this.ChatInput.on('mount', this.installPreviewObserver, this);
+		this.ChatInput.on('unmount', this.removePreviewObserver, this);
+
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 		this.CommandSuggestions.on('mount', this.overrideCommandMatcher, this);
@@ -307,6 +339,10 @@ export default class Input extends Module {
 			inst.ffz_ffz_cache = null;
 			inst.ffz_twitch_cache = null;
 		}
+
+		if ( this.use_previews )
+			for(const inst of this.ChatInput.instances)
+				inst.ffzInjectEmotes();
 	}
 
 	updateInput() {
@@ -332,6 +368,110 @@ export default class Input extends Module {
 	}
 
 
+	installPreviewObserver(inst) {
+		if ( inst._ffz_preview_observer || ! window.MutationObserver )
+			return;
+
+		if ( ! this.use_previews )
+			return;
+
+		const el = this.fine.getHostNode(inst),
+			target = el && el.querySelector('.chat-input__textarea');
+		if ( ! target )
+			return;
+
+		inst._ffz_preview_observer = new MutationObserver(mutations => {
+			for(const mut of mutations) {
+				//if ( mut.target instanceof Element )
+				//	this.checkForPreviews(inst, mut.target);
+
+				for(const node of mut.addedNodes) {
+					if ( node instanceof Element )
+						this.checkForPreviews(inst, node);
+				}
+			}
+		});
+
+		inst._ffz_preview_observer.observe(target, {
+			childList: true,
+			subtree: true,
+			//attributeFilter: ['src']
+		});
+	}
+
+	checkForPreviews(inst, node) {
+		for(const el of node.querySelectorAll?.('span[data-a-target="chat-input-emote-preview"][aria-describedby]') ?? []) {
+			const cont = document.getElementById(el.getAttribute('aria-describedby')),
+				target = cont && cont.querySelector('img.chat-line__message--emote');
+
+			if ( target && target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__') )
+				this.updatePreview(inst, target);
+		}
+
+		for(const target of node.querySelectorAll?.('img.chat-line__message--emote')) {
+			if ( target && (target.dataset.ffzId || target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__')) )
+				this.updatePreview(inst, target);
+		}
+	}
+
+	updatePreview(inst, target) {
+		let set_id = target.dataset.ffzSet,
+			emote_id = target.dataset.ffzId;
+
+		if ( ! emote_id ) {
+			const idx = target.src.indexOf('__FFZ__', 49),
+				raw_id = target.src.slice(49, idx);
+
+			const raw_idx = raw_id.indexOf('::');
+			if ( raw_idx === -1 )
+				return;
+
+			set_id = raw_id.slice(0, raw_idx);
+			emote_id = raw_id.slice(raw_idx + 2);
+
+			target.dataset.ffzSet = set_id;
+			target.dataset.ffzId = emote_id;
+		}
+
+		const emote_set = this.emotes.emote_sets[set_id],
+			emote = emote_set?.emotes?.[emote_id];
+
+		if ( ! emote )
+			return;
+
+		const anim = this.chat.context.get('chat.emotes.animated') > 0;
+
+		target.src = (anim ? emote.animSrc : null) ?? emote.src;
+		target.srcset = (anim ? emote.animSrcSet : null) ?? emote.srcSet;
+
+		const w = `${emote.width}px`;
+		const h = `${emote.height}px`;
+
+		target.style.width = w;
+		target.style.height = h;
+
+		// Find the parent.
+		const cont = target.closest('.chat-image__container');
+		if ( cont ) {
+			cont.style.width = w;
+			cont.style.height = h;
+
+			const outer = cont.closest('.chat-line__message--emote-button');
+			if ( outer ) {
+				outer.style.width = w;
+				outer.style.height = h;
+			}
+		}
+	}
+
+	removePreviewObserver(inst) {
+		if ( inst._ffz_preview_observer ) {
+			inst._ffz_preview_observer.disconnect();
+			inst._ffz_preview_observer = null;
+		}
+	}
+
+
 	updateEmoteCompletion(inst, child) {
 		if ( ! child )
 			child = this.fine.searchTree(inst, 'tab-emote-suggestions', 50);
@@ -352,6 +492,33 @@ export default class Input extends Module {
 		const originalOnKeyDown = inst.onKeyDown,
 			originalOnMessageSend = inst.onMessageSend,
 			old_resize = inst.resizeInput;
+
+		const old_componentDidUpdate = inst.componentDidUpdate;
+
+		inst.ffzInjectEmotes = function() {
+			const idx = this.props.emotes.findIndex(item => item?.id === 'FrankerFaceZWasHere'),
+				data = t.createFakeEmoteSet(inst);
+
+			if ( idx === -1 && data )
+				this.props.emotes.push(data);
+			else if ( idx !== -1 && data )
+				this.props.emotes.splice(idx, 1, data);
+			else if ( idx !== -1 && ! data )
+				this.props.emotes.splice(idx, 1);
+		}
+
+		inst.componentDidUpdate = function(props, ...args) {
+			try {
+				if ( props.emotes !== this.props.emotes && Array.isArray(this.props.emotes) )
+					inst.ffzInjectEmotes();
+
+			} catch(err) {
+				t.log.error('Error updating emote autocompletion data.', err);
+			}
+
+			if ( old_componentDidUpdate )
+				old_componentDidUpdate.call(this, props, ...args);
+		}
 
 		inst.resizeInput = function(msg, ...args) {
 			try {
@@ -574,6 +741,60 @@ export default class Input extends Module {
 	}
 
 
+	createFakeEmoteSet(inst) {
+		if ( ! this.use_previews )
+			return null;
+
+		if ( ! inst._ffz_channel_login ) {
+			const parent = this.fine.searchParent(inst, 'chat-input', 50);
+			if ( parent )
+				this.updateEmoteCompletion(parent, inst);
+		}
+
+		const user = inst._ffz_user,
+			channel_id = inst._ffz_channel_id,
+			channel_login = inst._ffz_channel_login;
+
+		if ( ! channel_login )
+			return null;
+
+		const sets = this.emotes.getSets(user?.id, user?.login, channel_id, channel_login);
+		if ( ! sets || ! sets.length )
+			return null;
+
+		const out = [],
+			added_emotes = new Set;
+
+		for(const set of sets) {
+			if ( ! set || ! set.emotes )
+				continue;
+
+			const source = set.source || 'ffz';
+
+			for(const emote of Object.values(set.emotes)) {
+				if ( ! emote || ! emote.id || ! emote.name || added_emotes.has(emote.name) )
+					continue;
+
+				added_emotes.add(emote.name);
+
+				out.push({
+					id: `__FFZ__${set.id}::${emote.id}__FFZ__`,
+					modifiers: null,
+					setID: 'FrankerFaceZWasHere',
+					token: emote.name
+				});
+			}
+		}
+
+		return {
+			__typename: 'EmoteSet',
+			emotes: out,
+			id: 'FrankerFaceZWasHere',
+			owner: null
+		}
+	}
+
+
 	overrideEmoteMatcher(inst) {
 		if ( inst._ffz_override )
 			return;
@@ -734,6 +955,10 @@ export default class Input extends Module {
 				owner = set.owner,
 				is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
 				channel = is_points ? null : owner;
+
+			// Skip this set.
+			if ( set.id === 'FrankerFaceZWasHere' )
+				continue;
 
 			let key = `twitch-set-${set.id}`;
 			let extra = null;

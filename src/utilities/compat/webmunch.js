@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {has} from 'utilities/object';
+import {has, generateUUID} from 'utilities/object';
 import { DEBUG } from 'utilities/constants';
 
 
@@ -193,7 +193,7 @@ export default class WebMunch extends Module {
 		for(const [mod_id, original_module] of Object.entries(modules)) {
 			this._known_ids.add(mod_id);
 
-			modules[mod_id] = function(module, exports, require, ...args) {
+			/*modules[mod_id] = function(module, exports, require, ...args) {
 				if ( ! t._require && typeof require === 'function' ) {
 					t.log.debug(`require() grabbed from invocation of module ${mod_id}`);
 					try {
@@ -206,7 +206,7 @@ export default class WebMunch extends Module {
 				return original_module.call(this, module, exports, require, ...args);
 			}
 
-			modules[mod_id].original = original_module;
+			modules[mod_id].original = original_module;*/
 		}
 	}
 
@@ -604,7 +604,7 @@ export default class WebMunch extends Module {
 			return Promise.resolve(this._require);
 
 		return new Promise((resolve, reject) => {
-			const fn = this._original_loader;
+			let fn = this._original_loader;
 			if ( ! fn ) {
 				if ( limit > 500 )
 					reject(new Error('unable to find webpackJsonp'));
@@ -612,28 +612,20 @@ export default class WebMunch extends Module {
 				return setTimeout(() => this.getRequire(limit++).then(resolve), 250);
 			}
 
-			if ( this.v4 ) {
-				// There's currently no good way to grab require from
-				// webpack 4 due to its lazy loading, so we just wait
-				// and hope that a module is imported.
-				if ( this._resolve_require )
-					this._resolve_require.push(resolve);
-				else
-					this._resolve_require = [resolve];
+			if ( this.v4 )
+				fn = fn.bind(this._original_store);
 
-			} else {
-				// Inject a fake module and use that to grab require.
-				const id = `${this._id}$${this._rid++}`;
-				fn(
-					[],
-					{
-						[id]: (module, exports, __webpack_require__) => {
-							resolve(this._require = __webpack_require__);
-						}
-					},
-					[id]
-				)
-			}
+			// Inject a fake module and use that to grab require.
+			const id = `ffz-loader$${generateUUID()}`;
+			fn([
+				[id],
+				{
+					[id]: (module, exports, __webpack_require__) => {
+						resolve(this._require = __webpack_require__);
+					}
+				},
+				req => req(id)
+			]);
 		})
 	}
 
