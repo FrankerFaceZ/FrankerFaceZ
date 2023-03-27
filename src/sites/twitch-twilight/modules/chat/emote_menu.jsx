@@ -685,7 +685,7 @@ export default class EmoteMenu extends Module {
 					return;
 				}
 
-				if ( t.emotes.handleClick(event) )
+				if ( t.emotes.handleClick(event, true) )
 					return;
 
 				// Check for magic.
@@ -1123,6 +1123,8 @@ export default class EmoteMenu extends Module {
 					combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
 					showSearch: t.chat.context.get('chat.emote-menu.show-search'),
 					clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
+					hasNewEffects: false,
+					unlockedEffects: t.settings.provider.get('unlocked-effects', []),
 					tone: t.settings.provider.get('emoji-tone', null)
 				}
 
@@ -1313,6 +1315,16 @@ export default class EmoteMenu extends Module {
 				});
 			}
 
+			seeEffects() {
+				if ( this.state.hasNewEffects ) {
+					t.settings.provider.set('unlocked-effects', this.state.unlockedEffects);
+
+					this.setState({
+						hasNewEffects: false
+					});
+				}
+			}
+
 			pickTone(tone) {
 				tone = tone || null;
 				t.settings.provider.set('emoji-tone', tone);
@@ -1340,6 +1352,10 @@ export default class EmoteMenu extends Module {
 
 			clickTab(event) {
 				const tab = event.currentTarget.dataset.tab;
+
+				if ( tab === 'effect' )
+					this.seeEffects();
+
 				if ( this.state.combineTabs ) {
 					let sets;
 					switch(tab) {
@@ -1349,7 +1365,7 @@ export default class EmoteMenu extends Module {
 						case 'channel':
 							sets = this.state.filtered_channel_sets;
 							break;
-						case 'effects':
+						case 'effect':
 							sets = this.state.filtered_effect_sets;
 							break;
 						case 'emoji':
@@ -2272,7 +2288,10 @@ export default class EmoteMenu extends Module {
 				}
 
 				let wants_resub_info = false,
-					wants_plan_info = false;
+					wants_plan_info = false,
+					has_new_effects = false;
+
+				const unlocked_effects = [...t.settings.provider.get('unlocked-effects', [])];
 
 				// Finally, emotes added by FrankerFaceZ.
 				if ( t.chat.context.get('chat.emotes.enabled') > 1 ) {
@@ -2319,9 +2338,10 @@ export default class EmoteMenu extends Module {
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
 
-							if ( use_effect_tab && ! effects.includes(section) && section.has_effects )
+							if ( use_effect_tab && ! effects.includes(section) && section.has_effects ) {
+								has_new_effects = this.checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
 								effects.push(section);
-							else if ( ! all.includes(section) )
+							} else if ( ! all.includes(section) )
 								all.push(section);
 						}
 					}
@@ -2337,10 +2357,11 @@ export default class EmoteMenu extends Module {
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
 
-							if ( use_effect_tab && ! effects.includes(section) && section.has_effects )
+							if ( use_effect_tab && ! effects.includes(section) && section.has_effects ) {
+								has_new_effects = this.checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
 								effects.push(section);
 
-							else if ( ! all.includes(section) )
+							} else if ( ! all.includes(section) )
 								all.push(section);
 
 							if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
@@ -2354,6 +2375,9 @@ export default class EmoteMenu extends Module {
 				state.wants_plan_info = wants_plan_info;
 
 				if ( this.props.visible ) {
+					if ( state.tab === 'effects' )
+						has_new_effects = false;
+
 					if ( wants_plan_info )
 						this.loadFFZPlanData();
 					if ( wants_resub_info )
@@ -2367,8 +2391,22 @@ export default class EmoteMenu extends Module {
 
 				state.has_channel_tab = channel.length > 0;
 				state.has_effect_tab = effects.length > 0;
+				state.hasNewEffects = effects.length > 0 && has_new_effects;
+				state.unlockedEffects = unlocked_effects;
 
 				return this.buildEmoji(state);
+			}
+
+
+			checkNewEffects(emotes, unlocked) {
+				let added = false;
+				for(const emote of emotes) {
+					if ( emote && ! emote.locked && emote.id && emote.provider === 'ffz' && ! unlocked.includes(emote.id) ) {
+						added = true;
+						unlocked.push(emote.id);
+					}
+				}
+				return added;
 			}
 
 
@@ -2800,6 +2838,7 @@ export default class EmoteMenu extends Module {
 												data-title={t.i18n.t('emote-menu.effects', 'Emote Effects')}
 												onClick={this.clickTab}
 											>
+												{this.state.hasNewEffects && (<div class="ffz-new-indicator" />)}
 												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
 													<figure class="ffz-i-fx" />
 												</div>
@@ -2930,7 +2969,7 @@ export default class EmoteMenu extends Module {
 		// 3. When they expire/renew
 
 		if ( ! result )
-			return null;
+			return {error: true};
 
 		const out = {
 			has_free_sub: result.user?.bonus_month_eligible ?? false,
@@ -3023,3 +3062,5 @@ export default class EmoteMenu extends Module {
 
 
 EmoteMenu.getData = once(EmoteMenu.getData);
+EmoteMenu.getFFZSubData = once(EmoteMenu.getFFZSubData);
+EmoteMenu.getFFZSubPrices = once(EmoteMenu.getFFZSubPrices);

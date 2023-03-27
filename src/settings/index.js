@@ -918,7 +918,7 @@ export default class SettingsManager extends Module {
 
 
 	_saveProfiles() {
-		this.provider.set('profiles', this.__profiles.map(prof => prof.data));
+		this.provider.set('profiles', this.__profiles.filter(prof => ! prof.ephemeral).map(prof => prof.data));
 		for(const context of this.__contexts)
 			context.selectProfiles();
 

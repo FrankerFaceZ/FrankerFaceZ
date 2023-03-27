@@ -112,5 +112,6 @@ export default [
 	"flag",
 	"mange-suspicious",
 	"doc-text",
-	"fx"
+	"fx",
+	"artist"
 ];

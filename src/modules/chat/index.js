@@ -1864,7 +1864,7 @@ export default class Chat extends Module {
 				className: 'chat-author__intl-login'
 			}, ` (${user.login})`));
 
-		return [out];
+		return out;
 	}
 
 

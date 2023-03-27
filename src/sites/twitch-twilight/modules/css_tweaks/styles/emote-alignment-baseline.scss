@@ -10,6 +10,9 @@
 
 .message > div > .chat-line__message--emote {
 	vertical-align: baseline;
+}
+
+.message > div:not(.modified-emote) > .chat-line__message--emote {
 	padding-top: 5px;
 }
 

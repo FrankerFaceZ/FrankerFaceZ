@@ -1,0 +1,65 @@
+query FFZ_EmoteCard ($emoteID: ID!) {
+	emote(id: $emoteID) {
+		id
+		type
+		token
+		setID
+		artist {
+			id
+			login
+			displayName
+		}
+		owner {
+			id
+			login
+			displayName
+			channel {
+				id
+				localEmoteSets {
+					id
+					emotes {
+						id
+						token
+					}
+				}
+			}
+			stream {
+				id
+				type
+			}
+			self {
+				follower {
+					followedAt
+				}
+				subscriptionBenefit {
+					id
+					tier
+				}
+			}
+			subscriptionProducts {
+				id
+				displayName
+				tier
+				name
+				url
+				emotes {
+					id
+					token
+				}
+				priceInfo {
+					id
+					currency
+					price
+				}
+			}
+		}
+		bitsBadgeTierSummary {
+			threshold
+			self {
+				isUnlocked
+				numberOfBitsUntilUnlock
+			}
+		}
+		type
+	}
+}

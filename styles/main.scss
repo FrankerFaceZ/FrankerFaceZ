@@ -47,6 +47,24 @@
 }
 
 
+.ffz-new-indicator {
+	position: absolute;
+	top: 0;
+	right: 0;
+
+	width: 0.8rem;
+	height: 0.8rem;
+
+	background-color: var(--color-fill-new-item-indicator);
+	border-radius: var(--border-radius-rounded);
+}
+
+.emote-picker-tab-item .ffz-new-indicator {
+	top: 0.25rem;
+	right: 0.25rem;
+}
+
+
 .ffz-i-t-reset.loading,
 .ffz-i-t-reset-clicked.loading,
 .ffz-i-zreknarf.loading {

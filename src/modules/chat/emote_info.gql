@@ -1,6 +1,11 @@
 query FFZ_GetEmoteInfo($id: ID!) {
 	emote(id: $id) {
 		id
+		artist {
+			id
+			login
+			displayName
+		}
 		owner {
 			id
 			login

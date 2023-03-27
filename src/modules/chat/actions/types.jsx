@@ -238,7 +238,10 @@ export const open_url = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-url.vue'),
 
 	title: 'Open URL',
-	description: '{options.url}',
+	description(data) {
+		return data.options.url;
+	},
+	description_i18n: null,
 
 	can_self: true,
 
@@ -287,7 +290,20 @@ export const chat = {
 	},
 
 	title: 'Chat Command',
-	description: '{options.command}',
+	description(data) {
+		if ( data.options.paste )
+			return this.t('chat.actions.chat.desc.paste', 'Paste into chat: {cmd}', {cmd: data.options.command})
+
+		const target = data.options.target ?? '';
+
+		return this.t('chat.actions.chat.desc.target', 'Send in {target}: {cmd}', {
+			cmd: data.options.command,
+			target: /^\s*$/.test(target)
+				? this.t('chat.actions.chat.desc.current', 'current channel')
+				: target
+		});
+	},
+	description_i18n: null,
 
 	can_self: true,
 
@@ -295,10 +311,15 @@ export const chat = {
 
 	tooltip(data) {
 		const msg = this.replaceVariables(data.options.command, data);
+		let target = this.replaceVariables(data.options.target ?? '', data);
+		if ( /^\s*$/.test(target) )
+			target = null;
 
 		return [
 			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
-				this.i18n.t('chat.actions.chat', 'Chat Command')
+				target
+					? this.i18n.t('chat.actions.chat.with-target', 'Chat Command in Channel: {target}', {target})
+					: this.i18n.t('chat.actions.chat', 'Chat Command')
 			}</div>),
 			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
 				msg
@@ -308,10 +329,14 @@ export const chat = {
 
 	click(event, data) {
 		const msg = this.replaceVariables(data.options.command, data);
+		let target = this.replaceVariables(data.options.target ?? '', data);
+		if ( data.options.paste || /^\s*$/.test(target) )
+			target = data.room.login;
+
 		if ( data.options.paste )
-			this.pasteMessage(data.room.login, msg);
+			this.pasteMessage(target, msg);
 		else
-			this.sendMessage(data.room.login, msg);
+			this.sendMessage(target, msg);
 	}
 }
 

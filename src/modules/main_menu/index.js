@@ -837,6 +837,8 @@ export default class MainMenu extends Module {
 			title: profile.name,
 			i18n_key: profile.i18n_key,
 
+			ephemeral: profile.ephemeral,
+
 			description: profile.description,
 			desc_i18n_key: profile.desc_i18n_key || profile.i18n_key && `${profile.i18n_key}.description`,
 
@@ -883,7 +885,7 @@ export default class MainMenu extends Module {
 
 		if ( ! currentProfile ) {
 			for(let i=profiles.length - 1; i >= 0; i--) {
-				if ( profiles[i].live ) {
+				if ( profiles[i].live && ! profiles[i].ephemeral && profiles[i].title && ! /7tv/i.test(profiles[i].title) ) {
 					currentProfile = profiles[i];
 					break;
 				}

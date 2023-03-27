@@ -580,11 +580,15 @@ export default {
 
 			if ( def.title ) {
 				const data = this.getData(),
-					out = maybe_call(def.title, this, data, def),
-					i18n = def.title_i18n || `chat.actions.${this.display.action}`;
+					out = maybe_call(def.title, this, data, def);
+				let i18n = maybe_call(def.title_i18n, this, data, def);
+				if ( i18n === undefined )
+					i18n = `chat.actions.${this.display.action}`;
 
-				if ( out )
+				if ( out && i18n )
 					return this.t(i18n, out, data);
+				else if ( out )
+					return out;
 			}
 
 			return this.t('setting.actions.untitled', 'Action: {action}', this.display);
@@ -614,11 +618,15 @@ export default {
 				return null;
 
 			const data = this.getData(),
-				out = maybe_call(def.description, this, data, def),
-				i18n = def.description_i18n || `chat.actions.${this.display.action}.desc`;
+				out = maybe_call(def.description, this, data, def);
+			let i18n = maybe_call(def.description_i18n, this, data, def);
+			if ( i18n === undefined )
+				i18n = `chat.actions.${this.display.action}.desc`;
 
-			if ( out )
+			if ( out && i18n )
 				return this.t(i18n, out, data);
+			else if ( out )
+				return out;
 
 			return null;
 		},

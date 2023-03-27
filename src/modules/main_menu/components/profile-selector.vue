@@ -53,6 +53,14 @@
 							>
 								<div class="ffz--profile-row__icon-tray tw-flex">
 									<div
+										v-if="p.ephemeral"
+										class="ffz-il-tooltip__container ffz--profile-row__icon ffz-i-user-secret tw-relative"
+									>
+										<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+											{{ t('setting.profiles.ephemeral', 'This profile is ephemeral.') }}
+										</div>
+									</div>
+									<div
 										v-if="p.url"
 										:class="`ffz-il-tooltip__container ffz--profile-row__icon ffz-i-download-cloud tw-relative${p.pause_updates ? ' ffz-unmatched-item' : ''}`"
 									>

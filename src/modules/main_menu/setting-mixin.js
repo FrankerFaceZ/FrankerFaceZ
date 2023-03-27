@@ -96,6 +96,10 @@ export default {
 			return this.isDefault || this.validate(this.value);
 		},
 
+		isReadOnly() {
+			return this.profile && this.profile.ephemeral
+		},
+
 		sourceOrder() {
 			return this.source ? this.source.order : Infinity
 		},
@@ -210,6 +214,8 @@ export default {
 
 		set(value) {
 			// TODO: Run validation.
+			if ( this.isReadOnly )
+				return;
 
 			let process = this.item.process;
 			if ( process ) {
@@ -228,6 +234,9 @@ export default {
 		},
 
 		clear() {
+			if ( this.isReadOnly )
+				return;
+
 			this.profile.delete(this.item.setting);
 
 			if ( this.item.onUIChange )

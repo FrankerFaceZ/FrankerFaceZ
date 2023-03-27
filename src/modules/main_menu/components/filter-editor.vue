@@ -9,6 +9,7 @@
 				v-for="rule in editing"
 				:key="rule.id"
 				:value="rule"
+				:disabled="disabled"
 				:filters="filters"
 				:preview="preview"
 				:context="context"
@@ -61,6 +62,10 @@ export default {
 	props: {
 		value: Array,
 		filters: Object,
+		disabled: {
+			type: Boolean,
+			default: false
+		},
 		maxRules: {
 			type: Number,
 			required: false,
@@ -87,6 +92,8 @@ export default {
 
 	computed: {
 		canAddRule() {
+			if ( this.disabled )
+				return false;
 			return ! this.maxRules || (this.editing.length < this.maxRules);
 		}
 	},
@@ -99,7 +106,7 @@ export default {
 
 		editing: {
 			handler() {
-				if (!this.resetting)
+				if ( ! this.resetting && ! this.disabled)
 					this.$emit('input', this.editing)
 				this.resetting = false;
 			},
@@ -139,6 +146,11 @@ export default {
 			},
 
 			onAdd: event => {
+				if ( this.disabled ) {
+					event.preventDefault();
+					return;
+				}
+
 				if ( ! this.canAddRule ) {
 					event.preventDefault();
 					return;
@@ -156,6 +168,11 @@ export default {
 			},
 
 			onRemove: event => {
+				if ( this.disabled ) {
+					event.preventDefault();
+					return;
+				}
+
 				let rule;
 				try {
 					rule = JSON.parse(event.originalEvent.dataTransfer.getData('JSON'));
@@ -168,6 +185,9 @@ export default {
 			},
 
 			onUpdate: event => {
+				if ( this.disabled )
+					return;
+
 				if ( event.newIndex === event.oldIndex )
 					return;
 
@@ -210,6 +230,9 @@ export default {
 		},
 
 		addRule() {
+			if ( this.disabled )
+				return;
+
 			this.adding = false;
 
 			const key = this.$refs.add_box.value,
@@ -228,6 +251,9 @@ export default {
 		},
 
 		updateRule(id, data) {
+			if ( this.disabled )
+				return;
+
 			for(let i=0; i < this.editing.length; i++) {
 				if ( this.editing[i].id === id ) {
 					this.editing[i] = Object.assign(this.editing[i], data);
@@ -237,6 +263,9 @@ export default {
 		},
 
 		deleteRule(id) {
+			if ( this.disabled )
+				return;
+
 			for(let i=0; i < this.editing.length; i++) {
 				if ( this.editing[i].id === id ) {
 					this.editing.splice(i, 1);

@@ -13,6 +13,7 @@
 				<select
 					:id="item.full_key"
 					ref="control"
+					:disabled="isReadOnly"
 					class="tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 					@change="onChange"
 				>
@@ -48,7 +49,7 @@
 				<input
 					ref="text"
 					:value="value"
-					:disabled="! isCustom"
+					:disabled="isReadOnly || ! isCustom"
 					class="ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 					@change="onTextChange"
 				>
@@ -72,7 +73,13 @@
 				</span>
 			</button>
 
-			<button v-if="has_value" class="tw-mg-l-05 tw-mg-y-05 tw-button tw-button--text ffz-il-tooltip__container" @click="clear">
+			<button
+				v-if="has_value"
+				:disabled="isReadOnly"
+				class="tw-mg-l-05 tw-mg-y-05 tw-button tw-button--text ffz-il-tooltip__container"
+				:class="{'tw-button--disabled': isReadOnly}"
+				@click="clear"
+			>
 				<span class="tw-button__text ffz-i-cancel" />
 				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.reset', 'Reset to Default') }}

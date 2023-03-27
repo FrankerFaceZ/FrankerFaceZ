@@ -832,6 +832,7 @@ export default class Metadata extends Module {
 					const tooltip = maybe_call(def.tooltip, this, data);
 					if ( el.tip_content !== tooltip ) {
 						el.tip_content = tooltip;
+						el.tip.element.innerHTML = '';
 						setChildren(el.tip.element, tooltip);
 					}
 				}

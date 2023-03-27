@@ -23,10 +23,10 @@ const Flags = make_enum_flags(
 	'FlipX',
 	'FlipY',
 	'GrowX',
-	'GrowY',
-	'ShrinkX',
-	'ShrinkY',
-	'Rotate45',
+	'Slide',
+	'Appear',
+	'Leave',
+	'Rotate',
 	'Rotate90',
 	'Greyscale',
 	'Sepia',
@@ -41,6 +41,70 @@ const Flags = make_enum_flags(
 export const MODIFIER_FLAGS = Flags;
 
 export const MODIFIER_KEYS = Object.values(MODIFIER_FLAGS).filter(x => typeof x === 'number');
+
+const APPEAR_FRAMES = [
+	[0, -18, 0, 0],
+	[19.99, -18, 0, 0],
+	[20, -18, 0.1, 0],
+	[25, -16, 0.2, 0.6],
+	[30, -14, 0.3, -4],
+	[35, -12, 0.4, 0.6],
+	[40, -10, 0.5, -4],
+	[45, -8, 0.6, 2],
+	[50, -6, 0.7, -3],
+	[55, -4, 0.8, 2],
+	[60, -2, 0.9, -3],
+	[65, 0, 1, 0],
+	[100, 0, 1, 0]
+];
+
+const LEAVE_FRAMES = [
+	[0, 0, 1, 0],
+	[39.99, 1, 1, 0],
+	[40, 0, -.9, .9, -3],
+	[45, -2, -.8, .8, 2],
+	[50, -4, -.7, .7, -3],
+	[55, -6, -.6, .6, 2],
+	[60, -8, -.5, .5, -4],
+	[65, -10, -.4, .4, .6],
+	[70, -12, -.3, .3, -4],
+	[75, -14, -.2, .2, .6],
+	[80, 16, -.1, .1, 0],
+	[85, -18, -0.01, 0, 0],
+	[100, -18, -0.01, 0, 0]
+];
+
+
+function appearLeaveToKeyframes(source, multi = 1, offset = 0, has_var = false) {
+	const out = [];
+
+	for(const line of source) {
+		const pct = (line[0] * multi) + offset;
+
+		let vr, tx, scale, ty;
+		vr = has_var ? `var(--ffz-effect-transforms) ` : '';
+		tx = line[1] === 0 ? '' : `translateX(${line[1]}px) `;
+
+		if ( line.length === 4 ) {
+			scale = `scale(${line[2]})`;
+			ty = line[3] === 0 ? '' : ` translateY(${line[3]}px)`;
+
+		} else {
+			const sx = line[2],
+				sy = line[3];
+
+			scale = `scale(${sx}, ${sy})`;
+
+			ty = line[4] === 0 ? '' : ` translateY(${line[4]}px)`;
+		}
+
+		out.push(`\t${pct}% { transform:${vr}${tx}${scale}${ty}; }`);
+	}
+
+	return out.join('\n');
+}
+
+
 
 const EFFECT_STYLES = [
 	{
@@ -66,24 +130,87 @@ const EFFECT_STYLES = [
 		title: 'Stretch Horizontal'
 	},
 	{
-		setting: 'ShrinkY',
-		flags: Flags.ShrinkY,
-		title: 'Squish Vertical'
+		setting: 'Slide',
+		flags: Flags.Slide,
+		//not_flags: Flags.Rotate,
+		title: 'Slide Animation',
+		as_background: true,
+		animation: 'ffz-effect-slide var(--ffz-speed-x) linear infinite',
+		raw: `@keyframes ffz-effect-slide {
+0% { background-position-x: 0; }
+100% { background-position-x: calc(-1 * var(--ffz-width)); }
+}`
 	},
 	{
-		setting: 'GrowY',
-		flags: Flags.GrowY,
-		title: 'Stretch Vertical'
+		setting: 'Appear',
+		flags: Flags.Appear,
+		not_flags: Flags.Leave,
+		title: 'Appear Animation',
+		animation: 'ffz-effect-appear 3s infinite linear',
+		animationTransform: 'ffz-effect-appear-transform 3s linear infinite',
+		raw: `@keyframes ffz-effect-appear {
+${appearLeaveToKeyframes(APPEAR_FRAMES)}
+}
+@keyframes ffz-effect-appear-transform {
+${appearLeaveToKeyframes(APPEAR_FRAMES, 1, 0, true)}
+}`
+	},
+	{
+		setting: 'Leave',
+		flags: Flags.Leave,
+		not_flags: Flags.Appear,
+		title: 'Leave Animation',
+		animation: 'ffz-effect-leave 3s infinite linear',
+		animationTransform: 'ffz-effect-leave-transform 3s infinite linear',
+		raw: `@keyframes ffz-effect-leave {
+${appearLeaveToKeyframes(LEAVE_FRAMES)}
+}
+@keyframes ffz-effect-leave-transform {
+${appearLeaveToKeyframes(LEAVE_FRAMES, 1, 0, true)}
+}`
+	},
+	{
+		setting: [
+			'Appear',
+			'Leave'
+		],
+		flags: Flags.Appear | Flags.Leave,
+		animation: 'ffz-effect-in-out 6s infinite linear',
+		animationTransform: 'ffz-effect-in-out-transform 6s linear infinite',
+		raw: `@keyframes ffz-effect-in-out {
+${appearLeaveToKeyframes(APPEAR_FRAMES, 0.5, 0)}
+${appearLeaveToKeyframes(LEAVE_FRAMES, 0.5, 50)}
+}
+@keyframes ffz-effect-in-out-transform {
+${appearLeaveToKeyframes(APPEAR_FRAMES, 0.5, 0, true)}
+${appearLeaveToKeyframes(LEAVE_FRAMES, 0.5, 50, true)}
+}`
+	},
+	{
+		setting: 'Rotate',
+		flags: Flags.Rotate,
+		not_flags: Flags.Slide,
+		title: 'Rotate Animation',
+		no_wide: true,
+		animation: 'ffz-effect-rotate 1.5s infinite linear',
+		animationTransform: 'ffz-effect-rotate-transform 1.5s infinite linear',
+		raw: `@keyframes ffz-effect-rotate {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+@keyframes ffz-effect-rotate-transform {
+0% { transform: var(--ffz-effect-transforms) rotate(0deg); }
+100% { transform: var(--ffz-effect-transforms) rotate(360deg); }
+}`
 	},
 	/*{
-		setting: 'Rotate45',
-		flags: MODIFIER_FLAGS.Rotate45,
-		title: 'Rotate 45 Degrees'
-	},
-	{
-		setting: 'Rotate90',
-		flags: MODIFIER_FLAGS.Rotate90,
-		title: 'Rotate 90 Degrees'
+		setting: [
+			'Slide',
+			'Rotate'
+		],
+		flags: Flags.Rotate | Flags.Slide,
+		// Sync up the speed for slide and rotate if both are applied.
+		animation: 'ffz-effect-slide calc(1.5 * var(--ffz-speed-x)) linear infinite'
 	},
 	{
 		setting: 'Greyscale',
@@ -242,7 +369,7 @@ const EFFECT_STYLES = [
 
 function generateBaseFilterCss() {
 	const out = [
-		`.modified-emote[data-effects] > img {
+		`.modified-emote[data-effects] > .chat-line__message--emote {
 	--ffz-effect-filters: none;
 	--ffz-effect-transforms: initial;
 	--ffz-effect-animations: initial;
@@ -314,6 +441,7 @@ export default class Emotes extends Module {
 		this.twitch_inventory_sets = new Set; //(EXTRA_INVENTORY);
 		this.__twitch_emote_to_set = {};
 		this.__twitch_set_to_channel = {};
+		this.__twitch_emote_to_artist = {};
 
 		// Bulk data structure for collections applied to a lot of users.
 		// This lets us avoid allocating lots of individual user
@@ -548,6 +676,9 @@ export default class Emotes extends Module {
 			if ( (flags & input.flags) !== input.flags )
 				continue;
 
+			if ( input.not_flags && (flags & input.not_flags) === input.not_flags )
+				continue;
+
 			if ( input.animation )
 				animations.push(input);
 
@@ -584,7 +715,7 @@ export default class Emotes extends Module {
 		if ( ! filter && ! transform && ! animation )
 			return null;
 
-		return `.modified-emote[data-effects="${flags}"] > img {${filter ? `
+		return `.modified-emote[data-effects="${flags}"] > .chat-line__message--emote {${filter ? `
 	--ffz-effect-filters: ${filter};
 	filter: var(--ffz-effect-filters);` : ''}${transformOrigin ? `
 	transform-origin: ${transformOrigin};` : ''}${transform ? `
@@ -601,6 +732,9 @@ export default class Emotes extends Module {
 
 		this.effects_enabled = {};
 		this.activeEffectStyles = [];
+
+		this.activeAsBackgroundMask = 0;
+		this.activeNoWideMask = 0;
 
 		for(const input of EFFECT_STYLES) {
 			if ( input.setting && ! Array.isArray(input.setting) )
@@ -619,8 +753,14 @@ export default class Emotes extends Module {
 			} else if ( input.setting )
 				enabled = this.effects_enabled[input.setting];
 
-			if ( enabled )
+			if ( enabled ) {
 				this.activeEffectStyles.push(input);
+
+				if ( input.as_background )
+					this.activeAsBackgroundMask = this.activeAsBackgroundMask | input.flags;
+				if ( input.no_wide )
+					this.activeNoWideMask = this.activeNoWideMask | input.flags;
+			}
 		}
 
 		this.effect_style.clear();
@@ -820,9 +960,13 @@ export default class Emotes extends Module {
 			this.settings.provider.set(key, favs);
 	}
 
-	handleClick(event) {
+	handleClick(event, favorite_only = false) {
 		const target = event.target,
 			ds = target && target.dataset;
+
+		/*const modified = target.closest('.modified-emote');
+		if ( modified && modified !== target )
+			return;*/
 
 		if ( ! ds )
 			return;
@@ -928,9 +1072,14 @@ export default class Emotes extends Module {
 			return true;
 		}
 
+		if ( favorite_only )
+			return false;
+
 		const evt = new FFZEvent({
 			provider,
 			id: ds.id,
+			set: ds.set,
+			name: ds.name || target.alt,
 			source: event
 		});
 
@@ -1504,6 +1653,18 @@ export default class Emotes extends Module {
 			}
 		}
 
+		// Check to see if this emote applies any effects with as_background.
+		/*let as_background = false;
+		if ( emote.modifier_flags ) {
+			for(const input of EFFECT_STYLES)
+				if ( (emote.modifier_flags & input.flags) === input.flags ) {
+					if ( input.as_background ) {
+						as_background = true;
+						break;
+					}
+				}
+		}*/
+
 		emote.token = {
 			type: 'emote',
 			id: emote.id,
@@ -1524,7 +1685,8 @@ export default class Emotes extends Module {
 			length: emote.name.length,
 			height: emote.height,
 			width: emote.width,
-			source_modifier_flags: emote.modifier_flags ?? 0
+			source_modifier_flags: emote.modifier_flags ?? 0,
+			//effect_bg: as_background
 		};
 
 		if ( has(MODIFIERS, emote.id) )
@@ -1746,7 +1908,7 @@ export default class Emotes extends Module {
 		}
 
 		if ( emote.modifier && emote.mask?.[1] ) {
-			output = (output || '') + `.modified-emote[data-modifiers~="${emote.id}"] > img {
+			output = (output || '') + `.modified-emote[data-modifiers~="${emote.id}"] > .chat-line__message--emote {
 	-webkit-mask-image: url("${emote.mask[1]}");
 	-webkit-mask-position: center center;
 }`
@@ -1790,9 +1952,10 @@ export default class Emotes extends Module {
 		this.__twitch_set_to_channel[set_id] = channel;
 	}
 
-	_getTwitchEmoteSet(emote_id) {
+	_getTwitchEmoteSet(emote_id, need_artist = false) {
 		const tes = this.__twitch_emote_to_set,
-			tsc = this.__twitch_set_to_channel;
+			tsc = this.__twitch_set_to_channel,
+			tsa = this.__twitch_emote_to_artist;
 
 		if ( typeof emote_id === 'number' ) {
 			if ( isNaN(emote_id) || ! isFinite(emote_id) )
@@ -1801,7 +1964,7 @@ export default class Emotes extends Module {
 			emote_id = `${emote_id}`;
 		}
 
-		if ( has(tes, emote_id) ) {
+		if ( has(tes, emote_id) && (! need_artist || has(tsa, emote_id)) ) {
 			const val = tes[emote_id];
 			if ( Array.isArray(val) )
 				return new Promise(s => val.push(s));
@@ -1829,6 +1992,10 @@ export default class Emotes extends Module {
 				if ( emote ) {
 					set_id = emote.setID;
 
+					if ( emote.id && ! has(tsa, emote.id) ) {
+						tsa[emote.id] = emote.artist;
+					}
+
 					if ( set_id && ! has(tsc, set_id) ) {
 						const type = determineEmoteType(emote);
 
@@ -1854,6 +2021,28 @@ export default class Emotes extends Module {
 
 	getTwitchEmoteSet(emote_id, callback) {
 		const promise = this._getTwitchEmoteSet(emote_id);
+		if ( callback )
+			promise.then(callback);
+		else
+			return promise;
+	}
+
+	_getTwitchEmoteArtist(emote_id) {
+		const tsa = this.__twitch_emote_to_artist;
+
+		if ( has(tsa, emote_id) )
+			return Promise.resolve(tsa[emote_id]);
+
+		return this._getTwitchEmoteSet(emote_id, true)
+			.then(() => tsa[emote_id])
+			.catch(() => {
+				tsa[emote_id] = null;
+				return null;
+			});
+	}
+
+	getTwitchEmoteArtist(emote_id, callback) {
+		const promise = this._getTwitchEmoteArtist(emote_id);
 		if ( callback )
 			promise.then(callback);
 		else

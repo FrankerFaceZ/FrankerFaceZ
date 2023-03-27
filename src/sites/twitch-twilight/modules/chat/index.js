@@ -378,6 +378,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.charity', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow the charity fundraiser progress to be displayed in chat.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.banners.hype-train', {
 			default: true,
 			ui: {
@@ -936,6 +945,10 @@ export default class ChatHook extends Module {
 
 		this.chat.context.on('changed:chat.disable-handling', this.updateDisableHandling, this);
 
+		this.chat.context.on('changed:chat.banners.charity', () => {
+			this.ChatContainer.forceUpdate();
+		});
+
 		this.chat.context.on('changed:chat.subs.gift-banner', () => this.GiftBanner.forceUpdate(), this);
 		this.chat.context.on('changed:chat.effective-width', this.updateChatCSS, this);
 		this.settings.main_context.on('changed:chat.use-width', this.updateChatCSS, this);
@@ -1313,11 +1326,30 @@ export default class ChatHook extends Module {
 				old_render = cls.prototype.render,
 				old_catch = cls.prototype.componentDidCatch;
 
+			cls.prototype.ffzRender = function() {
+				if ( t.chat.context.get('chat.banners.charity') )
+					return old_render.call(this);
+
+				const cd = this.props.campaignData;
+				this.props.campaignData = null;
+				let result;
+
+				try {
+					result = old_render.call(this);
+				} catch(err) {
+					this.props.campaignData = cd;
+					throw err;
+				}
+
+				this.props.campaignData = cd;
+				return result;
+			}
+
 			cls.prototype.render = function() {
 				try {
 					if ( t.CommunityStackHandler ) {
 						const React = t.web_munch.getModule('react'),
-							out = old_render.call(this),
+							out = this.ffzRender(),
 							thing = out?.props?.children?.props?.children;
 
 						if ( React && Array.isArray(thing) )
@@ -1330,7 +1362,7 @@ export default class ChatHook extends Module {
 					// No op
 				}
 
-				return old_render.call(this);
+				return this.ffzRender();
 			}
 
 			// Try catching errors. With any luck, maybe we can

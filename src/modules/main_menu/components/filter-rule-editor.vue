@@ -4,7 +4,11 @@
 			<h5 class="ffz-i-ellipsis-vert" />
 		</div>
 
+		<div v-if="! component" class="tw-flex tw-flex-grow-1 tw-align-self-center tw-align-items-center">
+			{{ t('setting.filters.missing', 'This rule of type "{type}" cannot be loaded. It may be from an add-on that is not loaded.', {type: editing && editing.type}) }}
+		</div>
 		<component
+			v-else
 			:is="component"
 			v-model="editing"
 			:type="type"
@@ -111,7 +115,7 @@ export default {
 		},
 
 		isShort() {
-			return this.type && ! this.type.tall;
+			return ! this.component || (this.type && ! this.type.tall);
 		}
 	},
 

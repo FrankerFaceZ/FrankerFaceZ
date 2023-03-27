@@ -77,7 +77,7 @@ export default class Input extends Module {
 			ui: {
 				path: 'Chat > Input >> Appearance',
 				title: 'Display in-line previews of FrankerFaceZ emotes when entering a chat message.',
-				description: '**Note:** This feature is tempermental. It may not display all emotes, and emote effects and overlay emotes are not displayed correctly. Once this setting has been enabled, it cannot be reasonably disabled and will remain active until you refresh the page.',
+				description: '**Note:** This feature is temperamental. It may not display all emotes, and emote effects and overlay emotes are not displayed correctly. Once this setting has been enabled, it cannot be reasonably disabled and will remain active until you refresh the page.',
 				component: 'setting-check-box'
 			}
 		});

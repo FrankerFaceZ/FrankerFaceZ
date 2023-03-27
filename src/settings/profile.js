@@ -28,6 +28,11 @@ export default class SettingsProfile extends EventEmitter {
 		this.data = data;
 		this.prefix = `p:${this.id}:`;
 		this.enabled_key = `${this.prefix}:enabled`;
+
+		if ( this.ephemeral ) {
+			this._enabled = true;
+			this._storage = new Map;
+		}
 	}
 
 	get data() {
@@ -39,6 +44,8 @@ export default class SettingsProfile extends EventEmitter {
 			i18n_key: this.i18n_key,
 			hotkey: this.hotkey,
 			pause_updates: this.pause_updates,
+
+			ephemeral: this.ephemeral,
 
 			description: this.description,
 			desc_i18n_key: this.desc_i18n_key,
@@ -70,7 +77,8 @@ export default class SettingsProfile extends EventEmitter {
 
 
 	save() {
-		this.manager.saveProfile(this.id);
+		if ( ! this.ephemeral )
+			this.manager.saveProfile(this.id);
 	}
 
 
@@ -82,6 +90,8 @@ export default class SettingsProfile extends EventEmitter {
 			toggled: this.toggled,
 			values: {}
 		};
+
+		delete out.profile.ephemeral;
 
 		for(const [k,v] of this.entries())
 			out.values[k] = v;
@@ -99,6 +109,7 @@ export default class SettingsProfile extends EventEmitter {
 			return false;
 
 		// We don't want to override general settings.
+		delete data.profile.ephemeral;
 		delete data.profile.id;
 		delete data.profile.name;
 		delete data.profile.i18n_key;
@@ -186,6 +197,8 @@ export default class SettingsProfile extends EventEmitter {
 	// ========================================================================
 
 	get toggled() {
+		if ( this.ephemeral )
+			return this._enabled;
 		return this.provider.get(this.enabled_key, true);
 	}
 
@@ -193,7 +206,11 @@ export default class SettingsProfile extends EventEmitter {
 		if ( val === this.toggleState )
 			return;
 
-		this.provider.set(this.enabled_key, val);
+		if ( this.ephemeral )
+			this._enabled = val;
+		else
+			this.provider.set(this.enabled_key, val);
+
 		this.emit('toggled', this, val);
 	}
 
@@ -226,24 +243,37 @@ export default class SettingsProfile extends EventEmitter {
 	// ========================================================================
 
 	get(key, default_value) {
+		if ( this.ephemeral )
+			return this._storage.get(key, default_value);
 		return this.provider.get(this.prefix + key, default_value);
 	}
 
 	set(key, value) {
-		this.provider.set(this.prefix + key, value);
+		if ( this.ephemeral )
+			this._storage.set(key, value);
+		else
+			this.provider.set(this.prefix + key, value);
 		this.emit('changed', key, value);
 	}
 
 	delete(key) {
-		this.provider.delete(this.prefix + key);
+		if ( this.ephemeral )
+			this._storage.delete(key);
+		else
+			this.provider.delete(this.prefix + key);
 		this.emit('changed', key, undefined, true);
 	}
 
 	has(key) {
+		if ( this.ephemeral )
+			return this._storage.has(key);
 		return this.provider.has(this.prefix + key);
 	}
 
 	keys() {
+		if ( this.ephemeral )
+			return Array.from(this._storage.keys());
+
 		const out = [],
 			p = this.prefix,
 			len = p.length;
@@ -256,6 +286,15 @@ export default class SettingsProfile extends EventEmitter {
 	}
 
 	clear() {
+		if ( this.ephemeral ) {
+			const keys = this.keys();
+			this._storage.clear();
+			for(const key of keys) {
+				this.emit('changed', key, undefined, true);
+			}
+			return;
+		}
+
 		const p = this.prefix,
 			len = p.length;
 		for(const key of this.provider.keys())
@@ -266,15 +305,24 @@ export default class SettingsProfile extends EventEmitter {
 	}
 
 	*entries() {
-		const p = this.prefix,
-			len = p.length;
+		if ( this.ephemeral ) {
+			for(const entry of this._storage.entries())
+				yield entry;
 
-		for(const key of this.provider.keys())
-			if ( key.startsWith(p) && key !== this.enabled_key )
-				yield [key.slice(len), this.provider.get(key)];
+		} else {
+			const p = this.prefix,
+				len = p.length;
+
+			for(const key of this.provider.keys())
+				if ( key.startsWith(p) && key !== this.enabled_key )
+					yield [key.slice(len), this.provider.get(key)];
+		}
 	}
 
 	get size() {
+		if ( this.ephemeral )
+			return this._storage.size;
+
 		const p = this.prefix;
 		let count = 0;
 

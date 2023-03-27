@@ -7,6 +7,23 @@
 				<template v-if="i !== item">&raquo; </template>
 			</span>
 		</header>
+		<section v-if="context.currentProfile.ephemeral && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
+			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
+				<h3 class="ffz-i-attention">
+					{{ t('setting.profiles.ephemeral', "This profile is ephemeral.") }}
+				</h3>
+
+				<span>
+					{{ t('setting.profiles.ephemeral.description',
+						"The currently selected profile is ephemeral, which is a fancy way of saying that it was automatically generated, that it only exists temporarily, and that any changes you make won't be saved."
+					) }}
+				</span>
+
+				<span>{{ t('setting.profiles.ephemeral.description-2',
+					"Please select a different profile from the selector at the upper left of this menu to edit your settings."
+				) }}</span>
+			</div>
+		</section>
 		<section v-if="(! context.currentProfile.live || ! context.currentProfile.toggled) && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
 				<h3 class="ffz-i-attention">

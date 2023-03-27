@@ -5,6 +5,7 @@
 				ref="input"
 				v-bind="$attrs"
 				class="default-dimmable tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+				:class="{'ffz--disabled': disabled}"
 				tabindex="0"
 				@click="startRecording"
 				@keydown="onKey"
@@ -23,6 +24,7 @@
 			</div>
 
 			<button
+				:disabled="disabled"
 				class="ffz-button--hollow ffz-clear-key tw-absolute tw-top-0 tw-bottom-0 tw-right-0 tw-border-l tw-z-default tw-pd-x-1 ffz-il-tooltip__container"
 				@click="clear"
 			>
@@ -78,7 +80,11 @@ for(const letter of 'abcdefghijklmnopqrstuvwxyz')
 
 export default {
 	props: {
-		value: String
+		value: String,
+		disabled: {
+			type: Boolean,
+			default: false
+		}
 	},
 
 	data() {
@@ -113,6 +119,9 @@ export default {
 			if ( e )
 				this.stop(e);
 
+			if ( this.disabled )
+				return;
+
 			if ( this.active )
 				return;
 
@@ -144,6 +153,9 @@ export default {
 
 			this.stop(e);
 
+			if ( this.disabled )
+				return;
+
 			if ( IGNORE_KEYS.includes(k) )
 				return;
 
@@ -162,6 +174,9 @@ export default {
 		},
 
 		clear() {
+			if ( this.disabled )
+				return;
+
 			this.$emit('input', null);
 		}
 	}
