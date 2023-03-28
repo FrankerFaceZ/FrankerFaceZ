@@ -224,8 +224,6 @@ export default class Input extends Module {
 				for(const inst of this.ChatInput.instances) {
 					this.installPreviewObserver(inst);
 					inst.ffzInjectEmotes();
-					inst.forceUpdate();
-					this.emit('site:dom-update', 'chat-input', inst);
 				}
 		});
 
@@ -330,6 +328,7 @@ export default class Input extends Module {
 		this.on('chat.emotes:update-default-sets', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-user-sets', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-room-sets', this.uncacheTabCompletion, this);
+		this.on('chat.emotes:loaded', this.uncacheTabCompletion, this);
 
 		this.on('site.css_tweaks:update-chat-css', this.resizeInput, this);
 	}
@@ -505,6 +504,11 @@ export default class Input extends Module {
 				this.props.emotes.splice(idx, 1, data);
 			else if ( idx !== -1 && ! data )
 				this.props.emotes.splice(idx, 1);
+
+			this.props.emotes = [...this.props.emotes];
+
+			inst.forceUpdate();
+			t.emit('site:dom-update', 'chat-input', inst);
 		}
 
 		inst.componentDidUpdate = function(props, ...args) {
