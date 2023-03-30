@@ -232,6 +232,8 @@ Twilight.KNOWN_MODULES = {
 		if ( n.S && n.S.toString().includes('.visit') )
 			return n.S;
 	},
+	'user-report': n => n['a3']?.displayName === 'Loadable(ReportUserModal)' && n['a3'],
+	'sub-form': n => typeof n.T === 'function' && String(n.T).includes('CheckoutModal') && n.T,
 	mousetrap: n => n.bindGlobal && n.unbind && n.handleKey,
 	'algolia-search': n => {
 		if ( n.a?.prototype?.queryTopResults && n.a.prototype.queryForType )
@@ -279,6 +281,11 @@ Twilight.KNOWN_MODULES['highlightstack'].chunks = CHAT_CHUNK;
 Twilight.KNOWN_MODULES['algolia-search'].use_result = true;
 Twilight.KNOWN_MODULES['algolia-search'].chunks = 'core';
 
+Twilight.KNOWN_MODULES['user-report'].use_result = true;
+Twilight.KNOWN_MODULES['user-report'].chunks = 'core';
+
+Twilight.KNOWN_MODULES['sub-form'].use_result = true;
+Twilight.KNOWN_MODULES['sub-form'].chunks = 'core';
 
 
 Twilight.POPOUT_ROUTES = [

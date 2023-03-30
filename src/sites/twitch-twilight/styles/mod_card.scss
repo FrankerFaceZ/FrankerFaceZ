@@ -7,6 +7,10 @@
 		box-shadow: var(--shadow-button-focus);
 	}
 
+	&__header {
+		overflow: unset !important;
+	}
+
 	> div:first-child {
 		cursor: move;
 	}
@@ -42,4 +46,26 @@
 .viewer-card__background {
 	background-position: top;
 	background-size: cover
+}
+
+.ffz-emote-card__live-indicator {
+	background-color: var(--color-fill-live);
+	border-radius: var(--border-radius-rounded);
+	width: 0.8rem;
+	height: 0.8rem;
+	display: inline-block;
+}
+
+.ffz-emote-card__emote-list {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-around;
+}
+
+.ffz-button__sub-price {
+	background-color: var(--color-background-button-purchase);
+	padding: 0 var(--button-padding-x);
+	display: flex;
+	align-self: stretch;
+	align-items: center;
 }

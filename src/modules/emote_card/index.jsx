@@ -4,8 +4,8 @@
 // Emote Cards
 // ============================================================================
 
-import {createElement, sanitize} from 'utilities/dom';
-import {has, maybe_call, deep_copy, getTwitchEmoteURL} from 'utilities/object';
+import {createElement} from 'utilities/dom';
+import {deep_copy, getTwitchEmoteURL} from 'utilities/object';
 import { EmoteTypes } from 'utilities/constants';
 
 import GET_EMOTE from './twitch_data.gql';
@@ -34,6 +34,17 @@ function getEmoteTypeFromTwitchType(type) {
 }
 
 
+function tierToNumber(tier) {
+	if ( tier === '1000' || tier === 'prime' )
+		return 1;
+	if ( tier === '2000' )
+		return 2;
+	if ( tier === '3000' )
+		return 3;
+	return 1;
+}
+
+
 export default class EmoteCard extends Module {
 	constructor(...args) {
 		super(...args);
@@ -43,6 +54,7 @@ export default class EmoteCard extends Module {
 		this.inject('i18n');
 		this.inject('chat');
 		this.inject('chat.emotes');
+		this.inject('chat.emoji');
 		this.inject('site');
 		this.inject('site.apollo');
 		this.inject('site.twitch_data');
@@ -68,9 +80,12 @@ export default class EmoteCard extends Module {
 
 		this.openCard({
 			provider: evt.provider,
+			code: evt.code,
+			variant: evt.variant,
+			name: evt.name,
 			set: evt.set,
-			id: evt.id
-		}, evt.source);
+			id: evt.id ?? `${evt.code}::${evt.variant}`
+		}, evt.modifiers, evt.source);
 
 	}
 
@@ -79,11 +94,65 @@ export default class EmoteCard extends Module {
 			return;
 
 		await this.vue.enable();
-		const card_component = await import('./components/card.vue');
+		const card_component = await import(/* webpackChunkName: 'emote-cards' */ './components/card.vue');
 		this.vue.component('emote-card', card_component.default);
 
 		this._vue_loaded = true;
 	}
+
+
+	canReportTwitch() {
+		const site = this.resolve('site'),
+			core = site.getCore(),
+			user = site.getUser(),
+			web_munch = this.resolve('site.web_munch');
+
+		let report_form;
+		try {
+			report_form = web_munch.getModule('user-report');
+		} catch(err) {
+			return false;
+		}
+
+		return !! report_form && !! user?.id && core?.store?.dispatch;
+	}
+
+
+	reportTwitchEmote(id, channel) {
+		const site = this.resolve('site'),
+			core = site.getCore(),
+			user = site.getUser(),
+			web_munch = this.resolve('site.web_munch');
+
+		let report_form;
+		try {
+			report_form = web_munch.getModule('user-report');
+		} catch(err) {
+			return false;
+		}
+
+		if ( ! user?.id || ! core?.store?.dispatch )
+			return false;
+
+		core.store.dispatch({
+			type: 'core.modal.MODAL_SHOWN',
+			modalComponent: report_form,
+			modalProps: {
+				reportContext: {
+					contentID: String(id),
+					contentMetadata: {
+						channelID: String(user.id)
+					},
+					contentType: 'EMOTE_REPORT',
+					targetUserID: String(channel),
+					trackingContext: 'emote_card'
+				}
+			}
+		});
+
+		return true;
+	}
+
 
 	async loadData(emote) {
 		if ( emote.provider === 'twitch' ) {
@@ -107,6 +176,8 @@ export default class EmoteCard extends Module {
 			const srcSet = `${src} 1x, ${getTwitchEmoteURL(data.id, 4, true, true)} 2x`;
 
 			let source;
+			let body;
+			let tier;
 
 			//console.log("loaded data", data);
 
@@ -114,37 +185,30 @@ export default class EmoteCard extends Module {
 
 			if ( type === EmoteTypes.Subscription ) {
 				const products = data.owner?.subscriptionProducts;
-				let tier;
 
 				if ( Array.isArray(products) ) {
 					for(const product of products) {
 						if ( product.emotes.some(em => em.id === data.id) ) {
-							tier = product.tier;
+							tier = tierToNumber(product.tier);
 							break;
 						}
 					}
 				}
-
-				if ( tier === '1000' )
-					tier = 1;
-				else if ( tier === '2000' )
-					tier = 2;
-				else if ( tier === '3000' )
-					tier = 3;
-				else
-					tier = 1;
 
 				source = this.i18n.t('emote-card.sub', 'Tier {tier} Sub Emote ({source})', {
 					tier: tier,
 					source: data.owner.displayName || data.owner.login
 				});
 
-			} else if ( type === EmoteTypes.Follower )
+				body = 'twitch';
+
+			} else if ( type === EmoteTypes.Follower ) {
 				source = this.i18n.t('emote.follower', 'Follower Emote ({source})', {
 					source: data.owner.displayName || data.owner.login
 				});
+				body = 'twitch';
 
-			else if ( type === EmoteTypes.Global )
+			} else if ( type === EmoteTypes.Global )
 				source = this.i18n.t('emote.global', 'Twitch Global');
 
 			else if ( type === EmoteTypes.LimitedTime )
@@ -155,23 +219,30 @@ export default class EmoteCard extends Module {
 					amount: data.bitsBadgeTierSummary?.threshold,
 					source: data.owner.displayName || data.owner.login
 				});
+				body = 'twitch';
 
 			} else if ( type === EmoteTypes.TwoFactor )
 				source = this.i18n.t('emote.2fa', 'Twitch 2FA Emote');
 
-			else if ( type === EmoteTypes.ChannelPoints )
+			else if ( type === EmoteTypes.ChannelPoints ) {
 				source = this.i18n.t('emote.points', 'Channel Points Emote');
+				body = 'twitch';
 
-			else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
+			} else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
 				source = this.i18n.t('emote.prime', 'Prime Gaming');
 
 			else
 				source = data.type;
 
+			//console.log('raw data', data);
+
 			const out = {
 				//raw: data,
 				id: data.id,
+				fav_source: 'twitch',
+				channel_id: data.owner?.id,
 				more: [],
+				body,
 				src,
 				srcSet,
 				name: data.token,
@@ -184,17 +255,129 @@ export default class EmoteCard extends Module {
 					: null
 			};
 
-			/*if ( data.owner?.id )
+			if ( data.owner?.id ) {
+				out.channel_title = data.owner.displayName ?? data.owner.login;
+				out.channel_login = data.owner.login;
+				out.channel_live = !! data.owner.stream?.id;
+				out.channel_followed = !! data.owner?.self?.follower?.followedAt;
+
 				out.more.push({
 					type: 'link',
 					icon: 'ffz-i-link-ext',
 					title: 'View Channel on TwitchEmotes.com',
 					href: `https://twitchemotes.com/channels/${data.owner.id}`
-				});*/
+				});
+
+				// Check if we can actually submit a report.
+				if ( this.canReportTwitch() )
+				out.more.push({
+					type: 'report-twitch',
+					title_i18n: 'emote-card.report',
+					title: 'Report Emote',
+					icon: 'ffz-i-flag'
+				});
+			}
+
+			if ( data.bitsBadgeTierSummary?.threshold ) {
+				out.unlock_mode = 'bits';
+				out.unlocked = data.bitsBadgeTierSummary.self?.isUnlocked;
+				out.bits_amount = data.bitsBadgeTierSummary.threshold;
+				out.bits_remain = data.bitsBadgeTierSummary.self?.numberOfBitsUntilUnlock ?? out.unlock_amount;
+
+			} else if ( type === EmoteTypes.Follower ) {
+				out.unlock_mode = 'follow';
+				out.unlocked = false; // out.channel_followed ?? false;
+				const extras = out.extra_emotes = [];
+
+				if ( ! out.unlocked && Array.isArray(data.owner?.channel?.localEmoteSets) )
+					for(const set of data.owner.channel.localEmoteSets)
+						if ( Array.isArray(set.emotes) )
+							for(const em of set.emotes) {
+								const src = getTwitchEmoteURL(em.id, 1, true, true);
+								const srcSet = `${src} 1x, ${getTwitchEmoteURL(em.id, 2, true, true)} 2x`;
+
+								extras.push({
+									id: em.id,
+									name: em.token,
+									src,
+									srcSet
+								});
+							}
+
+			} else if ( type === EmoteTypes.Subscription ) {
+				out.unlock_mode = 'subscribe';
+				out.unlocked = false;
+				out.unlock_tier = tier;
+
+				out.existing_tier = 0;
+				const bene = data.owner?.self?.subscriptionBenefit;
+				if ( bene?.tier )
+					out.existing_tier = tierToNumber(bene.tier);
+
+				const extras = out.extra_emotes = [],
+					extier = out.existing_tier;
+
+				if ( extier >= tier )
+					out.unlocked = true;
+				else if ( Array.isArray(data.owner?.subscriptionProducts) )
+					for(const product of data.owner.subscriptionProducts) {
+						const ptier = tierToNumber(product.tier);
+						if ( ptier === tier ) {
+							out.channel_product = product.name;
+							if ( product.priceInfo?.price && product.priceInfo.currency ) {
+								const formatter = new Intl.NumberFormat(navigator.languages, {
+									style: 'currency',
+									currency: product.priceInfo.currency
+								});
+
+								out.product_price = formatter.format(product.priceInfo.price / 100);
+							}
+						}
+
+						if ( ptier > extier && ptier <= tier && Array.isArray(product.emotes) )
+							for(const em of product.emotes) {
+								const src = getTwitchEmoteURL(em.id, 1, true, true);
+								const srcSet = `${src} 1x, ${getTwitchEmoteURL(em.id, 2, true, true)} 2x`;
+
+								extras.push({
+									id: em.id,
+									name: em.token,
+									src,
+									srcSet
+								});
+							}
+					}
+			}
 
 			return out;
 		}
 
+		// Emoji
+		if ( emote.provider === 'emoji' ) {
+			const emoji = this.emoji.emoji[emote.code],
+				style = this.chat.context.get('chat.emoji.style'),
+				variant = emote.variant ? emoji.variants[emote.variant] : emoji,
+				vcode = emote.variant ? this.emoji.emoji[emote.variant] : null;
+
+			const category = emoji.category ? this.i18n.t(`emoji.category.${emoji.category.toSnakeCase()}`, this.emoji.categories[emoji.category] || emoji.category) : null;
+
+			const out = {
+				id: emote.code,
+				fav_source: 'emoji',
+				more: [],
+				src: this.emoji.getFullImage(variant.image, style),
+				srcSet: this.emoji.getFullImageSet(variant.image, style),
+				width: 18,
+				height: 18,
+				name: `:${emoji.names[0]}:${vcode ? `:${vcode.names[0]}:` : ''}`,
+				source: this.i18n.t('tooltip.emoji', 'Emoji - {category}', {category})
+			};
+
+			return out;
+		}
+
+		if ( emote.provider !== 'ffz' )
+			throw new Error('Invalid provider');
 
 		// Try to get the emote set.
 		const emote_set = this.emotes.emote_sets[emote.set],
@@ -205,6 +388,7 @@ export default class EmoteCard extends Module {
 
 		const out = {
 			id: data.id,
+			fav_source: emote_set.source ?? 'ffz',
 			more: [],
 			src: data.animSrc2 ?? data.src2,
 			srcSet: data.animSrcSet2 ?? data.srcSet2,
@@ -215,18 +399,21 @@ export default class EmoteCard extends Module {
 			owner: data.owner
 				? (data.owner.display_name || data.owner.name)
 				: null,
-			ownerLink: data.owner
+			ownerLink: data.owner && ! emote_set.source
 				? `https://www.frankerfacez.com/${data.owner.name}`
 				: null,
 			artist: data.artist
 				? (data.artist.display_name || data.artist.name)
 				: null,
-			artistLink: data.artist
+			artistLink: data.artist && ! emote_set.source
 				? `https://www.frankerfacez.com/${data.artist.name}`
 				: null,
 		};
 
 		if ( ! emote_set.source ) {
+			if ( data.public )
+				out.body = 'manage-ffz';
+
 			out.more.push({
 				type: 'link',
 				title_i18n: 'emote-card.view-on-ffz',
@@ -240,15 +427,24 @@ export default class EmoteCard extends Module {
 				title: 'Report Emote',
 				icon: 'ffz-i-flag'
 			});
+
+		} else if ( data.click_url ) {
+			out.more.push({
+				type: 'link',
+				title_i18n: 'emote-card.view-external',
+				title: 'View on {source}',
+				source: emote_set.source,
+				href: data.click_url
+			});
 		}
 
 		return out;
 	}
 
 
-	async openCard(emote, event) {
+	async openCard(emote, modifiers, event) {
 
-		const card_key = `${emote.provider}::${emote.id}`,
+		const card_key = `${emote.provider}::${emote.id}::${modifiers ?? ''}`,
 			old_card = this.open_cards[card_key];
 
 		if ( old_card ) {
@@ -283,11 +479,12 @@ export default class EmoteCard extends Module {
 			pos_x,
 			pos_y,
 			emote,
+			modifiers,
 			data
 		);
 	}
 
-	buildCard(pos_x, pos_y, emote, data) {
+	buildCard(pos_x, pos_y, emote, modifiers, data) {
 		let child;
 
 		const component = new this.vue.Vue({
@@ -295,9 +492,11 @@ export default class EmoteCard extends Module {
 			render: h => h('emote-card', {
 				props: {
 					raw_emote: deep_copy(emote),
+					raw_modifiers: modifiers,
 					data: data,
 
 					getFFZ: () => this,
+					reportTwitchEmote: (...args) => this.reportTwitchEmote(...args),
 					getZ: () => ++this.last_z
 				},
 
@@ -312,7 +511,7 @@ export default class EmoteCard extends Module {
 						if ( this.last_card === child )
 							this.last_card = null;
 
-						const card_key = `${emote.provider}::${emote.id}`;
+						const card_key = `${emote.provider}::${emote.id}::${modifiers ?? ''}`;
 						if ( this.open_cards[card_key] === child )
 							this.open_cards[card_key] = null;
 

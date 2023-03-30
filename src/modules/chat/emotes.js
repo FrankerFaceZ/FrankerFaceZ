@@ -933,7 +933,7 @@ export default class Emotes extends Module {
 		else if ( ! value && idx !== -1 )
 			favorites.splice(idx, 1);
 		else
-			return;
+			return value;
 
 		if ( favorites.length )
 			p.set(key, favorites);
@@ -941,6 +941,7 @@ export default class Emotes extends Module {
 			p.delete(key);
 
 		this.emit(':change-favorite', source, id, value);
+		return value;
 	}
 
 	isFavorite(source, id) {
@@ -1075,11 +1076,21 @@ export default class Emotes extends Module {
 		if ( favorite_only )
 			return false;
 
+		let modifiers;
+		try {
+			modifiers = JSON.parse(ds.modifierInfo);
+		} catch(err) {
+			/* no-op */
+		}
+
 		const evt = new FFZEvent({
 			provider,
 			id: ds.id,
 			set: ds.set,
+			code: ds.code,
+			variant: ds.variant,
 			name: ds.name || target.alt,
+			modifiers,
 			source: event
 		});
 
@@ -1680,7 +1691,7 @@ export default class Emotes extends Module {
 			animSrc2: emote.animSrc2,
 			animSrcSet2: emote.animSrcSet2,
 			masked: !! emote.mask,
-			hidden: (emote.modifier_flags & 1) === 1,
+			mod_hidden: (emote.modifier_flags & 1) === 1,
 			text: emote.hidden ? '???' : emote.name,
 			length: emote.name.length,
 			height: emote.height,

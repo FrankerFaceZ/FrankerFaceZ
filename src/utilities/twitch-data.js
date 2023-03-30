@@ -284,6 +284,58 @@ export default class TwitchData extends Module {
 		return get('data.user.self', data);
 	}
 
+
+	async getUserFollowed(id, login) {
+		const data = await this.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './data/user-followed.gql'),
+			{ id, login }
+		);
+
+		return get('data.user.self.follower', data);
+	}
+
+
+	async followUser(channel_id, disable_notifications = false) {
+		channel_id = String(channel_id);
+		disable_notifications = !! disable_notifications;
+
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/follow-user.gql'),
+			variables: {
+				input: {
+					targetID: channel_id,
+					disableNotifications: disable_notifications
+				}
+			}
+		});
+
+		console.log('result', data);
+		const err = get('data.followUser.error', data);
+		if ( err?.code )
+			throw new Error(err.code);
+
+		return get('data.followUser.follow', data);
+	}
+
+
+	async unfollowUser(channel_id, disable_notifications = false) {
+		channel_id = String(channel_id);
+		disable_notifications = !! disable_notifications;
+
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/unfollow-user.gql'),
+			variables: {
+				input: {
+					targetID: channel_id
+				}
+			}
+		});
+
+		console.log('result', data);
+		return get('data.unfollowUser.follow', data);
+	}
+
+
 	/**
 	 * Queries Apollo for the requested user's latest broadcast. One of (id, login) MUST be specified
 	 * @function getLastBroadcast

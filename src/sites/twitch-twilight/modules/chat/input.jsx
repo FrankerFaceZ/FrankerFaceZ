@@ -330,7 +330,6 @@ export default class Input extends Module {
 		this.on('chat.emotes:update-default-sets', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-user-sets', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-room-sets', this.uncacheTabCompletion, this);
-
 		this.on('site.css_tweaks:update-chat-css', this.resizeInput, this);
 	}
 
@@ -341,8 +340,11 @@ export default class Input extends Module {
 		}
 
 		if ( this.use_previews )
-			for(const inst of this.ChatInput.instances)
+			for(const inst of this.ChatInput.instances) {
 				inst.ffzInjectEmotes();
+				inst.forceUpdate();
+				this.emit('site:dom-update', 'chat-input', inst);
+			}
 	}
 
 	updateInput() {
@@ -460,8 +462,30 @@ export default class Input extends Module {
 			if ( outer ) {
 				outer.style.width = w;
 				outer.style.height = h;
+
+				if ( ! outer._ffz_click_handler ) {
+					outer._ffz_click_handler = this.previewClick.bind(this, emote.id, emote_set.id, emote.name);
+					outer.addEventListener('click', outer._ffz_click_handler);
+				}
 			}
 		}
+	}
+
+	previewClick(id, set, name, evt) {
+		const fe = new FFZEvent({
+			provider: 'ffz',
+			id,
+			set,
+			name,
+			source: evt
+		});
+
+		this.emit('chat.emotes:click', fe);
+		if ( ! fe.defaultPrevented )
+			return;
+
+		evt.preventDefault();
+		evt.stopImmediatePropagation();
 	}
 
 	removePreviewObserver(inst) {
@@ -505,6 +529,11 @@ export default class Input extends Module {
 				this.props.emotes.splice(idx, 1, data);
 			else if ( idx !== -1 && ! data )
 				this.props.emotes.splice(idx, 1);
+			else
+				return;
+
+			// Make a copy, so that React reacts.
+			this.props.emotes = [...this.props.emotes];
 		}
 
 		inst.componentDidUpdate = function(props, ...args) {

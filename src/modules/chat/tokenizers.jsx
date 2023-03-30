@@ -1260,7 +1260,7 @@ export const AddonEmotes = {
 				if ( mod.effect_bg )
 					as_bg = true;
 
-				if ( ! mod.hidden && mod.set !== 'info' ) {
+				if ( ! mod.mod_hidden && mod.set !== 'info' ) {
 					const factor = mod.big ? 2 : 1,
 						width = mod.width * factor,
 						height = mod.height * factor;

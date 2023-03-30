@@ -17,7 +17,7 @@
 			<label :for="item.full_key" class="ffz-checkbox__label">
 				<span class="tw-mg-l-1">
 					{{ item.i18n_key ? t(item.i18n_key, item.title) : item.title }}
-					<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+					<span v-if="unseen" class="ffz-pill ffz-pill--success">{{ t('setting.new', 'New') }}</span>
 				</span>
 			</label>
 
