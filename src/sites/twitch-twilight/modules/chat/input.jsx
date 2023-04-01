@@ -532,8 +532,9 @@ export default class Input extends Module {
 			else
 				return;
 
-			// Make a copy, so that React reacts.
-			this.props.emotes = [...this.props.emotes];
+			// TODO: Somehow update other React state to deal with our
+			// injected changes. Making a shallow copy of the array
+			// runs too frequently.
 		}
 
 		inst.componentDidUpdate = function(props, ...args) {
