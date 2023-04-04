@@ -19,10 +19,9 @@ const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
 // Describes how an emote matches against a given input
 // Higher values represent a more exact match
 const NO_MATCH = 0;
-const SUBSTRING_MATCH = 1;
-const NON_PREFIX_MATCH = 2;
-const CASE_INSENSITIVE_PREFIX_MATCH = 3;
-const EXACT_PREFIX_MATCH = 4;
+const NON_PREFIX_MATCH = 1;
+const CASE_INSENSITIVE_PREFIX_MATCH = 2;
+const EXACT_PREFIX_MATCH = 3;
 
 function getNodeText(node) {
 	if ( ! node )
@@ -826,12 +825,8 @@ export default class Input extends Module {
 			if (emote_lower.startsWith(term_lower))
 				return CASE_INSENSITIVE_PREFIX_MATCH;
 
-			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
-			if (idx !== -1 && emote_lower.slice(idx + 1).startsWith(term_lower.slice(1)))
-				return NON_PREFIX_MATCH;
-
 			if (emote_lower.includes(term_lower))
-				return SUBSTRING_MATCH;
+				return NON_PREFIX_MATCH;
 
 			return NO_MATCH;
 		}
