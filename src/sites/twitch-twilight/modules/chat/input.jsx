@@ -828,13 +828,13 @@ export default class Input extends Module {
 			const term_lower = term.toLowerCase();
 			const termPosition = emote_lower.search(term_lower);
 			
-			if (termPosition == 0)
+			if (termPosition === 0)
 				return CASE_INSENSITIVE_PREFIX_MATCH;
 
 			if (isUpperChar(emote_name.charAt(termPosition)))
 				return CAPITALIZED_SECTION_MATCH;
 
-			if (termPosition != -1)
+			if (termPosition !== -1)
 				return SUBSTRING_MATCH;
 
 			return NO_MATCH;
@@ -1047,7 +1047,7 @@ export default class Input extends Module {
 					results_usage.push(element);
 				else if ( match_type >= CASE_INSENSITIVE_PREFIX_MATCH )
 					results_prefix.push(element);
-				else if ( match_type == CAPITALIZED_SECTION_MATCH )
+				else if ( match_type === CAPITALIZED_SECTION_MATCH )
 					results_capitalized.push(element);
 				else
 					results_other.push(element);
