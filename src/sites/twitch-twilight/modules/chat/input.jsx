@@ -826,7 +826,7 @@ export default class Input extends Module {
 			if ( ! emote_lower )
 				emote_lower = emote_name.toLowerCase();
 			const term_lower = term.toLowerCase();
-			const termPosition = emote_lower.search(term_lower);
+			const termPosition = emote_lower.indexOf(term_lower);
 			
 			if (termPosition === 0)
 				return CASE_INSENSITIVE_PREFIX_MATCH;
