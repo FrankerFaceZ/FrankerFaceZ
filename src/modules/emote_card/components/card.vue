@@ -21,7 +21,7 @@
 							>
 						</figure>
 					</div>
-					<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-x-1 tw-mg-y-05 viewer-card__display-name">
+					<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-l-1 tw-mg-y-05 viewer-card__display-name">
 						<h4 class="tw-inline tw-ellipsis" :title="emote ? emote.name : raw_emote.name">
 							{{ emote ? emote.name : raw_emote.name }}
 						</h4>
@@ -76,7 +76,7 @@
 						v-if="canFavorite"
 						:data-title="favoriteLabel"
 						:aria-label="favoriteLabel"
-						class="viewer-card-drag-cancel tw-align-self-start tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
+						class="tw-flex-shrink-0 viewer-card-drag-cancel tw-align-self-start tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative ffz-tooltip"
 						@click="toggleFavorite"
 					>
 						<span class="tw-button-icon__icon">

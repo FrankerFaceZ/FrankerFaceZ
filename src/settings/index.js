@@ -110,7 +110,7 @@ export default class SettingsManager extends Module {
 		this.filters = {};
 
 		for(const key in FILTERS)
-			if ( has(FILTERS, key) )
+			if ( has(FILTERS, key) && FILTERS[key] )
 				this.filters[key] = FILTERS[key];
 
 
@@ -247,8 +247,28 @@ export default class SettingsManager extends Module {
 	}
 
 
+	async createMonitorUpdate() {
+		const Monitor = FILTERS?.Monitor;
+		if ( ! Monitor || Monitor.details !== undefined )
+			return;
+
+		Monitor.details = null;
+		try {
+			Monitor.details = await window.getScreenDetails();
+			Monitor.details.addEventListener('currentscreenchange', () => {
+				for(const context of this.__contexts)
+					context.selectProfiles();
+			});
+
+		} catch(err) {
+			this.log.error('Unable to get monitor details', err);
+			Monitor.details = false;
+		}
+	}
+
+
 	updateClock() {
-		const captured = require('./filters').Time.captured();
+		const captured = FILTERS?.Time?.captured?.();
 		if ( ! captured?.length )
 			return;
 
@@ -918,7 +938,19 @@ export default class SettingsManager extends Module {
 
 
 	_saveProfiles() {
-		this.provider.set('profiles', this.__profiles.filter(prof => ! prof.ephemeral).map(prof => prof.data));
+		const out = this.__profiles.filter(prof => ! prof.ephemeral).map(prof => prof.data);
+
+		// Ensure that we always have a non-ephemeral profile.
+		if ( ! out ) {
+			this.createProfile({
+				name: 'Default Profile',
+				i18n_key: 'setting.profiles.default',
+				description: 'Settings that apply everywhere on Twitch.'
+			});
+			return;
+		}
+
+		this.provider.set('profiles', out);
 		for(const context of this.__contexts)
 			context.selectProfiles();
 

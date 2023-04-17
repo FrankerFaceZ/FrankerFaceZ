@@ -746,8 +746,10 @@ export default {
 			if ( this.$refs.key_meta.checked )
 				i |= 8;
 
-			this.edit_data.display.hover = this.$refs.key_hover.checked;
 			this.edit_data.display.keys = i;
+
+			if ( this.has_hover_modifier )
+				this.edit_data.display.hover = this.$refs.key_hover.checked;
 		},
 
 		edit() {

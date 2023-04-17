@@ -1212,7 +1212,7 @@ export default class EmoteMenu extends Module {
 				requestAnimationFrame(() => {
 					const el = this.nav_ref?.querySelector?.(`button[data-key="${this.state.active_nav}"]`);
 					if ( el )
-						el.scrollIntoView({block: 'nearest'});
+						el.scrollIntoView({block: 'nearest', inline: 'start'});
 				});
 			}
 
@@ -1342,7 +1342,7 @@ export default class EmoteMenu extends Module {
 				const el = this.ref?.querySelector?.(`section[data-key="${key}"]`);
 				if ( el ) {
 					this.lock_active = true;
-					el.scrollIntoView();
+					el.scrollIntoView({block: 'nearest', inline: 'start'});
 					this.setState({
 						active_nav: key
 					});
@@ -1381,7 +1381,7 @@ export default class EmoteMenu extends Module {
 						el = set && this.ref?.querySelector?.(`section[data-key="${set.key}"]`);
 
 					if ( el )
-						el.scrollIntoView();
+						el.scrollIntoView({block: 'nearest', inline: 'start'});
 
 					return;
 				}

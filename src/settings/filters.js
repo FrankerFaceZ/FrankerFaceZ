@@ -37,6 +37,21 @@ export const Invert = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
 };
 
+export const And = {
+	createTest(config, rule_types, rebuild) {
+		return createTester(config, rule_types, false, false, rebuild);
+	},
+
+	childRules: true,
+
+	tall: true,
+	title: 'And',
+	i18n: 'settings.filter.and',
+
+	default: () => [],
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
+};
+
 export const Or = {
 	createTest(config, rule_types, rebuild) {
 		return createTester(config, rule_types, false, true, rebuild);
@@ -83,7 +98,7 @@ export const Constant = {
 	default: true,
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
-}
+};
 
 
 // Context Stuff
@@ -375,3 +390,53 @@ export const Title = {
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/title.vue')
 };
+
+// Monitor Stuff
+
+export let Monitor = null;
+
+if ( window.getScreenDetails ) {
+
+	Monitor = {
+		_used: false,
+		details: undefined,
+
+		used: () => {
+			const out = Monitor._used;
+			Monitor._used = false;
+			return out;
+		},
+
+		createTest(config = {}, _, reload) {
+			if ( ! config.label )
+				return () => false;
+
+			Monitor._used = true;
+			if ( Monitor.details === undefined )
+				FrankerFaceZ.get().resolve('settings').createMonitorUpdate().then(() => {
+					reload();
+				});
+
+			return () => {
+				Monitor._used = true;
+				const details = Monitor.details,
+					screen = details?.currentScreen;
+
+				if ( ! screen )
+					return false;
+
+				return screen.label === config.label;
+			};
+		},
+
+		default: () => ({
+			label: null
+		}),
+
+		title: 'Current Monitor',
+		i18n: 'settings.filter.monitor',
+
+		editor: () => import(/* webpackChunkName: 'main-menu' */ './components/monitor.vue')
+	};
+
+}

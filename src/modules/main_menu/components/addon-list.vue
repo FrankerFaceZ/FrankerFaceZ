@@ -63,6 +63,16 @@
 			/>
 		</div>
 
+		<div v-if="ready && visible_addons.length !== listed_addons.length" class="tw-align-center tw-pd-1">
+			{{ t('addon.displaying', 'Displaying {visible, number} of {total, plural, one {# add-on} other {# add-ons} }.', {
+				visible: visible_addons.length,
+				total: listed_addons.length
+			}) }}
+			<template v-if="filter && filter.length">
+				{{ t('addon.displaying.filtered', 'The visible add-ons are being filtered by your search. Clear it to view all available add-ons.') }}
+			</template>
+		</div>
+
 		<div v-if="visible_unlisted" class="tw-flex tw-align-items-center">
 			<div class="tw-flex-grow-1" />
 			<div
@@ -134,6 +144,10 @@ export default {
 
 		visible_addons() {
 			return this.sorted_addons.filter(addon => this.shouldShow(addon));
+		},
+
+		listed_addons() {
+			return this.sorted_addons.filter(addon => ! addon.unlisted)
 		},
 
 		sorted_addons() {

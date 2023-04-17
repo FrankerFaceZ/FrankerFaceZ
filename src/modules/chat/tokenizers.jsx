@@ -22,7 +22,8 @@ const SHRINK_X = MODIFIER_FLAGS.ShrinkX,
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	//WHITESPACE = /^\s*$/,
 	//LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
-	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
+	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*[^\.!,?])?))/g,
+	//OLD_NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
 	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
 	MENTION_REGEX = /^(['"*([{<\\/]*)(@)((?:[^\u0000-\u007F]|[\w-])+)(?:\b|$)/; // eslint-disable-line no-control-regex
 
@@ -1275,9 +1276,9 @@ export const AddonEmotes = {
 			if ( effects ) {
 				this.emotes.ensureEffect(effects);
 
-				if ( (effects & SHRINK_X) === SHRINK_X )
+				if ( (effects & SHRINK_X) === SHRINK_X && this.emotes.effects_enabled?.ShrinkX )
 					style.width *= 0.5;
-				if ( (effects & STRETCH_X) === STRETCH_X )
+				if ( (effects & STRETCH_X) === STRETCH_X && this.emotes.effects_enabled?.GrowX )
 					style.width *= 2;
 				/*if ( (effects  & SHRINK_Y) === SHRINK_Y )
 					style.height *= 0.5;
@@ -1538,11 +1539,11 @@ export const AddonEmotes = {
 
 					let changed = false;
 
-					if ( (effects & SHRINK_X) === SHRINK_X ) {
+					if ( (effects & SHRINK_X) === SHRINK_X && this.emotes.effects_enabled?.ShrinkX ) {
 						style.width *= 0.5;
 						changed = true;
 					}
-					if ( (effects & STRETCH_X) === STRETCH_X ) {
+					if ( (effects & STRETCH_X) === STRETCH_X && this.emotes.effects_enabled?.GrowX ) {
 						style.width *= 2;
 						changed = true;
 					}
