@@ -366,7 +366,7 @@ export default class ChatLine extends Module {
 			this.updateLines();
 		});
 
-		this.on('experiments:changed:line_renderer', () => {
+		/*this.on('experiments:changed:line_renderer', () => {
 			const value = this.experiments.get('line_renderer'),
 				cls = this.ChatLine._class;
 
@@ -379,7 +379,7 @@ export default class ChatLine extends Module {
 
 				this.rerenderLines();
 			}
-		});
+		});*/
 
 		for(const setting of RERENDER_SETTINGS)
 			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
@@ -1095,7 +1095,7 @@ other {# messages were deleted by a moderator.}
 				}
 			} };
 
-			cls.prototype.ffzOldRender = function() { try {
+			/*cls.prototype.ffzOldRender = function() { try {
 				this._ffz_no_scan = true;
 
 				const types = t.parent.message_types || {},
@@ -1238,7 +1238,7 @@ other {# messages were deleted by a moderator.}
 							if ( ds && ds.user ) {
 								try {
 									target_user = JSON.parse(ds.user);
-								} catch(err) { /* nothing~! */ }
+								} catch(err) { /* nothing~! * / }
 							}
 
 							const fe = new FFZEvent({
@@ -1691,11 +1691,13 @@ other {# messages were deleted by a moderator.}
 
 					return 'An error occurred rendering this chat line.';
 				}
-			} }
+			} } */
 
-			cls.prototype.render = this.experiments.get('line_renderer')
+			/*cls.prototype.render = this.experiments.get('line_renderer')
 				? cls.prototype.ffzNewRender
-				: cls.prototype.ffzOldRender;
+				: cls.prototype.ffzOldRender;*/
+
+			cls.prototype.render = cls.prototype.ffzNewRender;
 
 			// Do this after a short delay to hopefully reduce the chance of React
 			// freaking out on us.

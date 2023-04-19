@@ -1691,6 +1691,45 @@ export default class ChatHook extends Module {
 						} */ else if ( msg.type === types.Moderation ) {
 							t.emit('chat:mod-user', msg.moderationType, msg.userLogin, msg.targetMessageID, msg);
 
+							// Special handling
+							if ( ! inst.props.isCurrentUserModerator ) {
+								const type = msg.moderationType,
+									target = msg.userLogin;
+
+								// Whee~
+								let mat;
+								if ( type === mod_types.Ban )
+									mat = 'ban';
+								else if ( type === mod_types.Timeout )
+									mat = 'timeout';
+								else if ( type === mod_types.Delete )
+									mat = 'delete';
+
+								if ( mat )
+									msg.moderationActionType = mat;
+
+								// Handle moderation events ourself if it's not
+								// a delete, so that we can pass the action info.
+								if ( ! inst.moderatedUsers.has(target) && type !== mod_types.Delete ) {
+									inst.moderateBuffers(
+										[
+											inst.buffer,
+											inst.delayedMessageBuffer.map(e => e.event)
+										],
+										target,
+										msg
+									);
+
+									inst.delayedMessageBuffer.push({
+										event: msg,
+										time: Date.now(),
+										shouldDelay: false
+									});
+
+									return;
+								}
+							}
+
 						} /*else if ( msg.type === types.ModerationAction && false && inst.markUserEventDeleted && inst.unsetModeratedUser ) {
 							if ( !((! msg.level || ! msg.level.length) && msg.targetUserLogin && msg.targetUserLogin === inst.props.currentUserLogin) ) {
 								//t.log.info('Moderation Action', msg);
@@ -2159,7 +2198,25 @@ export default class ChatHook extends Module {
 					inst.addMessage({
 						type: t.chat_types.Notice,
 						message: 'The /ffz command is not yet re-implemented.'
-					})
+					});
+
+					return false;
+				}
+
+				if ( msg === '/reconnect' ) {
+					if ( ! inst.client?.reconnect )
+						inst.addMessage({
+							type: t.chat_types.Notice,
+							message: t.i18n.t('chat.reconnect.unable', 'FFZ is unable to force chat to reconnect.')
+						});
+					else {
+						inst.addMessage({
+							type: t.chat_types.Notice,
+							message: t.i18n.t('chat.reconnect', 'FFZ is forcing chat to reconnect...')
+						});
+
+						inst.client.reconnect();
+					}
 
 					return false;
 				}

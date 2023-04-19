@@ -2056,11 +2056,12 @@ export default class Chat extends Module {
 		const want_mid = this.context.get('chat.rich.want-mid');
 
 		for(const token of tokens) {
-			for(const provider of providers)
-				if ( provider.test.call(this, token, msg) ) {
-					token.hidden = provider.can_hide_token && (this.context.get('chat.rich.hide-tokens') || provider.hide_token);
-					return provider.process.call(this, token, want_mid);
-				}
+			if ( token.allow_rich )
+				for(const provider of providers)
+					if ( provider.test.call(this, token, msg) ) {
+						token.hidden = provider.can_hide_token && (this.context.get('chat.rich.hide-tokens') || provider.hide_token);
+						return provider.process.call(this, token, want_mid);
+					}
 		}
 	}
 
