@@ -1038,6 +1038,39 @@ export default class ChatHook extends Module {
 		this.updateLineBorders();
 		//this.updateMentionCSS();
 
+		this.on('chat:get-tab-commands', e => {
+			e.commands.push({
+				name: 'reconnect',
+				description: 'Force chat to reconnect.',
+				permissionLevel: 0,
+				ffz_group: 'FrankerFaceZ'
+			})
+		});
+
+		this.on('chat:pre-send-message', e => {
+			const msg = e.message,
+				inst = e._inst;
+
+			if ( ! /^\/reconnect ?/i.test(msg) )
+				return;
+
+			e.preventDefault();
+
+			if ( ! inst.client?.reconnect )
+				inst.addMessage({
+					type: t.chat_types.Notice,
+					message: t.i18n.t('chat.reconnect.unable', 'FFZ is unable to force chat to reconnect.')
+				});
+			else {
+				inst.addMessage({
+					type: t.chat_types.Notice,
+					message: t.i18n.t('chat.reconnect', 'FFZ is forcing chat to reconnect...')
+				});
+
+				inst.client.reconnect();
+			}
+		});
+
 		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);
 		this.RaidController.ready((cls, instances) => {
@@ -2203,29 +2236,12 @@ export default class ChatHook extends Module {
 					return false;
 				}
 
-				if ( msg === '/reconnect' ) {
-					if ( ! inst.client?.reconnect )
-						inst.addMessage({
-							type: t.chat_types.Notice,
-							message: t.i18n.t('chat.reconnect.unable', 'FFZ is unable to force chat to reconnect.')
-						});
-					else {
-						inst.addMessage({
-							type: t.chat_types.Notice,
-							message: t.i18n.t('chat.reconnect', 'FFZ is forcing chat to reconnect...')
-						});
-
-						inst.client.reconnect();
-					}
-
-					return false;
-				}
-
 				const event = new FFZEvent({
 					message: msg,
 					extra,
 					context: t.chat.context,
 					channel: inst.props.channelLogin,
+					_inst: inst,
 					addMessage,
 					sendMessage
 				});
