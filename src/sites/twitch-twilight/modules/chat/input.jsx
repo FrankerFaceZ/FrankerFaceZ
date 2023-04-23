@@ -151,6 +151,16 @@ export default class Input extends Module {
 			}
 		});
 
+		this.settings.add('chat.tab-complete.prefix-and-capitals-only', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >>  Tab Completion',
+				title: 'Only match emotes at start or at capitalized sections.',
+				description: 'Will only suggest emotes if the term resides at the start of the emote, or at a capital letter.',
+				component: 'setting-check-box'
+			}
+		});
+
 
 		// Components
 
@@ -1030,9 +1040,12 @@ export default class Input extends Module {
 
 			search = input.startsWith(':') ? input.slice(1) : input;
 
+		const only_match_starts = this.chat.context.get('chat.tab-complete.prefix-and-capitals-only');
+
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
-			if ( match_type !== NO_MATCH ) {
+			const valid_match = only_match_starts ? match_type > SUBSTRING_MATCH : match_type !== NO_MATCH;
+			if ( valid_match ) {
 				const element = {
 					current: input,
 					emote,
@@ -1080,8 +1093,13 @@ export default class Input extends Module {
 
 		const included = new Set;
 
-		for(const name in this.emoji.names)
-			if ( has_colon ? name === search : name.startsWith(search) ) {
+		const only_match_starts = this.chat.context.get('chat.tab-complete.prefix-and-capitals-only');
+
+		for(const name in this.emoji.names) {
+			const valid_match = has_colon && name === search ||
+				only_match_starts && name.startsWith(search) ||
+				! only_match_starts && name.includes(search);
+			if ( valid_match ) {
 				const emoji = this.emoji.emoji[this.emoji.names[name]],
 					toned = emoji.variants && emoji.variants[tone],
 					source = toned || emoji;
@@ -1110,6 +1128,7 @@ export default class Input extends Module {
 					});
 				}
 			}
+		}
 
 		return results;
 	}
@@ -1193,9 +1212,12 @@ export default class Input extends Module {
 		const search = input.startsWith(':') ? input.slice(1) : input,
 			results = [];
 
+		const only_match_starts = this.chat.context.get('chat.tab-complete.prefix-and-capitals-only');
+
 		for(const emote of emotes) {
-			const match_type = inst.doesEmoteMatchTerm(emote, search)
-			if ( match_type !== NO_MATCH )
+			const match_type = inst.doesEmoteMatchTerm(emote, search);
+			const valid_match = only_match_starts ? match_type > SUBSTRING_MATCH : match_type !== NO_MATCH;
+			if ( valid_match )
 				results.push({
 					current: input,
 					emote,
