@@ -35,6 +35,25 @@ const TONE_EMOJI = [
 	'love_you_gesture'
 ];
 
+
+function scrollIntoView(el, container) {
+	if ( ! container )
+		container = el.closest('.simplebar-scroll-content') ?? el.parentElement;
+
+	const height = container.offsetHeight,
+		el_height = el.offsetHeight,
+		el_top = el.offsetTop;
+
+	if ( el_height >= height ) {
+		container.scrollTop = el_top;
+		return;
+	}
+
+	const pos = el_top + (el_height / 2) - (height / 2);
+	container.scrollTop = pos;
+}
+
+
 function maybe_date(val) {
 	if ( ! val )
 		return val;
@@ -1212,7 +1231,8 @@ export default class EmoteMenu extends Module {
 				requestAnimationFrame(() => {
 					const el = this.nav_ref?.querySelector?.(`button[data-key="${this.state.active_nav}"]`);
 					if ( el )
-						el.scrollIntoView({block: 'nearest', inline: 'start'});
+						scrollIntoView(el);
+						//el.scrollIntoView({block: 'nearest', inline: 'start'});
 				});
 			}
 
@@ -1342,7 +1362,8 @@ export default class EmoteMenu extends Module {
 				const el = this.ref?.querySelector?.(`section[data-key="${key}"]`);
 				if ( el ) {
 					this.lock_active = true;
-					el.scrollIntoView({block: 'nearest', inline: 'start'});
+					scrollIntoView(el);
+					//el.scrollIntoView({block: 'nearest', inline: 'start'});
 					this.setState({
 						active_nav: key
 					});
@@ -1381,7 +1402,8 @@ export default class EmoteMenu extends Module {
 						el = set && this.ref?.querySelector?.(`section[data-key="${set.key}"]`);
 
 					if ( el )
-						el.scrollIntoView({block: 'nearest', inline: 'start'});
+						scrollIntoView(el);
+						//el.scrollIntoView({block: 'nearest', inline: 'start'});
 
 					return;
 				}

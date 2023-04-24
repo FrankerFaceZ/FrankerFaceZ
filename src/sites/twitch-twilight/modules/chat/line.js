@@ -354,6 +354,7 @@ export default class ChatLine extends Module {
 
 		this.can_reprocess = true;
 
+		this.on('chat:reload-data', () => this.can_reprocess = true);
 		this.on('chat:room-add', () => this.can_reprocess = true);
 
 		this.on('load_tracker:complete:chat-data', () => {

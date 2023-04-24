@@ -639,6 +639,11 @@ export default class Emotes extends Module {
 
 		this.on('socket:command:follow_sets', this.updateFollowSets, this);
 
+		this.on('chat:reload-data', flags => {
+			if ( ! flags || flags.emotes )
+				this.loadGlobalSets();
+		});
+
 		this.loadGlobalSets();
 	}
 
@@ -1419,6 +1424,14 @@ export default class Emotes extends Module {
 	}
 
 	removeDefaultSet(provider, set_id) {
+		if ( ! set_id ) {
+			const sets = this.default_sets.get(provider);
+			if ( sets )
+				for(const set_id of Array.from(sets))
+					this.removeDefaultSet(provider, set_id);
+			return;
+		}
+
 		if ( typeof set_id === 'number' )
 			set_id = `${set_id}`;
 
@@ -1529,6 +1542,9 @@ export default class Emotes extends Module {
 		}
 
 		const sets = data.sets || {};
+
+		// Remove existing global sets, in case we have any.
+		this.removeDefaultSet('ffz-global');
 
 		for(const set_id of data.default_sets)
 			this.addDefaultSet('ffz-global', set_id);

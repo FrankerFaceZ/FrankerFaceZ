@@ -45,6 +45,52 @@ export function generateUUID(input) {
 }
 
 
+export function sortScreens(screens) {
+	screens.sort((a,b) => {
+		if ( a.left < b.left ) return -1;
+		if ( a.left > b.left ) return 1;
+		if ( a.top < b.top ) return -1;
+		if ( a.top > b.top ) return 1;
+		return 0;
+	});
+	return screens;
+}
+
+
+export function matchScreen(screens, options) {
+	let match = undefined;
+	let mscore = 0;
+
+	for(let i = 0; i < screens.length; i++) {
+		const mon = screens[i];
+		if ( mon.label !== options.label )
+			continue;
+
+		let score = 1;
+		if ( options.left && options.left === mon.left )
+			score += 15;
+		if ( options.top && options.top === mon.top )
+			score += 15;
+
+		if ( options.width && options.width === mon.width )
+			score += 10;
+
+		if ( options.height && options.height === mon.height )
+			score += 10;
+
+		if ( options.index )
+			score -= Math.abs(options.index - i);
+
+		if ( score > mscore ) {
+			match = mon;
+			mscore = score;
+		}
+	}
+
+	return match;
+}
+
+
 export function has(object, key) {
 	return object ? HOP.call(object, key) : false;
 }

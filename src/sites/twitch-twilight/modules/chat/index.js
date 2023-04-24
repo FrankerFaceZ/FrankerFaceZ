@@ -2161,7 +2161,7 @@ export default class ChatHook extends Module {
 		room = room.toLowerCase();
 
 		for(const inst of this.ChatService.instances) {
-			if ( inst.props.channelLogin.toLowerCase() === room ) {
+			if ( room === '*' || inst.props.channelLogin.toLowerCase() === room ) {
 				inst.addMessage({
 					type: this.chat_types.Notice,
 					message
@@ -2228,10 +2228,38 @@ export default class ChatHook extends Module {
 				msg = msg.replace(/\s+/g, ' ');
 
 				if ( msg.startsWith('/ffz') ) {
-					inst.addMessage({
-						type: t.chat_types.Notice,
-						message: 'The /ffz command is not yet re-implemented.'
+					msg = msg.slice(5).trim();
+					const idx = msg.indexOf(' ');
+					let subcmd;
+					if ( idx === -1 ) {
+						subcmd = msg;
+						msg = '';
+					} else {
+						subcmd = msg.slice(0, idx);
+						msg = msg.slice(idx + 1).trimStart();
+					}
+
+					const event = new FFZEvent({
+						command: subcmd,
+						message: msg,
+						extra,
+						context: t.chat.context,
+						channel: inst.props.channelLogin,
+						_inst: inst,
+						addMessage,
+						sendMessage
 					});
+
+					const topic = `chat:ffz-command:${subcmd}`,
+						listeners = t.listeners(topic);
+
+					if ( listeners?.length > 0 )
+						t.emit(topic, event);
+					else
+						inst.addMessage({
+							type: t.chat_types.Notice,
+							message: t.i18n.t('chat.ffz-command.invalid', 'No such command: /ffz {subcmd}', {subcmd})
+						});
 
 					return false;
 				}

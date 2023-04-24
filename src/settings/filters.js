@@ -4,7 +4,7 @@
 // Profile Filters for Settings
 // ============================================================================
 
-import {glob_to_regex, escape_regex} from 'utilities/object';
+import {glob_to_regex, escape_regex, matchScreen, sortScreens} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
 import { DEBUG } from 'utilities/constants';
 
@@ -425,7 +425,10 @@ if ( window.getScreenDetails ) {
 				if ( ! screen )
 					return false;
 
-				return screen.label === config.label;
+				const sorted = sortScreens(Array.from(details.screens)),
+					matched = matchScreen(sorted, config);
+
+				return matched === screen;
 			};
 		},
 

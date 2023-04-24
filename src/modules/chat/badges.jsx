@@ -185,6 +185,7 @@ export default class Badges extends Module {
 		this.inject('tooltips');
 		this.inject('experiments');
 		this.inject('staging');
+		this.inject('load_tracker');
 
 		this.style = new ManagedStyle('badges');
 
@@ -423,6 +424,11 @@ export default class Badges extends Module {
 
 		this.rebuildAllCSS();
 		this.loadGlobalBadges();
+
+		this.on('chat:reload-data', flags => {
+			if ( ! flags || flags.badges )
+				this.loadGlobalBadges();
+		});
 
 		this.tooltips.types.badge = (target, tip) => {
 			tip.add_class = 'ffz__tooltip--badges';
@@ -951,6 +957,8 @@ export default class Badges extends Module {
 
 
 	async loadGlobalBadges(tries = 0) {
+		this.load_tracker.schedule('chat-data', 'ffz-global-badges');
+
 		let response, data;
 
 		if ( this.experiments.getAssignment('api_load') && tries < 1 )
@@ -966,16 +974,20 @@ export default class Badges extends Module {
 				return setTimeout(() => this.loadGlobalBadges(tries), 500 * tries);
 
 			this.log.error('Error loading global badge data.', err);
+			this.load_tracker.notify('chat-data', 'ffz-global-badges', false);
 			return false;
 		}
 
-		if ( ! response.ok )
+		if ( ! response.ok ) {
+			this.load_tracker.notify('chat-data', 'ffz-global-badges', false);
 			return false;
+		}
 
 		try {
 			data = await response.json();
 		} catch(err) {
 			this.log.error('Error parsing global badge data.', err);
+			this.load_tracker.notify('chat-data', 'ffz-global-badges', false);
 			return false;
 		}
 
@@ -1017,6 +1029,7 @@ export default class Badges extends Module {
 
 		this.log.info(`Loaded ${badges} badges and assigned them to ${users} users.`);
 		this.buildBadgeCSS();
+		this.load_tracker.notify('chat-data', 'ffz-global-badges');
 	}
 
 

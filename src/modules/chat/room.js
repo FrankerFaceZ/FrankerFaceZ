@@ -314,10 +314,10 @@ export default class Room {
 
 		this.data = d;
 
+		this.removeAllSets('main');
+
 		if ( d.set )
 			this.addSet('main', d.set);
-		else
-			this.removeAllSets('main');
 
 		if ( data.sets )
 			for(const set_id in data.sets)

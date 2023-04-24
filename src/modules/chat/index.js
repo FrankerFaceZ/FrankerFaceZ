@@ -1263,6 +1263,44 @@ export default class Chat extends Module {
 		for(const key in LINK_PROVIDERS)
 			if ( has(LINK_PROVIDERS, key) )
 				this.addLinkProvider(LINK_PROVIDERS[key]);
+
+		this.on('chat:reload-data', flags => {
+			for(const room of this.iterateRooms())
+				room.load_data();
+		});
+
+		this.on('chat:get-tab-commands', event => {
+			event.commands.push({
+				name: 'ffz reload',
+				description: this.i18n.t('chat.command.reload', 'Reload FFZ and add-on chat data (emotes, badges, etc.)'),
+				permissionLevel: 0,
+				ffz_group: 'FrankerFaceZ'
+			});
+		});
+
+		this.triggered_reload = false;
+
+		this.on('chat:ffz-command:reload', event => {
+			if ( this.triggered_reload )
+				return;
+
+			const sc = this.resolve('site.chat');
+			if ( sc?.addNotice )
+				sc.addNotice('*', this.i18n.t('chat.command.reload.starting', 'FFZ is reloading data...'));
+
+			this.triggered_reload = true;
+			this.emit('chat:reload-data');
+		});
+
+		this.on('load_tracker:complete:chat-data', () => {
+			if ( this.triggered_reload ) {
+				const sc = this.resolve('site.chat');
+				if ( sc?.addNotice )
+					sc.addNotice('*', this.i18n.t('chat.command.reload.done', 'FFZ has finished reloading data.'));
+			}
+
+			this.triggered_reload = false;
+		});
 	}
 
 
