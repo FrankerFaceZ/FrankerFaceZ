@@ -101,7 +101,7 @@ textarea.ffz-input {
 	&--alert { background-color: var(--color-fill-alert) }
 	&--success { background-color: var(--color-fill-success) }
 	&--overlay {
-		background-color: var(--color-background-overlay);
+		background-color: var(--color-background-overlay-alt);
 		box-shadow: 0 0 0 1px var(--color-border-overlay);
 	}
 

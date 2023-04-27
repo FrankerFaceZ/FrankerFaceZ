@@ -4,7 +4,7 @@
 // Profile Filters for Settings
 // ============================================================================
 
-import {glob_to_regex, escape_regex, matchScreen, sortScreens} from 'utilities/object';
+import {glob_to_regex, escape_regex, matchScreen} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
 import { DEBUG } from 'utilities/constants';
 
@@ -412,10 +412,13 @@ if ( window.getScreenDetails ) {
 				return () => false;
 
 			Monitor._used = true;
-			if ( Monitor.details === undefined )
-				FrankerFaceZ.get().resolve('settings').createMonitorUpdate().then(() => {
-					reload();
-				});
+			if ( Monitor.details === undefined ) {
+				const FFZ = window.FrankerFaceZ ?? window.FFZBridge;
+				if ( FFZ )
+					FFZ.get().resolve('settings').createMonitorUpdate().then(() => {
+						reload();
+					});
+			}
 
 			return () => {
 				Monitor._used = true;
@@ -425,7 +428,7 @@ if ( window.getScreenDetails ) {
 				if ( ! screen )
 					return false;
 
-				const sorted = sortScreens(Array.from(details.screens)),
+				const sorted = details.screens, // sortScreens(Array.from(details.screens)),
 					matched = matchScreen(sorted, config);
 
 				return matched === screen;

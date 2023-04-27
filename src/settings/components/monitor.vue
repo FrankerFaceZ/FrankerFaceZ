@@ -25,7 +25,7 @@
 
 <script>
 
-import { sortScreens, matchScreen } from 'utilities/object';
+import { matchScreen } from 'utilities/object';
 
 let last_id = 0;
 
@@ -84,7 +84,7 @@ export default {
 					height: mon.height
 				});
 
-			sortScreens(this.monitors);
+			//sortScreens(this.monitors);
 			if ( this.value.data )
 				this.selected = matchScreen(this.monitors, this.value.data);
 

@@ -45,7 +45,7 @@ export function generateUUID(input) {
 }
 
 
-export function sortScreens(screens) {
+/*export function sortScreens(screens) {
 	screens.sort((a,b) => {
 		if ( a.left < b.left ) return -1;
 		if ( a.left > b.left ) return 1;
@@ -54,7 +54,7 @@ export function sortScreens(screens) {
 		return 0;
 	});
 	return screens;
-}
+}*/
 
 
 export function matchScreen(screens, options) {
