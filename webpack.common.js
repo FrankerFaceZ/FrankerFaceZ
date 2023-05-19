@@ -8,6 +8,7 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 const VERSION = semver.parse(require('./package.json').version);
 const PRODUCTION = process.env.NODE_ENV === 'production';
+const FOR_EXTENSION = !! process.env.FFZ_EXTENSION;
 
 const ENTRY_POINTS = {
 	bridge: './src/bridge.js',
@@ -36,7 +37,9 @@ module.exports = {
 		}
 	],
 	output: {
-		chunkFilename: '[name].[chunkhash].js',
+		chunkFilename: FOR_EXTENSION
+			? '[name].js'
+			: '[name].[chunkhash].js',
 		path: path.resolve(__dirname, 'dist'),
 		jsonpFunction: 'ffzWebpackJsonp',
 		crossOriginLoading: 'anonymous'
@@ -58,7 +61,10 @@ module.exports = {
 			__version_major__: VERSION.major,
 			__version_minor__: VERSION.minor,
 			__version_patch__: VERSION.patch,
-			__version_prerelease__: VERSION.prerelease
+			__version_prerelease__: VERSION.prerelease,
+			__extension__: FOR_EXTENSION
+				? JSON.stringify(process.env.FFZ_EXTENSION)
+				: false
 		}),
 	],
 	module: {
@@ -67,7 +73,9 @@ module.exports = {
 			use: [{
 				loader: 'file-loader',
 				options: {
-					name: PRODUCTION ? '[name].[hash].css' : '[name].css'
+					name: (! FOR_EXTENSION && PRODUCTION)
+						? '[name].[hash].css'
+						: '[name].css'
 				}
 			}, {
 				loader: 'extract-loader'
@@ -89,7 +97,9 @@ module.exports = {
 			type: 'javascript/auto',
 			loader: 'file-loader',
 			options: {
-				name: PRODUCTION ? '[name].[hash].json' : '[name].json'
+				name: (! FOR_EXTENSION && PRODUCTION)
+					? '[name].[hash].json'
+					: '[name].json'
 			}
 		},
 		{
@@ -123,7 +133,9 @@ module.exports = {
 			use: [{
 				loader: 'file-loader',
 				options: {
-					name: PRODUCTION ? '[name].[hash].[ext]' : '[name].[ext]'
+					name: (! FOR_EXTENSION && PRODUCTION)
+						? '[name].[hash].[ext]'
+						: '[name].[ext]'
 				}
 			}]
 		},

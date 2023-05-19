@@ -67,9 +67,11 @@ export default class LoadTracker extends Module {
 			data.success = true;
 
 		if ( ! data.pending.size ) {
-			this.log.debug('complete', type, Object.keys(data.timers));
+			const keys = Object.keys(data.timers);
+
+			this.log.debug('complete', type, keys);
 			if ( data.success )
-				this.emit(`:complete:${type}`);
+				this.emit(`:complete:${type}`, keys);
 			this.pending_loads.delete(type);
 		}
 	}

@@ -1271,7 +1271,7 @@ export default class Chat extends Module {
 
 		this.on('chat:get-tab-commands', event => {
 			event.commands.push({
-				name: 'ffz reload',
+				name: 'ffz:reload',
 				description: this.i18n.t('chat.command.reload', 'Reload FFZ and add-on chat data (emotes, badges, etc.)'),
 				permissionLevel: 0,
 				ffz_group: 'FrankerFaceZ'
@@ -1292,11 +1292,11 @@ export default class Chat extends Module {
 			this.emit('chat:reload-data');
 		});
 
-		this.on('load_tracker:complete:chat-data', () => {
+		this.on('load_tracker:complete:chat-data', (list) => {
 			if ( this.triggered_reload ) {
 				const sc = this.resolve('site.chat');
 				if ( sc?.addNotice )
-					sc.addNotice('*', this.i18n.t('chat.command.reload.done', 'FFZ has finished reloading data.'));
+					sc.addNotice('*', this.i18n.t('chat.command.reload.done', 'FFZ has finished reloading data. (Sources: {list})', {list: list.join(', ')}));
 			}
 
 			this.triggered_reload = false;

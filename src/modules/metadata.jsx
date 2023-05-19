@@ -361,6 +361,12 @@ export default class Metadata extends Module {
 					}
 				}
 
+				// Get the video element.
+				const video = maybe_call(player.getHTMLVideoElement, player);
+				stats.avOffset = 0;
+				if ( video?._ffz_context )
+					stats.avOffset = (video._ffz_context_offset ?? 0) + video._ffz_context.currentTime - video.currentTime;
+
 				let tampered = false;
 				try {
 					const url = player.core.state.path;
@@ -493,6 +499,14 @@ export default class Metadata extends Module {
 						stats
 					);
 
+				const desync = data.avOffset !== 0
+						? (<div>{this.i18n.t(
+							'metadata.player-stats.av-offset',
+							'A/V Offset: {avOffset, number} seconds',
+							stats
+						)}</div>)
+						: null;
+
 				if ( data.old )
 					return [
 						delayed,
@@ -510,6 +524,7 @@ export default class Metadata extends Module {
 						<div class="tw-pd-t-05">
 							{video_info}
 						</div>,
+						desync,
 						tampered
 					];
 
@@ -522,6 +537,7 @@ export default class Metadata extends Module {
 					<div class="tw-pd-t-05">
 						{video_info}
 					</div>,
+					desync,
 					tampered
 				];
 			}

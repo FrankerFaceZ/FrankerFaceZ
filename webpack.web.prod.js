@@ -12,13 +12,16 @@ const Terser = require('terser');
 // Get Git info
 
 const commit_hash = require('child_process').execSync('git rev-parse HEAD').toString().trim();
+const FOR_EXTENSION = !! process.env.FFZ_EXTENSION;
 
 /* global module Buffer */
 
 const minifier = content => {
-	const text = content.toString('utf8');
+	let text = content.toString('utf8');
+	if ( FOR_EXTENSION )
+		text = text.replace('__EXTENSION_PATH__', JSON.stringify(process.env.FFZ_EXTENSION));
 	const minified = Terser.minify(text);
-	return (minified && minified.code) ? Buffer.from(minified.code) : content;
+	return (minified && minified.code) ? Buffer.from(minified.code) : Buffer.from(text);
 };
 
 module.exports = merge(common, {
@@ -45,7 +48,9 @@ module.exports = merge(common, {
 		}),
 		new CopyPlugin([
 			{
-				from: './src/entry.js',
+				from: FOR_EXTENSION
+					? './src/entry_ext.js'
+					: './src/entry.js',
 				to: 'script.min.js',
 				transform: minifier
 			}
@@ -62,7 +67,11 @@ module.exports = merge(common, {
 	],
 
 	output: {
-		publicPath: '//cdn.frankerfacez.com/static/',
-		filename: '[name].[hash].js'
+		publicPath: FOR_EXTENSION
+			? process.env.FFZ_EXTENSION
+			: '//cdn.frankerfacez.com/static/',
+		filename: FOR_EXTENSION
+			? '[name].js'
+			: '[name].[hash].js'
 	}
 });

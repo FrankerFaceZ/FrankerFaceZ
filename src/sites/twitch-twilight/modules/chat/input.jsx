@@ -402,13 +402,24 @@ export default class Input extends Module {
 	}
 
 	checkForPreviews(inst, node) {
-		for(const el of node.querySelectorAll?.('span[data-a-target="chat-input-emote-preview"][aria-describedby]') ?? []) {
+		// We can't find the tooltip element directly (without digging into React tree at least)
+		// So instead just find the relevant images in the document. This shouldn't happen TOO
+		// frequently, with any luck, so the performance impact should be small.
+		if ( node.querySelector?.('span[data-a-target="chat-input-emote-preview"]') ) {
+			for(const target of document.querySelectorAll('.tw-tooltip-layer img.chat-line__message--emote')) {
+				if ( target && target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__') )
+					this.updatePreview(inst, target);
+			}
+		}
+
+		// This no longer works because they removed aria-describedby
+		/*for(const el of node.querySelectorAll?.('span[data-a-target="chat-input-emote-preview"][aria-describedby]') ?? []) {
 			const cont = document.getElementById(el.getAttribute('aria-describedby')),
 				target = cont && cont.querySelector('img.chat-line__message--emote');
 
 			if ( target && target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__') )
 				this.updatePreview(inst, target);
-		}
+		}*/
 
 		for(const target of node.querySelectorAll?.('img.chat-line__message--emote')) {
 			if ( target && (target.dataset.ffzId || target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__')) )

@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import { SERVER } from 'utilities/constants';
+import { EXTENSION, SERVER_OR_EXT } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
 import { timeout, has } from 'utilities/object';
 import { getBuster } from 'utilities/time';
@@ -69,15 +69,16 @@ export default class AddonManager extends Module {
 			off: (...args) => this.off(...args)
 		});
 
-		this.settings.add('addons.dev.server', {
-			default: false,
-			ui: {
-				path: 'Add-Ons >> Development',
-				title: 'Use Local Development Server',
-				description: 'Attempt to load add-ons from local development server on port 8001.',
-				component: 'setting-check-box'
-			}
-		});
+		if ( ! EXTENSION )
+			this.settings.add('addons.dev.server', {
+				default: false,
+				ui: {
+					path: 'Add-Ons >> Development',
+					title: 'Use Local Development Server',
+					description: 'Attempt to load add-ons from local development server on port 8001.',
+					component: 'setting-check-box'
+				}
+			});
 
 		this.on('i18n:update', this.rebuildAddonSearch, this);
 
@@ -151,9 +152,13 @@ export default class AddonManager extends Module {
 
 	async loadAddonData() {
 		const [cdn_data, local_data] = await Promise.all([
-			fetchJSON(`${SERVER}/script/addons.json?_=${getBuster(30)}`),
-			this.settings.get('addons.dev.server') ?
-				fetchJSON(`https://localhost:8001/script/addons.json?_=${getBuster()}`) : null
+			fetchJSON(`${SERVER_OR_EXT}/addons.json?_=${getBuster(30)}`),
+
+			// Do not attempt to load local add-ons if using the extension, as
+			// loading external code is against the policy of basically everyone.
+			(! EXTENSION && this.settings.get('addons.dev.server'))
+				? fetchJSON(`https://localhost:8001/script/addons.json?_=${getBuster()}`)
+				: null
 		]);
 
 		if ( Array.isArray(cdn_data) )
@@ -469,7 +474,7 @@ export default class AddonManager extends Module {
 		document.head.appendChild(createElement('script', {
 			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
-			src: addon.src || `${addon.dev ? 'https://localhost:8001' : SERVER}/script/addons/${addon.id}/script.js?_=${getBuster(30)}`,
+			src: addon.src || `${addon.dev ? 'https://localhost:8001/script' : SERVER_OR_EXT}/addons/${addon.id}/script.js?_=${getBuster(30)}`,
 			crossorigin: 'anonymous'
 		}));
 

@@ -2227,7 +2227,7 @@ export default class ChatHook extends Module {
 			inst.sendMessage = function(msg, extra) {
 				msg = msg.replace(/\s+/g, ' ');
 
-				if ( msg.startsWith('/ffz') ) {
+				if ( msg.startsWith('/ffz:') ) {
 					msg = msg.slice(5).trim();
 					const idx = msg.indexOf(' ');
 					let subcmd;
@@ -2258,7 +2258,7 @@ export default class ChatHook extends Module {
 					else
 						inst.addMessage({
 							type: t.chat_types.Notice,
-							message: t.i18n.t('chat.ffz-command.invalid', 'No such command: /ffz {subcmd}', {subcmd})
+							message: t.i18n.t('chat.ffz-command.invalid', 'No such command: /ffz:{subcmd}', {subcmd})
 						});
 
 					return false;
