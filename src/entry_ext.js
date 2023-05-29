@@ -21,5 +21,6 @@
 	script.async = true;
 	script.crossOrigin = 'anonymous';
 	script.src = `${SERVER}/${FLAVOR}.js?_=${Date.now()}`;
+	document.body.classList.add('ffz-ext');
 	document.head.appendChild(script);
 })();
