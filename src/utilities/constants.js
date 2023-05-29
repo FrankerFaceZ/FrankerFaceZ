@@ -4,7 +4,7 @@ import {make_enum} from 'utilities/object';
 
 
 export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev');
-export const EXTENSION = document.body.classList.contains('ffz-ext') && !!__extension__;
+export const EXTENSION = !!__extension__;
 export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com';
 export const SERVER_OR_EXT = EXTENSION
 	? __extension__
