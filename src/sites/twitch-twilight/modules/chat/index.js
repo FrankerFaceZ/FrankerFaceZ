@@ -192,7 +192,7 @@ export default class ChatHook extends Module {
 
 		this.ChatService = this.fine.define(
 			'chat-service',
-			n => n.join && n.connectHandlers,
+			n => n.join && n.client && n.props.setChatConnectionAPI,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -1251,7 +1251,7 @@ export default class ChatHook extends Module {
 				if ( state )
 					this.updateChatState(state);
 
-				inst.connectHandlers();
+				inst.addEventListeners();
 
 				inst.props.setChatConnectionAPI({
 					sendMessage: inst.sendMessage,
@@ -2209,7 +2209,7 @@ export default class ChatHook extends Module {
 	wrapChatService(cls) {
 		const t = this,
 			old_mount = cls.prototype.componentDidMount,
-			old_handler = cls.prototype.connectHandlers;
+			old_handler = cls.prototype.addEventListeners;
 
 		cls.prototype._ffz_was_here = true;
 
@@ -2295,7 +2295,7 @@ export default class ChatHook extends Module {
 		}
 
 
-		cls.prototype.connectHandlers = function(...args) {
+		cls.prototype.addEventListeners = function(...args) {
 			if ( ! this._ffz_init ) {
 				const i = this;
 
