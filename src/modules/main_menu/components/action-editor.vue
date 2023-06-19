@@ -509,6 +509,7 @@ export default {
 			out.push('snakecase');
 			out.push('slugify');
 			out.push('slugify(separator)');
+			out.push('urlencode');
 
 			return out.join(', ');
 		},
