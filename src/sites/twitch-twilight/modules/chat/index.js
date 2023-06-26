@@ -599,6 +599,21 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.hype.message-style', {
+			default: 1,
+			ui: {
+				path: 'Chat > Hype Chat >> Appearance',
+				title: 'Hype Chat Style',
+				component: 'setting-select-box',
+				description: '**Note**: Hype Chats that include messages will always have their messages displayed, regardless of setting. Changes made to this setting may not affect existing chat messages.',
+				data: [
+					{value: 0, title: 'Do Not Display'},
+					{value: 1, title: 'Standard Twitch (Large, Colored, Limited FFZ Support)'},
+					{value: 2, title: 'Minimal (Marked with System Message, No Colors)' }
+				]
+			}
+		});
+
 		this.settings.add('chat.subs.show', {
 			default: 3,
 			ui: {
@@ -1420,6 +1435,11 @@ export default class ChatHook extends Module {
 		this.subpump.on(':pubsub-message', event => {
 			if ( event.prefix !== 'community-points-channel-v1' || this.disable_handling )
 				return;
+
+			if ( event.prefix === 'pinned-chat-updates-v1' ) {
+				this.log.info('Pinned Chat', event);
+				return;
+			}
 
 			const service = this.ChatService.first,
 				message = event.message,
@@ -2357,6 +2377,43 @@ export default class ChatHook extends Module {
 					}
 
 					return old_state.call(i, e);
+				}
+
+				const old_pinned = this.onPinnedChatEvent;
+				this.onPinnedChatEvent = function(e) {
+					try {
+						const setting = t.chat.context.get('chat.hype.message-style');
+						if ( setting !== 1 ) {
+							// Drop messages with no message if we're not displaying them.
+							if ( e.isSystemMessage && setting === 0 )
+								return;
+
+							const out = i.convertMessage(e);
+							out.ffz_type = 'hype';
+							out.hype_amount = e.amount;
+							out.hype_canonical_amount = e.canonical_amount;
+							out.hype_currency = e.currency;
+							out.hype_exponent = e.exponent;
+							out.hype_level = e.level;
+
+							if ( e.isSystemMessage ) {
+								// Delete the message it comes with.
+								out.message = '';
+								out.messageBody = '';
+								out.messageParts = [];
+								e.message.body = '';
+							}
+
+							//t.log.info('Pinned Event', e, out);
+
+							return i.postMessageToCurrentChannel(e, out);
+						}
+
+					} catch(err) {
+						t.log.capture(err, {extra: e});
+					}
+
+					return old_pinned.call(i, e);
 				}
 
 				const old_resub = this.onResubscriptionEvent;

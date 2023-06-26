@@ -25,12 +25,18 @@
 					<option
 						v-for="(sample, idx) in samples"
 						:key="idx"
-						:selected="sample.data === message"
-						:value="sample.data"
+						:selected="sample.data === message && sample.topic === topic"
+						:value="idx"
 					>
 						{{ sample.name }}
 					</option>
 				</select>
+				<input
+					ref="topic"
+					class="tw-block tw-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p"
+					@blur="updateMessage"
+					@input="onMessageChange"
+				/>
 				<textarea
 					ref="message"
 					class="tw-block tw-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium"
@@ -220,14 +226,20 @@ export default {
 		const state = window.history.state;
 		const samples = deep_copy(LOADED_SAMPLES);
 		const message = state?.ffz_ct_message ?? samples[0].data;
+		const topic = state?.ffz_ct_topic ?? samples[0].topic ?? '';
 
 		let is_custom = true;
-		for(const item of samples) {
-			if (item.data === message) {
+		/*for(const item of samples) {
+			if ( ! item.topic )
+				item.topic = '';
+			if ( typeof item.data !== 'string' )
+				item.data = JSON.stringify(item.data, null, 4);
+
+			if (item.data === message && item.topic === topic) {
 				is_custom = false;
 				break;
 			}
-		}
+		}*/
 
 		return {
 			has_client: false,
@@ -235,6 +247,7 @@ export default {
 			samples,
 			is_custom,
 			message,
+			topic,
 
 			replay_fix: state?.ffz_ct_replay ?? true,
 			ignore_privmsg: state?.ffz_ct_privmsg ?? false,
@@ -250,6 +263,11 @@ export default {
 		message() {
 			if ( ! this.is_custom )
 				this.$refs.message.value = this.message;
+		},
+
+		topic() {
+			if ( ! this.is_custom )
+				this.$refs.topic.value = this.topic;
 		},
 
 		capture_chat() {
@@ -292,6 +310,7 @@ export default {
 
 	mounted() {
 		this.$refs.message.value = this.message;
+		this.$refs.topic.value = this.topic;
 	},
 
 	methods: {
@@ -336,8 +355,12 @@ export default {
 				has_loaded_samples = true;
 
 				for(const item of values) {
+					if ( ! item.topic )
+						item.topic = '';
 					if ( Array.isArray(item.data) )
 						item.data = item.data.join('\n\n');
+					else if ( typeof item.data !== 'string' )
+						item.data = JSON.stringify(item.data, null, 4);
 				}
 
 				LOADED_SAMPLES = values;
@@ -345,7 +368,7 @@ export default {
 
 				let is_custom = true;
 				for(const item of this.samples) {
-					if (item.data === this.message) {
+					if (item.data === this.message && item.topic === this.topic) {
 						is_custom = false;
 						break;
 					}
@@ -503,29 +526,34 @@ export default {
 		// Event Handlers
 
 		onSelectChange() {
-			const raw_value = this.$refs.selector.value;
+			const idx = this.$refs.selector.value,
+				item = this.samples[idx];
 
-			if ( raw_value && raw_value !== 'custom' ) {
-				this.message = raw_value;
+			if ( idx !== 'custom' && item?.data ) {
+				this.message = item.data;
+				this.topic = item.topic ?? '';
 				this.is_custom = false;
 			} else
 				this.is_custom = true;
 		},
 
 		updateMessage() {
-			const value = this.$refs.message.value;
+			const value = this.$refs.message.value,
+				topic = this.$refs.topic.value;
 
 			let is_custom = true;
 			for(const item of this.samples) {
-				if (item.data === value) {
+				if (item.data === value && item.topic === topic) {
 					is_custom = false;
 					break;
 				}
 			}
 
 			this.is_custom = is_custom;
-			if ( this.is_custom )
+			if ( this.is_custom ) {
+				this.topic = topic;
 				this.message = value;
+			}
 		},
 
 		onMessageChange() {
@@ -581,6 +609,26 @@ export default {
 		},
 
 		playMessage() {
+			// Check for PubSub
+			if ( this.topic.trim().length > 0 ) {
+				let data;
+				try {
+					data = JSON.parse(this.message);
+				} catch(err) {
+					console.error(err);
+					alert("Unable to parse message.");
+					return;
+				}
+
+				this.replayItem({
+					pubsub: true,
+					topic: this.topic,
+					data
+				});
+
+				return;
+			}
+
 			const msgs = [];
 			const parts = this.message.split(/\r?\n/g);
 
@@ -601,6 +649,18 @@ export default {
 		},
 
 		replayItem(item) {
+			if ( item.pubsub ) {
+				const channel = this.chat.ChatService.first?.props?.channelID;
+
+				if ( this.replay_fix ) {
+					item.topic = item.topic.replace(/<channel>/gi, channel);
+					// TODO: Crawl, replacing ids.
+					// TODO: Update timestamps for pinned chat?
+				}
+
+				this.chat.resolve('site.subpump').inject(item.topic, item.data);
+			}
+
 			if ( item.chat ) {
 				// While building the string, also build colors for the console log.
 				const out = [];

@@ -63,18 +63,21 @@ export default class MainMenu extends Module {
 		this.settings.addUI('backup', {
 			path: 'Data Management > Backup and Restore @{"profile_warning": false}',
 			component: 'backup-restore',
+			getExtraTerms: () => ['restore'],
 			getFFZ: () => this.resolve('core')
 		});
 
 		this.settings.addUI('clear', {
 			path: 'Data Management > Storage @{"profile_warning": false} >> tabs ~> Clear',
 			component: 'clear-settings',
+			getExtraTerms: () => ['reset'],
 			force_seen: true
 		});
 
 		this.settings.addUI('provider', {
 			path: 'Data Management > Storage >> tabs ~> Provider',
 			component: 'provider',
+			getExtraTerms: () => ['storage', 'local', 'indexeddb', 'localstorage'],
 			force_seen: true
 		});
 

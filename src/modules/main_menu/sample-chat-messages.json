@@ -25,5 +25,18 @@
 			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=f694b0fc-0b5e-4adf-8002-03dae340e9b5;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=1;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=corette0;msg-param-recipient-id=149790291;msg-param-recipient-user-name=corette0;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\scorette0!;tmi-sent-ts=1671302976767;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",
 			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=5893d8a8-5eb3-46d6-9737-f1b2b76400d4;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=2;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=yo_adg;msg-param-recipient-id=465861822;msg-param-recipient-user-name=yo_adg;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\syo_adg!;tmi-sent-ts=1671302976798;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold"
 		]
+	},
+	{
+		"name": "Hype Chat (Message)",
+		"data": "@badge-info=;badges=partner/1;color=#D6A3FF;display-name=GalaxyAUS;emotes=;first-msg=0;flags=;id=ab02f65f-c600-4e95-a97d-48163f686830;mod=0;pinned-chat-paid-amount=170;pinned-chat-paid-canonical-amount=170;pinned-chat-paid-currency=AUD;pinned-chat-paid-exponent=2;pinned-chat-paid-is-system-message=0;pinned-chat-paid-level=ONE;returning-chatter=0;room-id=29158331;subscriber=0;tmi-sent-ts=1687494193366;turbo=0;user-id=68458131;user-type= :galaxyaus!galaxyaus@galaxyaus.tmi.twitch.tv PRIVMSG #cardboard_cowboy :SCIENCE"
+	},
+	{
+		"name": "Hype Chat (No Message)",
+		"data": "@badge-info=;badges=;color=#00FF7F;display-name=옥메왁까;emotes=;first-msg=0;flags=;id=36999eea-314c-4bb8-8cc2-8be1175c3e31;mod=0;pinned-chat-paid-amount=7500;pinned-chat-paid-canonical-amount=7500;pinned-chat-paid-currency=KRW;pinned-chat-paid-exponent=0;pinned-chat-paid-is-system-message=1;pinned-chat-paid-level=TWO;returning-chatter=0;room-id=148057505;subscriber=0;tmi-sent-ts=1687458800209;turbo=0;user-id=184488771;user-type= :okmewaka!okmewaka@okmewaka.tmi.twitch.tv PRIVMSG #tmxk319 :User sent Hype Chat"
+	},
+	{
+		"name": "Hype Chat (PubSub)",
+		"topic": "pinned-chat-updates-v1.<channel>",
+		"data": {"type":"pin-message","data":{"id":"deea93ac-66c7-4500-aa38-d9cfb82f14bc","pinned_by":{"id":"128900149","display_name":"JailBreakRules"},"message":{"id":"deea93ac-66c7-4500-aa38-d9cfb82f14bc","sender":{"id":"128900149","display_name":"JailBreakRules","badges":[{"id":"subscriber","version":"12"},{"id":"glhf-pledge","version":"1"}],"chat_color":"#F31995"},"content":{"text":"xQc gets 70 cents off this lmfao","fragments":[{"text":"xQc gets 70 cents off this lmfao"}]},"type":"PAID","starts_at":1687737336,"updated_at":1687737336,"ends_at":1687737366,"sent_at":1687737336,"metadata":{"amount":"100","canonical-amount":"100","currency":"USD","exponent":"2","isSystemMessage":"false","level":"ONE"}}}}
 	}
 ]

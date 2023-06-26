@@ -46,6 +46,61 @@ export default class ChatLine extends Module {
 			}
 		};
 
+		this.line_types.hype = {
+			renderNotice: (msg, current_user, room, inst, e) => {
+				const setting = this.chat.context.get('chat.hype.message-style');
+				if ( setting === 0 )
+					return null;
+
+				// We need to get the message's tokens to see if it has a message or not.
+				const user = msg.user,
+					tokens = msg.ffz_tokens = msg.ffz_tokens || this.chat.tokenizeMessage(msg, current_user),
+					has_message = tokens.length > 0;
+
+				let amount = msg.hype_amount;
+				const digits = msg.hype_exponent ?? 0;
+				if ( digits > 0 )
+					amount /= Math.pow(10, digits);
+
+				try {
+					// TODO: Cache formatter?
+					const fmt = new Intl.NumberFormat(navigator.languages, {
+						style: 'currency',
+						currency: msg.hype_currency,
+						compactDisplay: 'short',
+						minimumFractionDigits: digits,
+						maximumFractionDigits: digits
+					});
+
+					amount = fmt.format(amount);
+
+				} catch(err) {
+					amount = `${msg.hype_currency} ${amount}`;
+				}
+
+				if (! has_message)
+					return this.i18n.tList('chat.hype-chat.user', '{user} sent a Hype Chat for {amount}!', {
+						amount,
+						user: e('span', {
+							role: 'button',
+							className: 'chatter-name',
+							onClick: inst.ffz_user_click_handler,
+							onContextMenu: this.actions.handleUserContext
+						}, e('span', {
+							className: 'tw-c-text-base tw-strong'
+						}, user.displayName))
+					});
+
+				return this.i18n.tList(
+					'chat.hype-chat',
+					'Sent a Hype Chat for {amount}!',
+					{
+						amount
+					}
+				)
+			}
+		};
+
 		this.line_types.cheer = {
 			renderNotice: (msg, current_user, room, inst, e) => {
 				return this.i18n.tList(

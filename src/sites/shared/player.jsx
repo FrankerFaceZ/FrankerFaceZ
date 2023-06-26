@@ -105,6 +105,21 @@ export default class PlayerBase extends Module {
 			changed: val => this.css_tweaks.toggle('player-fade-paused', val)
 		});
 
+		this.settings.add('player.disable-content-warnings', {
+			default: false,
+			ui: {
+				path: 'Player > General >> General',
+				title: 'Do not display content warnings.',
+				description: 'When this is enabled, FFZ will automatically skip content warnings. This feature is intended for use by adults only.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => {
+				for(const inst of this.Player.instances)
+					this.skipContentWarnings(inst);
+			}
+		});
+
 		if ( HAS_COMPRESSOR ) {
 			this.settings.add('player.compressor.enable', {
 				default: true,
@@ -1208,7 +1223,19 @@ export default class PlayerBase extends Module {
 		this.css_tweaks.toggleHide('player-ext', val === 2);
 	}
 
+	skipContentWarnings(inst) {
+		if ( ! this.settings.get('player.disable-content-warnings') )
+			return;
+
+		const cont = this.fine.getHostNode(inst),
+			btn = cont && cont.querySelector('button[data-a-target="content-classification-gate-overlay-start-watching-button"]');
+
+		if ( btn )
+			btn.click();
+	}
+
 	updateGUI(inst) {
+		this.skipContentWarnings(inst);
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
 		this.addCompressorButton(inst, false);

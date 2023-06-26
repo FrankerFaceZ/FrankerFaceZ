@@ -111,7 +111,8 @@ export const RERENDER_SETTINGS = [
 	'chat.filtering.display-mod-action',
 	'chat.replies.style',
 	'chat.bits.cheer-notice',
-	'chat.filtering.hidden-tokens'
+	'chat.filtering.hidden-tokens',
+	'chat.hype.message-style'
 ];
 
 export const UPDATE_BADGE_SETTINGS = [

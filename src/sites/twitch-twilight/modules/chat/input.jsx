@@ -72,6 +72,15 @@ export default class Input extends Module {
 
 		// Settings
 
+		this.settings.add('chat.hype.display-input', {
+			default: true,
+			ui: {
+				path: 'Chat > Hype Chat >> Input',
+				title: 'Allow the Hype Chat button to appear in the chat input element.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.inline-preview.enabled', {
 			default: true,
 			ui: {
@@ -203,6 +212,7 @@ export default class Input extends Module {
 	}
 
 	async onEnable() {
+		this.chat.context.on('changed:chat.hype.display-input', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.actions.room-above', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.tab-complete.emotes-without-colon', enabled => {
@@ -242,7 +252,15 @@ export default class Input extends Module {
 
 			cls.prototype.render = function() {
 				const out = old_render.call(this);
+
 				try {
+					const hide_hype = ! t.chat.context.get('chat.hype.display-input');
+					if ( hide_hype ) {
+						const frag = findReactFragment(out, n => n.key === 'paidPinnedMessage');
+						if ( frag )
+							frag.type = () => null;
+					}
+
 					const above = t.chat.context.get('chat.actions.room-above'),
 						state = t.chat.context.get('context.chat_state') || {},
 						container = above ? findReactFragment(out, n => n.props && Array.isArray(n.props.children))  : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');

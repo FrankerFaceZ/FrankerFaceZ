@@ -50,6 +50,8 @@ const CLASSES = {
 
 	'last-x-events': '.last-x-events_container',
 
+	'pinned-hype-chat': '.paid-pinned-chat-message-list',
+
 	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
 	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]',
 	'ci-shield-mode': '.chat-input__buttons-container > div:last-child button[class|="ScCoreButton"]:not([data-highlight-selector]):not([data-a-target])'
@@ -364,6 +366,16 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
+		this.settings.add('chat.hype.show-pinned', {
+			default: true,
+			ui: {
+				path: 'Chat > Hype Chat >> Appearance',
+				title: 'Allow Hype Chat messages to appear pinned at the top of chat.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('pinned-hype-chat', ! val)
+		});
+
 		this.settings.add('chat.bits.show', {
 			default: true,
 			ui: {
@@ -465,6 +477,8 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));
+
+		this.toggleHide('pinned-hype-chat', ! this.settings.get('chat.hype.show-pinned'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 		//this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
