@@ -18,10 +18,15 @@ const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
 
 // Describes how an emote matches against a given input
 // Higher values represent a more exact match
-const NO_MATCH = 0;
-const NON_PREFIX_MATCH = 1;
-const CASE_INSENSITIVE_PREFIX_MATCH = 2;
-const EXACT_PREFIX_MATCH = 3;
+const NO_MATCH = 0; // Search term doesn't exist in the emote's name
+const SUBSTRING_MATCH = 1; // Term exists somewhere in the emote's name
+const CAPITALIZED_SECTION_MATCH = 2; // Term exists at the start of a capitalized section in the emote
+const CASE_INSENSITIVE_PREFIX_MATCH = 3; // Term characters exist at the start of the emote's name
+const EXACT_PREFIX_MATCH = 4; // Term characters and casing exactly match the start of the emote
+
+function isUpperChar(char) {
+	return (char.length === 1) && (char !== char.toLocaleLowerCase());
+}
 
 function getNodeText(node) {
 	if ( ! node )
@@ -151,6 +156,16 @@ export default class Input extends Module {
 			ui: {
 				path: 'Chat > Input >> Tab Completion',
 				title: 'Prioritize emotes that start with user input.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.tab-complete.prefix-and-capitals-only', {
+			default: false,
+			ui: {
+				path: 'Chat > Input >>  Tab Completion',
+				title: 'Only match emotes at start or at capitalized sections.',
+				description: 'Will only suggest emotes if the term resides at the start of the emote, or at a capital letter.',
 				component: 'setting-check-box'
 			}
 		});
@@ -879,14 +894,17 @@ export default class Input extends Module {
 			let emote_lower = emote.tokenLower;
 			if ( ! emote_lower )
 				emote_lower = emote_name.toLowerCase();
-
 			const term_lower = term.toLowerCase();
-			if (emote_lower.startsWith(term_lower))
+			const termPosition = emote_lower.indexOf(term_lower);
+			
+			if (termPosition === 0)
 				return CASE_INSENSITIVE_PREFIX_MATCH;
 
-			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
-			if (idx !== -1 && emote_lower.slice(idx + 1).startsWith(term_lower.slice(1)))
-				return NON_PREFIX_MATCH;
+			if (isUpperChar(emote_name.charAt(termPosition)))
+				return CAPITALIZED_SECTION_MATCH;
+
+			if (termPosition !== -1)
+				return SUBSTRING_MATCH;
 
 			return NO_MATCH;
 		}
@@ -971,24 +989,11 @@ export default class Input extends Module {
 					else return 0 - bIsEmoji + aIsEmoji;
 				}
 
-				// Prefer case-sensitive prefix matches
-				const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
-				const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH);
-				if (aStartsWithInput && bStartsWithInput)
+				// Prefer highest match priority, then sort alphabetically
+				if (a.match_type !== b.match_type)
+					return b.match_type - a.match_type;
+				else
 					return locale.compare(aStr, bStr);
-				else if (aStartsWithInput) return -1;
-				else if (bStartsWithInput) return 1;
-
-				// Else prefer case-insensitive prefix matches
-				const aStartsWithInputCI = (a.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
-				const bStartsWithInputCI = (b.match_type === CASE_INSENSITIVE_PREFIX_MATCH);
-				if (aStartsWithInputCI && bStartsWithInputCI)
-					return localeCaseInsensitive.compare(aStr, bStr);
-				else if (aStartsWithInputCI) return -1;
-				else if (bStartsWithInputCI) return 1;
-
-				// Else alphabetize
-				return locale.compare(aStr, bStr);
 			}
 
 			// Keep unsorted order for non-favorite items if prefix matching is not enabled.
@@ -1088,14 +1093,18 @@ export default class Input extends Module {
 			return [];
 
 		const results_usage = [],
-			results_starting = [],
+			results_prefix = [],
+			results_capitalized = [],
 			results_other = [],
 
 			search = input.startsWith(':') ? input.slice(1) : input;
 
+		const only_match_starts = this.chat.context.get('chat.tab-complete.prefix-and-capitals-only');
+
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
-			if ( match_type !== NO_MATCH ) {
+			const valid_match = only_match_starts ? match_type > SUBSTRING_MATCH : match_type !== NO_MATCH;
+			if ( valid_match ) {
 				const element = {
 					current: input,
 					emote,
@@ -1108,18 +1117,21 @@ export default class Input extends Module {
 
 				if ( element.count > 0 )
 					results_usage.push(element);
-				else if ( match_type > NON_PREFIX_MATCH )
-					results_starting.push(element);
+				else if ( match_type >= CASE_INSENSITIVE_PREFIX_MATCH )
+					results_prefix.push(element);
+				else if ( match_type === CAPITALIZED_SECTION_MATCH )
+					results_capitalized.push(element);
 				else
 					results_other.push(element);
 			}
 		}
 
 		results_usage.sort((a,b) => b.count - a.count);
-		results_starting.sort((a,b) => locale.compare(a.replacement, b.replacement));
+		results_prefix.sort((a,b) => locale.compare(a.replacement, b.replacement));
+		results_capitalized.sort((a,b) => locale.compare(a.replacement, b.replacement));
 		results_other.sort((a,b) => locale.compare(a.replacement, b.replacement));
 
-		return results_usage.concat(results_starting).concat(results_other);
+		return results_usage.concat(results_prefix).concat(results_capitalized).concat(results_other);
 	}
 
 
@@ -1140,8 +1152,13 @@ export default class Input extends Module {
 
 		const included = new Set;
 
-		for(const name in this.emoji.names)
-			if ( has_colon ? name === search : name.startsWith(search) ) {
+		const only_match_starts = this.chat.context.get('chat.tab-complete.prefix-and-capitals-only');
+
+		for(const name in this.emoji.names) {
+			const valid_match = has_colon && name === search ||
+				only_match_starts && name.startsWith(search) ||
+				! only_match_starts && name.includes(search);
+			if ( valid_match ) {
 				const emoji = this.emoji.emoji[this.emoji.names[name]],
 					toned = emoji.variants && emoji.variants[tone],
 					source = toned || emoji;
@@ -1170,6 +1187,7 @@ export default class Input extends Module {
 					});
 				}
 			}
+		}
 
 		return results;
 	}
@@ -1253,9 +1271,12 @@ export default class Input extends Module {
 		const search = input.startsWith(':') ? input.slice(1) : input,
 			results = [];
 
+		const only_match_starts = this.chat.context.get('chat.tab-complete.prefix-and-capitals-only');
+
 		for(const emote of emotes) {
-			const match_type = inst.doesEmoteMatchTerm(emote, search)
-			if ( match_type !== NO_MATCH )
+			const match_type = inst.doesEmoteMatchTerm(emote, search);
+			const valid_match = only_match_starts ? match_type > SUBSTRING_MATCH : match_type !== NO_MATCH;
+			if ( valid_match )
 				results.push({
 					current: input,
 					emote,
