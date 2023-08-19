@@ -31,6 +31,14 @@ export default class Channel extends Module {
 		this.inject('metadata');
 		this.inject('socket');
 
+		this.settings.add('channel.auto-click-off-featured', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> General',
+				title: 'Automatically un-check "Featured Clips Only" when viewing a channel\'s clips.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('channel.panel-tips', {
 			default: false,
@@ -212,7 +220,26 @@ export default class Channel extends Module {
 		}
 	}
 
+	checkFeaturedClips() {
+		if ( this.router.current_name !== 'user-clips' && this.router.current_name !== 'user-videos' )
+			return;
+
+		if ( this._featured_waiting || ! this.settings.get('channel.auto-click-off-featured') )
+			return;
+
+		this._featured_waiting = this.parent.awaitElement('input#featured-clips-toggle').then(el => {
+			if ( el.checked )
+				el.click();
+
+			this._featured_waiting = false;
+		}).catch(() => {
+			this._featured_waiting = false;
+		});
+	}
+
 	checkNavigation() {
+		this.checkFeaturedClips();
+
 		if ( ! this.settings.get('channel.auto-click-chat') || this.router.current_name !== 'user-home' )
 			return;
 

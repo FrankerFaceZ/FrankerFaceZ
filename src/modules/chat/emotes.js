@@ -35,7 +35,8 @@ const Flags = make_enum_flags(
 	'Shake',
 	'Cursed',
 	'Jam',
-	'Bounce'
+	'Bounce',
+	'NoSpace'
 );
 
 export const MODIFIER_FLAGS = Flags;
@@ -1707,6 +1708,8 @@ export default class Emotes extends Module {
 			animSrc2: emote.animSrc2,
 			animSrcSet2: emote.animSrcSet2,
 			masked: !! emote.mask,
+			mod: emote.modifier,
+			mod_prefix: emote.modifier_prefix,
 			mod_hidden: (emote.modifier_flags & 1) === 1,
 			text: emote.hidden ? '???' : emote.name,
 			length: emote.name.length,

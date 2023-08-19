@@ -1716,7 +1716,12 @@ export const AddonEmotes = {
 			anim = this.context.get('chat.emotes.animated'),
 			out = [];
 
+		let had_prefix_mods = false;
+		let had_no_space = false;
 		let last_token, emote;
+
+		const NoSpace = this.emotes.ModifierFlags?.NoSpace;
+
 		for(const token of tokens) {
 			if ( ! token )
 				continue;
@@ -1741,10 +1746,15 @@ export const AddonEmotes = {
 					emote = emotes[segment];
 
 					// Is this emote a modifier?
-					if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
+					if ( emote.modifier && emote.modifier_prefix )
+						had_prefix_mods = true;
+					else if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
 						if ( last_token.modifiers.indexOf(emote.token) === -1 ) {
-							if ( emote.modifier_flags )
+							if ( emote.modifier_flags ) {
 								last_token.modifier_flags |= emote.modifier_flags;
+								if ( NoSpace && (emote.modifier_flags & NoSpace) === NoSpace )
+									had_no_space = true;
+							}
 
 							last_token.modifiers.push(
 								Object.assign({
@@ -1787,6 +1797,66 @@ export const AddonEmotes = {
 			if ( text.length > 1 || (text.length === 1 && text[0] !== '') ) {
 				const t = {type: 'text', text: text.join(' ')};
 				out.push(t);
+			}
+		}
+
+		if ( had_prefix_mods ) {
+			// We need to scan through and apply prefix modifiers as appropriate.
+			let last_emote,
+				had_text = false;
+
+			let i = out.length;
+			while(i--) {
+				const token = out[i];
+
+				// Is it a new emote?
+				if ( token.type === 'emote' && ! token.mod ) {
+					last_emote = token;
+					had_text = false;
+				}
+
+				// Is it a prefix mod with a target emote?
+				else if ( last_emote && token.type === 'emote' && token.mod && token.mod_prefix ) {
+					last_emote.modifiers.push(token);
+					if ( token.source_modifier_flags ) {
+						last_emote.modifier_flags |= token.source_modifier_flags;
+						if ( NoSpace && (token.source_modifier_flags & NoSpace) === NoSpace )
+							had_no_space = true;
+					}
+
+					// Remove one or two tokens, depending on if we had a space.
+					// (We should always have a space, but be flexible.)
+					out.splice(i, had_text ? 2 : 1);
+					had_text = false;
+				}
+
+				// Make a note of at most one space.
+				else if ( last_emote && ! had_text && token.type === 'text' && token.text === ' ' ) {
+					had_text = true;
+				}
+
+				// Absolutely anything else means it's a broken sequence.
+				else {
+					last_emote = null;
+					had_text = false;
+				}
+			}
+		}
+
+		if ( had_no_space ) {
+			// We need to remove prefix spaces before emotes with the no-space effect.
+			let no_space = false;
+			let i = out.length;
+			while(i--) {
+				const token = out[i];
+				if ( token.type === 'emote' && (token.modifier_flags & NoSpace) === NoSpace )
+					no_space = true;
+				else {
+					if ( no_space && token.type === 'text' && token.text === ' ' )
+						out.splice(i, 1);
+
+					no_space = false;
+				}
 			}
 		}
 

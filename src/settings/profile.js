@@ -63,6 +63,10 @@ export default class SettingsProfile extends EventEmitter {
 
 		this.matcher = null;
 
+		// Make sure ephemeral is set first.
+		if ( val.ephemeral )
+			this.ephemeral = true;
+
 		for(const key in val)
 			if ( has(val, key) )
 				this[key] = val[key];
@@ -203,7 +207,7 @@ export default class SettingsProfile extends EventEmitter {
 	}
 
 	set toggled(val) {
-		if ( val === this.toggleState )
+		if ( val === this.toggled )
 			return;
 
 		if ( this.ephemeral )

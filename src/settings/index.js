@@ -184,7 +184,6 @@ export default class SettingsManager extends Module {
 	}
 
 
-
 	addFilter(key, data) {
 		if ( this.filters[key] )
 			return this.log.warn('Tried to add already existing filter', key);
@@ -763,12 +762,21 @@ export default class SettingsManager extends Module {
 			old_ids = new Set(old_profiles.map(x => x.id)),
 
 			new_ids = new Set,
-			changed_ids = new Set,
+			changed_ids = new Set;
 
-			raw_profiles = this.provider.get('profiles', [
+		let raw_profiles = this.provider.get('profiles', [
 				SettingsProfile.Moderation,
 				SettingsProfile.Default
 			]);
+
+		// Sanity check. If we have no profiles, delete the old data.
+		if ( ! raw_profiles?.length ) {
+			this.provider.delete('profiles');
+			raw_profiles = [
+				SettingsProfile.Moderation,
+				SettingsProfile.Default
+			];
+		}
 
 		let reordered = false,
 			changed = false;
@@ -851,6 +859,9 @@ export default class SettingsManager extends Module {
 	 * @returns {SettingsProfile}
 	 */
 	createProfile(options) {
+		if ( ! this.enabled )
+			throw new Error('Unable to create profile before settings have initialized. Please await enable()');
+
 		let i = 0;
 		while( this.__profile_ids[i] )
 			i++;
@@ -878,6 +889,9 @@ export default class SettingsManager extends Module {
 	 * @param {number|SettingsProfile} id - The profile to delete
 	 */
 	deleteProfile(id) {
+		if ( ! this.enabled )
+			throw new Error('Unable to delete profile before settings have initialized. Please await enable()');
+
 		if ( typeof id === 'object' && id.id != null )
 			id = id.id;
 
@@ -905,6 +919,9 @@ export default class SettingsManager extends Module {
 
 
 	moveProfile(id, index) {
+		if ( ! this.enabled )
+			throw new Error('Unable to move profiles before settings have initialized. Please await enable()');
+
 		if ( typeof id === 'object' && id.id )
 			id = id.id;
 
@@ -925,6 +942,9 @@ export default class SettingsManager extends Module {
 
 
 	saveProfile(id) {
+		if ( ! this.enabled )
+			throw new Error('Unable to save profile before settings have initialized. Please await enable()');
+
 		if ( typeof id === 'object' && id.id )
 			id = id.id;
 

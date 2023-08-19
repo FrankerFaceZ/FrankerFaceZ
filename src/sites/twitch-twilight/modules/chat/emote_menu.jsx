@@ -708,12 +708,17 @@ export default class EmoteMenu extends Module {
 					return;
 
 				// Check for magic.
-				let prefix = '';
-				const effects = event.currentTarget.dataset.effects;
-				if ( effects?.length > 0 && effects != '0' && t.emotes.target_emote )
-					prefix = `${t.emotes.target_emote.name} `;
+				let prefix = '', postfix = '';
+				const effects = event.currentTarget.dataset.effects,
+					is_prefix = event.currentTarget.dataset.effectPrefix === 'true';
+				if ( effects?.length > 0 && effects != '0' && t.emotes.target_emote ) {
+					if ( is_prefix )
+						postfix = ` ${t.emotes.target_emote.name}`;
+					else
+						prefix = `${t.emotes.target_emote.name} `;
+				}
 
-				this.props.onClickToken(`${prefix}${event.currentTarget.dataset.name}`);
+				this.props.onClickToken(`${prefix}${event.currentTarget.dataset.name}${postfix}`);
 			}
 
 			keyHeading(event) {
@@ -925,6 +930,7 @@ export default class EmoteMenu extends Module {
 					data-code={emote.code}
 					data-modifiers={modifiers}
 					data-effects={emote.effects}
+					data-effect-prefix={emote.effect_prefix}
 					data-variant={emote.variant}
 					data-no-source={source}
 					data-name={emote.name}
@@ -2519,6 +2525,7 @@ export default class EmoteMenu extends Module {
 								animSrc: emote.animSrc,
 								animSrcSet: emote.animSrcSet,
 								effects: emote.modifier ? emote.modifier_flags : 0,
+								effect_prefix: emote.modifier ? emote.modifier_prefix : false,
 								name: emote.name,
 								favorite: is_fav,
 								locked: locked,

@@ -362,7 +362,7 @@ export default class Metadata extends Module {
 				}
 
 				// Get the video element.
-				const video = maybe_call(player.getHTMLVideoElement, player);
+				const video = player && maybe_call(player.getHTMLVideoElement, player);
 				stats.avOffset = 0;
 				if ( video?._ffz_context )
 					stats.avOffset = (video._ffz_context_offset ?? 0) + video._ffz_context.currentTime - video.currentTime;
