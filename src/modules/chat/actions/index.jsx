@@ -320,6 +320,9 @@ export default class Actions extends Module {
 				slugify(val, locale, options, extra) {
 					return val.toString().toSlug(extra && extra.length ? extra : '-');
 				},
+				urlencode(val) {
+					return encodeURIComponent(val);
+				},
 				word(val, locale, options, extra) {
 					if (! extra || ! extra.length)
 						return val;
