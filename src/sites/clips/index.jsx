@@ -40,7 +40,7 @@ export default class ClipsSite extends BaseSite {
 		this.inject('css_tweaks', CSSTweaks);
 
 		this.css_tweaks.loader = require.context(
-			'!raw-loader!sass-loader!./css_tweaks', false, /\.s?css$/, 'lazy-once'
+			'./css_tweaks?css_tweaks', false, /\.s?css$/, 'lazy-once'
 		);
 
 		this.css_tweaks.rules = {

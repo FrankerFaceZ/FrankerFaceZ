@@ -6,7 +6,7 @@
 		return;
 
 	const HOST = location.hostname,
-		SERVER = __EXTENSION_PATH__,
+		SERVER = browser.runtime.getURL("web/"),
 		script = document.createElement('script');
 
 	let FLAVOR =
@@ -21,5 +21,6 @@
 	script.async = true;
 	script.crossOrigin = 'anonymous';
 	script.src = `${SERVER}/${FLAVOR}.js?_=${Date.now()}`;
+	script.dataset.path = SERVER;
 	document.head.appendChild(script);
 })();
