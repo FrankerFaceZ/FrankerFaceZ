@@ -130,3 +130,10 @@ html, .tw-root--theme-dark, .tw-root--theme-light {
 		border-color: var(--color-background-button-primary-default) !important;
 	}
 }
+
+.subtember-gradient {
+	--color-text-base: #0e0c10;
+	--color-fill-button-icon: #0e0c10;
+
+	color: var(--color-text-base);
+}

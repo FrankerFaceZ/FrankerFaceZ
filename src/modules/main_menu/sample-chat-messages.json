@@ -38,5 +38,10 @@
 		"name": "Hype Chat (PubSub)",
 		"topic": "pinned-chat-updates-v1.<channel>",
 		"data": {"type":"pin-message","data":{"id":"deea93ac-66c7-4500-aa38-d9cfb82f14bc","pinned_by":{"id":"128900149","display_name":"JailBreakRules"},"message":{"id":"deea93ac-66c7-4500-aa38-d9cfb82f14bc","sender":{"id":"128900149","display_name":"JailBreakRules","badges":[{"id":"subscriber","version":"12"},{"id":"glhf-pledge","version":"1"}],"chat_color":"#F31995"},"content":{"text":"xQc gets 70 cents off this lmfao","fragments":[{"text":"xQc gets 70 cents off this lmfao"}]},"type":"PAID","starts_at":1687737336,"updated_at":1687737336,"ends_at":1687737366,"sent_at":1687737336,"metadata":{"amount":"100","canonical-amount":"100","currency":"USD","exponent":"2","isSystemMessage":"false","level":"ONE"}}}}
+	},
+	{
+		"name": "Drop Claim Reward (PubSub)",
+		"topic": "user-drop-events.<user>",
+		"data": {"type":"drop-claim","data":{"drop_instance_id":"9f21b210-63b0-4725-be46-b8e49207f533","drop_id":"4da46d69-269e-4709-baf0-1dc62dcf39b2","channel_id":"118336478"}}
 	}
 ]

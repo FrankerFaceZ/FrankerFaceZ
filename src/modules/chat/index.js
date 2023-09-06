@@ -900,6 +900,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.all-mentions', {
+			default: false,
+			ui: {
+				component: 'setting-check-box',
+				path: 'Chat > Filtering > General >> Appearance',
+				title: 'Display mentions for all users without requiring an at sign (@).',
+				description: '**Note**: This setting can increase memory usage and impact chat performance.'
+			}
+		});
+
 		this.settings.add('chat.filtering.color-mentions', {
 			default: false,
 			ui: {
@@ -907,6 +917,13 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Display mentions in chat with username colors.',
 				description: '**Note:** Not compatible with color overrides as mentions do not include user IDs.'
+			}
+		});
+
+		this.settings.add('chat.filtering.need-colors', {
+			requires: ['chat.filtering.all-mentions' ,'chat.filtering.color-mentions'],
+			process(ctx) {
+				return ctx.get('chat.filtering.all-mentions') || ctx.get('chat.filtering.color-mentions')
 			}
 		});
 
@@ -1218,7 +1235,7 @@ export default class Chat extends Module {
 				room.buildBitsCSS();
 		});
 
-		this.context.on('changed:chat.filtering.color-mentions', async val => {
+		this.context.on('changed:chat.filtering.need-colors', async val => {
 			if ( val )
 				await this.createColorCache();
 			else
@@ -1226,6 +1243,9 @@ export default class Chat extends Module {
 
 			this.emit(':update-line-tokens');
 		});
+
+		this.context.on('changed:chat.filtering.all-mentions', () => this.emit(':update-line-tokens'));
+		this.context.on('changed:chat.filtering.color-mentions', () => this.emit(':update-line-tokens'));
 	}
 
 
@@ -1249,7 +1269,7 @@ export default class Chat extends Module {
 
 		this.on('site.subpump:pubsub-message', this.onPubSub, this);
 
-		if ( this.context.get('chat.filtering.color-mentions') )
+		if ( this.context.get('chat.filtering.need-colors') )
 			this.createColorCache().then(() => this.emit(':update-line-tokens'));
 
 		for(const key in TOKENIZERS)

@@ -36,6 +36,31 @@ export default class SocketClient extends Module {
 			getSocket: () => this,
 		});
 
+		this.settings.add('auth.mode', {
+			default: 'chat',
+
+			ui: {
+				path: 'Data Management > Authentication >> General',
+				title: 'Authentication Provider',
+				description: 'Which method should the FrankerFaceZ client use to authenticate against the FFZ servers when necessary?',
+				component: 'setting-select-box',
+				force_seen: true,
+
+				data: [
+					{
+						value: 'chat',
+						title: 'Twitch Chat'
+					},
+					{
+						value: false,
+						title: 'Disabled (No Authentication)'
+					}
+				]
+			},
+
+			changed: () => this._cached_token = null
+		});
+
 		this.settings.add('socket.use-cluster', {
 			default: 'Production',
 
@@ -135,6 +160,15 @@ export default class SocketClient extends Module {
 	// ========================================================================
 
 	getAPIToken() {
+		const mode = this.settings.get('auth.mode');
+
+		if ( mode === 'chat' )
+			return this._getAPIToken_Chat();
+
+		return Promise.reject(new Error('The user has disabled authentication.'));
+	}
+
+	_getAPIToken_Chat() {
 		if ( this._cached_token ) {
 			if ( this._cached_token.expires > (Date.now() + 15000) )
 				return Promise.resolve(this._cached_token);

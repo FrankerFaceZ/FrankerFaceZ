@@ -90,7 +90,7 @@ const config = {
 	output: {
 		chunkFormat: 'array-push',
 		clean: true,
-		publicPath: true
+		publicPath: FOR_EXTENSION
 			? 'auto'
 			: FILE_PATH,
 		path: path.resolve(__dirname, 'dist'),

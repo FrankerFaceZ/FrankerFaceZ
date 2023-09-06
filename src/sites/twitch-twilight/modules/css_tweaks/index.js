@@ -31,6 +31,8 @@ const CLASSES = {
 	'prime-offers': '.top-nav__prime',
 	'discover-luna': '.top-nav__external-link[data-a-target="try-presto-link"]',
 
+	'subtember': '.subtember-gradient',
+
 	'player-gain-volume': '.video-player__container[data-compressed="true"] .volume-slider__slider-container:not(.ffz--player-gain)',
 
 	'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
@@ -318,6 +320,15 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
+		this.settings.add('layout.subtember', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Allow the Subtember upsell banner to appear.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('layout.discover', {
 			default: true,
 			ui: {
@@ -498,6 +509,8 @@ export default class CSSTweaks extends Module {
 
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
 		this.toggleHide('celebration', ! this.settings.get('channel.show-celebrations'));
+
+		this.settings.getChanges('layout.subtember', val => this.toggleHide('subtember', !val));
 
 		this.updateFont();
 		this.updateTopNav();

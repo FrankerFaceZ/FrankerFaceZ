@@ -650,10 +650,12 @@ export default {
 
 		replayItem(item) {
 			if ( item.pubsub ) {
-				const channel = this.chat.ChatService.first?.props?.channelID;
+				const channel = this.chat.ChatService.first?.props?.channelID,
+					user = this.chat.resolve('site').getUser();
 
 				if ( this.replay_fix ) {
 					item.topic = item.topic.replace(/<channel>/gi, channel);
+					item.topic = item.topic.replace(/<user>/gi, user.id);
 					// TODO: Crawl, replacing ids.
 					// TODO: Update timestamps for pinned chat?
 				}

@@ -619,6 +619,8 @@ export class FineWrapper extends EventEmitter {
 		this._wrapped.add('UNSAFE_componentWillMount');
 		this._wrapped.add('componentWillUnmount');
 
+		cls._ffz_wrapper = this;
+
 		const t = this,
 			_instances = this.instances,
 			proto = cls.prototype,

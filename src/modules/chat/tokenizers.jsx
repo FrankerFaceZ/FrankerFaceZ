@@ -313,6 +313,81 @@ export const Replies = {
 // Mentions
 // ============================================================================
 
+function mention_processAll(tokens, msg, user, color_mentions) {
+	const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
+		priority = this.context.get('chat.filtering.mention-priority');
+
+	let login, display, mentionable = false;
+	if ( user && user.login && ! can_highlight_user ) {
+		login = user.login.toLowerCase();
+		display = user.displayName && user.displayName.toLowerCase();
+		if ( display === login )
+			display = null;
+
+		mentionable = true;
+	}
+
+	const out = [];
+	for(const token of tokens) {
+		if ( token.type !== 'text' ) {
+			out.push(token);
+			continue;
+		}
+
+		let text = [];
+
+		for(const segment of token.text.split(/ +/)) {
+			const match = /^(@?)(\S+?)(?:\b|$)/.exec(segment);
+			if ( match ) {
+				let recipient = match[2],
+					has_at = match[1] === '@',
+					mentioned = false;
+
+				const rlower = recipient ? recipient.toLowerCase() : '',
+					color = this.color_cache ? this.color_cache.get(rlower) : null;
+
+				if ( rlower === login || rlower === display )
+					mentioned = true;
+
+				if ( ! has_at && ! color && ! mentioned ) {
+					text.push(segment);
+
+				} else {
+					// If we have pending text, join it together.
+					if ( text.length )  {
+						out.push({
+							type: 'text',
+							text: `${text.join(' ')} `
+						});
+						text = [];
+					}
+
+					out.push({
+						type: 'mention',
+						text: match[0],
+						me: mentioned,
+						color: color_mentions ? color : null,
+						recipient: rlower
+					});
+
+					if ( mentioned )
+						this.applyHighlight(msg, priority, null, 'mention', true);
+
+					// Push the remaining text from the token.
+					text.push(segment.substr(match[0].length));
+				}
+
+			} else
+				text.push(segment);
+		}
+
+		if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+			out.push({type: 'text', text: text.join(' ')})
+	}
+
+	return out;
+}
+
 export const Mentions = {
 	type: 'mention',
 	priority: 0,
@@ -345,6 +420,12 @@ export const Mentions = {
 	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
 			return;
+
+		const all_mentions = this.context.get('chat.filtering.all-mentions'),
+			color_mentions = this.context.get('chat.filtering.color-mentions');
+
+		if ( all_mentions )
+			return mention_processAll.call(this, tokens, msg, user, color_mentions);
 
 		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
 			priority = this.context.get('chat.filtering.mention-priority');
@@ -396,7 +477,7 @@ export const Mentions = {
 					}
 
 					const rlower = recipient ? recipient.toLowerCase() : '',
-						color = this.color_cache ? this.color_cache.get(rlower) : null;
+						color = (color_mentions && this.color_cache) ? this.color_cache.get(rlower) : null;
 
 					out.push({
 						type: 'mention',

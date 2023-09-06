@@ -228,6 +228,11 @@ export default class ModView extends Module {
 		//if ( channel?.id && channel.id != this._cached_id )
 		//	this.checkRoot();
 
+		if ( this._cached_bar_id != channel?.id ) {
+			this._cached_bar_id = channel?.id;
+			this._cached_bar_channel = channel;
+		}
+
 		if ( title != el._cached_title || game?.id != el._cached_game ) {
 			el._cached_title = title;
 			el._cached_game = game?.id;
@@ -277,7 +282,7 @@ export default class ModView extends Module {
 
 	updateMetadata(el, keys) {
 		const cont = el._ffz_cont,
-			channel = this._cached_channel;
+			channel = this._cached_bar_channel;
 			//root = this.fine.getReactInstance(el);
 
 		/*let channel = null, state = root?.return?.memoizedState, i = 0;

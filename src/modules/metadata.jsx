@@ -351,6 +351,7 @@ export default class Metadata extends Module {
 						videoWidth,
 						displayHeight,
 						displayWidth,
+						buffered: maybe_call(player.getBufferDuration, player) || -1,
 						rate: maybe_call(player.getPlaybackRate, player),
 						fps: Math.floor(maybe_call(player.getVideoFrameRate, player) || 0),
 						hlsLatencyBroadcaster: maybe_call(player.getLiveLatency, player) || 0,
@@ -499,11 +500,21 @@ export default class Metadata extends Module {
 						stats
 					);
 
-				const desync = data.avOffset !== 0
+				const desync = /*data.avOffset !== 0
 						? (<div>{this.i18n.t(
 							'metadata.player-stats.av-offset',
 							'A/V Offset: {avOffset, number} seconds',
 							stats
+						)}</div>)
+						:*/ null;
+
+				const buffer = stats.buffered > 0
+						? (<div>{this.i18n.t(
+							'metadata.player-stats.buffered',
+							'Buffered: {buffered} seconds',
+							{
+								buffered: stats.buffered.toFixed(2)
+							}
 						)}</div>)
 						: null;
 
@@ -525,6 +536,7 @@ export default class Metadata extends Module {
 							{video_info}
 						</div>,
 						desync,
+						buffer,
 						tampered
 					];
 
@@ -538,6 +550,7 @@ export default class Metadata extends Module {
 						{video_info}
 					</div>,
 					desync,
+					buffer,
 					tampered
 				];
 			}
