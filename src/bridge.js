@@ -208,7 +208,7 @@ class FFZBridge extends Module {
 
 FFZBridge.Logger = Logger;
 
-const VER = FrankerFaceZ.version_info = Object.freeze({
+const VER = FFZBridge.version_info = Object.freeze({
 	major: __version_major__,
 	minor: __version_minor__,
 	revision: __version_patch__,

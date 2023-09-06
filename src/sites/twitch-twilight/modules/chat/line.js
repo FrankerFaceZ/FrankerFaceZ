@@ -1879,6 +1879,7 @@ other {# messages were deleted by a moderator.}
 
 				if ( clear_tokens ) {
 					msg.ffz_tokens = null;
+					msg.ffz_reply = null;
 					msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
 				}
 
@@ -1927,6 +1928,7 @@ other {# messages were deleted by a moderator.}
 
 				if ( clear_tokens ) {
 					msg.ffz_tokens = null;
+					msg.ffz_reply = null;
 					msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
 				}
 			}
@@ -1940,6 +1942,7 @@ other {# messages were deleted by a moderator.}
 
 				if ( clear_tokens ) {
 					msg.ffz_tokens = null;
+					msg.ffz_reply = null;
 					msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
 				}
 			}

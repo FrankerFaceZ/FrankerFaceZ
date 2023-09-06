@@ -122,8 +122,12 @@ const config = {
 		new CopyPlugin({
 			patterns: [
 				{
-					from: './src/entry.js',
-					to: 'script.js'
+					from: FOR_EXTENSION
+						? './src/entry_ext.js'
+						: './src/entry.js',
+					to: (DEV_SERVER || DEV_BUILD)
+						? 'script.js'
+						: 'script.min.js'
 				}
 			]
 		}),
@@ -142,7 +146,7 @@ const config = {
 			}
 		}),
 		new WebpackManifestPlugin({
-
+			publicPath: ''
 		})
 	],
 

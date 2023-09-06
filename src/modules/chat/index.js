@@ -1625,7 +1625,9 @@ export default class Chat extends Module {
 			{
 				type: 'reply',
 				text: reply.parentDisplayName,
-				color: this.color_cache ? this.color_cache.get(reply.parentUserLogin) : null,
+				color: (this.context.get('chat.filtering.color-mentions') && this.color_cache)
+					? this.color_cache.get(reply.parentUserLogin)
+					: null,
 				recipient: reply.parentUserLogin
 			},
 			{
