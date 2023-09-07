@@ -175,7 +175,9 @@ const config = {
 				include: /src/,
 				type: 'asset/resource',
 				generator: {
-					filename: '[name].[contenthash:8].json'
+					filename: (FOR_EXTENSION || DEV_BUILD)
+						? '[name].json'
+						: '[name].[contenthash:8].json'
 				}
 			},
 			{
