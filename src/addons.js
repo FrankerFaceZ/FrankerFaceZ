@@ -161,9 +161,16 @@ export default class AddonManager extends Module {
 				: null
 		]);
 
-		if ( Array.isArray(cdn_data) )
-			for(const addon of cdn_data )
+		if ( Array.isArray(cdn_data) ) {
+			// We need to handle relative URLs for addon logos.
+			const base_path = `${SERVER_OR_EXT}/addons/`;
+
+			for(const addon of cdn_data ) {
+				if ( addon.icon )
+				addon.icon = (new URL(addon.icon, base_path)).toString();
 				this.addAddon(addon, false);
+			}
+		}
 
 		if ( Array.isArray(local_data) ) {
 			this.has_dev = true;

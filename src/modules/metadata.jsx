@@ -362,10 +362,12 @@ export default class Metadata extends Module {
 				}
 
 				// Get the video element.
-				const video = player && maybe_call(player.getHTMLVideoElement, player);
-				stats.avOffset = 0;
-				if ( video?._ffz_context )
-					stats.avOffset = (video._ffz_context_offset ?? 0) + video._ffz_context.currentTime - video.currentTime;
+				if ( stats ) {
+					const video = player && maybe_call(player.getHTMLVideoElement, player);
+					stats.avOffset = 0;
+					if ( video?._ffz_context )
+						stats.avOffset = (video._ffz_context_offset ?? 0) + video._ffz_context.currentTime - video.currentTime;
+				}
 
 				let tampered = false;
 				try {
@@ -375,7 +377,6 @@ export default class Metadata extends Module {
 						tampered = data && data.player_type && data.player_type !== 'site' ? data.player_type : false;
 					}
 				} catch(err) { /* no op */ }
-
 
 				if ( ! stats || stats.hlsLatencyBroadcaster < -100 )
 					return {stats};
