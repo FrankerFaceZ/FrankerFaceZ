@@ -57,7 +57,7 @@ export default class ClipsSite extends BaseSite {
 
 		this.ClipsMenu = this.fine.define(
 			'clips-menu',
-			n => n.props?.changeTheme && has(n.state, 'dropdownOpen')
+			n => n.props?.signup && has(n.state, 'dropdownOpen')
 		)
 
 		document.head.appendChild(createElement('link', {
@@ -217,3 +217,5 @@ export default class ClipsSite extends BaseSite {
 ClipsSite.CLIP_ROUTES = {
 	'clip-page': '/:slug'
 };
+
+ClipsSite.DIALOG_SELECTOR = '#root > div';

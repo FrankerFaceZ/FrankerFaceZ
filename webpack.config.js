@@ -46,6 +46,7 @@ const commit_hash = DEV_SERVER
 
 const ENTRY_POINTS = {
 	bridge: './src/bridge.js',
+	esbridge: './src/esbridge.js',
 	player: './src/player.js',
 	avalon: './src/main.js',
 	clips: './src/clips.js'

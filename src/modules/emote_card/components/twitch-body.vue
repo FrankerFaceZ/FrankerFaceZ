@@ -157,7 +157,7 @@ export default {
 			// Finally, make sure we can find the right UI elements.
 			const store = this.getFFZ().resolve('site')?.store,
 				web_munch = this.getFFZ().resolve('site.web_munch'),
-				sub_form = web_munch.getModule('sub-form');
+				sub_form = web_munch?.getModule?.('sub-form');
 
 			if ( ! store?.dispatch || ! sub_form )
 				return false;
@@ -173,7 +173,7 @@ export default {
 
 			const store = this.getFFZ().resolve('site')?.store,
 				web_munch = this.getFFZ().resolve('site.web_munch'),
-				sub_form = web_munch.getModule('sub-form');
+				sub_form = web_munch?.getModule?.('sub-form');
 
 			if ( ! store?.dispatch || ! sub_form )
 				return;

@@ -1486,6 +1486,7 @@ export const AddonEmotes = {
 			modifiers = ds.modifierInfo;
 
 		let name, preview, source, artist, owner, mods, fav_source, emote_id,
+			original_name,
 			plain_name = false;
 
 		const hide_source = ds.noSource === 'true';
@@ -1576,6 +1577,12 @@ export const AddonEmotes = {
 
 				if ( emote.artist )
 					artist = emote.artist.display_name || emote.artist.name;
+
+				if ( emote.original_name && emote.original_name !== emote.name )
+					original_name = this.i18n.t(
+						'emote.original-name', 'Name: {name}',
+						{name: emote.original_name}
+					);
 
 				if ( emote.owner )
 					owner = this.i18n.t(
@@ -1751,10 +1758,16 @@ export const AddonEmotes = {
 				onLoad={tip.update}
 			/>) : preview),
 
-			plain_name || (hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: {name}', {name}),
+			plain_name || (hide_source && ! owner)
+				? name
+				: this.i18n.t('tooltip.emote', 'Emote: {name}', {name}),
 
 			! hide_source && source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{source}
+			</div>),
+
+			original_name && (<div class="tw-pd-t-05">
+				{original_name}
 			</div>),
 
 			owner && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">

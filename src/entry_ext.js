@@ -5,7 +5,9 @@
 	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev|gql|passport)\./.test(location.hostname) )
 		return;
 
-	const HOST = location.hostname,
+	const browser = globalThis.browser ?? globalThis.chrome,
+
+		HOST = location.hostname,
 		SERVER = browser.runtime.getURL("web"),
 		script = document.createElement('script');
 

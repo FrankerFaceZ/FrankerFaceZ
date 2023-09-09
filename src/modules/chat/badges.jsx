@@ -665,7 +665,7 @@ export default class Badges extends Module {
 					bdata = tb && tb[badge_id],
 					cat = bdata && bdata.__cat || 'm-twitch';
 
-				if ( is_hidden || (is_hidden == null && hidden_badges[cat]) )
+				if ( ! badge_id || is_hidden || (is_hidden == null && hidden_badges[cat]) )
 					continue;
 
 				if ( has(BADGE_POSITIONS, badge_id) )

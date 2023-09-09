@@ -1211,7 +1211,7 @@ export default class ChatHook extends Module {
 						this._ffz_auto_drop = setTimeout(() => {
 							this._ffz_auto_drop = null;
 							t.autoClickDrop(this);
-						}, 250);
+						}, 0);
 
 				} catch(err) {
 					t.log.capture(err);
@@ -1512,19 +1512,40 @@ export default class ChatHook extends Module {
 
 
 	autoClickDrop(inst) {
+		if ( inst._ffz_clicking )
+			return;
+
+		// Check to ensure the active callout is a drop to claim.
 		const callout = inst.props?.callouts?.[0] || inst.props?.pinnedCallout,
 			ctype = callout?.event?.type;
 
 		if ( ctype !== 'drop' || ! this.chat.context.get('chat.drops.auto-rewards') )
 			return;
 
-		const node = this.fine.getHostNode(inst),
-			btn = node.querySelector('button[data-a-target="chat-private-callout__primary-button"]');
+		inst._ffz_clicking = true;
 
-		if ( ! btn )
-			return;
+		// Wait for the button to be added to the DOM.
+		const waiter = this.resolve('site').awaitElement(
+			'button[data-a-target="chat-private-callout__primary-button"]',
+			this.fine.getHostNode(inst),
+			10000
+		);
 
-		btn.click();
+		waiter.then(btn => {
+			inst._ffz_clicking = false;
+
+			// Check AGAIN because time has passed.
+			const callout = inst.props?.callouts?.[0] || inst.props?.pinnedCallout,
+				ctype = callout?.event?.type;
+
+			if ( ctype !== 'drop' || ! this.chat.context.get('chat.drops.auto-rewards') )
+				return;
+
+			btn.click();
+
+		}).catch(() => {
+			inst._ffz_clicking = false;
+		});
 	}
 
 

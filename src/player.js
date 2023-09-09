@@ -128,13 +128,14 @@ const VER = FrankerFaceZ.version_info = Object.freeze({
 	build: __version_build__,
 	hash: __webpack_hash__,
 	toString: () =>
-		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}${VER.build ? `+${VER.build}` : ''}`
+		`${VER.major}.${VER.minor}.${VER.revision}${VER.build ? `.${VER.build}` : ''}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
 });
 
 // We don't support addons in the player right now, so a few
 // of these are unavailable.
 FrankerFaceZ.utilities = {
 	addon: require('utilities/addon'),
+	blobs: require('utilities/blobs'),
 	//color: require('utilities/color'),
 	constants: require('utilities/constants'),
 	dom: require('utilities/dom'),

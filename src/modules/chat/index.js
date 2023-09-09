@@ -22,7 +22,7 @@ import * as TOKENIZERS from './tokenizers';
 import * as RICH_PROVIDERS from './rich_providers';
 import * as LINK_PROVIDERS from './link_providers';
 
-import Actions from './actions';
+import Actions from './actions/actions';
 import { getFontsList } from 'src/utilities/fonts';
 
 function sortPriorityColorTerms(list) {
@@ -77,7 +77,7 @@ export default class Chat extends Module {
 		this.inject(Emotes);
 		this.inject(Emoji);
 		this.inject(Actions);
-		this.inject(Overrides);
+		this.inject('overrides', Overrides);
 
 		this._link_info = {};
 

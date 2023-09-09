@@ -103,7 +103,7 @@ export default class EmoteCard extends Module {
 
 	canReportTwitch() {
 		const site = this.resolve('site'),
-			core = site.getCore(),
+			core = site.getCore?.(),
 			user = site.getUser(),
 			web_munch = this.resolve('site.web_munch');
 
@@ -395,6 +395,7 @@ export default class EmoteCard extends Module {
 			width: data.width,
 			height: data.height,
 			name: data.name,
+			originalName: data.original_name,
 			source: emote_set.source_line || (`${emote_set.source || 'FFZ'} ${emote_set.title || 'Global Emotes'}`),
 			owner: data.owner
 				? (data.owner.display_name || data.owner.name)

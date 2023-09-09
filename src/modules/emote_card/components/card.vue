@@ -22,7 +22,11 @@
 						</figure>
 					</div>
 					<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-l-1 tw-mg-y-05 viewer-card__display-name">
-						<h4 class="tw-inline tw-ellipsis" :title="emote ? emote.name : raw_emote.name">
+						<h4
+							class="tw-inline tw-ellipsis"
+							:class="{'tw-italic': hasOriginalName}"
+							:title="emote ? emote.name : raw_emote.name"
+						>
 							{{ emote ? emote.name : raw_emote.name }}
 						</h4>
 						<P
@@ -37,6 +41,16 @@
 							:title="emote.source_i18n ? t(emote.source_i18n, emote.source) : emote.source"
 						>
 							{{ emote.source_i18n ? t(emote.source_i18n, emote.source) : emote.source }}
+						</p>
+						<p v-if="hasOriginalName" class="tw-c-text-alt-2 tw-font-size-6 tw-ellipsis">
+							<t-list
+								phrase="emote.original-name"
+								default="Name: {name}"
+							>
+								<template #name>
+									{{ emote.originalName }}
+								</template>
+							</t-list>
 						</p>
 						<p v-if="loaded && emote.owner" class="tw-c-text-alt-2 tw-font-size-6 tw-ellipsis">
 							<t-list
@@ -225,6 +239,10 @@ export default {
 
 		hasBody() {
 			return this.bodyComponent != null
+		},
+
+		hasOriginalName() {
+			return this.loaded && this.emote.originalName && this.emote.originalName !== this.emote.name;
 		},
 
 		bodyComponent() {

@@ -173,9 +173,7 @@ export default class Input extends Module {
 					{value: 2, title: '2: Non-Prefix (Old FFZ style)'},
 					{value: 3, title: '3: Exact (Case-Insensitive)'}
 				]
-			},
-
-			changed: () => this.uncacheTabCompletion()
+			}
 		});
 
 
@@ -365,6 +363,7 @@ export default class Input extends Module {
 
 		this.chat.context.on('changed:chat.emotes.animated', this.uncacheTabCompletion, this);
 		this.chat.context.on('changed:chat.emotes.enabled', this.uncacheTabCompletion, this);
+		this.chat.context.on('changed:chat.tab-complete.matching', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-set-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-favorite', this.uncacheTabCompletion, this);

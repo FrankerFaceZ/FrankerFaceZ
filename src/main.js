@@ -138,7 +138,13 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 
 	async discoverModules() {
 		// TODO: Actually do async modules.
-		const ctx = await require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/ /*, 'lazy-once' */);
+		const ctx = await require.context(
+			'src/modules',
+			true,
+			/(?:^(?:\.\/)?[^/]+|index)\.jsx?$/
+			/*, 'lazy-once' */
+		);
+
 		const modules = this.populate(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
@@ -169,12 +175,13 @@ const VER = FrankerFaceZ.version_info = Object.freeze({
 	build: __version_build__,
 	hash: __webpack_hash__,
 	toString: () =>
-		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}${VER.build ? `+${VER.build}` : ''}`
+		`${VER.major}.${VER.minor}.${VER.revision}${VER.build ? `.${VER.build}` : ''}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
 });
 
 
 FrankerFaceZ.utilities = {
 	addon: require('utilities/addon'),
+	blobs: require('utilities/blobs'),
 	color: require('utilities/color'),
 	constants: require('utilities/constants'),
 	dialog: require('utilities/dialog'),

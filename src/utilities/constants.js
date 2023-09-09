@@ -5,17 +5,23 @@ import {make_enum} from 'utilities/object';
 
 export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev');
 export const EXTENSION = !!__extension__;
-export const SERVER = DEBUG ? '//localhost:8000' : 'https://cdn.frankerfacez.com';
+export const SERVER = DEBUG ? 'https://localhost:8000' : 'https://cdn.frankerfacez.com';
 
-export const SERVER_OR_EXT = EXTENSION
-	? __webpack_public_path__
-	: `${SERVER}/script`;
+let path = `${SERVER}/script`;
+
+if ( EXTENSION ) {
+	path = __webpack_public_path__;
+	if ( path.endsWith('/') )
+		path = path.slice(0, path.length - 1);
+}
+
+export const SERVER_OR_EXT = path;
 
 export const CLIENT_ID = 'a3bc9znoz6vi8ozsoca0inlcr4fcvkl';
-export const API_SERVER = '//api.frankerfacez.com';
-export const STAGING_API = '//api-staging.frankerfacez.com';
-export const STAGING_CDN = '//cdn-staging.frankerfacez.com';
-export const NEW_API = '//api2.frankerfacez.com';
+export const API_SERVER = 'https://api.frankerfacez.com';
+export const STAGING_API = 'https://api-staging.frankerfacez.com';
+export const STAGING_CDN = 'https://cdn-staging.frankerfacez.com';
+export const NEW_API = 'https://api2.frankerfacez.com';
 
 //export const SENTRY_ID = 'https://1c3b56f127254d3ba1bd1d6ad8805eee@sentry.io/1186960';
 //export const SENTRY_ID = 'https://07ded545d3224ca59825daee02dc7745@catbag.frankerfacez.com:444/2';
