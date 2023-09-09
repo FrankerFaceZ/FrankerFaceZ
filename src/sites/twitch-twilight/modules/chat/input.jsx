@@ -19,7 +19,7 @@ const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
 // Describes how an emote matches against a given input
 // Higher values represent a more exact match
 const NO_MATCH = 0;
-const CASE_INSENSITIVE_NON_PREFIX_MATCH = 1;
+const MATCH_ANY = 1;
 const NON_PREFIX_MATCH = 2;
 const CASE_INSENSITIVE_PREFIX_MATCH = 3;
 const EXACT_PREFIX_MATCH = 4;
@@ -154,6 +154,28 @@ export default class Input extends Module {
 				title: 'Prioritize emotes that start with user input.',
 				component: 'setting-check-box'
 			}
+		});
+
+		this.settings.add('chat.tab-complete.matching', {
+			default: 1,
+
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Emote Matching Type',
+				description: '1: `ppa` would match `Kappa`\n\n' +
+					'2: `sip` would match `cohhSip` but not `Gossip`\n\n' +
+					'3: `pasta` would match `pastaThat` but not `HoldThat`',
+
+				component: 'setting-select-box',
+
+				data: [
+					{value: 1, title: '1: Anything (Twitch style)'},
+					{value: 2, title: '2: Non-Prefix (Old FFZ style)'},
+					{value: 3, title: '3: Exact (Case-Insensitive)'}
+				]
+			},
+
+			changed: () => this.uncacheTabCompletion()
 		});
 
 
@@ -890,7 +912,7 @@ export default class Input extends Module {
 				return NON_PREFIX_MATCH;
 
 			if (emote_lower.includes(term_lower))
-				return CASE_INSENSITIVE_NON_PREFIX_MATCH;
+				return MATCH_ANY;
 
 			return NO_MATCH;
 		}
@@ -1086,6 +1108,8 @@ export default class Input extends Module {
 		if ( inst.ffz_twitch_cache?.length !== inst.props.emotes?.length )
 			inst.ffz_twitch_cache = this.buildTwitchCache(inst.props.emotes);
 
+		const emoteMatchingType = this.chat.context.get('chat.tab-complete.matching');
+
 		const emotes = inst.ffz_twitch_cache.emotes;
 
 		if ( ! emotes.length )
@@ -1099,24 +1123,28 @@ export default class Input extends Module {
 
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
-			if ( match_type !== NO_MATCH ) {
-				const element = {
-					current: input,
-					emote,
-					replacement: emote.token,
-					element: inst.renderEmoteSuggestion(emote),
-					favorite: emote.favorite,
-					count: this.EmoteUsageCount[emote.token] || 0,
-					match_type
-				};
+			if (match_type < emoteMatchingType)
+					continue;
 
-				if ( element.count > 0 )
-					results_usage.push(element);
-				else if ( match_type > NON_PREFIX_MATCH )
-					results_starting.push(element);
-				else
-					results_other.push(element);
-			}
+			const element = {
+				current: input,
+				emote,
+				replacement: emote.token,
+				element: inst.renderEmoteSuggestion(emote),
+				favorite: emote.favorite,
+				count: this.EmoteUsageCount[emote.token] || 0,
+				match_type
+			};
+
+			if (match_type < emoteMatchingType)
+				continue;
+
+			if ( element.count > 0 )
+				results_usage.push(element);
+			else if ( match_type > NON_PREFIX_MATCH )
+				results_starting.push(element);
+			else
+				results_other.push(element);
 		}
 
 		results_usage.sort((a,b) => b.count - a.count);
@@ -1239,6 +1267,8 @@ export default class Input extends Module {
 				this.updateEmoteCompletion(parent, inst);
 		}
 
+		const emoteMatchingType = this.chat.context.get('chat.tab-complete.matching');
+
 		const user = inst._ffz_user,
 			channel_id = inst._ffz_channel_id,
 			channel_login = inst._ffz_channel_login;
@@ -1259,16 +1289,18 @@ export default class Input extends Module {
 
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search)
-			if ( match_type !== NO_MATCH )
-				results.push({
-					current: input,
-					emote,
-					replacement: emote.token,
-					element: inst.renderEmoteSuggestion(emote),
-					favorite: emote.favorite,
-					count: 0, // TODO: Count stuff?
-					match_type
-				});
+			if (match_type < emoteMatchingType)
+				continue;
+
+			results.push({
+				current: input,
+				emote,
+				replacement: emote.token,
+				element: inst.renderEmoteSuggestion(emote),
+				favorite: emote.favorite,
+				count: 0, // TODO: Count stuff?
+				match_type
+			});
 		}
 
 		return results;
