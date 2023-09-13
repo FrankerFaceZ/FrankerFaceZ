@@ -106,6 +106,13 @@ export default class Twilight extends BaseSite {
 		window.addEventListener('resize', update_size);
 		update_size();
 
+		const update_fullscreen = () => this.settings.updateContext({
+			fullscreen: !! document.fullscreenElement
+		});
+
+		document.addEventListener('fullscreenchange', update_fullscreen);
+		update_fullscreen();
+
 		// Share Context
 		store.subscribe(() => this.updateContext());
 		this.updateContext();

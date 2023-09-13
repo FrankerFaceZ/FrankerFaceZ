@@ -151,6 +151,13 @@ export default class MainMenu extends Module {
 			}
 		});
 
+		this.settings.addUI('debug.graphql-test', {
+			path: 'Debugging > GraphQL >> Inspector',
+			component: 'graphql-inspect',
+			getFFZ: () => this.resolve('core'),
+			force_seen: true
+		});
+
 		this.settings.addUI('faq', {
 			path: 'Home > FAQ @{"profile_warning": false}',
 			component: 'md-page',
@@ -1210,7 +1217,7 @@ export default class MainMenu extends Module {
 				if ( this.dialog.exclusive || this.site?.router?.current_name === 'squad' || this.site?.router?.current_name === 'command-center' )
 					return;
 
-				if ( this.settings.get('context.ui.theatreModeEnabled') )
+				if ( this.settings.get('layout.is-theater-mode') )
 					return;
 
 				this.dialog.toggleSize(e);

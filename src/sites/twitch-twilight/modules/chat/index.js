@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {Color, ColorAdjuster} from 'utilities/color';
-import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals} from 'utilities/object';
+import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals, glob_to_regex, escape_regex} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {FFZEvent} from 'utilities/events';
 import {useFont} from 'utilities/fonts';
@@ -356,6 +356,50 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('channel.raids.blocked-channels', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Channel > Behavior >> Raids: Blocked Channels @{"description": "You will not automatically join raids to channels listed here."}',
+				component: 'basic-terms',
+				words: false
+			}
+		});
+
+		this.settings.add('__filter:channel.raids.blocked-channels', {
+			requires: ['channel.raids.blocked-channels'],
+			equals: 'requirements',
+			process(ctx) {
+				const val = ctx.get('channel.raids.blocked-channels');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out.push(v);
+				}
+
+				if ( out.length )
+					return new RegExp(`^(?:${out.join('|')})$`, 'gi');
+
+				return null;
+			}
+		})
+
 		this.settings.add('chat.hide-community-highlights', {
 			default: false,
 			ui: {
@@ -399,6 +443,16 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Allow the Hype Train to be displayed in chat.',
 				component: 'setting-check-box',
+			}
+		});
+
+		this.settings.add('chat.banners.kappa-train', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Attempt to always display the Golden Kappa Train, even if other Hype Trains are hidden.',
+				description: '**Note**: This setting is currently theoretical and may not work, or may cause non-Kappa hype trains to appear. Due to the infrequent nature of hype trains, and especially the golden kappa hype train, it is very hard to test.',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -1570,17 +1624,32 @@ export default class ChatHook extends Module {
 	}
 
 	noAutoRaids(inst) {
-		if ( this.settings.get('channel.raids.no-autojoin') )
-			setTimeout(() => {
-				if ( inst.props && inst.props.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
-					const id = inst.props.raid.id;
-					if ( this.joined_raids.has(id) )
-						return;
+		if ( inst._ffz_no_raid )
+			return;
 
-					this.log.info('Automatically leaving raid:', id);
-					inst.handleLeaveRaid();
+		inst._ffz_no_raid = setTimeout(() => {
+			inst._ffz_no_raid = null;
+
+			if ( inst.props && inst.props.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
+				const id = inst.props.raid.id;
+				if ( this.joined_raids.has(id) )
+					return;
+
+				let leave = this.settings.get('channel.raids.no-autojoin');
+
+				if ( ! leave ) {
+					const blocked = this.settings.get('__filter:channel.raids.blocked-channels');
+					if ( blocked && ((inst.props.raid.targetLogin && blocked.test(inst.props.raid.targetLogin)) || (inst.props.raid.targetDisplayName && blocked.test(inst.props.raid.targetDisplayName))) )
+						leave = true;
+
+					if ( ! leave )
+						return;
 				}
-			});
+
+				this.log.info('Automatically leaving raid:', id);
+				inst.handleLeaveRaid();
+			}
+		});
 	}
 
 	toggleEmoteJail() {
@@ -1611,6 +1680,10 @@ export default class ChatHook extends Module {
 
 			const type = entry.event.type;
 			if ( type && has(types, type) && ! types[type] ) {
+				// Attempt to allow Golden Kappa hype trains?
+				if ( type === 'hype_train' && entry.event.typeDetails === '0' && this.chat.context.get('chat.banners.kappa-train') )
+					continue;
+
 				this.log.info('Removing community highlight: ', type, '#', entry.id);
 				this.community_dispatch({
 					type: 'remove-highlight',

@@ -330,3 +330,46 @@ export class ClickOutside {
 			this.cb(e);
 	}
 }
+
+
+// TODO: Rewrite this method to not use raw HTML.
+
+export function highlightJson(object, pretty = false, depth = 1) {
+	let indent = '', indent_inner = '';
+	if ( pretty ) {
+		indent = '    '.repeat(depth - 1);
+		indent_inner = '    '.repeat(depth);
+	}
+
+	if ( depth > 10 )
+		return `<span class="ffz-ct--obj-literal">&lt;nested&gt;</span>`;
+
+	if (object == null)
+		return `<span class="ffz-ct--literal" depth="${depth}">null</span>`;
+
+	if ( typeof object === 'number' || typeof object === 'boolean' )
+		return `<span class="ffz-ct--literal" depth="${depth}">${object}</span>`;
+
+	if ( typeof object === 'string' )
+		return `<span class=ffz-ct--string depth="${depth}">"${sanitize(object)}"</span>`;
+
+	if ( Array.isArray(object) )
+		return `<span class="ffz-ct--obj-open" depth="${depth}">[</span>`
+			+ object.map(x => (pretty ? `\n${indent_inner}` : '') + highlightJson(x, pretty, depth + 1)).join(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`)
+			+ (pretty ? `\n${indent}` : '')
+			+ `<span class="ffz-ct--obj-close" depth="${depth}">]</span>`;
+
+	const out = [];
+
+	for(const [key, val] of Object.entries(object)) {
+		if ( out.length > 0 )
+			out.push(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`);
+
+		if ( pretty )
+			out.push(`\n${indent_inner}`);
+		out.push(`<span class="ffz-ct--obj-key" depth="${depth}">"${sanitize(key)}"</span><span class="ffz-ct--obj-key-sep" depth="${depth}">: </span>`);
+		out.push(highlightJson(val, pretty, depth + 1));
+	}
+
+	return `<span class="ffz-ct--obj-open" depth="${depth}">{</span>${out.join('')}${pretty ? `\n${indent}` : ''}<span class="ffz-ct--obj-close" depth="${depth}">}</span>`;
+}

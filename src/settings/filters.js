@@ -172,11 +172,28 @@ export const Time = {
 
 export const TheaterMode = {
 	createTest(config) {
-		return ctx => ctx.ui && ctx.ui.theatreModeEnabled === config;
+		return ctx => {
+			if ( ctx.fullscreen )
+				return config === false;
+			return ctx.ui && ctx.ui.theatreModeEnabled === config;
+		}
 	},
 
 	title: 'Theater Mode',
 	i18n: 'settings.filter.theater',
+
+	default: true,
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+};
+
+export const Fullscreen = {
+	createTest(config) {
+		return ctx => ctx.fullscreen === config;
+	},
+
+	title: 'Fullscreen',
+	i18n: 'settings.filter.fullscreen',
 
 	default: true,
 

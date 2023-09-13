@@ -492,6 +492,10 @@ textarea.ffz-input {
 }
 
 .ffz--example-report {
+	&.ffz--tall div {
+		max-height: 60rem;
+	}
+
 	div {
 		max-height: 30rem;
 		overflow-y: auto;

@@ -304,10 +304,10 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.theatre-navigation', {
-			requires: ['context.ui.theatreModeEnabled'],
+			requires: ['layout.is-theater-mode'],
 			default: false,
 			process(ctx, val) {
-				return ctx.get('context.ui.theatreModeEnabled') ? val : false
+				return ctx.get('layout.is-theater-mode') ? val : false
 			},
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',

@@ -196,8 +196,8 @@
 
 <script>
 
-import { sanitize } from 'src/utilities/dom';
 import { DEBUG, SERVER } from 'utilities/constants';
+import { highlightJson } from 'utilities/dom';
 import { deep_copy, generateUUID } from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
@@ -314,35 +314,8 @@ export default {
 	},
 
 	methods: {
-		highlightJson(object, depth = 1) {
-			if ( depth > 10 )
-				return `<span class="ffz-ct--obj-literal">&lt;nested&gt;`;
-
-			if (object == null)
-				return `<span class="ffz-ct--literal" depth="${depth}">null</span>`;
-
-			if ( typeof object === 'number' || typeof object === 'boolean' )
-				return `<span class="ffz-ct--literal" depth="${depth}">${object}</span>`;
-
-			if ( typeof object === 'string' )
-				return `<span class=ffz-ct--string depth="${depth}">"${sanitize(object)}"</span>`;
-
-			if ( Array.isArray(object) )
-				return `<span class="ffz-ct--obj-open" depth="${depth}">[</span>`
-					+ object.map(x => this.highlightJson(x, depth + 1)).join(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`)
-					+ `<span class="ffz-ct--obj-close" depth="${depth}">]</span>`;
-
-			const out = [];
-
-			for(const [key, val] of Object.entries(object)) {
-				if ( out.length > 0 )
-					out.push(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`);
-
-				out.push(`<span class="ffz-ct--obj-key" depth="${depth}">"${sanitize(key)}"</span><span class="ffz-ct--obj-key-sep" depth="${depth}">: </span>`);
-				out.push(this.highlightJson(val, depth + 1));
-			}
-
-			return `<span class="ffz-ct--obj-open" depth="${depth}">{</span>${out.join('')}<span class="ffz-ct--obj-close" depth="${depth}">}</span>`;
+		highlightJson(object, pretty) {
+			return highlightJson(object, pretty);
 		},
 
 		// Samples

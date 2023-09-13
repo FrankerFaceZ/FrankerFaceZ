@@ -235,6 +235,17 @@ export default class Directory extends SiteModule {
 			changed: () => this.updateCards()
 		});
 
+		this.settings.add('directory.blocked-tags', {
+			default: [],
+			type: 'basic_array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Block by Tag',
+				component: 'tag-list-editor'
+			},
+			changed: () => this.updateCards()
+		});
+
 		/*this.settings.add('directory.hide-viewing-history', {
 			default: false,
 			ui: {
@@ -342,7 +353,7 @@ export default class Directory extends SiteModule {
 		let bad_tag = false;
 
 		if ( Array.isArray(tags) ) {
-			const bad_tags = this.settings.provider.get('directory.game.blocked-tags', []);
+			const bad_tags = this.settings.get('directory.blocked-tags', []);
 			if ( bad_tags.length ) {
 				for(const tag of tags) {
 					if ( tag?.id && bad_tags.includes(tag.id) ) {
@@ -380,7 +391,7 @@ export default class Directory extends SiteModule {
 			return;
 
 		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,
-			tags = props.tagListProps?.tags;
+			tags = props.tagListProps?.freeformTags;
 
 		let bad_tag = false;
 
@@ -388,10 +399,10 @@ export default class Directory extends SiteModule {
 		el.dataset.ffzType = props.streamType;
 
 		if ( Array.isArray(tags) ) {
-			const bad_tags = this.settings.provider.get('directory.game.blocked-tags', []);
+			const bad_tags = this.settings.get('directory.blocked-tags', []);
 			if ( bad_tags.length ) {
 				for(const tag of tags) {
-					if ( tag?.id && bad_tags.includes(tag.id) ) {
+					if ( tag?.name && bad_tags.includes(tag.name.toLowerCase()) ) {
 						bad_tag = true;
 						break;
 					}
@@ -533,53 +544,6 @@ export default class Directory extends SiteModule {
 			inst.ffz_last_created_at = null;
 		}
 	}
-
-
-	/*updateAvatar(inst) {
-		const container = this.fine.getChildNode(inst),
-			card = container && container.querySelector && container.querySelector('.preview-card-overlay'),
-			setting = this.settings.get('directory.show-channel-avatars');
-
-		if ( ! card )
-			return;
-
-		const props = inst.props,
-			is_video = props.durationInSeconds != null,
-			src = props.channelImageProps && props.channelImageProps.src;
-
-		const avatar = card.querySelector('.ffz-channel-avatar');
-
-		if ( ! src || setting < 2 || props.context === CARD_CONTEXTS.SingleChannelList ) {
-			if ( avatar )
-				avatar.remove();
-
-			return;
-		}
-
-		if ( setting === inst.ffz_av_setting && props.channelLogin === inst.ffz_av_login && src === inst.ffz_av_src )
-			return;
-
-		if ( avatar )
-			avatar.remove();
-
-		inst.ffz_av_setting = setting;
-		inst.ffz_av_login = props.channelLogin;
-		inst.ffz_av_src = src;
-
-		const link = props.channelLinkTo && props.channelLinkTo.pathname;
-
-		card.appendChild(<a
-			class="ffz-channel-avatar"
-			href={link}
-			onClick={e => this.routeClick(e, link)} // eslint-disable-line react/jsx-no-bind
-		>
-			<div class={`tw-absolute tw-right-0 tw-border-l tw-c-background-base ${is_video ? 'tw-top-0 tw-border-b' : 'tw-bottom-0 tw-border-t'}`}>
-				<figure class="tw-aspect tw-aspect--align-top">
-					<img src={src} title={props.channelDisplayName} />
-				</figure>
-			</div>
-		</a>);
-	}*/
 
 
 	routeClick(event, url) {

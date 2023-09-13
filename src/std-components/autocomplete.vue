@@ -54,7 +54,8 @@
 					>
 						<slot :item="item">
 							<div class="tw-pd-x-1 tw-pd-y-05">
-								<span :title="item.title">{{ item.displayName || item.label || item.name }}</span>
+								<span v-if="typeof item === 'string'">{{ item }}</span>
+								<span v-else :title="item.title">{{ item.displayName || item.label || item.name }}</span>
 							</div>
 						</slot>
 					</button>

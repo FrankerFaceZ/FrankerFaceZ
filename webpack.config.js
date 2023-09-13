@@ -182,6 +182,21 @@ const config = {
 				}
 			},
 			{
+				// This stupid rule goes out to Mozilla, who consistantly
+				// manage to have this one file not included in the bundle
+				// the same way as every other build on every other machine
+				// out of like twelve I've tested. So fine. We'll do it
+				// your way. Whatever. I don't care.
+				test: /entities.json$/,
+				include: /node_modules/,
+				type: 'asset/resource',
+				generator: {
+					filename: (FOR_EXTENSION || DEV_BUILD)
+						? '[name].json'
+						: '[name].[contenthash:8].json'
+				}
+			},
+			{
 				test: /\.(?:otf|eot|ttf|woff|woff2)$/,
 				use: [{
 					loader: 'file-loader',

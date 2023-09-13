@@ -2214,7 +2214,7 @@ export default class PlayerBase extends Module {
 		else if ( ! Array.isArray(keys) )
 			keys = [keys];
 
-		const source = this.parent.data,
+		const source = this.getData(),
 			user = source?.props?.data?.user;
 
 		const timers = inst._ffz_meta_timers = inst._ffz_meta_timers || {},
@@ -2237,6 +2237,25 @@ export default class PlayerBase extends Module {
 
 		for(const key of keys)
 			this.metadata.renderPlayer(key, data, cont, timers, refresh_fn);
+	}
+
+
+	getUptime(inst) {
+		// TODO: Support multiple instances.
+		const source = this.getData(),
+			user = source?.props?.data?.user;
+
+		let created = user?.stream?.createdAt;
+
+		if ( ! created )
+			return null;
+
+		if ( !(created instanceof Date) )
+			created = new Date(created);
+
+		const now = Date.now();
+
+		return (now - created.getTime()) / 1000;
 	}
 
 

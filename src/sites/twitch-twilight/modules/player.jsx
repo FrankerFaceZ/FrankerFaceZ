@@ -41,6 +41,12 @@ export default class Player extends PlayerBase {
 			n => n.state && n.state.playerStyles
 		);*/
 
+		this.DataSource = this.fine.define(
+			'data-source',
+			n => n.consentMetadata && n.onPlaying && n.props && n.props.data,
+			PLAYER_ROUTES
+		);
+
 		this.Player = this.fine.define(
 			'highwind-player',
 			n => n.setPlayerActive && n.props?.playerEvents && n.props?.mediaPlayerInstance,
@@ -108,9 +114,9 @@ export default class Player extends PlayerBase {
 
 		this.settings.add('player.theatre.metadata', {
 			default: false,
-			requires: ['context.route.name'],
+			requires: ['context.route.name', 'layout.is-theater-mode'],
 			process(ctx, val) {
-				if ( ctx.get('context.route.name') === 'video' )
+				if ( ! ctx.get('layout.is-theater-mode') || ctx.get('context.route.name') === 'video' )
 					return false;
 				return val
 			},
@@ -212,6 +218,11 @@ export default class Player extends PlayerBase {
 
 			this.stopPlayer(player, events, inst);
 		}*/
+	}
+
+
+	getData() {
+		return this.DataSource.first;
 	}
 
 
