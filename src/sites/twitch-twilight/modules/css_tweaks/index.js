@@ -13,7 +13,7 @@ const STYLE_VALIDATOR = document.createElement('span');
 
 const CLASSES = {
 	//'unfollow': '.follow-btn__follow-btn--following,.follow-btn--following',
-	'top-discover': '.navigation-link[data-a-target="discover-link"]',
+	//'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav,#sideNav',
 	'side-nav-viewers': '.side-nav-card__live-status',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends):not(.bd--shelf)',
@@ -329,7 +329,7 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
-		this.settings.add('layout.discover', {
+		/*this.settings.add('layout.discover', {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
@@ -339,6 +339,15 @@ export default class CSSTweaks extends Module {
 			changed: val => {
 				this.toggleHide('top-discover', !val);
 				this.updateTopNav();
+			}
+		});*/
+
+		this.settings.add('layout.turbo-cta', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Allow the Twitch Turbo button to appear.',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -486,7 +495,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('discover-luna', this.settings.get('layout.hide-discover-luna'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
-		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
+		//this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));
 
 		this.toggleHide('pinned-hype-chat', ! this.settings.get('chat.hype.show-pinned'));

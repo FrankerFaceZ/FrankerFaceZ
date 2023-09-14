@@ -1392,7 +1392,10 @@ export default class ChatHook extends Module {
 				inst.props.setMessageBufferAPI({
 					addUpdateHandler: inst.addUpdateHandler,
 					removeUpdateHandler: inst.removeUpdateHandler,
+					getUnreadCount: inst.getUnreadCount,
 					getMessages: inst.getMessages,
+					getMessagesForHighlight: inst.getMessagesForHighlight,
+					getMessagesForAllHighlights: inst.getMessagesForAllHighlights,
 					isPaused: inst.isPaused,
 					setPaused: inst.setPaused,
 					hasNewerLeft: inst.hasNewerLeft,
@@ -2307,6 +2310,10 @@ export default class ChatHook extends Module {
 							this.notifySubscribers();
 					}
 				}
+
+				if ( this.flushHighlightsBuffer )
+					this.flushHighlightsBuffer();
+
 			} catch(err) {
 				t.log.error('Error running flush.', err);
 				return old_flush.call(this);

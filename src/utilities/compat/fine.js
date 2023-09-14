@@ -611,6 +611,18 @@ export class FineWrapper extends EventEmitter {
 			fn(inst);
 	}
 
+	updateInstances(node = null, max_depth = 1000) {
+		if ( ! this._class )
+			return;
+
+		const instances = this.fine.findAllMatching(node, n => n.constructor === this._class, max_depth);
+
+		for(const inst of instances) {
+			inst._ffz_mounted = true;
+			this.instances.add(inst);
+		}
+	}
+
 	_set(cls, instances) {
 		if ( this._class )
 			throw new Error('already have a class');

@@ -99,6 +99,9 @@ export default class Overrides extends Module {
 						name: this.getName(user.id),
 						color: this.getColor(user.id),
 
+						originalName: user.displayName ?? user.login,
+						originalColor: user.color,
+
 						updateTip: () => tip.update(),
 						setColor: val => this.setColor(user.id, val),
 						deleteColor: () => this.deleteColor(user.id),

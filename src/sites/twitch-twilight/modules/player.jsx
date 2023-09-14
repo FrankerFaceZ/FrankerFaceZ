@@ -138,6 +138,15 @@ export default class Player extends PlayerBase {
 			}
 		});
 
+		this.settings.add('player.fullscreen.auto-chat', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Fullscreen',
+				title: 'Automatically expand chat when entering fullscreen mode.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('player.hide-event-bar', {
 			default: false,
 			ui: {
@@ -178,6 +187,8 @@ export default class Player extends PlayerBase {
 
 		this.on(':fix-player', this.repositionPlayer, this);
 
+		this.on('site:fullscreen', this.maybeOpenChat, this);
+
 		this.TheatreHost.on('mount', inst => {
 			inst._ffz_theater_start = Date.now();
 			this.tryTheatreMode(inst);
@@ -193,6 +204,14 @@ export default class Player extends PlayerBase {
 
 		this.PlayerSource.on('mount', this.checkCarousel, this);
 		this.PlayerSource.on('update', this.checkCarousel, this);
+	}
+
+	maybeOpenChat() {
+		if ( ! this.settings.get('player.fullscreen.auto-chat') )
+			return;
+
+		this.parent.awaitElement('.right-column--collapsed .right-column__toggle-visibility button', document.fullscreenElement, 1000)
+			.then(el => el.click());
 	}
 
 	shouldStopAutoplay() {

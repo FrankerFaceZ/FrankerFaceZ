@@ -22,6 +22,11 @@ export default class Loadable extends Module {
 			n => n.props?.component && n.props.loader
 		);
 
+		this.ErrorBoundaryComponent = this.fine.define(
+			'error-boundary-component',
+			n => n.props?.name && n.props?.onError && n.props?.children && n.onErrorBoundaryTestEmit
+		);
+
 		this.overrides = new Map();
 
 	}
@@ -29,6 +34,32 @@ export default class Loadable extends Module {
 	onEnable() {
 		this.settings.getChanges('chat.hype.show-pinned', val => {
 			this.toggle('PaidPinnedChatMessageList', val);
+		});
+
+		this.settings.getChanges('layout.turbo-cta', val => {
+			this.toggle('TopNav__TurboButton_Available', val);
+		});
+
+		this.ErrorBoundaryComponent.ready((cls, instances) => {
+			this.log.debug('Found Error Boundary component wrapper.');
+
+			const t = this,
+				old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				try {
+					const type = this.props.name;
+					if ( t.overrides.has(type) && ! t.shouldRender(type) )
+						return null;
+				} catch(err) {
+					/* no-op */
+					console.error(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.ErrorBoundaryComponent.updateInstances();
 		});
 
 		this.LoadableComponent.ready((cls, instances) => {
@@ -72,6 +103,7 @@ export default class Loadable extends Module {
 				return old_render.call(this);
 			}
 
+			this.LoadableComponent.updateInstances();
 		});
 	}
 
@@ -91,7 +123,14 @@ export default class Loadable extends Module {
 
 	update(cmp) {
 		for(const inst of this.LoadableComponent.instances) {
-			if ( inst?.props?.component === cmp )
+			const type = inst?.props?.component;
+			if ( type && type === cmp )
+				inst.forceUpdate();
+		}
+
+		for(const inst of this.ErrorBoundaryComponent.instances) {
+			const name = inst?.props?.name;
+			if ( name && name === cmp )
 				inst.forceUpdate();
 		}
 	}
