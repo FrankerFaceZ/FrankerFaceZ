@@ -165,21 +165,31 @@ export default class ChatLine extends Module {
 
 				const user = msg.user,
 					plan = msg.sub_plan || {},
-					tier = SUB_TIERS[plan.plan] || 1;
+					tier = SUB_TIERS[plan.plan] || 1,
+					multi = msg.sub_multi,
 
-				const sub_msg = this.i18n.tList('chat.sub.main', '{user} subscribed {plan}. ', {
-					user: e('span', {
-						role: 'button',
-						className: 'chatter-name',
-						onClick: inst.ffz_user_click_handler,
-						onContextMenu: this.actions.handleUserContext
-					}, e('span', {
-						className: 'tw-c-text-base tw-strong'
-					}, user.displayName)),
-					plan: plan.prime ?
-						this.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
-						this.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier})
-				});
+					has_multi = (multi?.count ?? 0) > 1 && multi.tenure === 0;
+
+				const sub_msg = this.i18n.tList(
+					`chat.sub.main${has_multi ? '-multi' : ''}`,
+					`{user} subscribed {plan}${has_multi ? ' for {multi, plural, one {# month} other {# months}} in advance' : ''}. `,
+					{
+						user: e('span', {
+							role: 'button',
+							className: 'chatter-name',
+							onClick: inst.ffz_user_click_handler,
+							onContextMenu: this.actions.handleUserContext
+						}, e('span', {
+							className: 'tw-c-text-base tw-strong'
+						}, user.displayName)),
+						plan: plan.prime ?
+							this.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
+							this.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier}),
+						multi: has_multi
+							? multi.count
+							: 1
+					}
+				);
 
 				if ( msg.sub_share_streak && msg.sub_streak > 1 ) {
 					sub_msg.push(this.i18n.t(

@@ -15,6 +15,8 @@ import {createPopper} from '@popperjs/core';
 
 let last_id = 0;
 
+export const NoContent = Symbol('NoContent');
+
 export const DefaultOptions = {
 	html: false,
 	delayShow: 0,
@@ -77,7 +79,7 @@ export class Tooltip {
 
 		} else if ( this.live ) {
 			this._onMouseOver = e => {
-				this.updateShift(e.shiftKey);
+				this.updateShift(e.shiftKey, e.ctrlKey);
 				const target = e.target;
 				if ( target && target.classList && target.classList.contains(this.cls) && target.dataset.forceOpen !== 'true' ) {
 					this._enter(target);
@@ -89,7 +91,7 @@ export class Tooltip {
 
 		} else {
 			this._onMouseOver = e => {
-				this.updateShift(e.shiftKey);
+				this.updateShift(e.shiftKey, e.ctrlKey);
 				const target = e.target;
 				if ( this.elements.has(target)  && target.dataset.forceOpen !== 'true' ) {
 					this._enter(e.target);
@@ -144,7 +146,7 @@ export class Tooltip {
 		if ( this._keyUpdate )
 			return;
 
-		this._keyUpdate = e => this.updateShift(e.shiftKey);
+		this._keyUpdate = e => this.updateShift(e.shiftKey, e.ctrlKey);
 		window.addEventListener('keydown', this._keyUpdate);
 		window.addEventListener('keyup', this._keyUpdate);
 	}
@@ -158,11 +160,13 @@ export class Tooltip {
 		this._keyUpdate = null;
 	}
 
-	updateShift(state) {
-		if ( state === this.shift_state )
+	updateShift(state, ctrl_state) {
+		if ( state === this.shift_state && ctrl_state === this.ctrl_state )
 			return;
 
 		this.shift_state = state;
+		this.ctrl_state = ctrl_state;
+
 		if ( ! this._shift_af )
 			this._shift_af = requestAnimationFrame(() => {
 				this._shift_af = null;
@@ -171,7 +175,9 @@ export class Tooltip {
 						const tip = el[this._accessor];
 						if ( tip && tip.outer ) {
 							tip.outer.dataset.shift = this.shift_state;
+							tip.outer.dataset.ctrl = this.ctrl_state;
 							tip.update();
+							//tip.updateVideo();
 						}
 					}
 			});
@@ -268,19 +274,30 @@ export class Tooltip {
 				tip = target[this._accessor] = {target};
 			this.show(tip);
 		};
+		tip.updateVideo = () => {
+			if ( ! tip.element )
+				return;
+			const videos = tip.element.querySelectorAll('video');
+			for(const video of videos) {
+				if ( this.ctrl_state )
+					video.play();
+				else
+					video.pause();
+			}
+		};
 		tip.hide = () => this.hide(tip);
 		tip.rerender = () => {
 			if ( tip.visible ) {
 				tip.hide();
 				tip.show();
 			}
-		}
+		};
 
 		let content = maybe_call(opts.content, null, target, tip);
 		if ( content === undefined )
 			content = tip.target.title;
 
-		if ( tip.visible || (! content && ! opts.onShow) )
+		if ( tip.visible || content === NoContent || (! content && ! opts.onShow) )
 			return;
 
 		// Build the DOM.
@@ -289,7 +306,8 @@ export class Tooltip {
 
 			el = tip.outer = createElement('div', {
 				className: opts.tooltipClass,
-				'data-shift': this.shift_state
+				'data-shift': this.shift_state,
+				'data-ctrl': this.ctrl_state
 			}, [inner, arrow]);
 
 		arrow.setAttribute('x-arrow', true);
@@ -314,7 +332,7 @@ export class Tooltip {
 		if ( ! opts.manual || (hover_events && (opts.onHover || opts.onLeave || opts.onMove)) ) {
 			if ( hover_events && opts.onMove )
 				el.addEventListener('mousemove', el._ffz_move_handler = event => {
-					this.updateShift(event.shiftKey);
+					this.updateShift(event.shiftKey, event.ctrlKey);
 					opts.onMove(target, tip, event);
 				});
 
@@ -388,7 +406,7 @@ export class Tooltip {
 
 		tip._promises = null;
 
-		if ( content instanceof Promise || (content.then && content.toString() === '[object Promise]') ) {
+		if ( content instanceof Promise || (content?.then && content.toString() === '[object Promise]') ) {
 			inner.innerHTML = '<div class="ffz-i-zreknarf loader"></div>';
 			content.then(content => {
 				if ( ! content )

@@ -112,6 +112,14 @@
 	}
 }
 
+.ffz--rich-player {
+	cursor: pointer;
+
+	> * {
+		width: 100%;
+	}
+}
+
 .ffz--overlay {
 	position: relative;
 
@@ -242,6 +250,22 @@
 	border-width: 0 3em 3em 0;
 	z-index: 100;
 
+	border-right-color: var(--ffz-flag-color);
+
+	&.ffz--corner-flag--left {
+		right: unset;
+		left: 0;
+		border-width: 0 0 3em 3em;
+
+		border-right-color: transparent;
+		border-left-color: var(--ffz-flag-color);
+
+		figure {
+			right: unset;
+			left: -2.75em;
+		}
+	}
+
 	figure {
 		position: absolute;
 		top: 0;
@@ -250,11 +274,12 @@
 }
 
 .ffz--corner-flag__warn {
-	border-right-color: #f33;
+	--ffz-flag-color: #f33;
 	color: #fff;
 
 	.tw-root--theme-dark & {
-		border-right-color: #900;
+		--ffz-flag-color: #900;
+		//border-right-color: #900;
 	}
 }
 
@@ -336,7 +361,7 @@
 		flex-direction: column;
 		overflow: hidden;
 		margin-top: -4px;
-		max-height: calc(100% + 4px);
+		max-height: calc(350px + 4px);
 
 		&:only-child {
 			grid-column-start: 1;

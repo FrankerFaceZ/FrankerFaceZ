@@ -102,6 +102,15 @@
 	.creator-chat-stats-carousel__left-arrow {
 		background: linear-gradient(90deg, var(--color-background-body) 60%, transparent) !important;
 	}
+
+	.emote-picker__emote-link {
+		&:hover {
+			background-color: var(--color-background-button-text-hover) !important;
+		}
+		&:active,&:focus {
+			background-color: var(--color-background-button-text-active) !important;
+		}
+	}
 }
 
 html {

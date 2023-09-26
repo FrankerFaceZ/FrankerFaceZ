@@ -8,7 +8,7 @@ import {has} from 'utilities/object';
 import Markdown from 'markdown-it';
 import MILA from 'markdown-it-link-attributes';
 
-export const VERSION = 7;
+export const VERSION = 8;
 
 export const TOKEN_TYPES = {};
 
@@ -989,7 +989,11 @@ TOKEN_TYPES.link = function(token, createElement, ctx) {
 	if ( token.no_color )
 		klass.push(`ffz-link--inherit`);
 
-	if ( ctx.vue )
+	if ( ctx.vue ) {
+		let on = {};
+		if ( ctx.link_click_handler )
+			on.click = ctx.link_click_handler;
+
 		return createElement('a', {
 			class: klass,
 			attrs: {
@@ -997,15 +1001,18 @@ TOKEN_TYPES.link = function(token, createElement, ctx) {
 				target: '_blank',
 				'data-tooltip-type': 'link',
 				href: token.url
-			}
+			},
+			on
 		}, content);
+	}
 
 	return createElement('a', {
 		className: klass.join(' '),
 		rel: 'noopener noreferrer',
 		target: '_blank',
 		'data-tooltip-type': 'link',
-		href: token.url
+		href: token.url,
+		onClick: ctx.link_click_handler
 	}, content);
 }
 
@@ -1062,6 +1069,140 @@ TOKEN_TYPES.overlay = function(token, createElement, ctx) {
 		createElement('div', {className: 'ffz--overlay__content'}, content),
 		...corners
 	]);
+}
+
+
+// ============================================================================
+// Token Type: Player
+// ============================================================================
+
+function handlePlayerClick(token, id, ctx, event) {
+	//console.log('clicked player', token, id, ctx, event);
+	if ( ctx.togglePlayer ) {
+		ctx.togglePlayer(id);
+		event.preventDefault();
+		event.stopPropagation();
+	}
+
+	const target = event.currentTarget;
+	if ( target instanceof HTMLVideoElement ) {
+		if ( target.paused )
+			target.play();
+		else
+			target.pause();
+	}
+}
+
+TOKEN_TYPES.player = function(token, createElement, ctx) {
+
+	// Make a unique ID for this player, within the context.
+	const id = ctx.last_player = (ctx.last_player || 0) + 1,
+		active = ctx.player_state?.[id];
+
+	const handler = handlePlayerClick.bind(this, token, id, ctx);
+
+	if ( token.iframe )
+		return render_player_iframe(id, active ?? false, handler, token, createElement, ctx);
+
+	if ( ! token.sources )
+		return null;
+
+	const autoplay = token.autoplay ?? false,
+		loop = token.loop ?? false,
+		playing = active ?? autoplay,
+		controls = ! token.silent || ! autoplay;
+
+	const muted = token.silent ? true : (active == null && autoplay);
+	const style = {};
+
+	const aspect = token.active_aspect ?? token.aspect;
+		if ( aspect )
+			style.aspectRatio = aspect;
+
+	if ( ctx.vue )
+		return createElement('video', {
+			style,
+			attrs: {
+				autoplay: playing,
+				loop,
+				controls,
+				poster: token.poster
+			},
+			domProps: {
+				muted
+			},
+			on: {
+				click: handler
+			}
+		}, token.sources.map(source => createElement('source', {
+			attrs: {
+				type: source.type,
+				src: source.src
+			}
+		})));
+
+	return createElement('video', {
+		style,
+		muted,
+		autoplay: playing,
+		loop,
+		poster: token.poster,
+		controls,
+		onClick: handler
+	}, token.sources.map(source => createElement('source', {
+		type: source.type,
+		src: source.src
+	})));
+}
+
+function render_player_iframe(id, active, handler, token, createElement, ctx) {
+
+	if ( active ) {
+		const style = {},
+			attrs = {
+				src: token.iframe,
+				frameborder: 0,
+				allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+				allowfullscreen: true
+			};
+
+		const aspect = token.active_aspect ?? token.aspect;
+		if ( aspect )
+			style.aspectRatio = aspect;
+
+		if ( ctx.vue )
+			return createElement('iframe', {
+				style,
+				attrs
+			});
+
+		return createElement('iframe', {
+			style,
+			...attrs
+		});
+	}
+
+	const content = renderTokens(token.content, createElement, ctx, token.markdown),
+		classes = ['ffz--rich-player'],
+		style = {};
+
+	if ( token.aspect )
+		style.aspectRatio = token.aspect;
+
+	if ( ctx.vue )
+		return createElement('div', {
+			class: classes,
+			style,
+			on: {
+				click: handler
+			}
+		}, content);
+
+	return createElement('div', {
+		className: classes.join(' '),
+		onClick: handler,
+		style
+	}, content);
 }
 
 

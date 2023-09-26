@@ -2506,6 +2506,11 @@ export default class ChatHook extends Module {
 						out.gift_theme = e.giftTheme;
 						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_plan = e.methods;
+						out.sub_multi = e.multiMonthData?.multiMonthDuration ? {
+							count: e.multiMonthData.multiMonthDuration,
+							tenure: e.multiMonthData.multiMonthTenure
+						} : null;
+
 						return i.postMessageToCurrentChannel(e, out);
 
 					} catch(err) {
@@ -2588,6 +2593,10 @@ export default class ChatHook extends Module {
 						out.sub_share_streak = e.shouldShareStreakTenure;
 						out.sub_months = e.months;
 						out.sub_plan = e.methods;
+						out.sub_multi = e.multiMonthData?.multiMonthDuration ? {
+							count: e.multiMonthData.multiMonthDuration,
+							tenure: e.multiMonthData.multiMonthTenure
+						} : null;
 
 						//t.log.info('Resub Event', e, out);
 

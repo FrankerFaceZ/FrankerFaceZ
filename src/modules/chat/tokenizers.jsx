@@ -6,6 +6,7 @@
 
 import {sanitize, createElement} from 'utilities/dom';
 import {has, getTwitchEmoteURL, split_chars, getTwitchEmoteSrcSet} from 'utilities/object';
+import { NoContent } from 'utilities/tooltip';
 
 import {EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS, WEIRD_EMOTE_SIZES} from 'utilities/constants';
 import {CATEGORIES, JOINER_REPLACEMENT} from './emoji';
@@ -80,12 +81,13 @@ export const Links = {
 			rel="noopener noreferrer"
 			target="_blank"
 			href={token.url}
+			onClick={this.handleLinkClick}
 		>{token.text}</a>);
 	},
 
 	tooltip(target, tip) {
 		if ( ! this.context.get('tooltip.rich-links') && ! target.dataset.forceTooltip )
-			return '';
+			return NoContent;
 
 		if ( target.dataset.isMail === 'true' )
 			return [this.i18n.t('tooltip.email-link', 'E-Mail {address}', {address: target.textContent})];

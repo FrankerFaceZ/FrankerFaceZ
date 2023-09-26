@@ -152,6 +152,8 @@
 					v-if="rich_data"
 					:data="rich_data"
 					:url="url"
+					:force-mid="false"
+					:force-full="false"
 					:force-media="force_media"
 					:force-unsafe="force_unsafe"
 					:events="events"
@@ -168,6 +170,7 @@
 					:data="rich_data"
 					:url="url"
 					:force-mid="true"
+					:force-full="false"
 					:force-media="force_media"
 					:force-unsafe="force_unsafe"
 					:events="events"
@@ -207,7 +210,8 @@
 					<div v-if="raw_loading" class="tw-align-center">
 						<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
 					</div>
-					<code v-else>{{ raw_data }}</code>
+					<code v-else-if="typeof raw_data === 'string'">{{ raw_data }}</code>
+					<code v-else v-html="highlightJson(raw_data, true)"></code>
 				</div>
 			</div>
 		</div>
@@ -215,7 +219,9 @@
 </template>
 
 <script>
+
 import { debounce, timeout, pick_random } from 'utilities/object'
+import { highlightJson } from 'utilities/dom';
 
 const STOCK_URLS = [
 	'https://www.twitch.tv/sirstendec',
@@ -503,7 +509,7 @@ export default {
 		},
 
 		async refreshRaw() {
-			this.raw_data = null;
+			this.raw_data = undefined;
 			this.length = 0;
 			if ( ! this.rich_data ) {
 				this.raw_loading = false;
@@ -513,7 +519,7 @@ export default {
 			this.raw_loading = true;
 			try {
 				const data = await this.chat.get_link_info(this.url);
-				this.raw_data = JSON.stringify(data, null, '\t');
+				this.raw_data = data; //JSON.stringify(data, null, '\t');
 				this.length = JSON.stringify(data).length;
 			} catch(err) {
 				this.raw_data = `Error\n\n${err.toString()}`;
@@ -585,7 +591,11 @@ export default {
 			this.force_tooltip = this.$refs.force_tooltip.checked;
 
 			this.saveState();
-		}
+		},
+
+		highlightJson(object, pretty) {
+			return highlightJson(object, pretty);
+		},
 	}
 
 }

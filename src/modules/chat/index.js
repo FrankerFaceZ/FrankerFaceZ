@@ -7,9 +7,11 @@
 import dayjs from 'dayjs';
 
 import Module from 'utilities/module';
-import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
 import {Color} from 'utilities/color';
+import {createElement, ManagedStyle} from 'utilities/dom';
+import {FFZEvent} from 'utilities/events';
+import {getFontsList} from 'utilities/fonts';
+import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -23,7 +25,7 @@ import * as RICH_PROVIDERS from './rich_providers';
 import * as LINK_PROVIDERS from './link_providers';
 
 import Actions from './actions/actions';
-import { getFontsList } from 'src/utilities/fonts';
+
 
 function sortPriorityColorTerms(list) {
 	list.sort((a,b) => {
@@ -83,6 +85,7 @@ export default class Chat extends Module {
 
 		// Bind for JSX stuff
 		this.clickToReveal = this.clickToReveal.bind(this);
+		this.handleLinkClick = this.handleLinkClick.bind(this);
 		this.handleMentionClick = this.handleMentionClick.bind(this);
 		this.handleReplyClick = this.handleReplyClick.bind(this);
 
@@ -1266,6 +1269,7 @@ export default class Chat extends Module {
 
 	onEnable() {
 		this.socket = this.resolve('socket');
+		this.pubsub = this.resolve('pubsub');
 
 		this.on('site.subpump:pubsub-message', this.onPubSub, this);
 
@@ -1500,6 +1504,31 @@ export default class Chat extends Module {
 				if ( room && ! room.destroyed && ! visited.has(room) )
 					yield room;
 			}
+	}
+
+
+	handleLinkClick(event) {
+		if ( event.ctrlKey || event.shiftKey )
+			return;
+
+		const target = event.currentTarget,
+			ds = target?.dataset;
+
+		if ( ! ds )
+			return;
+
+		const evt = new FFZEvent({
+			url: ds.url ?? target.href,
+			source: event
+		});
+
+		this.emit('chat:click-link', evt);
+		if ( evt.defaultPrevented ) {
+			event.preventDefault();
+			event.stopPropagation();
+			return true;
+		}
+
 	}
 
 
@@ -2318,7 +2347,9 @@ export default class Chat extends Module {
 					image: {type: 'image', url: ERROR_IMAGE},
 					title: {type: 'i18n', key: 'card.error', phrase: 'An error occurred.'},
 					subtitle: data.error
-				}
+				},
+				unsafe: data.unsafe,
+				urls: data.urls
 			}
 
 		if ( data.v < 5 && ! data.short && ! data.full && (data.title || data.desc_1 || data.desc_2) ) {

@@ -16,6 +16,10 @@
 		"data": "@badge-info=subscriber/17;badges=subscriber/12,moments/1;color=#2E8B57;display-name=FaustDaimos;emotes=;flags=;id=cdb378a9-4e56-4933-a78b-f4bcf2a3961a;login=faustdaimos;mod=0;msg-id=resub;msg-param-cumulative-months=17;msg-param-months=0;msg-param-multimonth-duration=0;msg-param-multimonth-tenure=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=Baka\\sBrigade!;msg-param-sub-plan=1000;msg-param-was-gifted=false;room-id=24761645;subscriber=1;system-msg=FaustDaimos\\ssubscribed\\sat\\sTier\\s1.\\sThey've\\ssubscribed\\sfor\\s17\\smonths!;tmi-sent-ts=1671231277242;user-id=37613709;user-type= :tmi.twitch.tv USERNOTICE #cirno_tv :when do we try it out"
 	},
 	{
+		"name": "Subscribe (Tier 1, 6 Months, No Message)",
+		"data": "@badge-info=subscriber/1;badges=subscriber/0;color=#191970;display-name=0x800CCC0F;emotes=;flags=;id=929243d4-3a4c-4cd6-ad78-31faa187d4f5;login=0x800ccc0f;mod=0;msg-id=sub;msg-param-cumulative-months=1;msg-param-months=0;msg-param-multimonth-duration=6;msg-param-multimonth-tenure=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=The\\sGeologists;msg-param-sub-plan=1000;msg-param-was-gifted=false;room-id=49399878;subscriber=1;system-msg=0x800CCC0F\\ssubscribed\\sat\\sTier\\s1.;tmi-sent-ts=1695428795186;user-id=128451573;user-type=;vip=0 :tmi.twitch.tv USERNOTICE #sirstendec"
+	},
+	{
 		"name": "Mass Gift Sub (Tier 1, 5 Total)",
 		"data": [
 			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=d0e4a1d9-75c7-406d-8423-cfa3dfb514b5;login=hellbirdza;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=5;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-sender-count=15;msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sis\\sgifting\\s5\\sTier\\s1\\sSubs\\sto\\sAsmongold's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s15\\sin\\sthe\\schannel!;tmi-sent-ts=1671302976346;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",

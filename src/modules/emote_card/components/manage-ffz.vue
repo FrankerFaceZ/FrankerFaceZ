@@ -4,6 +4,7 @@
 		:class="{'tw-pd-b-05': expanded}"
 	>
 		<div
+			v-if="! noHeader"
 			class="tw-flex tw-align-items-center tw-c-background-alt-2 tw-pd-y-05 tw-pd-x-1 ffz--cursor"
 			@click="toggle"
 		>
@@ -59,17 +60,23 @@ export default {
 
 	props: [
 		'emote',
-		'getFFZ'
+		'getFFZ',
+		'noHeader'
 	],
 
 	data() {
 		return {
-			expanded: false,
+			expanded: this.noHeader ? true : false,
 			loading: false,
 			error: false,
 			presence: null,
 			collections: null
 		}
+	},
+
+	created() {
+		if ( this.expanded && ! this.collections )
+			this.loadCollections();
 	},
 
 	methods: {

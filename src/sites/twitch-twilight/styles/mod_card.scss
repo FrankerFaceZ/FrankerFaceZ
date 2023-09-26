@@ -11,6 +11,11 @@
 		overflow: unset !important;
 	}
 
+	&.ffz-accent-card {
+		width: 40rem;
+		border-right: 0.5rem solid var(--ffz-color-accent) !important;
+	}
+
 	> div:first-child {
 		cursor: move;
 	}
@@ -37,7 +42,7 @@
 			margin-right: .5rem;
 
 			&:hover, &.active {
-				border-top: 1px solid #6441a4;
+				border-top: 3px solid var(--color-text-link);
 			}
 		}
 	}

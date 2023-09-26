@@ -6,7 +6,7 @@
 
 import {createElement} from 'utilities/dom';
 import {deep_copy, getTwitchEmoteURL} from 'utilities/object';
-import { EmoteTypes } from 'utilities/constants';
+import { EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS } from 'utilities/constants';
 
 import GET_EMOTE from './twitch_data.gql';
 
@@ -181,7 +181,21 @@ export default class EmoteCard extends Module {
 
 			//console.log("loaded data", data);
 
-			const type = getEmoteTypeFromTwitchType(data.type);
+			let type = getEmoteTypeFromTwitchType(data.type);
+
+			let set;
+			try {
+				set = parseInt(data.setID, 10);
+			} catch(err) { /* no-op */ }
+
+			if ( TWITCH_GLOBAL_SETS.includes(set) )
+				type = EmoteTypes.Global;
+			else if ( TWITCH_POINTS_SETS.includes(set) )
+				type = EmoteTypes.ChannelPoints;
+			else if ( TWITCH_PRIME_SETS.includes(set) )
+				type = EmoteTypes.Prime;
+
+			//console.log('loaded data', data, type);
 
 			if ( type === EmoteTypes.Subscription ) {
 				const products = data.owner?.subscriptionProducts;
@@ -197,7 +211,7 @@ export default class EmoteCard extends Module {
 
 				source = this.i18n.t('emote-card.sub', 'Tier {tier} Sub Emote ({source})', {
 					tier: tier,
-					source: data.owner.displayName || data.owner.login
+					source: data.owner?.displayName || data.owner?.login
 				});
 
 				body = 'twitch';

@@ -69,6 +69,9 @@ dependencies:
   text-diff:
     specifier: ^1.0.1
     version: 1.0.1
+  u8-mqtt:
+    specifier: ^0.5.3
+    version: 0.5.3
   vue:
     specifier: ^2.6.14
     version: 2.6.14
@@ -2985,7 +2988,7 @@ packages:
     dev: true
 
   /fs.realpath@1.0.0:
-    resolution: {integrity: sha1-FQStJSMVjKpA20onh8sBQRmU6k8=}
+    resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
     dev: true
 
   /fsevents@2.3.2:
@@ -3359,7 +3362,7 @@ packages:
     dev: true
 
   /inflight@1.0.6:
-    resolution: {integrity: sha1-Sb1jMdfQLQwJvJEKEHW6gWW1bfk=}
+    resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
     dependencies:
       once: 1.4.0
       wrappy: 1.0.2
@@ -4180,7 +4183,7 @@ packages:
     dev: true
 
   /once@1.4.0:
-    resolution: {integrity: sha1-WDsap3WWHUsROsF9nFC6753Xa9E=}
+    resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
     dependencies:
       wrappy: 1.0.2
     dev: true
@@ -5320,6 +5323,10 @@ packages:
       is-typed-array: 1.1.12
     dev: true
 
+  /u8-mqtt@0.5.3:
+    resolution: {integrity: sha512-C9eaN2/kxtmMhLVrKT8Yk6a3pRj12K+nNpylDqUn/rKYwAaMEUnvXNWqd4QMd/EaKKcMxpeA9cyCU8DlUOvKsw==}
+    dev: false
+
   /uc.micro@1.0.6:
     resolution: {integrity: sha512-8Y75pvTYkLJW2hWQHXxoqRgV7qb9B+9vFEtidML+7koHUFapnVJAZ6cKs+Qjz5Aw3aZWHMC6u0wJE3At+nSGwA==}
     dev: false
@@ -5371,7 +5378,7 @@ packages:
     dev: true
 
   /util-deprecate@1.0.2:
-    resolution: {integrity: sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=}
+    resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
   /utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
@@ -5841,7 +5848,7 @@ packages:
     dev: true
 
   /wrappy@1.0.2:
-    resolution: {integrity: sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=}
+    resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
     dev: true
 
   /ws@8.13.0:

@@ -14,7 +14,7 @@ import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
-//import PubSubClient from './pubsub';
+import PubSubClient from './pubsub';
 import Site from 'site';
 import Vue from 'utilities/vue';
 import StagingSelector from './staging';
@@ -61,7 +61,7 @@ class FrankerFaceZ extends Module {
 		this.inject('staging', StagingSelector);
 		this.inject('load_tracker', LoadTracker);
 		this.inject('socket', SocketClient);
-		//this.inject('pubsub', PubSubClient);
+		this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
 

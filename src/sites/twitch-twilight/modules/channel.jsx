@@ -30,6 +30,7 @@ export default class Channel extends Module {
 		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
+		this.inject('pubsub');
 
 		this.settings.add('channel.auto-click-off-featured', {
 			default: false,
@@ -301,13 +302,23 @@ export default class Channel extends Module {
 	}*/
 
 
-	updateSubscription(login) {
-		if ( this._subbed_login === login )
+	updateSubscription(id, login) {
+		if ( this._subbed_login === login && this._subbed_id === id )
 			return;
+
+		if ( this._subbed_id ) {
+			this.pubsub.unsubscribe(this, `twitch/${this._subbed_id}/channel/#`);
+			this._subbed_id = null;
+		}
 
 		if ( this._subbed_login ) {
 			this.socket.unsubscribe(this, `channel.${this._subbed_login}`);
 			this._subbed_login = null;
+		}
+
+		if ( id ) {
+			this.pubsub.subscribe(this, `twitch/${id}/channel`);
+			this._subbed_id = id;
 		}
 
 		if ( login ) {
@@ -379,7 +390,7 @@ export default class Channel extends Module {
 		});
 
 		if ( ! el._ffz_cont || ! props?.channelID ) {
-			this.updateSubscription(null);
+			this.updateSubscription(null, null);
 			return;
 		}
 
@@ -470,12 +481,12 @@ export default class Channel extends Module {
 		//if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
 		//	this.setHost(props.channelID, props.channelLogin, null, null);
 
-		this.updateSubscription(props.channelLogin);
+		this.updateSubscription(props.channelID, props.channelLogin);
 		this.updateMetadata(el);
 	}
 
 	removeBar(el) {
-		this.updateSubscription(null);
+		this.updateSubscription(null, null);
 
 		if ( el._ffz_cont )
 			el._ffz_cont.classList.remove('ffz--meta-tray');

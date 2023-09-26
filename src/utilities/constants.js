@@ -239,6 +239,14 @@ export const WS_CLUSTERS = {
 	]
 }
 
+
+export const PUBSUB_CLUSTERS = {
+	Production: 'wss://pubsub.frankerfacez.com/mqtt',
+	Staging: 'wss://pubsub-staging.frankerfacez.com/mqtt',
+	Development: 'wss://127.0.0.1:8084/mqtt'
+}
+
+
 export const IS_OSX = navigator.platform ? navigator.platform.indexOf('Mac') !== -1 : /OS X/.test(navigator.userAgent);
 export const IS_WIN = navigator.platform ? navigator.platform.indexOf('Win') !== -1 : /Windows/.test(navigator.userAgent);
 export const IS_WEBKIT = navigator.userAgent.indexOf('AppleWebKit/') !== -1 && navigator.userAgent.indexOf('Edge/') === -1;

@@ -86,21 +86,13 @@
 		body:not(.ffz--portrait-invert) & {
 			top: unset !important;
 			bottom: 0 !important;
-			border-top: 1px solid #dad8de;
-
-			.tw-root--theme-dark & {
-				border-top-color: #2a2a2a;
-			}
+			border-top: 1px solid var(--color-border-base);
 		}
 
 		.ffz--portrait-invert & {
 			top: 0 !important;
 			bottom: unset !important;
-			border-bottom: 1px solid #dad8de;
-
-			.tw-root--theme-dark & {
-				border-bottom-color: #2a2a2a;
-			}
+			border-bottom: 1px solid var(--color-border-base);
 		}
 
 		& > .tw-full-height {
@@ -163,6 +155,10 @@
 		.channel-root__right-column,
 		.channel-page__right-column {
 			width: 100% !important;
+
+			& > div {
+				border-left: none !important;
+			}
 		}
 	}
 }

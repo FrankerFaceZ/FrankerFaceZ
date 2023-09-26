@@ -390,6 +390,15 @@ export default class ThemeEngine extends Module {
 			}
 
 			bits.push(this.generateBackgroundBlob(hsla));
+
+			// TODO: Actually calculate these
+			if ( dark ) {
+				bits.push(`--color-border-base: var(--color-opac-gl-2);`);
+				bits.push(`--color-background-interactable-hover: var(--color-opac-gl-1);`);
+				bits.push(`--color-background-interactable-active: var(--color-opac-gl-2);`);
+				bits.push(`--color-background-button-text-hover: var(--color-opac-gl-1);`);
+				bits.push(`--color-background-button-text-active: var(--color-opac-gl-2);`);
+			}
 		}
 
 		let text = Color.RGBA.fromCSS(this.settings.get('theme.color.text'));
