@@ -14,7 +14,6 @@ export const State = {
 	CONNECTED: 2
 }
 
-const decoder = new TextDecoder();
 
 export default class PubSubClient extends Module {
 	constructor(...args) {
@@ -185,36 +184,6 @@ export default class PubSubClient extends Module {
 			this.log.debug(`Received command on topic "${topic}" for command "${data.cmd}":`, data.data);
 			this.emit(`socket:command:${data.cmd}`, data.data, data);
 		});
-
-		/*client.on('connect', () => {
-			this._state = State.CONNECTED;
-		});
-
-		client.on('message', (topic, message, packet) => {
-			let data;
-			try {
-				message = decoder.decode(message);
-				data = JSON.parse(message);
-			} catch(err) {
-				this.log.warn(`Error decoding PubSub message on topic "${topic}":`, err);
-				return;
-			}
-
-			if ( ! data.cmd ) {
-				this.log.warn(`Received invalid PubSub message on topic "${topic}":`, data);
-				return;
-			}
-
-			data.topic = topic;
-
-			this.log.debug(`Received command on topic "${topic}" for command "${data.cmd}":`, data.data);
-			this.emit(`socket:command:${data.cmd}`, data.data, data);
-
-		});
-
-		client.on('close', () => {
-			this._state = State.CONNECTING;
-		});*/
 
 		// Subscribe to topics.
 		const topics = [...this._topics.keys()];

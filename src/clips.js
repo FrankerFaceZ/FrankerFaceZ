@@ -13,6 +13,7 @@ import SettingsManager from './settings/index';
 import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
+import PubSubClient from './pubsub';
 import StagingSelector from './staging';
 import LoadTracker from './load_tracker';
 
@@ -59,6 +60,7 @@ class FrankerFaceZ extends Module {
 		this.inject('i18n', TranslationManager);
 		this.inject('staging', StagingSelector);
 		this.inject('load_tracker', LoadTracker);
+		this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
 

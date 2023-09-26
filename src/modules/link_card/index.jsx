@@ -54,8 +54,10 @@ export default class LinkCard extends Module {
 	}
 
 	handleClick(evt) {
-		evt.preventDefault();
+		if ( ! this.settings.get('link-cards.enable') )
+			return;
 
+		evt.preventDefault();
 		this.openCard(evt.url, evt.source);
 	}
 
