@@ -438,8 +438,8 @@ export default {
 			if ( idx === -1 )
 				msg.user = null;
 			else {
-				msg.user = msg.prefix.substr(0, idx);
-				msg.prefix = msg.prefix.substr(idx);
+				msg.user = msg.prefix.slice(0, idx);
+				msg.prefix = msg.prefix.slice(idx);
 			}
 
 			return msg;
