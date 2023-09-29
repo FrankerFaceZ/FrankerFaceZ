@@ -40,7 +40,7 @@ export default class ClipsSite extends BaseSite {
 		this.inject('css_tweaks', CSSTweaks);
 
 		this.css_tweaks.loader = require.context(
-			'!raw-loader!sass-loader!./css_tweaks', false, /\.s?css$/, 'lazy-once'
+			'./css_tweaks?css_tweaks', false, /\.s?css$/, 'lazy-once'
 		);
 
 		this.css_tweaks.rules = {
@@ -57,7 +57,7 @@ export default class ClipsSite extends BaseSite {
 
 		this.ClipsMenu = this.fine.define(
 			'clips-menu',
-			n => n.props?.changeTheme && has(n.state, 'dropdownOpen')
+			n => n.props?.signup && has(n.state, 'dropdownOpen')
 		)
 
 		document.head.appendChild(createElement('link', {
@@ -217,3 +217,5 @@ export default class ClipsSite extends BaseSite {
 ClipsSite.CLIP_ROUTES = {
 	'clip-page': '/:slug'
 };
+
+ClipsSite.DIALOG_SELECTOR = '#root > div';

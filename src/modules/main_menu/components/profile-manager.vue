@@ -236,6 +236,16 @@
 					</div>
 
 					<div
+						v-if="p.ephemeral"
+						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container tw-font-size-4"
+					>
+						<span class="ffz-i-user-secret" />
+						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-left">
+							{{ t('setting.profiles.ephemeral', 'This profile is ephemeral.') }}
+						</div>
+					</div>
+
+					<div
 						v-if="p.url"
 						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container tw-font-size-4"
 					>

@@ -15,6 +15,26 @@
 	100% { transform: rotateY(90deg) rotateX(0deg) }
 }
 
+@keyframes ffz-gentle-shake {
+	0% { transform: translate(20px) }
+	20% { transform: translate(-20px) }
+	40% { transform: translate(10px) }
+	60% { transform: translate(-10px) }
+	80% { transform: translate(5px) }
+	100% { transform: translate(0) }
+}
+
+@keyframes ffz--fade {
+	0% { opacity: 1 }
+	50% { opacity: 0.5 }
+	100% { opacity: 1 }
+}
+
+@keyframes ffz-rotate {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
 .ffz--inline {
 	display: inline;
 }
@@ -46,6 +66,37 @@
 	}
 }
 
+
+.ffz-new-indicator {
+	position: absolute;
+	top: 0;
+	right: 0;
+
+	width: 0.8rem;
+	height: 0.8rem;
+
+	background-color: var(--color-fill-new-item-indicator);
+	border-radius: var(--border-radius-rounded);
+}
+
+.emote-picker-tab-item .ffz-new-indicator {
+	top: 0.25rem;
+	right: 0.25rem;
+}
+
+.ffz--rotate {
+	animation: ffz-rotate 2s infinite linear;
+}
+
+.ffz--shaking {
+	animation: ffz-gentle-shake 0.4s 1 linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ffz--shaking {
+        animation: fade 0.4s 1 linear;
+    }
+}
 
 .ffz-i-t-reset.loading,
 .ffz-i-t-reset-clicked.loading,

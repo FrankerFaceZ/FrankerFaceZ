@@ -1,0 +1,51 @@
+[
+	{
+		"name": "Cheer",
+		"data": "@bits=42069;badge-info=subscriber/69;badges=subscriber/3024,bits/100;color=#FF526F;display-name=SirStendec;id=813a1ef5-f8dd-406c-a2dd-f74d99db2799 :sirstendec!sirstendec@sirstendec.tmi.twitch.tv PRIVMSG #sirstendec :Hello. cheer42069"
+	},
+	{
+		"name": "Ping",
+		"data": "PING :tmi.twitch.tv"
+	},
+	{
+		"name": "Subscribe (Tier 1, No Message)",
+		"data": "@badge-info=subscriber/1;badges=subscriber/0,premium/1;color=#007ECC;display-name=Kerokai;emotes=;flags=;id=80b7174c-830b-487b-8bce-99bab02b6378;login=kerokai;mod=0;msg-id=sub;msg-param-cumulative-months=1;msg-param-months=0;msg-param-multimonth-duration=1;msg-param-multimonth-tenure=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(maxisgoatlord);msg-param-sub-plan=1000;msg-param-was-gifted=false;room-id=42490770;subscriber=1;system-msg=Kerokai\\ssubscribed\\sat\\sTier\\s1.;tmi-sent-ts=1671231043209;user-id=32357552;user-type=; :tmi.twitch.tv USERNOTICE #maximum"
+	},
+	{
+		"name": "Resubscribe (Tier 1, 17 Months, Message)",
+		"data": "@badge-info=subscriber/17;badges=subscriber/12,moments/1;color=#2E8B57;display-name=FaustDaimos;emotes=;flags=;id=cdb378a9-4e56-4933-a78b-f4bcf2a3961a;login=faustdaimos;mod=0;msg-id=resub;msg-param-cumulative-months=17;msg-param-months=0;msg-param-multimonth-duration=0;msg-param-multimonth-tenure=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=Baka\\sBrigade!;msg-param-sub-plan=1000;msg-param-was-gifted=false;room-id=24761645;subscriber=1;system-msg=FaustDaimos\\ssubscribed\\sat\\sTier\\s1.\\sThey've\\ssubscribed\\sfor\\s17\\smonths!;tmi-sent-ts=1671231277242;user-id=37613709;user-type= :tmi.twitch.tv USERNOTICE #cirno_tv :when do we try it out"
+	},
+	{
+		"name": "Subscribe (Tier 1, 6 Months, No Message)",
+		"data": "@badge-info=subscriber/1;badges=subscriber/0;color=#191970;display-name=0x800CCC0F;emotes=;flags=;id=929243d4-3a4c-4cd6-ad78-31faa187d4f5;login=0x800ccc0f;mod=0;msg-id=sub;msg-param-cumulative-months=1;msg-param-months=0;msg-param-multimonth-duration=6;msg-param-multimonth-tenure=0;msg-param-should-share-streak=0;msg-param-sub-plan-name=The\\sGeologists;msg-param-sub-plan=1000;msg-param-was-gifted=false;room-id=49399878;subscriber=1;system-msg=0x800CCC0F\\ssubscribed\\sat\\sTier\\s1.;tmi-sent-ts=1695428795186;user-id=128451573;user-type=;vip=0 :tmi.twitch.tv USERNOTICE #sirstendec"
+	},
+	{
+		"name": "Mass Gift Sub (Tier 1, 5 Total)",
+		"data": [
+			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=d0e4a1d9-75c7-406d-8423-cfa3dfb514b5;login=hellbirdza;mod=0;msg-id=submysterygift;msg-param-mass-gift-count=5;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-sender-count=15;msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sis\\sgifting\\s5\\sTier\\s1\\sSubs\\sto\\sAsmongold's\\scommunity!\\sThey've\\sgifted\\sa\\stotal\\sof\\s15\\sin\\sthe\\schannel!;tmi-sent-ts=1671302976346;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",
+			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=182675e7-db1b-49d3-9650-54c31d938203;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=1;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=buddyunique1;msg-param-recipient-id=431251927;msg-param-recipient-user-name=buddyunique1;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\sbuddyunique1!;tmi-sent-ts=1671302976704;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",
+			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=594ce86d-f956-43cd-8b5d-1b7e8499dca1;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=1;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=tartarin_e;msg-param-recipient-id=144049812;msg-param-recipient-user-name=tartarin_e;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\startarin_e!;tmi-sent-ts=1671302976722;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",
+			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=527abc39-e599-4c1d-a480-e724a9c69823;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=1;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=haaryho_stracene_vlasy;msg-param-recipient-id=96664018;msg-param-recipient-user-name=haaryho_stracene_vlasy;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\shaaryho_stracene_vlasy!;tmi-sent-ts=1671302976759;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",
+			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=f694b0fc-0b5e-4adf-8002-03dae340e9b5;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=1;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=corette0;msg-param-recipient-id=149790291;msg-param-recipient-user-name=corette0;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\scorette0!;tmi-sent-ts=1671302976767;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold",
+			"@badge-info=;badges=premium/1;color=;display-name=HellbirDza;emotes=;flags=;id=5893d8a8-5eb3-46d6-9737-f1b2b76400d4;login=hellbirdza;mod=0;msg-id=subgift;msg-param-gift-months=1;msg-param-months=2;msg-param-origin-id=ee\\se2\\s3f\\s01\\s75\\s45\\se1\\sfa\\s24\\s47\\s29\\s08\\sdb\\sf8\\sab\\se1\\s56\\s27\\s83\\s2e;msg-param-recipient-display-name=yo_adg;msg-param-recipient-id=465861822;msg-param-recipient-user-name=yo_adg;msg-param-sender-count=0;msg-param-sub-plan-name=Channel\\sSubscription\\s(asmongold);msg-param-sub-plan=1000;room-id=26261471;subscriber=0;system-msg=HellbirDza\\sgifted\\sa\\sTier\\s1\\ssub\\sto\\syo_adg!;tmi-sent-ts=1671302976798;user-id=28678305;user-type= :tmi.twitch.tv USERNOTICE #asmongold"
+		]
+	},
+	{
+		"name": "Hype Chat (Message)",
+		"data": "@badge-info=;badges=partner/1;color=#D6A3FF;display-name=GalaxyAUS;emotes=;first-msg=0;flags=;id=ab02f65f-c600-4e95-a97d-48163f686830;mod=0;pinned-chat-paid-amount=170;pinned-chat-paid-canonical-amount=170;pinned-chat-paid-currency=AUD;pinned-chat-paid-exponent=2;pinned-chat-paid-is-system-message=0;pinned-chat-paid-level=ONE;returning-chatter=0;room-id=29158331;subscriber=0;tmi-sent-ts=1687494193366;turbo=0;user-id=68458131;user-type= :galaxyaus!galaxyaus@galaxyaus.tmi.twitch.tv PRIVMSG #cardboard_cowboy :SCIENCE"
+	},
+	{
+		"name": "Hype Chat (No Message)",
+		"data": "@badge-info=;badges=;color=#00FF7F;display-name=옥메왁까;emotes=;first-msg=0;flags=;id=36999eea-314c-4bb8-8cc2-8be1175c3e31;mod=0;pinned-chat-paid-amount=7500;pinned-chat-paid-canonical-amount=7500;pinned-chat-paid-currency=KRW;pinned-chat-paid-exponent=0;pinned-chat-paid-is-system-message=1;pinned-chat-paid-level=TWO;returning-chatter=0;room-id=148057505;subscriber=0;tmi-sent-ts=1687458800209;turbo=0;user-id=184488771;user-type= :okmewaka!okmewaka@okmewaka.tmi.twitch.tv PRIVMSG #tmxk319 :User sent Hype Chat"
+	},
+	{
+		"name": "Hype Chat (PubSub)",
+		"topic": "pinned-chat-updates-v1.<channel>",
+		"data": {"type":"pin-message","data":{"id":"deea93ac-66c7-4500-aa38-d9cfb82f14bc","pinned_by":{"id":"128900149","display_name":"JailBreakRules"},"message":{"id":"deea93ac-66c7-4500-aa38-d9cfb82f14bc","sender":{"id":"128900149","display_name":"JailBreakRules","badges":[{"id":"subscriber","version":"12"},{"id":"glhf-pledge","version":"1"}],"chat_color":"#F31995"},"content":{"text":"xQc gets 70 cents off this lmfao","fragments":[{"text":"xQc gets 70 cents off this lmfao"}]},"type":"PAID","starts_at":1687737336,"updated_at":1687737336,"ends_at":1687737366,"sent_at":1687737336,"metadata":{"amount":"100","canonical-amount":"100","currency":"USD","exponent":"2","isSystemMessage":"false","level":"ONE"}}}}
+	},
+	{
+		"name": "Drop Claim Reward (PubSub)",
+		"topic": "user-drop-events.<user>",
+		"data": {"type":"drop-claim","data":{"drop_instance_id":"9f21b210-63b0-4725-be46-b8e49207f533","drop_id":"4da46d69-269e-4709-baf0-1dc62dcf39b2","channel_id":"118336478"}}
+	}
+]

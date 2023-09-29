@@ -1,5 +1,6 @@
 <script>
 
+import {FFZEvent} from 'utilities/events';
 import {has, timeout} from 'utilities/object';
 
 const ERROR_IMAGE = 'https://static-cdn.jtvnw.net/emoticons/v1/58765/2.0';
@@ -8,13 +9,14 @@ let tokenizer;
 
 
 export default {
-	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia', 'forceMid'],
+	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia', 'forceMid', 'noLink', 'noTooltip', 'noElevation', 'noUnsafe'],
 
 	data() {
 		return {
 			has_tokenizer: false,
 			loaded: false,
 			version: null,
+			player_state: {},
 			fragments: {},
 			error: null,
 			accent: null,
@@ -23,6 +25,7 @@ export default {
 			full: null,
 			unsafe: false,
 			urls: null,
+			i18n_prefix: null,
 			allow_media: false,
 			allow_unsafe: false
 		}
@@ -55,14 +58,40 @@ export default {
 
 		this.listen();
 		this.load();
+
+		this.handle_click = this.handleClick.bind(this);
 	},
 
 	beforeDestroy() {
 		this.unlisten();
 		this.clearRefresh();
+
+		this.handle_click = null;
 	},
 
 	methods: {
+		handleClick(event) {
+			if ( ! this.events.emit || event.ctrlKey || event.shiftKey )
+				return;
+
+			const target = event.currentTarget,
+				ds = target?.dataset;
+
+			if ( ! ds )
+				return;
+
+			const evt = new FFZEvent({
+				url: ds.url ?? target.href,
+				source: event
+			});
+
+			this.events.emit('chat:click-link', evt);
+			if ( evt.defaultPrevented ) {
+				event.preventDefault();
+				return true;
+			}
+		},
+
 		async loadTokenizer() {
 			if ( tokenizer )
 				this.has_tokenizer = true;
@@ -104,6 +133,7 @@ export default {
 		reset(refresh = false) {
 			this.clearRefresh();
 
+			this.player_state = {};
 			this.loaded = false;
 			this.error = null;
 			this.version = null;
@@ -114,6 +144,7 @@ export default {
 			this.fragments = {};
 			this.unsafe = false;
 			this.urls = null;
+			this.i18n_prefix = null;
 			this.allow_media = false;
 			this.allow_unsafe = false;
 			this.load(refresh);
@@ -179,6 +210,7 @@ export default {
 			this.fragments = data.fragments ?? {};
 			this.unsafe = data.unsafe;
 			this.urls = data.urls;
+			this.i18n_prefix = data.i18n_prefix;
 			this.allow_media = data.allow_media;
 			this.allow_unsafe = data.allow_unsafe;
 		},
@@ -199,7 +231,7 @@ export default {
 		},
 
 		renderUnsafe(h) {
-			if ( ! this.unsafe )
+			if ( ! this.unsafe || this.noUnsafe )
 				return null;
 
 			const reasons = Array.from(new Set(this.urls.map(url => url.flags).flat())).join(', ');
@@ -223,8 +255,13 @@ export default {
 		},
 
 		renderBody(h) {
-			let body = this.forceFull ? this.full :
-				this.forceMid ? this.mid : this.short;
+			let body;
+			if ( this.forceFull === true || (this.forceFull !== false && this.full) )
+				body = this.full;
+			else if ( this.forceMid === true || (this.forceMid !== false && this.mid) )
+				body = this.mid;
+			else
+				body = this.short;
 
 			if ( this.has_tokenizer && this.version && this.version > tokenizer.VERSION )
 				body = null;
@@ -237,7 +274,17 @@ export default {
 					tList: (...args) => this.tList(...args),
 					i18n: this.getI18n(),
 
+					last_player: 0,
+					player_state: this.player_state,
+
+					togglePlayer: id => {
+						this.$set(this.player_state, id, ! this.player_state[id]);
+					},
+
+					link_click_handler: this.handle_click,
+
 					fragments: this.fragments,
+					i18n_prefix: this.i18n_prefix,
 
 					allow_media: this.forceMedia ?? this.allow_media,
 					allow_unsafe: this.forceUnsafe ?? this.allow_unsafe
@@ -291,12 +338,12 @@ export default {
 
 	render(h) {
 		let content = h('div', {
-			class: 'tw-flex tw-flex-nowrap tw-pd-05'
+			class: 'tw-flex tw-flex-nowrap tw-full-width tw-pd-05'
 		}, this.renderCard(h));
 
-		const tooltip = this.has_full && ! this.forceFull;
+		const tooltip = ! this.noTooltip && this.has_full && ! this.forceFull;
 
-		if ( this.url )
+		if ( this.url && ! this.noLink )
 			content = h('a', {
 				class: [
 					tooltip && 'ffz-tooltip',
@@ -304,6 +351,9 @@ export default {
 					!this.error && 'ffz-interactable--hover-enabled',
 					'tw-block tw-border-radius-medium tw-full-width ffz-interactable ffz-interactable--default tw-interactive'
 				],
+				on: {
+					click: this.handleClick
+				},
 				attrs: {
 					'data-tooltip-type': 'link',
 					'data-url': this.url,
@@ -325,7 +375,8 @@ export default {
 
 		return h('div', {
 			class: [
-				'tw-border-radius-medium tw-elevation-1 ffz--chat-card tw-relative',
+				'tw-border-radius-medium ffz--chat-card tw-relative',
+				this.noElevation ? '' : 'tw-elevation-1',
 				this.unsafe ? 'ffz--unsafe' : ''
 			],
 			style: {

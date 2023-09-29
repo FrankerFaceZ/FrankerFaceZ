@@ -15,3 +15,7 @@
 		}
 	}
 }
+
+.ffz-dialog:not(.maximized) .ffz-vertical-nav {
+	border-bottom-left-radius: var(--border-radius-extra-large);
+}

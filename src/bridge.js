@@ -208,16 +208,17 @@ class FFZBridge extends Module {
 
 FFZBridge.Logger = Logger;
 
-const VER = FFZBridge.version_info = {
+const VER = FFZBridge.version_info = Object.freeze({
 	major: __version_major__,
 	minor: __version_minor__,
 	revision: __version_patch__,
 	extra: __version_prerelease__?.length && __version_prerelease__[0],
 	commit: __git_commit__,
-	build: __webpack_hash__,
+	build: __version_build__,
+	hash: __webpack_hash__,
 	toString: () =>
-		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
-}
+		`${VER.major}.${VER.minor}.${VER.revision}${VER.build ? `.${VER.build}` : ''}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
+});
 
 window.FFZBridge = FFZBridge;
 window.ffz_bridge = new FFZBridge();

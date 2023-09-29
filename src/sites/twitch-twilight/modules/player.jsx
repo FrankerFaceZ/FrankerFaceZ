@@ -41,6 +41,12 @@ export default class Player extends PlayerBase {
 			n => n.state && n.state.playerStyles
 		);*/
 
+		this.DataSource = this.fine.define(
+			'data-source',
+			n => n.consentMetadata && n.onPlaying && n.props && n.props.data,
+			PLAYER_ROUTES
+		);
+
 		this.Player = this.fine.define(
 			'highwind-player',
 			n => n.setPlayerActive && n.props?.playerEvents && n.props?.mediaPlayerInstance,
@@ -108,9 +114,9 @@ export default class Player extends PlayerBase {
 
 		this.settings.add('player.theatre.metadata', {
 			default: false,
-			requires: ['context.route.name'],
+			requires: ['context.route.name', 'layout.is-theater-mode'],
 			process(ctx, val) {
-				if ( ctx.get('context.route.name') === 'video' )
+				if ( ! ctx.get('layout.is-theater-mode') || ctx.get('context.route.name') === 'video' )
 					return false;
 				return val
 			},
@@ -128,6 +134,15 @@ export default class Player extends PlayerBase {
 			ui: {
 				path: 'Player > General >> Theatre Mode',
 				title: 'Automatically open Theatre Mode when visiting a channel.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('player.fullscreen.auto-chat', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Fullscreen',
+				title: 'Automatically expand chat when entering fullscreen mode.',
 				component: 'setting-check-box'
 			}
 		});
@@ -172,6 +187,8 @@ export default class Player extends PlayerBase {
 
 		this.on(':fix-player', this.repositionPlayer, this);
 
+		this.on('site:fullscreen', this.maybeOpenChat, this);
+
 		this.TheatreHost.on('mount', inst => {
 			inst._ffz_theater_start = Date.now();
 			this.tryTheatreMode(inst);
@@ -189,6 +206,14 @@ export default class Player extends PlayerBase {
 		this.PlayerSource.on('update', this.checkCarousel, this);
 	}
 
+	maybeOpenChat() {
+		if ( ! this.settings.get('player.fullscreen.auto-chat') )
+			return;
+
+		this.parent.awaitElement('.right-column--collapsed .right-column__toggle-visibility button', document.fullscreenElement, 1000)
+			.then(el => el.click());
+	}
+
 	shouldStopAutoplay() {
 		return this.settings.get('player.no-autoplay') ||
 			(! this.settings.get('player.home.autoplay') && this.router.current?.name === 'front-page');
@@ -196,7 +221,7 @@ export default class Player extends PlayerBase {
 
 
 	checkCarousel(inst) {
-		if ( this.settings.get('channel.hosting.enable') )
+		/*if ( this.settings.get('channel.hosting.enable') )
 			return;
 
 		if ( inst.props?.playerType === 'channel_home_carousel' ) {
@@ -211,7 +236,12 @@ export default class Player extends PlayerBase {
 				events = inst.props.playerEvents;
 
 			this.stopPlayer(player, events, inst);
-		}
+		}*/
+	}
+
+
+	getData() {
+		return this.DataSource.first;
 	}
 
 

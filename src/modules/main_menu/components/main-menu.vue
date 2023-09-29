@@ -98,7 +98,7 @@
 							{{ version.commit.slice(0,7) }}
 						</a>
 						<span v-else>
-							{{ version.build }}
+							{{ version.hash }}
 						</span>
 					</div>
 				</footer>

@@ -1,11 +1,11 @@
 .twilight-main { order: 2 }
-#sideNav,
+.top-nav + div > div:first-child:not(.celebration__overlay),
 .side-nav { order: 3 }
 .right-column {
 	order: 1;
 	z-index: 2;
 
-	#root &:not(.right-column--collapsed) {
+	#root &:not(.right-column--collapsed):not(.right-column--below) {
 		width: var(--ffz-chat-width);
 	}
 }
@@ -14,7 +14,7 @@
 	width: unset !important;
 }
 
-#sideNav .collapse-toggle {
+.side-nav .collapse-toggle {
 	svg {
 		transform: rotate(180deg);
 	}
@@ -94,7 +94,7 @@ body .whispers--theatre-mode.whispers--right-column-expanded-beside {
 }
 
 .channel-root__scroll-area--theatre-mode {
-	.channel-info-content > div:first-child, .channel-info-bar {
+	#live-channel-stream-information, .channel-info-bar { // .channel-info-content > div:first-child, .channel-info-bar {
 		left: calc(var(--ffz-chat-width) + 5rem) !important;
 		right: 40rem !important;
 	}

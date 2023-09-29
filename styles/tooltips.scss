@@ -208,11 +208,25 @@ body {
 }
 
 
+.ffz__tooltip__mod-icon {
+	max-width: 8rem;
+	max-height: 4rem;
+}
+
+
 .ffz__tooltip--badges {
 	display: flex;
 	flex-wrap: wrap;
 	max-width: 20rem;
 	padding: .1rem .2rem;
+}
+
+.ffz-effect-tip {
+	margin: 3px auto 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
 }
 
 .ffz-badge-tip {

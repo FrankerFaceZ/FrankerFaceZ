@@ -611,6 +611,18 @@ export class FineWrapper extends EventEmitter {
 			fn(inst);
 	}
 
+	updateInstances(node = null, max_depth = 1000) {
+		if ( ! this._class )
+			return;
+
+		const instances = this.fine.findAllMatching(node, n => n.constructor === this._class, max_depth);
+
+		for(const inst of instances) {
+			inst._ffz_mounted = true;
+			this.instances.add(inst);
+		}
+	}
+
 	_set(cls, instances) {
 		if ( this._class )
 			throw new Error('already have a class');
@@ -618,6 +630,8 @@ export class FineWrapper extends EventEmitter {
 		this._class = cls;
 		this._wrapped.add('UNSAFE_componentWillMount');
 		this._wrapped.add('componentWillUnmount');
+
+		cls._ffz_wrapper = this;
 
 		const t = this,
 			_instances = this.instances,

@@ -361,6 +361,14 @@ export default class Metadata extends Module {
 					}
 				}
 
+				// Get the video element.
+				if ( stats ) {
+					const video = player && maybe_call(player.getHTMLVideoElement, player);
+					stats.avOffset = 0;
+					if ( video?._ffz_context )
+						stats.avOffset = (video._ffz_context_offset ?? 0) + video._ffz_context.currentTime - video.currentTime;
+				}
+
 				let tampered = false;
 				try {
 					const url = player.core.state.path;
@@ -369,7 +377,6 @@ export default class Metadata extends Module {
 						tampered = data && data.player_type && data.player_type !== 'site' ? data.player_type : false;
 					}
 				} catch(err) { /* no op */ }
-
 
 				if ( ! stats || stats.hlsLatencyBroadcaster < -100 )
 					return {stats};
@@ -493,6 +500,24 @@ export default class Metadata extends Module {
 						stats
 					);
 
+				const desync = /*data.avOffset !== 0
+						? (<div>{this.i18n.t(
+							'metadata.player-stats.av-offset',
+							'A/V Offset: {avOffset, number} seconds',
+							stats
+						)}</div>)
+						:*/ null;
+
+				const buffer = stats.bufferSize > 0
+						? (<div>{this.i18n.t(
+							'metadata.player-stats.buffered',
+							'Buffered: {buffered} seconds',
+							{
+								buffered: stats.bufferSize.toFixed(2)
+							}
+						)}</div>)
+						: null;
+
 				if ( data.old )
 					return [
 						delayed,
@@ -510,6 +535,8 @@ export default class Metadata extends Module {
 						<div class="tw-pd-t-05">
 							{video_info}
 						</div>,
+						desync,
+						buffer,
 						tampered
 					];
 
@@ -522,6 +549,8 @@ export default class Metadata extends Module {
 					<div class="tw-pd-t-05">
 						{video_info}
 					</div>,
+					desync,
+					buffer,
 					tampered
 				];
 			}
@@ -832,6 +861,7 @@ export default class Metadata extends Module {
 					const tooltip = maybe_call(def.tooltip, this, data);
 					if ( el.tip_content !== tooltip ) {
 						el.tip_content = tooltip;
+						el.tip.element.innerHTML = '';
 						setChildren(el.tip.element, tooltip);
 					}
 				}

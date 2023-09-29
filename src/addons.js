@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import { SERVER } from 'utilities/constants';
+import { EXTENSION, SERVER_OR_EXT } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
 import { timeout, has } from 'utilities/object';
 import { getBuster } from 'utilities/time';
@@ -24,6 +24,7 @@ export default class AddonManager extends Module {
 
 		this.inject('settings');
 		this.inject('i18n');
+		this.inject('load_tracker');
 
 		this.load_requires = ['settings'];
 
@@ -33,6 +34,8 @@ export default class AddonManager extends Module {
 		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = [];
+
+		this.load_tracker.schedule('chat-data', 'addon-initial');
 	}
 
 	onLoad() {
@@ -57,6 +60,8 @@ export default class AddonManager extends Module {
 			isAddonExternal: id => this.isAddonExternal(id),
 			enableAddon: id => this.enableAddon(id),
 			disableAddon: id => this.disableAddon(id),
+			reloadAddon: id => this.reloadAddon(id),
+			canReloadAddon: id => this.canReloadAddon(id),
 			isReloadRequired: () => this.reload_required,
 			refresh: () => window.location.reload(),
 
@@ -64,15 +69,16 @@ export default class AddonManager extends Module {
 			off: (...args) => this.off(...args)
 		});
 
-		this.settings.add('addons.dev.server', {
-			default: false,
-			ui: {
-				path: 'Add-Ons >> Development',
-				title: 'Use Local Development Server',
-				description: 'Attempt to load add-ons from local development server on port 8001.',
-				component: 'setting-check-box'
-			}
-		});
+		if ( ! EXTENSION )
+			this.settings.add('addons.dev.server', {
+				default: false,
+				ui: {
+					path: 'Add-Ons >> Development',
+					title: 'Use Local Development Server',
+					description: 'Attempt to load add-ons from local development server on port 8001.',
+					component: 'setting-check-box'
+				}
+			});
 
 		this.on('i18n:update', this.rebuildAddonSearch, this);
 
@@ -90,6 +96,7 @@ export default class AddonManager extends Module {
 						this.log.capture(err);
 					});
 
+			this.load_tracker.notify('chat-data', 'addon-initial');
 			this.emit(':ready');
 		});
 	}
@@ -145,14 +152,25 @@ export default class AddonManager extends Module {
 
 	async loadAddonData() {
 		const [cdn_data, local_data] = await Promise.all([
-			fetchJSON(`${SERVER}/script/addons.json?_=${getBuster(30)}`),
-			this.settings.get('addons.dev.server') ?
-				fetchJSON(`https://localhost:8001/script/addons.json?_=${getBuster()}`) : null
+			fetchJSON(`${SERVER_OR_EXT}/addons.json?_=${getBuster(30)}`),
+
+			// Do not attempt to load local add-ons if using the extension, as
+			// loading external code is against the policy of basically everyone.
+			(! EXTENSION && this.settings.get('addons.dev.server'))
+				? fetchJSON(`https://localhost:8001/script/addons.json?_=${getBuster()}`)
+				: null
 		]);
 
-		if ( Array.isArray(cdn_data) )
-			for(const addon of cdn_data )
+		if ( Array.isArray(cdn_data) ) {
+			// We need to handle relative URLs for addon logos.
+			const base_path = `${SERVER_OR_EXT}/addons/`;
+
+			for(const addon of cdn_data ) {
+				if ( addon.icon )
+				addon.icon = (new URL(addon.icon, base_path)).toString();
 				this.addAddon(addon, false);
+			}
+		}
 
 		if ( Array.isArray(local_data) ) {
 			this.has_dev = true;
@@ -280,16 +298,168 @@ export default class AddonManager extends Module {
 		return module.external || (module.constructor && module.constructor.external);
 	}
 
+	canReloadAddon(id) {
+		// Obviously we can't reload it if we don't have it.
+		if ( ! this.hasAddon(id) )
+			throw new Error(`Unknown add-on id: ${id}`);
+
+		// If the module isn't available, we can't reload it.
+		let module = this.resolve(`addon.${id}`);
+		if ( ! module )
+			return false;
+
+		// If the module cannot be disabled, or it cannot be unloaded, then
+		// we can't reload it.
+		if ( ! module.canDisable() || ! module.canUnload() )
+			return false;
+
+		// Check each child.
+		if ( module.children )
+			for(const child of Object.values(module.children))
+				if ( ! child.canDisable() || ! child.canUnload() )
+					return false;
+
+		// If we got here, we might be able to reload it.
+		return true;
+	}
+
+	async fullyUnloadModule(module) {
+		if ( ! module )
+			return;
+
+		if ( module.children )
+			for(const child of Object.values(module.children))
+				await this.fullyUnloadModule(child);
+
+		await module.disable();
+		await module.unload();
+
+		// Clean up parent references.
+		if ( module.parent && module.parent.children[module.name] === module )
+			delete module.parent.children[module.name];
+
+		// Clean up all individual references.
+		for(const entry of module.references) {
+			const other = this.resolve(entry[0]),
+				name = entry[1];
+			if ( other && other[name] === module )
+				other[name] = null;
+		}
+
+		// Clean up the global reference.
+		if ( this.__modules[module.__path] === module )
+			delete this.__modules[module.__path]; /* = [
+				module.dependents,
+				module.load_dependents,
+				module.references
+			];*/
+
+		// Remove any events we didn't unregister.
+		this.offContext(null, module);
+
+		// Do the same for settings.
+		for(const ctx of this.settings.__contexts)
+			ctx.offContext(null, module);
+
+		// Clean up all settings.
+		for(const [key, def] of Array.from(this.settings.definitions.entries())) {
+			if ( def && def.__source === module.__path ) {
+				this.settings.remove(key);
+			}
+		}
+
+		// Clean up the logger too.
+		module.__log = null;
+	}
+
+	async reloadAddon(id) {
+		const addon = this.getAddon(id),
+			button = this.resolve('site.menu_button');
+		if ( ! addon )
+			throw new Error(`Unknown add-on id: ${id}`);
+
+		const start = performance.now();
+
+		// Yeet the module into the abyss.
+		// This will also yeet all children.
+		let module = this.resolve(`addon.${id}`);
+		if ( module )
+			try {
+				await this.fullyUnloadModule(module);
+			} catch(err) {
+				if ( button )
+					button.addToast({
+						title_i18n: 'addons.reload.toast-error',
+						title: 'Error Reloading Add-On',
+						text_i18n: 'addons.reload.toast-error.unload',
+						text: 'Unable to unload existing modules for add-on "{addon_id}":\n\n{error}',
+						icon: 'ffz-i-attention',
+						addon_id: id,
+						error: String(err)
+					});
+
+				throw err;
+			}
+
+		// Is there a script tab?
+		let el = document.querySelector(`script#ffz-loaded-addon-${addon.id}`);
+		if ( el )
+			el.remove();
+
+		// Do unnatural things to webpack.
+		if ( window.ffzAddonsWebpackJsonp )
+			window.ffzAddonsWebpackJsonp = undefined;
+
+		// Now, reload it all~
+		try {
+			await this._enableAddon(id);
+		} catch(err) {
+			if ( button )
+				button.addToast({
+					title_i18n: 'addons.reload.toast-error',
+					title: 'Error Reloading Add-On',
+					text_i18n: 'addons.reload.toast-error.reload',
+					text: 'Unable to load new module for add-on "{addon_id}":\n\n{error}',
+					error: String(err),
+					icon: 'ffz-i-attention',
+					addon_id: id
+				});
+			throw err;
+		}
+
+		const end = performance.now();
+
+		if ( button )
+			button.addToast({
+				title_i18n: 'addons.reload.toast',
+				title: 'Reloaded Add-On',
+				text_i18n: 'addons.reload.toast.text',
+				text: 'Successfully reloaded add-on "{addon_id}" in {duration}ms.',
+				icon: 'ffz-i-info',
+				addon_id: id,
+				timeout: 5000,
+				duration: Math.round(100 * (end - start)) / 100
+			});
+	}
+
 	async _enableAddon(id) {
 		const addon = this.getAddon(id);
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
+
+		if ( Array.isArray(addon.load_events) )
+			for(const event of addon.load_events)
+				this.load_tracker.schedule(event, `addon.${id}`);
 
 		await this.loadAddon(id);
 
 		const module = this.resolve(`addon.${id}`);
 		if ( module && ! module.enabled )
 			await module.enable();
+
+		if ( Array.isArray(addon.load_events) )
+		for(const event of addon.load_events)
+			this.load_tracker.notify(event, `addon.${id}`, false);
 	}
 
 	async loadAddon(id) {
@@ -311,7 +481,7 @@ export default class AddonManager extends Module {
 		document.head.appendChild(createElement('script', {
 			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
-			src: addon.src || `${addon.dev ? 'https://localhost:8001' : SERVER}/script/addons/${addon.id}/script.js?_=${getBuster(30)}`,
+			src: addon.src || `${addon.dev ? 'https://localhost:8001/script' : SERVER_OR_EXT}/addons/${addon.id}/script.js?_=${getBuster(30)}`,
 			crossorigin: 'anonymous'
 		}));
 

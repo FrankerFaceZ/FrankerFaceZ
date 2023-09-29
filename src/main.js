@@ -14,9 +14,11 @@ import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
 import SocketClient from './socket';
-//import PubSubClient from './pubsub';
+import PubSubClient from './pubsub';
 import Site from 'site';
 import Vue from 'utilities/vue';
+import StagingSelector from './staging';
+import LoadTracker from './load_tracker';
 //import Timing from 'utilities/timing';
 
 class FrankerFaceZ extends Module {
@@ -56,8 +58,10 @@ class FrankerFaceZ extends Module {
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
+		this.inject('staging', StagingSelector);
+		this.inject('load_tracker', LoadTracker);
 		this.inject('socket', SocketClient);
-		//this.inject('pubsub', PubSubClient);
+		this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
 
@@ -134,7 +138,13 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 
 	async discoverModules() {
 		// TODO: Actually do async modules.
-		const ctx = await require.context('src/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/ /*, 'lazy-once' */);
+		const ctx = await require.context(
+			'src/modules',
+			true,
+			/(?:^(?:\.\/)?[^/]+|index)\.jsx?$/
+			/*, 'lazy-once' */
+		);
+
 		const modules = this.populate(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
@@ -156,20 +166,22 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 
 FrankerFaceZ.Logger = Logger;
 
-const VER = FrankerFaceZ.version_info = {
+const VER = FrankerFaceZ.version_info = Object.freeze({
 	major: __version_major__,
 	minor: __version_minor__,
 	revision: __version_patch__,
 	extra: __version_prerelease__?.length && __version_prerelease__[0],
 	commit: __git_commit__,
-	build: __webpack_hash__,
+	build: __version_build__,
+	hash: __webpack_hash__,
 	toString: () =>
-		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
-}
+		`${VER.major}.${VER.minor}.${VER.revision}${VER.build ? `.${VER.build}` : ''}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
+});
 
 
 FrankerFaceZ.utilities = {
 	addon: require('utilities/addon'),
+	blobs: require('utilities/blobs'),
 	color: require('utilities/color'),
 	constants: require('utilities/constants'),
 	dialog: require('utilities/dialog'),

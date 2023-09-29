@@ -5,6 +5,10 @@
 				<img :src="icon" class="tw-image">
 			</div>
 
+			<div v-if="reloading" class="tw-mg-b-05 ffz-pill">
+				{{ t('addon.reloading', 'Reloading') }}
+			</div>
+
 			<div v-if="external" class="tw-mg-b-05 ffz-pill">
 				{{ t('addon.external', 'External') }}
 			</div>
@@ -97,6 +101,20 @@
 						</span>
 					</button>
 					<button
+						v-if="addon.dev && can_reload"
+						class="tw-button ffz-button--hollow tw-mg-r-1"
+						:class="{'tw-button--disabled': reloading}"
+						:disabled="reloading"
+						@click="reloadAddon()"
+					>
+						<span class="tw-button__icon tw-button__icon--left">
+							<figure class="ffz-i-arrows-cw" />
+						</span>
+						<span class="tw-button__text">
+							{{ t('addon.reload', 'Reload') }}
+						</span>
+					</button>
+					<button
 						v-if="addon.settings"
 						class="tw-button ffz-button--hollow tw-mg-r-1"
 						@click="openSettings()"
@@ -151,6 +169,8 @@ export default {
 	data() {
 		return {
 			enabled: this.item.isAddonEnabled(this.id),
+			can_reload: this.addon.dev && this.item.canReloadAddon(this.id),
+			reloading: false,
 			external: this.item.isAddonExternal(this.id),
 			version: this.item.getVersion(this.id),
 			expanded: false
@@ -251,6 +271,19 @@ export default {
 				list.push(`add_ons.${this.addon.name.toSnakeCase()}`);
 
 			this.$emit('navigate', ...list);
+		},
+
+		reloadAddon() {
+			this.reloading = true;
+			this.item.reloadAddon(this.id)
+				.then(() => {
+					this.reloading = false;
+					this.can_reload = this.item.canReloadAddon(this.id);
+				})
+				.catch(err => {
+					console.error(err);
+					this.reloading = false;
+				});
 		}
 	}
 }

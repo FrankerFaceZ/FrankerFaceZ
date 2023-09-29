@@ -48,6 +48,78 @@
 	margin-right: -0.5rem;
 }
 
+.ffz--chat-card {
+	--ffz-rich-header-outline: var(--color-background-base);
+	.ffz--rich-header--background {
+		margin: 0; // overflow hidden is in play
+	}
+}
+
+.ffz__tooltip {
+	--ffz-rich-header-outline: var(--color-background-tooltip);
+	.ffz--rich-header--background {
+		margin: -.8rem;
+	}
+}
+
+.ffz--rich-header--background {
+	position: relative;
+	overflow: hidden;
+
+	--ffz-rich-header-outline: #000;
+	--color-background-base: #000;
+	--color-text-base: #efeff1;
+	--color-text-alt: #dedee3;
+	--color-text-alt-2: #adadb8;
+
+	--color-background-tooltip: var(--color-background-base);
+	--color-text-tooltip: var(--color-text-base);
+	--color-text-tooltip-alt: var(--color-text-alt);
+	--color-text-tooltip-alt-2: var(--color-text-alt-2);
+
+	padding: 1rem;
+
+	margin: -1rem;
+	margin-bottom: 0 !important;
+
+	background: var(--color-background-base);
+
+	text-shadow: -1px 1px 2px var(--ffz-rich-header-outline),
+		1px 1px 2px var(--ffz-rich-header-outline),
+		1px -1px 0 var(--ffz-rich-header-outline),
+		-1px -1px 0 var(--ffz-rich-header-outline);
+
+	& > * {
+		position: relative;
+		z-index: 1;
+	}
+
+	.ffz--rich-header__background {
+		position: absolute !important;
+		z-index: 0 !important;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+
+		opacity: 0.5;
+
+		& > img {
+			height: 100%;
+			width: 100%;
+			object-fit: cover;
+		}
+	}
+}
+
+.ffz--rich-player {
+	cursor: pointer;
+
+	> * {
+		width: 100%;
+	}
+}
+
 .ffz--overlay {
 	position: relative;
 
@@ -55,7 +127,7 @@
 		position: absolute;
 		z-index: 1;
 
-		background-color: var(--color-background-overlay);
+		background-color: var(--color-background-overlay-alt);
 		color: var(--color-text-overlay);
 
 		padding: 0 0.5rem;
@@ -132,6 +204,11 @@
 	height: 4.8rem;
 	max-width: 25%;
 
+	figure {
+		line-height: 4.8rem;
+		font-size: 2.4rem;
+	}
+
 	img {
 		object-fit: contain;
 		height: 100%;
@@ -145,6 +222,12 @@
 
 .ffz--compact-header .ffz--header-image {
 	height: 2.4rem;
+
+	figure {
+		line-height: 2.4rem;
+		font-size: 1.6rem;
+	}
+
 }
 
 .ffz--rich-gallery, .ffz--compact-header {
@@ -167,6 +250,22 @@
 	border-width: 0 3em 3em 0;
 	z-index: 100;
 
+	border-right-color: var(--ffz-flag-color);
+
+	&.ffz--corner-flag--left {
+		right: unset;
+		left: 0;
+		border-width: 0 0 3em 3em;
+
+		border-right-color: transparent;
+		border-left-color: var(--ffz-flag-color);
+
+		figure {
+			right: unset;
+			left: -2.75em;
+		}
+	}
+
 	figure {
 		position: absolute;
 		top: 0;
@@ -175,11 +274,12 @@
 }
 
 .ffz--corner-flag__warn {
-	border-right-color: #f33;
+	--ffz-flag-color: #f33;
 	color: #fff;
 
 	.tw-root--theme-dark & {
-		border-right-color: #900;
+		--ffz-flag-color: #900;
+		//border-right-color: #900;
 	}
 }
 
@@ -200,6 +300,18 @@
 		width: unset;
 		min-width: 150px;
 	}
+
+	.ffz--field-icon {
+		position: relative;
+		padding-left: 2.5rem;
+	}
+}
+
+.ffz--field__icon {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	left: 0;
 }
 
 .ffz--twitter-badge {
@@ -249,7 +361,7 @@
 		flex-direction: column;
 		overflow: hidden;
 		margin-top: -4px;
-		max-height: calc(100% + 4px);
+		max-height: calc(350px + 4px);
 
 		&:only-child {
 			grid-column-start: 1;
@@ -373,7 +485,12 @@
 	&[data-meta="true"][data-alt="true"][data-ctrl="true"] .ffz-modifier-13,
 	&[data-meta="true"][data-alt="true"][data-shift="true"] .ffz-modifier-14,
 	&[data-meta="true"][data-alt="true"][data-ctrl="true"][data-shift="true"] .ffz-modifier-15 {
+
 		display: inline-flex;
+
+		&:ffz-hover-action {
+			display: inline-block;
+		}
 	}
 }
 
@@ -405,18 +522,25 @@
 		z-index: 1
 	}
 
+	.ffz-alt-text {
+		display: inline;
+		font-size: 1px;
+		color: transparent;
+	}
+
 	position: relative;
 	z-index: 0;
 
 	span {
 		position: absolute;
-		top: -20px; bottom: -20px; left: -20px; right: -20px;
+		top: 0; bottom: 0; left: 0; right: 0; // -20px; bottom: -20px; left: -20px; right: -20px;
 		margin: auto;
 		pointer-events: none;
 
 		img {
 			position: absolute;
 			pointer-events: none !important;
+			margin: 0;
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%, -50%);

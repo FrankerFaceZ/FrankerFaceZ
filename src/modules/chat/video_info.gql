@@ -2,7 +2,7 @@ query FFZ_GetVideoInfo($id: ID!) {
 	video(id: $id) {
 		id
 		title
-		previewThumbnailURL(width: 86, height: 45)
+		previewThumbnailURL(width: 320, height: 180)
 		lengthSeconds
 		publishedAt
 		viewCount
@@ -14,6 +14,7 @@ query FFZ_GetVideoInfo($id: ID!) {
 			id
 			login
 			displayName
+			profileImageURL(width: 50)
 		}
 	}
 }

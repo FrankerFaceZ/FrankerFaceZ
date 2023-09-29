@@ -317,6 +317,16 @@ export default class Metadata extends Module {
 						stats
 					);
 
+				const buffer = stats.bufferSize > 0
+					? (<div>{this.i18n.t(
+						'metadata.player-stats.buffered',
+						'Buffered: {buffered} seconds',
+						{
+							buffered: stats.bufferSize.toFixed(2)
+						}
+					)}</div>)
+					: null;
+
 				if ( data.old )
 					return [
 						delayed,
@@ -334,6 +344,7 @@ export default class Metadata extends Module {
 						<div class="tw-pd-t-05">
 							{video_info}
 						</div>,
+						buffer,
 						tampered
 					];
 
@@ -346,6 +357,7 @@ export default class Metadata extends Module {
 					<div class="tw-pd-t-05">
 						{video_info}
 					</div>,
+					buffer,
 					tampered
 				];
 			}

@@ -75,7 +75,7 @@ export const array_merge = {
 	default(val) {
 		const values = [];
 		for(const v of val)
-			if ( v.t !== 'inherit' && v.v )
+			if ( v.t !== 'inherit' && v.t !== 'skip' && v.v )
 				values.push(v.v);
 
 		return values;
@@ -119,6 +119,8 @@ export const array_merge = {
 				had_value = true;
 				if ( val.t === 'inherit' )
 					is_trailing = true;
+				else if ( val.t === 'skip' )
+					continue;
 				else if ( is_trailing )
 					trail.push(val.v);
 				else

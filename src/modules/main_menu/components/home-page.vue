@@ -189,14 +189,16 @@
 				</a>
 			</div>
 
-			<a
-				:data-theme="theme"
-				class="twitter-timeline"
-				data-width="300"
-				href="https://twitter.com/FrankerFaceZ?ref_src=twsrc%5Etfw"
-			>
-				{{ t('home.tweets', 'Tweets by FrankerFaceZ') }}
-			</a>
+			<template v-if="not_extension">
+				<a
+					:data-theme="theme"
+					class="twitter-timeline"
+					data-width="300"
+					href="https://twitter.com/FrankerFaceZ?ref_src=twsrc%5Etfw"
+				>
+					{{ t('home.tweets', 'Tweets by FrankerFaceZ') }}
+				</a>
+			</template>
 		</div>
 	</div>
 </template>
@@ -207,6 +209,7 @@
 import HOME_MD from '../home.md';
 
 import {createElement as e} from 'utilities/dom';
+import { EXTENSION } from 'utilities/constants';
 
 export default {
 	props: ['item', 'context'],
@@ -217,7 +220,8 @@ export default {
 			theme: '',
 			addons: null,
 			new_addons: null,
-			unseen: this.item.getUnseen()
+			unseen: this.item.getUnseen(),
+			not_extension: ! EXTENSION
 		}
 	},
 
@@ -241,13 +245,14 @@ export default {
 
 	mounted() {
 		let el;
-		document.head.appendChild(el = e('script', {
-			id: 'ffz--twitter-widget-script',
-			async: true,
-			charset: 'utf-8',
-			src: 'https://platform.twitter.com/widgets.js',
-			onLoad: () => el.remove()
-		}));
+		if ( this.not_extension )
+			document.head.appendChild(el = e('script', {
+				id: 'ffz--twitter-widget-script',
+				async: true,
+				charset: 'utf-8',
+				src: 'https://platform.twitter.com/widgets.js',
+				onLoad: () => el.remove()
+			}));
 	},
 
 	methods: {

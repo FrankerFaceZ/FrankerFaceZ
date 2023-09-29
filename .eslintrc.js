@@ -13,8 +13,8 @@ module.exports = {
 		'react'
 	],
 	'parserOptions': {
-		'parser': '@babel/eslint-parser',
-		'ecmaVersion': 8,
+		//'parser': '@babel/eslint-parser',
+		'ecmaVersion': 'latest',
 		'sourceType': 'module',
 		'ecmaFeatures': {
 			'jsx': true
@@ -34,6 +34,7 @@ module.exports = {
 		'__version_minor__': false,
 		'__version_patch__': false,
 		'__version_prerelease__': false,
+		'__extension__': false,
 		'FrankerFaceZ': false
 	},
 	'rules': {

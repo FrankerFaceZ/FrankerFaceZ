@@ -1,6 +1,8 @@
 'use strict';
 
-import { isValidBlob, deserializeBlob, serializeBlob } from 'src/utilities/blobs';
+import { isValidBlob, deserializeBlob, serializeBlob } from 'utilities/blobs';
+import { EXTENSION } from 'utilities/constants';
+
 // ============================================================================
 // Settings Providers
 // ============================================================================
@@ -1027,9 +1029,9 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 		this._last_id = 0;
 
 		const frame = this.frame = document.createElement('iframe');
-		frame.src = this.manager.root.host === 'twitch' ?
-			'//www.twitch.tv/p/ffz_bridge/' :
-			'//www.youtube.com/__ffz_bridge/';
+		frame.src = this.manager.root.host === 'youtube' ?
+			'//www.youtube.com/__ffz_bridge/' :
+			'//www.twitch.tv/p/ffz_bridge/';
 		frame.id = 'ffz-settings-bridge';
 		frame.style.width = 0;
 		frame.style.height = 0;
@@ -1041,7 +1043,7 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 
 	// Static Properties
 
-	static supported(manager) { return manager.root.host === 'twitch' ? NOT_WWW_TWITCH : NOT_WWW_YT; }
+	static supported() { return NOT_WWW_TWITCH && NOT_WWW_YT; }
 	static hasContent(manager) { return CrossOriginStorageBridge.supported(manager); }
 
 	static key = 'cosb';
@@ -1255,3 +1257,268 @@ export class CrossOriginStorageBridge extends SettingsProvider {
 		cbs[success ? 0 : 1](msg);
 	}
 }
+
+
+// ============================================================================
+// ExtensionStorage
+// ============================================================================
+
+/*export class ExtensionStorageBridge extends SettingsProvider {
+	constructor(manager, start = true) {
+		super(manager);
+
+		this._start_time = performance.now();
+
+		this._rpc = new Map;
+
+		this._cached = new Map;
+		this.resolved_ready = false;
+		this.ready = false;
+		this._ready_wait = null;
+
+		this._last_id = 0;
+
+		if ( start ) {
+			window.addEventListener('message', this.onMessage.bind(this));
+			this.send('init');
+		}
+	}
+
+	// Static Properties
+
+	static supported() { return EXTENSION && document.documentElement.dataset.ffzEsbridge; }
+	static hasContent(manager) {
+		if ( ! ExtensionStorageBridge.supported(manager) )
+			return Promise.resolve(false);
+
+		return new Promise((s,f) => {
+			const onMessage = event => {
+				if ( event.origin !== location.origin )
+					return;
+
+				const msg = event.data,
+					type = msg?.ffz_esb_type;
+				if ( type === 'content-state' ) {
+					window.removeEventListener('message', onMessage);
+					s(msg.has_content);
+				}
+
+				else if ( type === 'error' && msg.id === -1 ) {
+					window.removeEventListener('message', onMessage);
+					s(false);
+				}
+			};
+
+			window.addEventListener('message', onMessage);
+			window.postMessage({ffz_esb_type: 'check-content', id: -1});
+		});
+	}
+
+	static key = 'ext';
+	static priority = 200;
+	static title = 'Extension Storage';
+	static description = 'This provider stores your settings within the FrankerFaceZ extension context, rather than the webpage context. Extension storage is independent from individual websites and should not be cleared automatically by your browser.';
+	static supportsBlobs = true;
+
+	// Initialization
+
+	_resolveReady(success, data) {
+		if ( this.manager )
+			this.manager.log.info(`ESB ready in ${(performance.now() - this._start_time).toFixed(5)}ms`);
+
+		this.resolved_ready = true;
+		this.ready = success;
+		const waiters = this._ready_wait;
+		this._ready_wait = null;
+		if ( waiters )
+			for(const pair of waiters)
+				pair[success ? 0 : 1](data);
+	}
+
+	awaitReady() {
+		if ( this.resolved_ready ) {
+			if ( this.ready )
+				return Promise.resolve();
+			return Promise.reject();
+		}
+
+		return new Promise((s,f) => {
+			const waiters = this._ready_wait = this._ready_wait || [];
+			waiters.push([s,f]);
+		})
+	}
+
+
+	// Provider Methods
+
+	get(key, default_value) {
+		return this._cached.has(key) ? this._cached.get(key) : default_value;
+	}
+
+	set(key, value) {
+		if ( value === undefined ) {
+			if ( this.has(key) )
+				this.delete(key);
+			return;
+		}
+
+		this._cached.set(key, value);
+		this.rpc({ffz_esb_type: 'set', key, value})
+			.catch(err => this.manager.log.error('Error setting value', err));
+		this.emit('set', key, value, false);
+	}
+
+	delete(key) {
+		this._cached.delete(key);
+		this.rpc({ffz_esb_type: 'delete', key})
+			.catch(err => this.manager.log.error('Error deleting value', err));
+		this.emit('set', key, undefined, true);
+	}
+
+	clear() {
+		const old_cache = this._cached;
+		this._cached = new Map;
+		for(const key of old_cache.keys())
+			this.emit('changed', key, undefined, true);
+
+		this.rpc('clear').catch(err => this.manager.log.error('Error clearing storage', err));
+	}
+
+	has(key) { return this._cached.has(key); }
+	keys() { return this._cached.keys(); }
+	entries() { return this._cached.entries(); }
+	get size() { return this._cached.size; }
+
+	async flush() {
+		await this.rpc('flush');
+	}
+
+
+	// Provider Methods: Blobs
+
+	async getBlob(key) {
+		const msg = await this.rpc({ffz_esb_type: 'get-blob', key});
+		return msg.reply && deserializeBlobForExt(msg.reply);
+	}
+
+	async setBlob(key, value) {
+		await this.rpc({
+			ffz_esb_type: 'set-blob',
+			key,
+			value: await serializeBlobForExt(value)
+		});
+	}
+
+	async deleteBlob(key) {
+		await this.rpc({
+			ffz_esb_type: 'delete-blob',
+			key
+		});
+	}
+
+	async hasBlob(key) {
+		const msg = await this.rpc({ffz_esb_type: 'has-blob', key});
+		return msg.reply;
+	}
+
+	async clearBlobs() {
+		await this.rpc('clear-blobs');
+	}
+
+	async blobKeys() {
+		const msg = await this.rpc('blob-keys');
+		return msg.reply;
+	}
+
+
+	// CORS Communication
+
+	send(msg, transfer) {
+		if ( typeof msg === 'string' )
+			msg = {ffz_esb_type: msg};
+
+		try {
+			window.postMessage(
+				msg,
+				location.origin,
+				transfer ? (Array.isArray(transfer) ? transfer : [transfer]) : undefined
+			);
+		} catch(err) {
+			this.manager.log.error('Error sending message to bridge.', err, msg, transfer);
+		}
+	}
+
+	rpc(msg, transfer) {
+		const id = ++this._last_id;
+
+		return new Promise((s,f) => {
+			this._rpc.set(id, [s,f]);
+
+			if ( typeof msg === 'string' )
+				msg = {ffz_esb_type: msg};
+
+			msg.id = id;
+
+			this.send(msg, transfer);
+		});
+	}
+
+	onMessage(event) {
+		if ( event.origin !== location.origin )
+			return;
+
+		const msg = event.data;
+		if ( ! msg || ! msg.ffz_esb_type )
+			return;
+
+		if ( msg.ffz_esb_type === 'ready' )
+			this.rpc('init-load').then(msg => {
+				for(const [key, value] of Object.entries(msg.reply.values))
+					this._cached.set(key, value);
+
+				this._resolveReady(true);
+			}).catch(err => {
+				this._resolveReady(false, err);
+			});
+
+		else if ( msg.ffz_esb_type === 'change' )
+			this.onChange(msg);
+
+		else if ( msg.ffz_esb_type === 'change-blob' )
+			this.emit('changed-blob', msg.key, msg.deleted);
+
+		else if ( msg.ffz_esb_type === 'clear-blobs' )
+			this.emit('clear-blobs');
+
+		else if ( msg.ffz_esb_type === 'reply' || msg.ffz_esb_type === 'reply-error' )
+			this.onReply(msg);
+
+		else
+			this.manager.log.warn('Unknown Message', msg.ffz_esb_type, msg);
+	}
+
+	onChange(msg) {
+		const key = msg.key,
+			value = msg.value,
+			deleted = msg.deleted;
+
+		if ( deleted ) {
+			this._cached.delete(key);
+			this.emit('changed', key, undefined, true);
+		} else {
+			this._cached.set(key, value);
+			this.emit('changed', key, value, false);
+		}
+	}
+
+	onReply(msg) {
+		const id = msg.id,
+			success = msg.ffz_esb_type === 'reply',
+			cbs = this._rpc.get(id);
+		if ( ! cbs )
+			return this.manager.log.warn('Received reply for unknown ID', id);
+
+		this._rpc.delete(id);
+		cbs[success ? 0 : 1](msg);
+	}
+}*/

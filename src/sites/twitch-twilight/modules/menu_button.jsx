@@ -56,7 +56,7 @@ export default class MenuButton extends SiteModule {
 		);*/
 
 		this.SunlightNav = this.elemental.define(
-			'sunlight-nav', '.sunlight-top-nav > div > div > div:nth-last-child(2) > div',
+			'sunlight-nav', '.sunlight-top-nav > div > div > div:last-child > div',
 			Twilight.SUNLIGHT_ROUTES,
 			{attributes: true}, 1
 		);
@@ -723,7 +723,13 @@ export default class MenuButton extends SiteModule {
 			profiles.push(<div class="tw-relative tw-border-b tw-pd-y-05 tw-pd-x-1 tw-flex">
 				{toggle}
 				<div>
-					<h4>{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }</h4>
+					<h4>{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }{profile.ephemeral && (<div
+						class="tw-inline tw-mg-l-05 ffz-il-tooltip__container ffz--profile-row__icon ffz-i-user-secret tw-relative"
+					>
+						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center">
+							{ this.i18n.t('setting.profiles.ephemeral', 'This profile is ephemeral.') }
+						</div>
+					</div>)}</h4>
 					{profile.description && (<div class="description">
 						{ desc_key ? this.i18n.t(desc_key, profile.description, profile) : profile.description }
 					</div>)}

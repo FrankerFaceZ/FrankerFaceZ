@@ -7,7 +7,7 @@
 import {SiteModule} from 'utilities/module';
 import {duration_to_string} from 'utilities/time';
 import {createElement} from 'utilities/dom';
-import {get} from 'utilities/object';
+import {get, glob_to_regex, escape_regex, addWordSeparators} from 'utilities/object';
 
 import Game from './game';
 
@@ -18,6 +18,15 @@ export const CARD_CONTEXTS = ((e ={}) => {
 	return e;
 })();
 
+function formatTerms(data, flags) {
+	if ( data[0].length )
+		data[1].push(addWordSeparators(data[0].join('|')));
+
+	if ( ! data[1].length )
+		return null;
+
+	return new RegExp(data[1].join('|'), flags);
+}
 
 //const CREATIVE_ID = 488191;
 
@@ -39,7 +48,6 @@ export default class Directory extends SiteModule {
 		this.inject('i18n');
 		this.inject('settings');
 
-		//this.inject(Following);
 		this.inject(Game);
 
 		this.DirectoryCard = this.elemental.define(
@@ -175,6 +183,69 @@ export default class Directory extends SiteModule {
 			changed: () => this.DirectoryShelf.forceUpdate()
 		});
 
+		this.settings.add('directory.block-titles', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Block by Title',
+				component: 'basic-terms'
+			}
+		});
+
+		this.settings.add('__filter:directory.block-titles', {
+			requires: ['directory.block-titles'],
+			equals: 'requirements',
+			process(ctx) {
+				const val = ctx.get('directory.block-titles');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [
+					[ // sensitive
+						[], [] // word
+					],
+					[
+						[], []
+					]
+				];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out[item.s ? 0 : 1][item.w ? 0 : 1].push(v);
+				}
+
+				return [
+					formatTerms(out[0], 'g'),
+					formatTerms(out[1], 'gi')
+				];
+			},
+
+			changed: () => this.updateCards()
+		});
+
+		this.settings.add('directory.blocked-tags', {
+			default: [],
+			type: 'basic_array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Block by Tag',
+				component: 'tag-list-editor'
+			},
+			changed: () => this.updateCards()
+		});
+
 		/*this.settings.add('directory.hide-viewing-history', {
 			default: false,
 			ui: {
@@ -282,7 +353,7 @@ export default class Directory extends SiteModule {
 		let bad_tag = false;
 
 		if ( Array.isArray(tags) ) {
-			const bad_tags = this.settings.provider.get('directory.game.blocked-tags', []);
+			const bad_tags = this.settings.get('directory.blocked-tags', []);
 			if ( bad_tags.length ) {
 				for(const tag of tags) {
 					if ( tag?.id && bad_tags.includes(tag.id) ) {
@@ -320,7 +391,7 @@ export default class Directory extends SiteModule {
 			return;
 
 		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,
-			tags = props.tagListProps?.tags;
+			tags = props.tagListProps?.freeformTags;
 
 		let bad_tag = false;
 
@@ -328,10 +399,10 @@ export default class Directory extends SiteModule {
 		el.dataset.ffzType = props.streamType;
 
 		if ( Array.isArray(tags) ) {
-			const bad_tags = this.settings.provider.get('directory.game.blocked-tags', []);
+			const bad_tags = this.settings.get('directory.blocked-tags', []);
 			if ( bad_tags.length ) {
 				for(const tag of tags) {
-					if ( tag?.id && bad_tags.includes(tag.id) ) {
+					if ( tag?.name && bad_tags.includes(tag.name.toLowerCase()) ) {
 						bad_tag = true;
 						break;
 					}
@@ -339,9 +410,23 @@ export default class Directory extends SiteModule {
 			}
 		}
 
-		const should_hide = bad_tag || (props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts')) ||
-			(props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game)) ||
-			((props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted'));
+		let should_hide = false;
+		if ( bad_tag )
+			should_hide = true;
+		else if ( props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts') )
+			should_hide = true;
+		else if ( props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game) )
+			should_hide = true;
+		else if ( (props.isPromotion || props.sourceType === 'COMMUNITY_BOOST' || props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted') )
+			should_hide = true;
+		else {
+			const regexes = this.settings.get('__filter:directory.block-titles');
+			if ( regexes &&
+				(( regexes[0] && regexes[0].test(props.title) ) ||
+				( regexes[1] && regexes[1].test(props.title) ))
+			)
+				should_hide = true;
+		}
 
 		let hide_container = el.closest('.tw-tower > div');
 		if ( ! hide_container )
@@ -459,53 +544,6 @@ export default class Directory extends SiteModule {
 			inst.ffz_last_created_at = null;
 		}
 	}
-
-
-	/*updateAvatar(inst) {
-		const container = this.fine.getChildNode(inst),
-			card = container && container.querySelector && container.querySelector('.preview-card-overlay'),
-			setting = this.settings.get('directory.show-channel-avatars');
-
-		if ( ! card )
-			return;
-
-		const props = inst.props,
-			is_video = props.durationInSeconds != null,
-			src = props.channelImageProps && props.channelImageProps.src;
-
-		const avatar = card.querySelector('.ffz-channel-avatar');
-
-		if ( ! src || setting < 2 || props.context === CARD_CONTEXTS.SingleChannelList ) {
-			if ( avatar )
-				avatar.remove();
-
-			return;
-		}
-
-		if ( setting === inst.ffz_av_setting && props.channelLogin === inst.ffz_av_login && src === inst.ffz_av_src )
-			return;
-
-		if ( avatar )
-			avatar.remove();
-
-		inst.ffz_av_setting = setting;
-		inst.ffz_av_login = props.channelLogin;
-		inst.ffz_av_src = src;
-
-		const link = props.channelLinkTo && props.channelLinkTo.pathname;
-
-		card.appendChild(<a
-			class="ffz-channel-avatar"
-			href={link}
-			onClick={e => this.routeClick(e, link)} // eslint-disable-line react/jsx-no-bind
-		>
-			<div class={`tw-absolute tw-right-0 tw-border-l tw-c-background-base ${is_video ? 'tw-top-0 tw-border-b' : 'tw-bottom-0 tw-border-t'}`}>
-				<figure class="tw-aspect tw-aspect--align-top">
-					<img src={src} title={props.channelDisplayName} />
-				</figure>
-			</div>
-		</a>);
-	}*/
 
 
 	routeClick(event, url) {

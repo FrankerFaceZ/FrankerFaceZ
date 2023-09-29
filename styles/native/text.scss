@@ -54,6 +54,7 @@
 		padding: 0;
 	}
 
+	&.ffz--disabled,
 	&:disabled {
 		opacity: 0.5;
 		pointer-events: none;

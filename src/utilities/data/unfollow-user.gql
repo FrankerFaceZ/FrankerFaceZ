@@ -1,0 +1,8 @@
+mutation FFZ_UnfollowUser($input: UnfollowUserInput!) {
+	unfollowUser(input: $input) {
+		follow {
+			disableNotifications
+			followedAt
+		}
+	}
+}

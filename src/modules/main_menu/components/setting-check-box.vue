@@ -8,6 +8,7 @@
 				:id="item.full_key"
 				ref="control"
 				:checked="value"
+				:disabled="isReadOnly"
 				type="checkbox"
 				class="ffz-checkbox__input"
 				@change="onChange"
@@ -16,7 +17,7 @@
 			<label :for="item.full_key" class="ffz-checkbox__label">
 				<span class="tw-mg-l-1">
 					{{ item.i18n_key ? t(item.i18n_key, item.title) : item.title }}
-					<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+					<span v-if="unseen" class="ffz-pill ffz-pill--success">{{ t('setting.new', 'New') }}</span>
 				</span>
 			</label>
 
@@ -39,7 +40,13 @@
 			</button>
 
 			<div class="ffz--reset-button">
-				<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container" @click="clear">
+				<button
+					v-if="has_value"
+					:disabled="isReadOnly"
+					class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
+					:class="{'tw-button--disabled': isReadOnly}"
+					@click="clear"
+				>
 					<span class="tw-button__text ffz-i-cancel" />
 					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 						{{ t('setting.reset', 'Reset to Default') }}
@@ -58,7 +65,11 @@
 			v-if="item.extra"
 			style="padding-left:2.5rem"
 		>
-			<component :is="item.extra.component" :context="context" :item="item" />
+			<component
+				:is="item.extra.component"
+				:context="context"
+				:item="item"
+			/>
 		</section>
 	</div>
 </template>

@@ -86,10 +86,10 @@ export default {
 			if ( ! this.item || ! this.item.tabs )
 				return [];
 
-			if ( ! this.context.matches_only )
+			//if ( ! this.context.matches_only )
 				return this.item.tabs;
 
-			return this.item.tabs.filter(tab => this.shouldShow(tab));
+			//return this.item.tabs.filter(tab => this.shouldShow(tab));
 		},
 
 		visibleContents() {
@@ -189,6 +189,15 @@ export default {
 		},
 
 		select(idx) {
+			/*const selected = this.visibleTabs[idx];
+			if ( this.item.tabs[idx] !== selected )
+				for(let i = 0; i < this.item.tabs.length; i++) {
+					if ( selected === this.item.tabs[i] ) {
+						idx = i;
+						break;
+					}
+				}*/
+
 			this.selected = idx;
 			this.markSeen();
 		},

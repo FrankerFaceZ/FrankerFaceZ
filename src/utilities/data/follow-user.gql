@@ -1,0 +1,11 @@
+mutation FFZ_FollowUser($input: FollowUserInput!) {
+	followUser(input: $input) {
+		follow {
+			disableNotifications
+			followedAt
+		}
+		error {
+			code
+		}
+	}
+}

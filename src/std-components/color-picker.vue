@@ -6,6 +6,7 @@
 				ref="input"
 				v-model="color"
 				v-bind="$attrs"
+				:disabled="disabled"
 				type="text"
 				class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 				autocapitalize="off"
@@ -84,6 +85,10 @@ export default {
 		alpha: {
 			type: Boolean,
 			default: true
+		},
+		disabled: {
+			type: Boolean,
+			default: false
 		},
 		default: {
 			type: String,
@@ -171,6 +176,9 @@ export default {
 		},
 
 		onPick(color) {
+			if ( this.disabled )
+				return;
+
 			const old_val = this.color;
 
 			if ( color.rgba.a == 1 )

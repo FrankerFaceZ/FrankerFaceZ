@@ -176,7 +176,7 @@ export class Vue extends Module {
 					})
 				);
 			}
-		})
+		});
 
 		vue.mixin({
 			methods: {

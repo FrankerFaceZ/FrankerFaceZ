@@ -51,6 +51,7 @@
 						>
 							<option
 								v-for="(r, key) in data.renderers"
+								v-if="supportsRenderer(key)"
 								:key="key"
 								:value="key"
 							>
@@ -330,7 +331,7 @@
 									</label>
 								</div>
 
-								<div class="tw-pd-r-1 ffz-checkbox">
+								<div v-if="has_hover_modifier" class="tw-pd-r-1 ffz-checkbox">
 									<input
 										:id="'key_hover$' + id"
 										ref="key_hover"
@@ -379,6 +380,7 @@
 						:value="edit_data.options"
 						:defaults="action_def.defaults"
 						:vars="vars"
+						:fmts="fmts"
 						@input="onChangeAction($event)"
 					/>
 				</section>
@@ -387,8 +389,8 @@
 
 		<div v-if="canPreview" class="tw-mg-l-1 tw-border-l tw-pd-l-1 tw-pd-y-05 tw-flex tw-flex-shrink-0 tw-align-items-start">
 			<action-preview
-				:act="display"
-				:color="display.appearance && data.color(display.appearance.color)"
+				:act="maybeDynamic(display)"
+				:process-color="data.color"
 				:renderers="data.renderers"
 			/>
 		</div>
@@ -457,7 +459,7 @@ import {has, maybe_call, deep_copy} from 'utilities/object';
 let id = 0;
 
 export default {
-	props: ['action', 'data', 'inline', 'mod_icons', 'context', 'modifiers'],
+	props: ['vuectx', 'action', 'data', 'inline', 'mod_icons', 'context', 'modifiers', 'hover_modifier'],
 
 	data() {
 		return {
@@ -491,6 +493,25 @@ export default {
 
 		has_modifiers() {
 			return this.modifiers
+		},
+
+		has_hover_modifier() {
+			return this.hover_modifier !== false
+		},
+
+		fmts() {
+			const out = [];
+
+			out.push('word(start)');
+			out.push('word(start,end)');
+			out.push('upper');
+			out.push('lower');
+			out.push('snakecase');
+			out.push('slugify');
+			out.push('slugify(separator)');
+			out.push('urlencode');
+
+			return out.join(', ');
 		},
 
 		vars() {
@@ -537,6 +558,9 @@ export default {
 			if ( this.action.t === 'inherit' )
 				return this.t('setting.inheritance', 'Inheritance Point');
 
+			if ( this.action.t === 'skip' )
+				return this.t('setting.inheritance.skip', 'Not Inheriting');
+
 			else if ( ! this.display )
 				return this.t('setting.unknown', 'Unknown Value');
 
@@ -557,11 +581,15 @@ export default {
 
 			if ( def.title ) {
 				const data = this.getData(),
-					out = maybe_call(def.title, this, data, def),
-					i18n = def.title_i18n || `chat.actions.${this.display.action}`;
+					out = maybe_call(def.title, this, data, def);
+				let i18n = maybe_call(def.title_i18n, this, data, def);
+				if ( i18n === undefined )
+					i18n = `chat.actions.${this.display.action}`;
 
-				if ( out )
+				if ( out && i18n )
 					return this.t(i18n, out, data);
+				else if ( out )
+					return out;
 			}
 
 			return this.t('setting.actions.untitled', 'Action: {action}', this.display);
@@ -570,7 +598,10 @@ export default {
 
 		description() {
 			if ( this.action.t === 'inherit' )
-				return this.t('setting.inheritance.desc', 'Inherit values from lower priority profiles at this position.');
+				return this.t('setting.inheritance.desc', 'Inherit values from lower priority profiles or the default values at this position.');
+
+			if ( this.action.t === 'skip' )
+				return this.t('setting.inheritance.skip.desc', 'This profile does not inherit values from lower priority profiles or the default values, despite having no values of its own.');
 
 			const type = this.display && this.display.type;
 
@@ -588,11 +619,15 @@ export default {
 				return null;
 
 			const data = this.getData(),
-				out = maybe_call(def.description, this, data, def),
-				i18n = def.description_i18n || `chat.actions.${this.display.action}.desc`;
+				out = maybe_call(def.description, this, data, def);
+			let i18n = maybe_call(def.description_i18n, this, data, def);
+			if ( i18n === undefined )
+				i18n = `chat.actions.${this.display.action}.desc`;
 
-			if ( out )
+			if ( out && i18n )
 				return this.t(i18n, out, data);
+			else if ( out )
+				return out;
 
 			return null;
 		},
@@ -676,7 +711,7 @@ export default {
 					}));
 			}
 
-			if ( disp.hover )
+			if ( this.has_hover_modifier && disp.hover )
 				out.push(this.t('setting.actions.visible.hover', 'when hovering'));
 
 			if ( ! out.length )
@@ -712,8 +747,10 @@ export default {
 			if ( this.$refs.key_meta.checked )
 				i |= 8;
 
-			this.edit_data.display.hover = this.$refs.key_hover.checked;
 			this.edit_data.display.keys = i;
+
+			if ( this.has_hover_modifier )
+				this.edit_data.display.hover = this.$refs.key_hover.checked;
 		},
 
 		edit() {
@@ -749,6 +786,29 @@ export default {
 			this.copying = false;
 			this.editing = false;
 			this.edit_data = null;
+		},
+
+		maybeDynamic(data) {
+			let ap = data.appearance;
+			if (ap?.type === 'dynamic') {
+				const act = this.action_def,
+					ffz = this.vuectx.getFFZ(),
+					actions = ffz && ffz.resolve('chat.actions');
+
+				const out = actions && act?.dynamicAppearance && act.dynamicAppearance
+					.call(actions, deep_copy(ap), data, null, null, null, null);
+				if ( out )
+					return Object.assign({}, data, {appearance: out});
+			}
+
+			return data;
+		},
+
+		supportsRenderer(key) {
+			if (key !== 'dynamic')
+				return true;
+
+			return this.action_def?.supports_dynamic;
 		},
 
 		getData() {

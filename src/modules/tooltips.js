@@ -89,7 +89,11 @@ export default class TooltipProvider extends Module {
 	}
 
 	getRoot() { // eslint-disable-line class-methods-use-this
-		return document.querySelector('.sunlight-root') || document.querySelector('#root>div') || document.querySelector('#root') || document.querySelector('.clips-root') || document.body;
+		return document.querySelector('.sunlight-root') ||
+			//document.querySelector('#root>div') ||
+			document.querySelector('#root') ||
+			document.querySelector('.clips-root') ||
+			document.body;
 	}
 
 	_createInstance(container, klass = 'ffz-tooltip', default_type = 'text', tip_container) {

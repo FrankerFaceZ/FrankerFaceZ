@@ -110,7 +110,7 @@ export default class SettingsManager extends Module {
 		this.filters = {};
 
 		for(const key in FILTERS)
-			if ( has(FILTERS, key) )
+			if ( has(FILTERS, key) && FILTERS[key] )
 				this.filters[key] = FILTERS[key];
 
 
@@ -184,7 +184,6 @@ export default class SettingsManager extends Module {
 	}
 
 
-
 	addFilter(key, data) {
 		if ( this.filters[key] )
 			return this.log.warn('Tried to add already existing filter', key);
@@ -247,8 +246,28 @@ export default class SettingsManager extends Module {
 	}
 
 
+	async createMonitorUpdate() {
+		const Monitor = FILTERS?.Monitor;
+		if ( ! Monitor || Monitor.details !== undefined )
+			return;
+
+		Monitor.details = null;
+		try {
+			Monitor.details = await window.getScreenDetails();
+			Monitor.details.addEventListener('currentscreenchange', () => {
+				for(const context of this.__contexts)
+					context.selectProfiles();
+			});
+
+		} catch(err) {
+			this.log.error('Unable to get monitor details', err);
+			Monitor.details = false;
+		}
+	}
+
+
 	updateClock() {
-		const captured = require('./filters').Time.captured();
+		const captured = FILTERS?.Time?.captured?.();
 		if ( ! captured?.length )
 			return;
 
@@ -743,12 +762,21 @@ export default class SettingsManager extends Module {
 			old_ids = new Set(old_profiles.map(x => x.id)),
 
 			new_ids = new Set,
-			changed_ids = new Set,
+			changed_ids = new Set;
 
-			raw_profiles = this.provider.get('profiles', [
+		let raw_profiles = this.provider.get('profiles', [
 				SettingsProfile.Moderation,
 				SettingsProfile.Default
 			]);
+
+		// Sanity check. If we have no profiles, delete the old data.
+		if ( ! raw_profiles?.length ) {
+			this.provider.delete('profiles');
+			raw_profiles = [
+				SettingsProfile.Moderation,
+				SettingsProfile.Default
+			];
+		}
 
 		let reordered = false,
 			changed = false;
@@ -831,6 +859,9 @@ export default class SettingsManager extends Module {
 	 * @returns {SettingsProfile}
 	 */
 	createProfile(options) {
+		if ( ! this.enabled )
+			throw new Error('Unable to create profile before settings have initialized. Please await enable()');
+
 		let i = 0;
 		while( this.__profile_ids[i] )
 			i++;
@@ -858,6 +889,9 @@ export default class SettingsManager extends Module {
 	 * @param {number|SettingsProfile} id - The profile to delete
 	 */
 	deleteProfile(id) {
+		if ( ! this.enabled )
+			throw new Error('Unable to delete profile before settings have initialized. Please await enable()');
+
 		if ( typeof id === 'object' && id.id != null )
 			id = id.id;
 
@@ -885,6 +919,9 @@ export default class SettingsManager extends Module {
 
 
 	moveProfile(id, index) {
+		if ( ! this.enabled )
+			throw new Error('Unable to move profiles before settings have initialized. Please await enable()');
+
 		if ( typeof id === 'object' && id.id )
 			id = id.id;
 
@@ -905,6 +942,9 @@ export default class SettingsManager extends Module {
 
 
 	saveProfile(id) {
+		if ( ! this.enabled )
+			throw new Error('Unable to save profile before settings have initialized. Please await enable()');
+
 		if ( typeof id === 'object' && id.id )
 			id = id.id;
 
@@ -918,7 +958,19 @@ export default class SettingsManager extends Module {
 
 
 	_saveProfiles() {
-		this.provider.set('profiles', this.__profiles.map(prof => prof.data));
+		const out = this.__profiles.filter(prof => ! prof.ephemeral).map(prof => prof.data);
+
+		// Ensure that we always have a non-ephemeral profile.
+		if ( ! out ) {
+			this.createProfile({
+				name: 'Default Profile',
+				i18n_key: 'setting.profiles.default',
+				description: 'Settings that apply everywhere on Twitch.'
+			});
+			return;
+		}
+
+		this.provider.set('profiles', out);
 		for(const context of this.__contexts)
 			context.selectProfiles();
 
@@ -942,10 +994,44 @@ export default class SettingsManager extends Module {
 
 
 	// ========================================================================
+	// Add-On Proxy
+	// ========================================================================
+
+	getAddonProxy(module) {
+		const path = module.__path;
+
+		const add = (key, definition) => {
+			return this.add(key, definition, path);
+		}
+
+		const addUI = (key, definition) => {
+			return this.addUI(key, definition, path);
+		}
+
+		const addClearable = (key, definition) => {
+			return this.addClearable(key, definition, path);
+		}
+
+		const handler = {
+			get(obj, prop) {
+				if ( prop === 'add' )
+					return add;
+				if ( prop === 'addUI' )
+					return addUI;
+				if ( prop === 'addClearable' )
+					return addClearable;
+				return Reflect.get(...arguments);
+			}
+		}
+
+		return new Proxy(this, handler);
+	}
+
+	// ========================================================================
 	// Definitions
 	// ========================================================================
 
-	add(key, definition) {
+	add(key, definition, source) {
 		if ( typeof key === 'object' ) {
 			for(const k in key)
 				if ( has(key, k) )
@@ -959,6 +1045,8 @@ export default class SettingsManager extends Module {
 
 		definition.required_by = required_by;
 		definition.requires = definition.requires || [];
+
+		definition.__source = source;
 
 		for(const req_key of definition.requires) {
 			const req = this.definitions.get(req_key);
@@ -1007,7 +1095,42 @@ export default class SettingsManager extends Module {
 	}
 
 
-	addUI(key, definition) {
+	remove(key) {
+		const definition = this.definitions.get(key);
+		if ( ! definition )
+			return;
+
+		// If the definition is an array, we're already not defined.
+		if ( Array.isArray(definition) )
+			return;
+
+		// Remove this definition from the definitions list.
+		if ( Array.isArray(definition.required_by) && definition.required_by.length > 0 )
+			this.definitions.set(key, definition.required_by);
+		else
+			this.definitions.delete(key);
+
+		// Remove it from all the things it required.
+		if ( Array.isArray(definition.requires) )
+			for(const req_key of definition.requires) {
+				let req = this.definitions.get(req_key);
+				if ( req.required_by )
+					req = req.required_by;
+				if ( Array.isArray(req) ) {
+					const idx = req.indexOf(key);
+					if ( idx !== -1 )
+						req.splice(idx, 1);
+				}
+			}
+
+		if ( definition.changed )
+			this.off(`:changed:${key}`, definition.changed);
+
+		this.emit(':removed-definition', key, definition);
+	}
+
+
+	addUI(key, definition, source) {
 		if ( typeof key === 'object' ) {
 			for(const k in key)
 				if ( has(key, k) )
@@ -1017,6 +1140,8 @@ export default class SettingsManager extends Module {
 
 		if ( ! definition.ui )
 			definition = {ui: definition};
+
+		definition.__source = source;
 
 		const ui = definition.ui;
 		ui.path_tokens = ui.path_tokens ?
@@ -1038,13 +1163,15 @@ export default class SettingsManager extends Module {
 	}
 
 
-	addClearable(key, definition) {
+	addClearable(key, definition, source) {
 		if ( typeof key === 'object' ) {
 			for(const k in key)
 				if ( has(key, k) )
-					this.addClearable(k, key[k]);
+					this.addClearable(k, key[k], source);
 			return;
 		}
+
+		definition.__source = source;
 
 		this.clearables[key] = definition;
 	}

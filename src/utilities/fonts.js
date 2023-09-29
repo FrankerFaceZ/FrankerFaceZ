@@ -22,7 +22,9 @@ const KNOWN_FONTS = [
 	'Comic Sans MS',
 ];
 
-export const VALID_FONTS = KNOWN_FONTS.filter(font => document.fonts.check(`16px ${font}`)).sort();
+export const VALID_FONTS = document.fonts?.check
+	? KNOWN_FONTS.filter(font => document.fonts.check(`16px ${font}`)).sort()
+	: KNOWN_FONTS.sort();
 
 
 /* Google Font Handling */

@@ -1,6 +1,6 @@
 'use strict';
 
-import {BAD_HOTKEYS, TWITCH_EMOTE_V2} from 'utilities/constants';
+import {BAD_HOTKEYS, TWITCH_EMOTE_V2, WORD_SEPARATORS} from 'utilities/constants';
 
 const HOP = Object.prototype.hasOwnProperty;
 
@@ -45,6 +45,68 @@ export function generateUUID(input) {
 }
 
 
+export async function sha256(message) {
+	// encode as UTF-8
+	const msgBuffer = new TextEncoder().encode(message);
+
+	// hash the message
+	const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+
+	// convert ArrayBuffer to Array
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+	// convert bytes to hex string
+	const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+	return hashHex;
+}
+
+
+/*export function sortScreens(screens) {
+	screens.sort((a,b) => {
+		if ( a.left < b.left ) return -1;
+		if ( a.left > b.left ) return 1;
+		if ( a.top < b.top ) return -1;
+		if ( a.top > b.top ) return 1;
+		return 0;
+	});
+	return screens;
+}*/
+
+
+export function matchScreen(screens, options) {
+	let match = undefined;
+	let mscore = 0;
+
+	for(let i = 0; i < screens.length; i++) {
+		const mon = screens[i];
+		if ( mon.label !== options.label )
+			continue;
+
+		let score = 1;
+		if ( options.left && options.left === mon.left )
+			score += 15;
+		if ( options.top && options.top === mon.top )
+			score += 15;
+
+		if ( options.width && options.width === mon.width )
+			score += 10;
+
+		if ( options.height && options.height === mon.height )
+			score += 10;
+
+		if ( options.index )
+			score -= Math.abs(options.index - i);
+
+		if ( score > mscore ) {
+			match = mon;
+			mscore = score;
+		}
+	}
+
+	return match;
+}
+
+
 export function has(object, key) {
 	return object ? HOP.call(object, key) : false;
 }
@@ -61,6 +123,22 @@ export function make_enum(...array) {
 		const word = array[i];
 		out[word] = i;
 		out[i] = word;
+	}
+
+	return out;
+}
+
+export function make_enum_flags(...array) {
+	const out = {};
+
+	out.None = 0;
+	out[0] = 'None';
+
+	for(let i = 0; i < array.length; i++) {
+		const word = array[i],
+			value = Math.pow(2, i);
+		out[word] = value;
+		out[value] = word;
 	}
 
 	return out;
@@ -536,6 +614,11 @@ export function pick_random(obj) {
 
 export const escape_regex = RegExp.escape || function escape_regex(str) {
 	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+export function addWordSeparators(str) {
+	return `(^|.*?${WORD_SEPARATORS})(?:${str})(?=$|${WORD_SEPARATORS})`
 }
 
 

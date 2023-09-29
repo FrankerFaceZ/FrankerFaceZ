@@ -1,5 +1,6 @@
 .tw-root--theme-dark, html {
 	body,
+	.creator-chat-stats-carousel,
 	.channel-header,
 	.channel-root__right-column,
 	.chat-viewers__pane,
@@ -19,6 +20,7 @@
 	.chat-room,
 	.video-chat,
 	.qa-vod-chat,
+	.extensions-popover-view-layout,
 	.video-card {
 		background-color: var(--color-background-base) !important;
 	}
@@ -34,6 +36,7 @@
 
 	.whispers-list-item:hover .whispers-list-item__archive-button:hover,
 	.clmgr-table__row:hover,
+	.last-x-events_collapsed_item,
 	.thread-header__title-bar-container.thread-header__title-bar-container--focused,
 	.whispers-list-item:hover,
 	.side-nav-card__link:hover {
@@ -47,6 +50,11 @@
 		&:hover {
 			background-color: var(--color-background-button-hover) !important;
 		}
+	}
+
+	.last-x-events_expanded_item_detail_icon,
+	.last-x-events_collapsed_item_detail {
+		background-color: var(--color-background-brand);
 	}
 
 	.top-stats-tab,
@@ -82,8 +90,26 @@
 		outline: .5rem auto var(--color-border-input-focus) !important;
 	}
 
+	.persistent-notification__card-image-unread,
 	.ach-card--expanded .ach-card__inner {
 		border-color: var(--color-border-brand) !important;
+	}
+
+	.creator-chat-stats-carousel__right-arrow {
+		background: linear-gradient(270deg, var(--color-background-body) 60%, transparent) !important;
+	}
+
+	.creator-chat-stats-carousel__left-arrow {
+		background: linear-gradient(90deg, var(--color-background-body) 60%, transparent) !important;
+	}
+
+	.emote-picker__emote-link {
+		&:hover {
+			background-color: var(--color-background-button-text-hover) !important;
+		}
+		&:active,&:focus {
+			background-color: var(--color-background-button-text-active) !important;
+		}
 	}
 }
 
@@ -121,4 +147,11 @@ html, .tw-root--theme-dark, .tw-root--theme-light {
 	.search-box__variant1 .tw-input {
 		border-color: var(--color-background-button-primary-default) !important;
 	}
+}
+
+.subtember-gradient {
+	--color-text-base: #0e0c10;
+	--color-fill-button-icon: #0e0c10;
+
+	color: var(--color-text-base);
 }

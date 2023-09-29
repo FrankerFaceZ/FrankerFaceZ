@@ -6,7 +6,7 @@
 
 import User from './user';
 
-import {NEW_API, API_SERVER, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/constants';
+import {NEW_API, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet, set_equals} from 'utilities/object';
@@ -31,6 +31,9 @@ export default class Room {
 
 		if ( id )
 			this.manager.room_ids[id] = this;
+
+		if ( id && this.manager.pubsub )
+			this.manager.pubsub.subscribe(this, `twitch/${id}/chat`);
 
 		this.manager.emit(':room-add', this);
 		this.load_data();
@@ -80,6 +83,9 @@ export default class Room {
 			if ( this.manager.socket )
 				this.manager.socket.unsubscribe(this, `room.${this.login}`);
 		}
+
+		if ( this._id && this.manager.pubsub )
+			this.manager.pubsub.unsubscribe(this, `twitch/${this._id}/chat`);
 
 		if ( this.manager.room_ids[this._id] === this )
 			this.manager.room_ids[this._id] = null;
@@ -253,6 +259,9 @@ export default class Room {
 		if ( this.destroyed )
 			return;
 
+		const load_key = `ffz-room-${this.id ? `id:${this.id}` : this.login}`;
+		this.manager.load_tracker.schedule('chat-data', load_key);
+
 		if ( this.manager.experiments.getAssignment('api_load') )
 			try {
 				fetch(`${NEW_API}/v1/room/${this.id ? `id/${this.id}` : this.login}`).catch(() => {});
@@ -260,23 +269,27 @@ export default class Room {
 
 		let response, data;
 		try {
-			response = await fetch(`${API_SERVER}/v1/room/${this.id ? `id/${this.id}` : this.login}`);
+			response = await fetch(`${this.manager.staging.api}/v1/room/${this.id ? `id/${this.id}` : this.login}`);
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
 				return setTimeout(() => this.load_data(tries), 500 * tries);
 
 			this.manager.log.error(`Error loading room data for ${this.id}:${this.login}`, err);
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
-		if ( ! response.ok )
+		if ( ! response.ok ) {
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
+		}
 
 		try {
 			data = await response.json();
 		} catch(err) {
 			this.manager.log.error(`Error parsing room data for ${this.id}:${this.login}`, err);
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
@@ -296,6 +309,7 @@ export default class Room {
 
 		} else if ( this._id !== id ) {
 			this.manager.log.warn(`Received data for ${this.id}:${this.login} with the wrong ID: ${id}`);
+			this.manager.load_tracker.notify('chat-data', load_key, false);
 			return false;
 		}
 
@@ -306,10 +320,10 @@ export default class Room {
 
 		this.data = d;
 
+		this.removeAllSets('main');
+
 		if ( d.set )
 			this.addSet('main', d.set);
-		else
-			this.removeAllSets('main');
 
 		if ( data.sets )
 			for(const set_id in data.sets)
@@ -331,6 +345,7 @@ export default class Room {
 		this.buildModBadgeCSS();
 		this.buildVIPBadgeCSS();
 
+		this.manager.load_tracker.notify('chat-data', load_key);
 		return true;
 	}
 

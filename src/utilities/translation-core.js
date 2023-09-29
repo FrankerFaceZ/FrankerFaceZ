@@ -68,6 +68,20 @@ export const DEFAULT_TYPES = {
 		return this.formatNumber(val, node.f);
 	},
 
+	currency(val, node) {
+		if ( typeof val !== 'number' ) {
+			let new_val = parseFloat(val);
+			if ( isNaN(new_val) || ! isFinite(new_val) )
+				new_val = parseInt(val, 10);
+			if ( isNaN(new_val) || ! isFinite(new_val) )
+				return val;
+
+			val = new_val;
+		}
+
+		return this.formatCurrency(val, node.f);
+	},
+
 	date(val, node) {
 		return this.formatDate(val, node.f);
 	},
@@ -204,6 +218,7 @@ export default class TranslationCore {
 
 		this.warn = options.warn;
 		this._locale = options.locale || 'en';
+		this._dayjs_locale = options.dayjsLocale || 'en';
 		this.defaultLocale = options.defaultLocale || this._locale;
 		this.transformation = null;
 
@@ -215,6 +230,7 @@ export default class TranslationCore {
 		this.cache = new Map;
 
 		this.numberFormats = new Map;
+		this.currencyFormats = new Map;
 
 		this.formats = Object.assign({}, DEFAULT_FORMATS);
 		if ( options.formats )
@@ -236,6 +252,7 @@ export default class TranslationCore {
 		if ( val !== this._locale ) {
 			this._locale = val;
 			this.numberFormats.clear();
+			this.currencyFormats.clear();
 		}
 	}
 
@@ -250,10 +267,24 @@ export default class TranslationCore {
 			without_suffix = f === 'plain';
 
 		try {
-			return d.locale(this._locale).fromNow(without_suffix);
+			return d.locale(this._dayjs_locale).fromNow(without_suffix);
 		} catch(err) {
 			return d.fromNow(without_suffix);
 		}
+	}
+
+	formatCurrency(value, currency) {
+		let formatter = this.currencyFormats.get(currency);
+		if ( ! formatter ) {
+			formatter = new Intl.NumberFormat(navigator.languages, {
+				style: 'currency',
+				currency
+			});
+
+			this.currencyFormats.set(currency, formatter);
+		}
+
+		return formatter.format(value);
 	}
 
 	formatNumber(value, format) {
@@ -286,7 +317,7 @@ export default class TranslationCore {
 		if ( format && ! this.formats.date[format] ) {
 			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(format);
+				return d.locale(this._dayjs_locale).format(format);
 			} catch(err) {
 				return d.format(format);
 			}
@@ -305,7 +336,7 @@ export default class TranslationCore {
 		if ( format && ! this.formats.time[format] ) {
 			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(format);
+				return d.locale(this._dayjs_locale).format(format);
 			} catch(err) {
 				return d.format(format);
 			}
@@ -324,7 +355,7 @@ export default class TranslationCore {
 		if ( format && ! this.formats.datetime[format] ) {
 			const d = dayjs(value);
 			try {
-				return d.locale(this._locale).format(format);
+				return d.locale(this._dayjs_locale).format(format);
 			} catch(err) {
 				return d.format(format);
 			}

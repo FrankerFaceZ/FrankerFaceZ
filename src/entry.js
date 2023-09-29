@@ -2,19 +2,21 @@
 'use strict';
 (() => {
 	// Don't run on certain sub-domains.
-	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev)\./.test(location.hostname) )
+	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev|gql|passport)\./.test(location.hostname) )
 		return;
 
 	const DEBUG = localStorage.ffzDebugMode == 'true' && document.body.classList.contains('ffz-dev'),
 		HOST = location.hostname,
-		FLAVOR =
+		SERVER = DEBUG ? '//localhost:8000' : '//cdn.frankerfacez.com',
+		script = document.createElement('script');
+
+	let FLAVOR =
 			HOST.includes('player') ? 'player' :
 				HOST.includes('clips') ? 'clips' :
-					(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon'),
-		SERVER = DEBUG ? '//localhost:8000' : '//cdn.frankerfacez.com',
-		//CLIPS = /clips\.twitch\.tv/.test(location.hostname) ? 'clips/' : '',
+					(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon');
 
-		script = document.createElement('script');
+	if (FLAVOR === 'clips' && location.pathname === '/embed')
+		FLAVOR = 'player';
 
 	script.id = 'ffz-script';
 	script.async = true;

@@ -1,9 +1,29 @@
 <template lang="html">
 	<div class="ffz--profile-editor">
+		<section v-if="isEphemeral" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
+			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
+				<h3 class="ffz-i-attention">
+					{{ t('setting.profiles.ephemeral', "This profile is ephemeral.") }}
+				</h3>
+
+				<span>
+					{{ t('setting.profiles.ephemeral.description',
+						"The currently selected profile is ephemeral, which is a fancy way of saying that it was automatically generated, that it only exists temporarily, and that any changes you make won't be saved."
+					) }}
+				</span>
+
+				<span>{{ t('setting.profiles.ephemeral.description-2',
+					"Please select a different profile from the selector at the upper left of this menu to edit your settings."
+				) }}</span>
+			</div>
+		</section>
+
 		<div class="tw-flex tw-align-items-center tw-border-t tw-pd-1">
 			<div class="tw-flex-grow-1" />
 			<button
+				:disabled="isEphemeral"
 				class="tw-button tw-button--text"
+				:class="{'tw-button--disabled': isEphemeral}"
 				@click="save"
 			>
 				<span class="tw-button__text ffz-i-floppy">
@@ -80,6 +100,7 @@
 				<input
 					id="ffz:editor:name"
 					ref="name"
+					:disabled="isEphemeral"
 					v-model="name"
 					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				>
@@ -93,6 +114,7 @@
 				<textarea
 					id="ffz:editor:description"
 					ref="desc"
+					:disabled="isEphemeral"
 					v-model="desc"
 					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				/>
@@ -107,6 +129,7 @@
 					<key-picker
 						id="ffz:editor:hotkey"
 						ref="hotkey"
+						:disabled="isEphemeral"
 						v-model="hotkey"
 					/>
 				</div>
@@ -148,6 +171,7 @@
 						id="ffz:editor:update"
 						ref="update"
 						:checked="! pause"
+						:disabled="isEphemeral"
 						type="checkbox"
 						class="ffz-checkbox__input"
 						@change="onPauseChange"
@@ -175,7 +199,9 @@
 			<filter-editor
 				v-model="rules"
 				:filters="filters"
+				:disabled="isEphemeral"
 				:context="test_context"
+				:preview="true"
 			/>
 		</div>
 	</div>
@@ -218,6 +244,10 @@ export default {
 	},
 
 	computed: {
+		isEphemeral() {
+			return this.item.profile?.ephemeral ?? false
+		},
+
 		canExport() {
 			return this.item.profile != null
 		}

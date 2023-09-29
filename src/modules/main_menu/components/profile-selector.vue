@@ -26,7 +26,7 @@
 				@focusin="focus"
 				@focusout="blur"
 			>
-				<div class="scrollable-area tw-border-b" data-simplebar>
+				<div ref="scroller" class="scrollable-area tw-border-b" data-simplebar>
 					<div class="simplebar-scroll-content">
 						<div ref="popup" class="simplebar-content">
 							<div
@@ -52,6 +52,14 @@
 								@click="changeProfile(p)"
 							>
 								<div class="ffz--profile-row__icon-tray tw-flex">
+									<div
+										v-if="p.ephemeral"
+										class="ffz-il-tooltip__container ffz--profile-row__icon ffz-i-user-secret tw-relative"
+									>
+										<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+											{{ t('setting.profiles.ephemeral', 'This profile is ephemeral.') }}
+										</div>
+									</div>
 									<div
 										v-if="p.url"
 										:class="`ffz-il-tooltip__container ffz--profile-row__icon ffz-i-download-cloud tw-relative${p.pause_updates ? ' ffz-unmatched-item' : ''}`"
@@ -111,7 +119,22 @@ export default {
 		}
 	},
 
+	watch: {
+		opened() {
+			if (this.opened)
+				this.$nextTick(() => this.updateScroller());
+		}
+	},
+
 	methods: {
+		updateScroller() {
+			const scroller = this.$refs.scroller;
+			if (!scroller || ! window.ffzSimplebar || scroller.SimpleBar)
+				return;
+
+			new ffzSimplebar(scroller, ffzSimplebar.getElOptions(scroller));
+		},
+
 		openConfigure() {
 			this.hide();
 			this.$emit('navigate', 'data_management.profiles');

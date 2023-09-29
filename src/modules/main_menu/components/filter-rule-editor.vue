@@ -4,16 +4,21 @@
 			<h5 class="ffz-i-ellipsis-vert" />
 		</div>
 
+		<div v-if="! component" class="tw-flex tw-flex-grow-1 tw-align-self-center tw-align-items-center">
+			{{ t('setting.filters.missing', 'This rule of type "{type}" cannot be loaded. It may be from an add-on that is not loaded.', {type: editing && editing.type}) }}
+		</div>
 		<component
+			v-else
 			:is="component"
 			v-model="editing"
 			:type="type"
 			:filters="filters"
 			:context="context"
+			:preview="preview"
 		/>
 
 		<div
-			v-if="isShort"
+			v-if="isShort && preview"
 			class="tw-mg-l-1 tw-pd-x-1 tw-border-l tw-flex tw-align-items-center ffz--profile__icon tw-relative ffz-il-tooltip__container"
 		>
 			<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
@@ -31,7 +36,7 @@
 			:class="[isShort ? '' : 'tw-mg-l-1']"
 			class="tw-border-l tw-pd-l-1 tw-flex tw-flex-column tw-flex-wrap tw-justify-content-start tw-align-items-start"
 		>
-			<div v-if="! isShort" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative ffz-il-tooltip__container">
+			<div v-if="! isShort && preview" class="tw-mg-b-1 tw-border-b tw-pd-b-1 tw-full-width tw-flex tw-justify-content-center ffz--profile__icon tw-relative ffz-il-tooltip__container">
 				<figure :class="[passes ? 'ffz-i-ok' : 'ffz-i-cancel']" />
 				<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 					<span v-if="passes">
@@ -44,23 +49,23 @@
 			</div>
 
 			<template v-if="deleting">
-				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="$emit('delete')">
-					<span class="tw-button__text ffz-i-trash" />
-					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
-						{{ t('setting.delete', 'Delete') }}
-					</div>
-				</button>
 				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="deleting = false">
 					<span class="tw-button__text ffz-i-cancel" />
-					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 						{{ t('setting.cancel', 'Cancel') }}
+					</div>
+				</button>
+				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="$emit('delete')">
+					<span class="tw-button__text ffz-i-trash" />
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
+						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
 			</template>
 			<template v-else>
 				<button class="tw-button tw-button--text tw-relative ffz-il-tooltip__container" @click="deleting = true">
 					<span class="tw-button__text ffz-i-trash" />
-					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+					<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
 						{{ t('setting.delete', 'Delete') }}
 					</div>
 				</button>
@@ -80,6 +85,11 @@ export default {
 		context: {
 			type: Object,
 			required: false
+		},
+		preview: {
+			type: Boolean,
+			required: false,
+			default: true
 		}
 	},
 
@@ -93,7 +103,7 @@ export default {
 
 	computed: {
 		passes() {
-			return this.tester && this.tester(this.context);
+			return this.preview && this.tester && this.tester(this.context);
 		},
 
 		type() {
@@ -105,7 +115,7 @@ export default {
 		},
 
 		isShort() {
-			return this.type && ! this.type.tall;
+			return ! this.component || (this.type && ! this.type.tall);
 		}
 	},
 

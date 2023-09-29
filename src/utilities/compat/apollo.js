@@ -384,18 +384,16 @@ export default class Apollo extends Module {
 	// ========================================================================
 
 	getQuery(operation) {
-		const qm = this.client.queryManager,
-			name_map = qm && qm.queryIdsByName,
-			query_map = qm && qm.queries,
-			query_id = name_map && name_map[operation],
-			query = query_map && query_id && query_map.get(Array.isArray(query_id) ? query_id[0] : query_id);
+		const query_map = this.client.queryManager?.queries;
 
-		if ( ! query_map && ! this.warn_qm ) {
-			this.log.error('Unable to find the Apollo query map. We cannot access data properly.');
-			this.warn_qm = true;
+		if ( ! query_map )
+			return;
+
+		for(const val of query_map.values()) {
+			const obs = val?.observableQuery;
+			if ( obs?.queryName === operation )
+				return obs;
 		}
-
-		return query && query.observableQuery;
 	}
 
 

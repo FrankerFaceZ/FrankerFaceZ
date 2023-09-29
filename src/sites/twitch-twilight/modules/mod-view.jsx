@@ -22,6 +22,7 @@ export default class ModView extends Module {
 		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
+		this.inject('pubsub');
 
 		this.should_enable = true;
 
@@ -60,13 +61,23 @@ export default class ModView extends Module {
 		this.checkNavigation();
 	}
 
-	updateSubscription(login) {
-		if ( this._subbed_login === login )
+	updateSubscription(id, login) {
+		if ( this._subbed_login === login && this._subbed_id === id )
 			return;
+
+		if ( this._subbed_id ) {
+			this.pubsub.unsubscribe(this, `twitch/${this._subbed_id}/channel/#`);
+			this._subbed_id = null;
+		}
 
 		if ( this._subbed_login ) {
 			this.socket.unsubscribe(this, `channel.${this._subbed_login}`);
 			this._subbed_login = null;
+		}
+
+		if ( id ) {
+			this.pubsub.subscribe(this, `twitch/${id}/channel`);
+			this._subbed_id = id;
 		}
 
 		if ( login ) {
@@ -114,7 +125,7 @@ export default class ModView extends Module {
 				this._cached_id = channel.id;
 				this._cached_channel = channel;
 				this._cached_color = null;
-				this.updateSubscription(channel.login);
+				this.updateSubscription(channel.id, channel.login);
 
 				this.getChannelColor(el, channel.id).then(color => {
 					if ( this._cached_id != channel.id )
@@ -216,7 +227,7 @@ export default class ModView extends Module {
 		let channel = null, state = root?.return?.memoizedState, i = 0;
 		while(state != null && channel == null && i < 50 ) {
 			state = state?.next;
-			channel = state?.memoizedState?.current?.previousData?.result?.data?.channel;
+			channel = state?.memoizedState?.current?.previous?.result?.data?.channel;
 			i++;
 		}
 
@@ -227,6 +238,11 @@ export default class ModView extends Module {
 		// This doesn't work because hosting in mod view.
 		//if ( channel?.id && channel.id != this._cached_id )
 		//	this.checkRoot();
+
+		if ( this._cached_bar_id != channel?.id ) {
+			this._cached_bar_id = channel?.id;
+			this._cached_bar_channel = channel;
+		}
 
 		if ( title != el._cached_title || game?.id != el._cached_game ) {
 			el._cached_title = title;
@@ -277,7 +293,7 @@ export default class ModView extends Module {
 
 	updateMetadata(el, keys) {
 		const cont = el._ffz_cont,
-			channel = this._cached_channel;
+			channel = this._cached_bar_channel;
 			//root = this.fine.getReactInstance(el);
 
 		/*let channel = null, state = root?.return?.memoizedState, i = 0;

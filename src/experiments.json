@@ -14,5 +14,13 @@
 			{"value": true, "weight": 30},
 			{"value": false, "weight": 70}
 		]
+	},
+	"pubsub": {
+		"name": "MQTT-Based PubSub",
+		"description": "An experimental new pubsub system that should be more reliable than the existing socket cluster.",
+		"groups": [
+			{"value": true, "weight": 25},
+			{"value": false, "weight": 75}
+		]
 	}
 }

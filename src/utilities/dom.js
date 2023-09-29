@@ -58,23 +58,30 @@ export function findReactFragment(frag, criteria, depth = 25, current = 0, visit
 
 	visited.add(frag);
 
-	if ( frag && frag.props && Array.isArray(frag.props.children) )
-		for(const child of frag.props.children) {
-			if ( ! child )
-				continue;
+	if ( frag && frag.props && frag.props.children ) {
+		if ( Array.isArray(frag.props.children) ) {
+			for(const child of frag.props.children) {
+				if ( ! child )
+					continue;
 
-			if ( Array.isArray(child) ) {
-				for(const f of child) {
-					const out = findReactFragment(f, criteria, depth, current + 1, visited);
+				if ( Array.isArray(child) ) {
+					for(const f of child) {
+						const out = findReactFragment(f, criteria, depth, current + 1, visited);
+						if ( out )
+							return out;
+					}
+				} else {
+					const out = findReactFragment(child, criteria, depth, current + 1, visited);
 					if ( out )
 						return out;
 				}
-			} else {
-				const out = findReactFragment(child, criteria, depth, current + 1, visited);
-				if ( out )
-					return out;
 			}
+		} else {
+			const out = findReactFragment(frag.props.children, criteria, depth, current + 1, visited);
+			if ( out )
+				return out;
 		}
+	}
 
 	return null;
 }
@@ -264,6 +271,22 @@ export class ManagedStyle {
 		this._style = null;
 	}
 
+	clear() {
+		this._blocks = {};
+		this._style.innerHTML = '';
+	}
+
+	get(key) {
+		const block = this._blocks[key];
+		if ( block )
+			return block.textContent;
+		return undefined;
+	}
+
+	has(key) {
+		return !! this._blocks[key];
+	}
+
 	set(key, value, force) {
 		const block = this._blocks[key];
 		if ( block ) {
@@ -306,4 +329,49 @@ export class ClickOutside {
 		if ( this.el && ! this.el.contains(e.target) )
 			this.cb(e);
 	}
+}
+
+
+// TODO: Rewrite this method to not use raw HTML.
+
+export function highlightJson(object, pretty = false, depth = 1, max_depth = 30) {
+	let indent = '', indent_inner = '';
+	if ( pretty ) {
+		indent = '    '.repeat(depth - 1);
+		indent_inner = '    '.repeat(depth);
+	}
+
+	if ( depth > max_depth )
+		return `<span class="ffz-ct--obj-literal">&lt;nested&gt;</span>`;
+
+	if (object == null)
+		return `<span class="ffz-ct--literal" depth="${depth}">null</span>`;
+
+	if ( typeof object === 'number' || typeof object === 'boolean' )
+		return `<span class="ffz-ct--literal" depth="${depth}">${object}</span>`;
+
+	if ( typeof object === 'string' )
+		return `<span class=ffz-ct--string depth="${depth}">"${sanitize(object)}"</span>`;
+
+	if ( Array.isArray(object) )
+		return `<span class="ffz-ct--obj-open" depth="${depth}">[</span>`
+			+ (object.length > 0 ? (
+				object.map(x => (pretty ? `\n${indent_inner}` : '') + highlightJson(x, pretty, depth + 1, max_depth)).join(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`)
+				+ (pretty ? `\n${indent}` : '')
+			) : '')
+			+ `<span class="ffz-ct--obj-close" depth="${depth}">]</span>`;
+
+	const out = [];
+
+	for(const [key, val] of Object.entries(object)) {
+		if ( out.length > 0 )
+			out.push(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`);
+
+		if ( pretty )
+			out.push(`\n${indent_inner}`);
+		out.push(`<span class="ffz-ct--obj-key" depth="${depth}">"${sanitize(key)}"</span><span class="ffz-ct--obj-key-sep" depth="${depth}">: </span>`);
+		out.push(highlightJson(val, pretty, depth + 1, max_depth));
+	}
+
+	return `<span class="ffz-ct--obj-open" depth="${depth}">{</span>${out.join('')}${out.length && pretty ? `\n${indent}` : ''}<span class="ffz-ct--obj-close" depth="${depth}">}</span>`;
 }

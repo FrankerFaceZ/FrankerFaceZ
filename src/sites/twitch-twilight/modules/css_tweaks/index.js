@@ -13,7 +13,7 @@ const STYLE_VALIDATOR = document.createElement('span');
 
 const CLASSES = {
 	//'unfollow': '.follow-btn__follow-btn--following,.follow-btn--following',
-	'top-discover': '.navigation-link[data-a-target="discover-link"]',
+	//'top-discover': '.navigation-link[data-a-target="discover-link"]',
 	'side-nav': '.side-nav,#sideNav',
 	'side-nav-viewers': '.side-nav-card__live-status',
 	'side-rec-channels': '.side-nav .recommended-channels,.side-nav .side-nav-section + .side-nav-section:not(.online-friends):not(.bd--shelf)',
@@ -26,9 +26,12 @@ const CLASSES = {
 	'modview-hide-info': '.modview-player-widget__hide-stream-info',
 
 	'community-highlights': '.community-highlight-stack__card',
+	'elevate-your-message': '.chat-input__input-icons button[aria-label="ElevatedMessage"]',
 
 	'prime-offers': '.top-nav__prime',
 	'discover-luna': '.top-nav__external-link[data-a-target="try-presto-link"]',
+
+	'subtember': '.subtember-gradient',
 
 	'player-gain-volume': '.video-player__container[data-compressed="true"] .volume-slider__slider-container:not(.ffz--player-gain)',
 
@@ -38,7 +41,7 @@ const CLASSES = {
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
 
-	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard',
+	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard,.channel-leaderboard-marquee,div[data-test-selector="channel-leaderboard-container"]',
 	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"],.whispers__pill',
 
 	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',
@@ -46,7 +49,14 @@ const CLASSES = {
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',
 	'celebration': 'body .celebration__overlay',
-	'mod-view': '.chat-input__buttons-container a[href*="/moderator"]'
+
+	'last-x-events': '.last-x-events_container',
+
+	'pinned-hype-chat': '.paid-pinned-chat-message-list',
+
+	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
+	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]',
+	'ci-shield-mode': '.chat-input__buttons-container > div:last-child button[class|="ScCoreButton"]:not([data-highlight-selector]):not([data-a-target])'
 };
 
 
@@ -294,10 +304,10 @@ export default class CSSTweaks extends Module {
 		});
 
 		this.settings.add('layout.theatre-navigation', {
-			requires: ['context.ui.theatreModeEnabled'],
+			requires: ['layout.is-theater-mode'],
 			default: false,
 			process(ctx, val) {
-				return ctx.get('context.ui.theatreModeEnabled') ? val : false
+				return ctx.get('layout.is-theater-mode') ? val : false
 			},
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
@@ -310,7 +320,16 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
-		this.settings.add('layout.discover', {
+		this.settings.add('layout.subtember', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Allow the Subtember upsell banner to appear.',
+				component: 'setting-check-box'
+			}
+		});
+
+		/*this.settings.add('layout.discover', {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
@@ -320,6 +339,15 @@ export default class CSSTweaks extends Module {
 			changed: val => {
 				this.toggleHide('top-discover', !val);
 				this.updateTopNav();
+			}
+		});*/
+
+		this.settings.add('layout.turbo-cta', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Allow the Twitch Turbo button to appear.',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -356,6 +384,16 @@ export default class CSSTweaks extends Module {
 				this.toggleHide('whispers', !val);
 				this.emit('site.layout:resize');
 			}
+		});
+
+		this.settings.add('chat.hype.show-pinned', {
+			default: true,
+			ui: {
+				path: 'Chat > Hype Chat >> Appearance',
+				title: 'Allow Hype Chat messages to appear pinned at the top of chat.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggleHide('pinned-hype-chat', ! val)
 		});
 
 		this.settings.add('chat.bits.show', {
@@ -457,8 +495,10 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('side-offline-channels', this.settings.get('layout.side-nav.hide-offline'));
 		this.toggleHide('discover-luna', this.settings.get('layout.hide-discover-luna'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
-		this.toggleHide('top-discover', !this.settings.get('layout.discover'));
+		//this.toggleHide('top-discover', !this.settings.get('layout.discover'));
 		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));
+
+		this.toggleHide('pinned-hype-chat', ! this.settings.get('chat.hype.show-pinned'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
 		//this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
@@ -478,6 +518,8 @@ export default class CSSTweaks extends Module {
 
 		this.toggleHide('whispers', !this.settings.get('whispers.show'));
 		this.toggleHide('celebration', ! this.settings.get('channel.show-celebrations'));
+
+		this.settings.getChanges('layout.subtember', val => this.toggleHide('subtember', !val));
 
 		this.updateFont();
 		this.updateTopNav();

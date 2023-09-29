@@ -4,25 +4,110 @@ import {createElement} from 'utilities/dom';
 
 
 // ============================================================================
+// Pin Message
+// ============================================================================
+
+export const pin = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-pin'
+		}
+	}],
+
+	required_context: ['message'],
+
+	title: 'Pin This Message',
+	description: "Allows you to pin a chat message if you're a moderator.",
+
+	can_self: true,
+
+	tooltip(data) {
+		const pinned = data.line?.props?.pinnedMessage?.message?.id === data.message_id;
+		if (pinned)
+			return this.i18n.t('chat.actions.pin.already', 'This message is already pinned.');
+
+		return this.i18n.t('chat.actions.pin', 'Pin This Message')
+	},
+
+	disabled(data, message, current_room, current_user, mod_icons, instance) {
+		const line = instance ?? data.line,
+			props = line?.props,
+			pinned = props?.pinnedMessage?.message?.id === message.id && message.id != null;
+
+		return pinned;
+	},
+
+	hidden(data, message, current_room, current_user, mod_icons, instance) {
+		let line = instance;
+
+		if ( ! line )
+			return true;
+
+		if ( ! line.props.isPinnable || ! line.onPinMessageClick )
+			return true;
+
+		// If the message is empty or deleted, we can't pin it.
+		if ( ! message.message || ! message.message.length || message.deleted )
+			return true;
+	},
+
+	click(event, data) {
+		let line = data.line;
+		if ( ! line ) {
+			const fine = this.resolve('site.fine');
+			line = fine ? fine.searchParent(event.target, n => n.setMessageTray && n.props && n.props.message) : null;
+		}
+
+		if ( ! line || ! line.props.isPinnable || ! line.onPinMessageClick )
+			return;
+
+		if ( line.props.pinnedMessage?.message?.id === data.message_id )
+			return;
+
+		line.onPinMessageClick();
+	}
+}
+
+
+// ============================================================================
 // Send Reply
 // ============================================================================
 
 export const reply = {
 	presets: [{
 		appearance: {
-			type: 'icon',
-			icon: 'ffz-i-reply'
+			type: 'dynamic'
 		}
 	}],
 
 	required_context: ['message'],
+	supports_dynamic: true,
 
 	title: 'Reply to Message',
-	description: 'Allows you to directly reply to another user\'s message. Only functions when the Chat Replies Style is "FrankerFaceZ".',
+	description: "Allows you to directly reply to another user's message.",
 
 	can_self: true,
 
-	tooltip() {
+	dynamicAppearance(ap, data, message, current_room, current_user, mod_icons, instance) {
+		const line = instance ?? data.line,
+			props = line?.props,
+			has_reply = props?.hasReply || props?.reply;
+
+		return {
+			type: 'icon',
+			icon: has_reply ? 'ffz-i-threads' : 'ffz-i-reply',
+			color: ap.color
+		}
+	},
+
+	tooltip(data) {
+		const props = data.line?.props,
+			has_reply = props?.hasReply || props?.reply;
+
+		if (has_reply)
+			return this.i18n.t('chat.actions.reply.thread', 'Open Thread');
+
 		return this.i18n.t('chat.actions.reply', 'Reply to Message')
 	},
 
@@ -31,10 +116,16 @@ export const reply = {
 		if ( typeof id !== 'string' || ! /^[0-9a-f]+-[0-9a-f]+/.test(id) )
 			return true;
 
-		if ( ! message.message || message.deleted || (current_user && current_user.login === message.user?.login) || ! current_user?.can_reply )
+		// Users must be able to reply.
+		if ( ! current_user?.can_reply )
 			return true;
 
-		if ( message?.reply )
+		// If reply mode is set to 0 (Disabled), don't show the action.
+		if ( current_user?.reply_mode === 0 )
+			return true;
+
+		// If the message is empty or deleted, don't show the action.
+		if ( ! message.message || message.deleted )
 			return true;
 	},
 
@@ -84,6 +175,51 @@ export const edit_overrides = {
 
 
 // ============================================================================
+// Copy to Clipboard
+// ============================================================================
+
+export const copy_message = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-docs'
+		}
+	}],
+
+	defaults: {
+		format: '{{user.displayName}}: {{message.text}}'
+	},
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-copy.vue'),
+
+	required_context: ['user', 'message'],
+
+	title: 'Copy Message',
+	description: 'Allows you to quickly copy a chat message to your clipboard.',
+
+	can_self: true,
+
+	tooltip(data) {
+		const msg = this.replaceVariables(data.options.format, data);
+
+		return [
+			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+				this.i18n.t('chat.actions.copy_message', 'Copy Message')
+			}</div>),
+			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
+				msg
+			}</div>)
+		];
+	},
+
+	click(event, data) {
+		const msg = this.replaceVariables(data.options.format, data);
+		navigator.clipboard.writeText(msg);
+	}
+}
+
+
+// ============================================================================
 // Open URL
 // ============================================================================
 
@@ -102,7 +238,10 @@ export const open_url = {
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-url.vue'),
 
 	title: 'Open URL',
-	description: '{options.url}',
+	description(data) {
+		return data.options.url;
+	},
+	description_i18n: null,
 
 	can_self: true,
 
@@ -151,7 +290,20 @@ export const chat = {
 	},
 
 	title: 'Chat Command',
-	description: '{options.command}',
+	description(data) {
+		if ( data.options.paste )
+			return this.t('chat.actions.chat.desc.paste', 'Paste into chat: {cmd}', {cmd: data.options.command})
+
+		const target = data.options.target ?? '';
+
+		return this.t('chat.actions.chat.desc.target', 'Send in {target}: {cmd}', {
+			cmd: data.options.command,
+			target: /^\s*$/.test(target)
+				? this.t('chat.actions.chat.desc.current', 'current channel')
+				: target
+		});
+	},
+	description_i18n: null,
 
 	can_self: true,
 
@@ -159,10 +311,15 @@ export const chat = {
 
 	tooltip(data) {
 		const msg = this.replaceVariables(data.options.command, data);
+		let target = this.replaceVariables(data.options.target ?? '', data);
+		if ( /^\s*$/.test(target) )
+			target = null;
 
 		return [
 			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
-				this.i18n.t('chat.actions.chat', 'Chat Command')
+				target
+					? this.i18n.t('chat.actions.chat.with-target', 'Chat Command in Channel: {target}', {target})
+					: this.i18n.t('chat.actions.chat', 'Chat Command')
 			}</div>),
 			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
 				msg
@@ -172,10 +329,14 @@ export const chat = {
 
 	click(event, data) {
 		const msg = this.replaceVariables(data.options.command, data);
+		let target = this.replaceVariables(data.options.target ?? '', data);
+		if ( data.options.paste || /^\s*$/.test(target) )
+			target = data.room.login;
+
 		if ( data.options.paste )
-			this.pasteMessage(data.room.login, msg);
+			this.pasteMessage(target, msg);
 		else
-			this.sendMessage(data.room.login, msg);
+			this.sendMessage(target, msg);
 	}
 }
 
@@ -361,6 +522,84 @@ export const untimeout = {
 		this.sendMessage(data.room.login, `/untimeout ${data.user.login}`);
 	}
 }
+
+
+// ============================================================================
+// Mod and Unmod User
+// ============================================================================
+
+export const mod = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-mod'
+		}
+	}],
+
+	required_context: ['room', 'user'],
+
+	title: 'Mod User',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.mod.tooltip', 'Mod {user.login}', {user: data.user});
+	},
+
+	hidden(data, message, current_room, current_user, mod_icons, instance) {
+		// You cannot mod mods.
+		if ( message.user.type === 'mod' )
+			return true;
+
+		// You cannot mod the broadcaster.
+		if ( message.user.id === current_room.id )
+			return true;
+
+		// Only the broadcaster can mod, otherwise.
+		return current_room.id !== current_user.id;
+	},
+
+	click(event, data) {
+		this.sendMessage(data.room.login, `/mod ${data.user.login}`);
+	}
+};
+
+
+export const unmod = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-unmod'
+		}
+	}],
+
+	required_context: ['room', 'user'],
+
+	title: 'Un-Mod User',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.unmod.tooltip', 'Un-Mod {user.login}', {user: data.user});
+	},
+
+	hidden(data, message, current_room, current_user, mod_icons, instance) {
+		// You can only un-mod mods.
+		if ( message.user.type !== 'mod' )
+			return true;
+
+		// You can unmod yourself.
+		if ( message.user.id === current_user.id )
+			return false;
+
+		// You cannot unmod the broadcaster.
+		if ( message.user.id === current_room.id )
+			return false;
+
+		// Only the broadcaster can unmod, otherwise.
+		return current_room.id !== current_user.id;
+	},
+
+	click(event, data) {
+		this.sendMessage(data.room.login, `/unmod ${data.user.login}`);
+	}
+};
 
 
 // ============================================================================

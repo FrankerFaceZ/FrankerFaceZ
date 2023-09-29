@@ -19,9 +19,10 @@ const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
 // Describes how an emote matches against a given input
 // Higher values represent a more exact match
 const NO_MATCH = 0;
-const NON_PREFIX_MATCH = 1;
-const CASE_INSENSITIVE_PREFIX_MATCH = 2;
-const EXACT_PREFIX_MATCH = 3;
+const MATCH_ANY = 1;
+const NON_PREFIX_MATCH = 2;
+const CASE_INSENSITIVE_PREFIX_MATCH = 3;
+const EXACT_PREFIX_MATCH = 4;
 
 function getNodeText(node) {
 	if ( ! node )
@@ -71,6 +72,25 @@ export default class Input extends Module {
 
 
 		// Settings
+
+		this.settings.add('chat.hype.display-input', {
+			default: true,
+			ui: {
+				path: 'Chat > Hype Chat >> Input',
+				title: 'Allow the Hype Chat button to appear in the chat input element.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.inline-preview.enabled', {
+			default: true,
+			ui: {
+				path: 'Chat > Input >> Appearance',
+				title: 'Display in-line previews of FrankerFaceZ emotes when entering a chat message.',
+				description: '**Note:** This feature is temperamental. It may not display all emotes, and emote effects and overlay emotes are not displayed correctly. Once this setting has been enabled, it cannot be reasonably disabled and will remain active until you refresh the page.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('chat.mru.enabled', {
 			default: true,
@@ -136,6 +156,26 @@ export default class Input extends Module {
 			}
 		});
 
+		this.settings.add('chat.tab-complete.matching', {
+			default: 1,
+
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Emote Matching Type',
+				description: '1: `ppa` would match `Kappa`\n\n' +
+					'2: `sip` would match `cohhSip` but not `Gossip`\n\n' +
+					'3: `pasta` would match `pastaThat` but not `HoldThat`',
+
+				component: 'setting-select-box',
+
+				data: [
+					{value: 1, title: '1: Anything (Twitch style)'},
+					{value: 2, title: '2: Non-Prefix (Old FFZ style)'},
+					{value: 3, title: '3: Exact (Case-Insensitive)'}
+				]
+			}
+		});
+
 
 		// Components
 
@@ -147,7 +187,7 @@ export default class Input extends Module {
 
 		this.EmoteSuggestions = this.fine.define(
 			'tab-emote-suggestions',
-			n => n && n.getMatchedEmotes,
+			n => n && n.getMatches && n.autocompleteType === 'emote',
 			Twilight.CHAT_ROUTES
 		);
 
@@ -193,6 +233,7 @@ export default class Input extends Module {
 	}
 
 	async onEnable() {
+		this.chat.context.on('changed:chat.hype.display-input', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.actions.room-above', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.tab-complete.emotes-without-colon', enabled => {
@@ -201,6 +242,22 @@ export default class Input extends Module {
 
 			for (const inst of this.MentionSuggestions.instances)
 				inst.canBeTriggeredByTab = !enabled;
+		});
+
+		this.use_previews = this.chat.context.get('chat.inline-preview.enabled');
+
+		this.chat.context.on('changed:chat.inline-preview.enabled', val => {
+			if ( this.use_previews )
+				return;
+
+			this.use_previews = val;
+			if ( val )
+				for(const inst of this.ChatInput.instances) {
+					this.installPreviewObserver(inst);
+					inst.ffzInjectEmotes();
+					inst.forceUpdate();
+					this.emit('site:dom-update', 'chat-input', inst);
+				}
 		});
 
 		const React = await this.web_munch.findModule('react'),
@@ -216,10 +273,18 @@ export default class Input extends Module {
 
 			cls.prototype.render = function() {
 				const out = old_render.call(this);
+
 				try {
+					const hide_hype = ! t.chat.context.get('chat.hype.display-input');
+					if ( hide_hype ) {
+						const frag = findReactFragment(out, n => n.key === 'paidPinnedMessage');
+						if ( frag )
+							frag.type = () => null;
+					}
+
 					const above = t.chat.context.get('chat.actions.room-above'),
 						state = t.chat.context.get('context.chat_state') || {},
-						container = above ? out : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');
+						container = above ? findReactFragment(out, n => n.props && Array.isArray(n.props.children))  : findReactFragment(out, n => n.props && n.props.className === 'chat-input__buttons-container');
 					if ( ! container || ! container.props || ! container.props.children )
 						return out;
 
@@ -266,6 +331,8 @@ export default class Input extends Module {
 				this.emit('site:dom-update', 'chat-input', inst);
 				this.updateEmoteCompletion(inst);
 				this.overrideChatInput(inst);
+				inst.ffzInjectEmotes();
+				this.installPreviewObserver(inst);
 			}
 		});
 
@@ -286,19 +353,23 @@ export default class Input extends Module {
 
 		this.ChatInput.on('update', this.updateEmoteCompletion, this);
 		this.ChatInput.on('mount', this.overrideChatInput, this);
+
+		this.ChatInput.on('mount', this.installPreviewObserver, this);
+		this.ChatInput.on('unmount', this.removePreviewObserver, this);
+
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
 		this.CommandSuggestions.on('mount', this.overrideCommandMatcher, this);
 
 		this.chat.context.on('changed:chat.emotes.animated', this.uncacheTabCompletion, this);
 		this.chat.context.on('changed:chat.emotes.enabled', this.uncacheTabCompletion, this);
+		this.chat.context.on('changed:chat.tab-complete.matching', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-set-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-favorite', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-default-sets', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-user-sets', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:update-room-sets', this.uncacheTabCompletion, this);
-
 		this.on('site.css_tweaks:update-chat-css', this.resizeInput, this);
 	}
 
@@ -307,6 +378,13 @@ export default class Input extends Module {
 			inst.ffz_ffz_cache = null;
 			inst.ffz_twitch_cache = null;
 		}
+
+		if ( this.use_previews )
+			for(const inst of this.ChatInput.instances) {
+				inst.ffzInjectEmotes();
+				inst.forceUpdate();
+				this.emit('site:dom-update', 'chat-input', inst);
+			}
 	}
 
 	updateInput() {
@@ -332,6 +410,143 @@ export default class Input extends Module {
 	}
 
 
+	installPreviewObserver(inst) {
+		if ( inst._ffz_preview_observer || ! window.MutationObserver )
+			return;
+
+		if ( ! this.use_previews )
+			return;
+
+		const el = this.fine.getHostNode(inst),
+			target = el && el.querySelector('.chat-input__textarea');
+		if ( ! target )
+			return;
+
+		inst._ffz_preview_observer = new MutationObserver(mutations => {
+			for(const mut of mutations) {
+				//if ( mut.target instanceof Element )
+				//	this.checkForPreviews(inst, mut.target);
+
+				for(const node of mut.addedNodes) {
+					if ( node instanceof Element )
+						this.checkForPreviews(inst, node);
+				}
+			}
+		});
+
+		inst._ffz_preview_observer.observe(target, {
+			childList: true,
+			subtree: true,
+			//attributeFilter: ['src']
+		});
+	}
+
+	checkForPreviews(inst, node) {
+		// We can't find the tooltip element directly (without digging into React tree at least)
+		// So instead just find the relevant images in the document. This shouldn't happen TOO
+		// frequently, with any luck, so the performance impact should be small.
+		if ( node.querySelector?.('span[data-a-target="chat-input-emote-preview"]') ) {
+			for(const target of document.querySelectorAll('.tw-tooltip-layer img.chat-line__message--emote')) {
+				if ( target && target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__') )
+					this.updatePreview(inst, target);
+			}
+		}
+
+		// This no longer works because they removed aria-describedby
+		/*for(const el of node.querySelectorAll?.('span[data-a-target="chat-input-emote-preview"][aria-describedby]') ?? []) {
+			const cont = document.getElementById(el.getAttribute('aria-describedby')),
+				target = cont && cont.querySelector('img.chat-line__message--emote');
+
+			if ( target && target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__') )
+				this.updatePreview(inst, target);
+		}*/
+
+		for(const target of node.querySelectorAll?.('img.chat-line__message--emote')) {
+			if ( target && (target.dataset.ffzId || target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__')) )
+				this.updatePreview(inst, target);
+		}
+	}
+
+	updatePreview(inst, target) {
+		let set_id = target.dataset.ffzSet,
+			emote_id = target.dataset.ffzId;
+
+		if ( ! emote_id ) {
+			const idx = target.src.indexOf('__FFZ__', 49),
+				raw_id = target.src.slice(49, idx);
+
+			const raw_idx = raw_id.indexOf('::');
+			if ( raw_idx === -1 )
+				return;
+
+			set_id = raw_id.slice(0, raw_idx);
+			emote_id = raw_id.slice(raw_idx + 2);
+
+			target.dataset.ffzSet = set_id;
+			target.dataset.ffzId = emote_id;
+		}
+
+		const emote_set = this.emotes.emote_sets[set_id],
+			emote = emote_set?.emotes?.[emote_id];
+
+		if ( ! emote )
+			return;
+
+		const anim = this.chat.context.get('chat.emotes.animated') > 0;
+
+		target.src = (anim ? emote.animSrc : null) ?? emote.src;
+		target.srcset = (anim ? emote.animSrcSet : null) ?? emote.srcSet;
+
+		const w = `${emote.width}px`;
+		const h = `${emote.height}px`;
+
+		target.style.width = w;
+		target.style.height = h;
+
+		// Find the parent.
+		const cont = target.closest('.chat-image__container');
+		if ( cont ) {
+			cont.style.width = w;
+			cont.style.height = h;
+
+			const outer = cont.closest('.chat-line__message--emote-button');
+			if ( outer ) {
+				outer.style.width = w;
+				outer.style.height = h;
+
+				if ( ! outer._ffz_click_handler ) {
+					outer._ffz_click_handler = this.previewClick.bind(this, emote.id, emote_set.id, emote.name);
+					outer.addEventListener('click', outer._ffz_click_handler);
+				}
+			}
+		}
+	}
+
+	previewClick(id, set, name, evt) {
+		const fe = new FFZEvent({
+			provider: 'ffz',
+			id,
+			set,
+			name,
+			source: evt
+		});
+
+		this.emit('chat.emotes:click', fe);
+		if ( ! fe.defaultPrevented )
+			return;
+
+		evt.preventDefault();
+		evt.stopImmediatePropagation();
+	}
+
+	removePreviewObserver(inst) {
+		if ( inst._ffz_preview_observer ) {
+			inst._ffz_preview_observer.disconnect();
+			inst._ffz_preview_observer = null;
+		}
+	}
+
+
 	updateEmoteCompletion(inst, child) {
 		if ( ! child )
 			child = this.fine.searchTree(inst, 'tab-emote-suggestions', 50);
@@ -352,6 +567,39 @@ export default class Input extends Module {
 		const originalOnKeyDown = inst.onKeyDown,
 			originalOnMessageSend = inst.onMessageSend,
 			old_resize = inst.resizeInput;
+
+		const old_componentDidUpdate = inst.componentDidUpdate;
+
+		inst.ffzInjectEmotes = function() {
+			const idx = this.props.emotes.findIndex(item => item?.id === 'FrankerFaceZWasHere'),
+				data = t.createFakeEmoteSet(inst);
+
+			if ( idx === -1 && data )
+				this.props.emotes.push(data);
+			else if ( idx !== -1 && data )
+				this.props.emotes.splice(idx, 1, data);
+			else if ( idx !== -1 && ! data )
+				this.props.emotes.splice(idx, 1);
+			else
+				return;
+
+			// TODO: Somehow update other React state to deal with our
+			// injected changes. Making a shallow copy of the array
+			// runs too frequently.
+		}
+
+		inst.componentDidUpdate = function(props, ...args) {
+			try {
+				if ( props.emotes !== this.props.emotes && Array.isArray(this.props.emotes) )
+					inst.ffzInjectEmotes();
+
+			} catch(err) {
+				t.log.error('Error updating emote autocompletion data.', err);
+			}
+
+			if ( old_componentDidUpdate )
+				old_componentDidUpdate.call(this, props, ...args);
+		}
 
 		inst.resizeInput = function(msg, ...args) {
 			try {
@@ -574,6 +822,60 @@ export default class Input extends Module {
 	}
 
 
+	createFakeEmoteSet(inst) {
+		if ( ! this.use_previews )
+			return null;
+
+		if ( ! inst._ffz_channel_login ) {
+			const parent = this.fine.searchParent(inst, 'chat-input', 50);
+			if ( parent )
+				this.updateEmoteCompletion(parent, inst);
+		}
+
+		const user = inst._ffz_user,
+			channel_id = inst._ffz_channel_id,
+			channel_login = inst._ffz_channel_login;
+
+		if ( ! channel_login )
+			return null;
+
+		const sets = this.emotes.getSets(user?.id, user?.login, channel_id, channel_login);
+		if ( ! sets || ! sets.length )
+			return null;
+
+		const out = [],
+			added_emotes = new Set;
+
+		for(const set of sets) {
+			if ( ! set || ! set.emotes )
+				continue;
+
+			const source = set.source || 'ffz';
+
+			for(const emote of Object.values(set.emotes)) {
+				if ( ! emote || ! emote.id || ! emote.name || added_emotes.has(emote.name) )
+					continue;
+
+				added_emotes.add(emote.name);
+
+				out.push({
+					id: `__FFZ__${set.id}::${emote.id}__FFZ__`,
+					modifiers: null,
+					setID: 'FrankerFaceZWasHere',
+					token: emote.name
+				});
+			}
+		}
+
+		return {
+			__typename: 'EmoteSet',
+			emotes: out,
+			id: 'FrankerFaceZWasHere',
+			owner: null
+		}
+	}
+
+
 	overrideEmoteMatcher(inst) {
 		if ( inst._ffz_override )
 			return;
@@ -607,6 +909,9 @@ export default class Input extends Module {
 			const idx = emote_name.indexOf(term.charAt(0).toUpperCase());
 			if (idx !== -1 && emote_lower.slice(idx + 1).startsWith(term_lower.slice(1)))
 				return NON_PREFIX_MATCH;
+
+			if (emote_lower.includes(term_lower))
+				return MATCH_ANY;
 
 			return NO_MATCH;
 		}
@@ -722,6 +1027,7 @@ export default class Input extends Module {
 			return {emotes: [], length: 0};
 
 		const out = [],
+			seen = new Set,
 			anim = this.chat.context.get('chat.emotes.animated') > 0,
 			hidden_sets = this.settings.provider.get('emote-menu.hidden-sets'),
 			has_hidden = Array.isArray(hidden_sets) && hidden_sets.length > 0,
@@ -733,6 +1039,10 @@ export default class Input extends Module {
 				owner = set.owner,
 				is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
 				channel = is_points ? null : owner;
+
+			// Skip this set.
+			if ( set.id === 'FrankerFaceZWasHere' )
+				continue;
 
 			let key = `twitch-set-${set.id}`;
 			let extra = null;
@@ -760,8 +1070,10 @@ export default class Input extends Module {
 				const id = emote.id,
 					token = KNOWN_CODES[emote.token] || emote.token;
 
-				if ( ! token )
+				if ( ! token || seen.has(token) )
 					continue;
+
+				seen.add(token);
 
 				const replacement = REPLACEMENTS[id];
 				let srcSet;
@@ -795,6 +1107,8 @@ export default class Input extends Module {
 		if ( inst.ffz_twitch_cache?.length !== inst.props.emotes?.length )
 			inst.ffz_twitch_cache = this.buildTwitchCache(inst.props.emotes);
 
+		const emoteMatchingType = this.chat.context.get('chat.tab-complete.matching');
+
 		const emotes = inst.ffz_twitch_cache.emotes;
 
 		if ( ! emotes.length )
@@ -808,24 +1122,28 @@ export default class Input extends Module {
 
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
-			if ( match_type !== NO_MATCH ) {
-				const element = {
-					current: input,
-					emote,
-					replacement: emote.token,
-					element: inst.renderEmoteSuggestion(emote),
-					favorite: emote.favorite,
-					count: this.EmoteUsageCount[emote.token] || 0,
-					match_type
-				};
+			if (match_type < emoteMatchingType)
+					continue;
 
-				if ( element.count > 0 )
-					results_usage.push(element);
-				else if ( match_type > NON_PREFIX_MATCH )
-					results_starting.push(element);
-				else
-					results_other.push(element);
-			}
+			const element = {
+				current: input,
+				emote,
+				replacement: emote.token,
+				element: inst.renderEmoteSuggestion(emote),
+				favorite: emote.favorite,
+				count: this.EmoteUsageCount[emote.token] || 0,
+				match_type
+			};
+
+			if (match_type < emoteMatchingType)
+				continue;
+
+			if ( element.count > 0 )
+				results_usage.push(element);
+			else if ( match_type > NON_PREFIX_MATCH )
+				results_starting.push(element);
+			else
+				results_other.push(element);
 		}
 
 		results_usage.sort((a,b) => b.count - a.count);
@@ -942,18 +1260,20 @@ export default class Input extends Module {
 
 
 	getEmoteSuggestions(input, inst) {
+		if ( ! inst._ffz_channel_login ) {
+			const parent = this.fine.searchParent(inst, 'chat-input', 50);
+			if ( parent )
+				this.updateEmoteCompletion(parent, inst);
+		}
+
+		const emoteMatchingType = this.chat.context.get('chat.tab-complete.matching');
+
 		const user = inst._ffz_user,
 			channel_id = inst._ffz_channel_id,
 			channel_login = inst._ffz_channel_login;
 
-		if ( ! channel_login ) {
-			const parent = this.fine.searchParent(inst, 'chat-input', 50);
-			if ( parent )
-				this.updateEmoteCompletion(parent, inst);
-
-			if ( ! channel_login )
-				return [];
-		}
+		if ( ! channel_login )
+			return [];
 
 		let cache = inst.ffz_ffz_cache;
 		if ( ! cache || cache.user_id !== user?.id || cache.user_login !== user?.login || cache.channel_id !== channel_id || cache.channel_login !== channel_login )
@@ -968,16 +1288,18 @@ export default class Input extends Module {
 
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search)
-			if ( match_type !== NO_MATCH )
-				results.push({
-					current: input,
-					emote,
-					replacement: emote.token,
-					element: inst.renderEmoteSuggestion(emote),
-					favorite: emote.favorite,
-					count: 0, // TODO: Count stuff?
-					match_type
-				});
+			if (match_type < emoteMatchingType)
+				continue;
+
+			results.push({
+				current: input,
+				emote,
+				replacement: emote.token,
+				element: inst.renderEmoteSuggestion(emote),
+				favorite: emote.favorite,
+				count: 0, // TODO: Count stuff?
+				match_type
+			});
 		}
 
 		return results;
@@ -1008,6 +1330,18 @@ export default class Input extends Module {
 		}
 
 		return results;*/
+	}
+
+	getInput() {
+		for(const inst of this.ChatInput.instances) {
+			if ( ! inst.autocompleteInputRef || ! inst.state )
+				continue;
+
+			if ( inst.state.value )
+				return inst.state.value;
+		}
+
+		return null;
 	}
 
 	pasteMessage(room, message) {

@@ -29,6 +29,10 @@ export default class Player extends PlayerBase {
 		return this.settings.get('player.embed-metadata');
 	}
 
+	getData() {
+		return this.parent.data;
+	}
+
 	async getBroadcastID(inst, channel_id) {
 		this.twitch_data = await this.parent.awaitTwitchData();
 		return super.getBroadcastID(inst, channel_id);

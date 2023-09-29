@@ -176,9 +176,13 @@ export default class RichContent extends Module {
 			}
 
 			renderBody() {
-				let doc = this.props.force_full ? this.state.full :
-					this.props.force_mid ? this.state.mid :
-					((this.props.want_mid ? this.state.mid : null) ?? this.state.short);
+				let doc;
+				if ( this.props.force_full === true || (this.props.force_full !== false && this.props.want_full && this.state.full) )
+					doc = this.state.full;
+				if ( this.props.force_mid === true || (this.props.force_mid !== false && this.props.want_mid && this.state.mid) )
+					doc = this.state.mid;
+				else
+					doc = this.state.short;
 
 				if ( t.has_tokenizer && this.state.v && this.state.v > t.tokenizer.VERSION)
 					doc = null;
@@ -191,7 +195,22 @@ export default class RichContent extends Module {
 							tList: (...args) => t.i18n.tList(...args),
 							i18n: t.i18n,
 
+							last_player: 0,
+							player_state: this.state.player_state,
+
+							togglePlayer: id => {
+								const player_state = this.state.player_state ?? {};
+								player_state[id] = ! player_state[id];
+
+								this.setState({
+									player_state
+								});
+							},
+
+							link_click_handler: t.chat.handleLinkClick,
+
 							fragments: this.state.fragments,
+							i18n_prefix: this.state.i18n_prefix,
 
 							allow_media: t.chat.context.get('tooltip.link-images'),
 							allow_unsafe: t.chat.context.get('tooltip.link-nsfw-images')
@@ -243,6 +262,7 @@ export default class RichContent extends Module {
 						target="_blank"
 						rel="noreferrer noopener"
 						href={this.state.url}
+						onClick={t.chat.handleLinkClick}
 					>
 						{content}
 					</a>);

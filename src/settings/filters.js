@@ -4,7 +4,7 @@
 // Profile Filters for Settings
 // ============================================================================
 
-import {glob_to_regex, escape_regex} from 'utilities/object';
+import {glob_to_regex, escape_regex, matchScreen} from 'utilities/object';
 import {createTester} from 'utilities/filtering';
 import { DEBUG } from 'utilities/constants';
 
@@ -32,6 +32,21 @@ export const Invert = {
 	tall: true,
 	title: 'Invert',
 	i18n: 'settings.filter.invert',
+
+	default: () => [],
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
+};
+
+export const And = {
+	createTest(config, rule_types, rebuild) {
+		return createTester(config, rule_types, false, false, rebuild);
+	},
+
+	childRules: true,
+
+	tall: true,
+	title: 'And',
+	i18n: 'settings.filter.and',
 
 	default: () => [],
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
@@ -83,7 +98,7 @@ export const Constant = {
 	default: true,
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
-}
+};
 
 
 // Context Stuff
@@ -157,11 +172,28 @@ export const Time = {
 
 export const TheaterMode = {
 	createTest(config) {
-		return ctx => ctx.ui && ctx.ui.theatreModeEnabled === config;
+		return ctx => {
+			if ( ctx.fullscreen )
+				return config === false;
+			return ctx.ui && ctx.ui.theatreModeEnabled === config;
+		}
 	},
 
 	title: 'Theater Mode',
 	i18n: 'settings.filter.theater',
+
+	default: true,
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+};
+
+export const Fullscreen = {
+	createTest(config) {
+		return ctx => ctx.fullscreen === config;
+	},
+
+	title: 'Fullscreen',
+	i18n: 'settings.filter.fullscreen',
 
 	default: true,
 
@@ -375,3 +407,59 @@ export const Title = {
 
 	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/title.vue')
 };
+
+// Monitor Stuff
+
+export let Monitor = null;
+
+if ( window.getScreenDetails ) {
+
+	Monitor = {
+		_used: false,
+		details: undefined,
+
+		used: () => {
+			const out = Monitor._used;
+			Monitor._used = false;
+			return out;
+		},
+
+		createTest(config = {}, _, reload) {
+			if ( ! config.label )
+				return () => false;
+
+			Monitor._used = true;
+			if ( Monitor.details === undefined ) {
+				const FFZ = window.FrankerFaceZ ?? window.FFZBridge;
+				if ( FFZ )
+					FFZ.get().resolve('settings').createMonitorUpdate().then(() => {
+						reload();
+					});
+			}
+
+			return () => {
+				Monitor._used = true;
+				const details = Monitor.details,
+					screen = details?.currentScreen;
+
+				if ( ! screen )
+					return false;
+
+				const sorted = details.screens, // sortScreens(Array.from(details.screens)),
+					matched = matchScreen(sorted, config);
+
+				return matched === screen;
+			};
+		},
+
+		default: () => ({
+			label: null
+		}),
+
+		title: 'Current Monitor',
+		i18n: 'settings.filter.monitor',
+
+		editor: () => import(/* webpackChunkName: 'main-menu' */ './components/monitor.vue')
+	};
+
+}

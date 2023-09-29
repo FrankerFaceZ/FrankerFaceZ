@@ -4,7 +4,7 @@
 // Badge Handling
 // ============================================================================
 
-import {NEW_API, SERVER, API_SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {has, maybe_call, SourcedSet} from 'utilities/object';
@@ -44,7 +44,10 @@ const CSS_BADGES = {
 		turbo: { 1: { color: '#59399A' } },
 		premium: { 1: { color: '#00A0D6' } },
 		'anonymous-cheerer': { 1: { color: '#4B367C' } },
-		'clip-champ': { 1: { color: '#9146FF' } }
+		'clip-champ': { 1: { color: '#9146FF' } },
+		'artist-badge': { 1: { color: '#1e69ff' } },
+		'no_audio': { 1: { color: '#323239' } },
+		'no_video': { 1: { color: '#323239' } }
 	}
 }
 
@@ -181,6 +184,8 @@ export default class Badges extends Module {
 		this.inject('settings');
 		this.inject('tooltips');
 		this.inject('experiments');
+		this.inject('staging');
+		this.inject('load_tracker');
 
 		this.style = new ManagedStyle('badges');
 
@@ -223,12 +228,24 @@ export default class Badges extends Module {
 		});
 
 		this.settings.add('chat.badges.clickable', {
-			default: true,
+			default: 2,
+			process(ctx, val) {
+				if (val === true)
+					return 2;
+				else if (val === false)
+					return 0;
+				return val;
+			},
 			ui: {
 				path: 'Chat > Badges >> Behavior',
 				title: 'Allow clicking badges.',
 				description: 'Certain badges, such as Prime Gaming, act as links when this is enabled.',
-				component: 'setting-check-box'
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Legacy (Open URLs)'},
+					{value: 2, title: 'Open Badge Card'}
+				]
 			}
 		});
 
@@ -408,6 +425,11 @@ export default class Badges extends Module {
 		this.rebuildAllCSS();
 		this.loadGlobalBadges();
 
+		this.on('chat:reload-data', flags => {
+			if ( ! flags || flags.badges )
+				this.loadGlobalBadges();
+		});
+
 		this.tooltips.types.badge = (target, tip) => {
 			tip.add_class = 'ffz__tooltip--badges';
 
@@ -534,7 +556,8 @@ export default class Badges extends Module {
 
 
 	handleClick(event) {
-		if ( ! this.parent.context.get('chat.badges.clickable') )
+		const mode = this.parent.context.get('chat.badges.clickable');
+		if ( ! mode )
 			return;
 
 		const target = event.target;
@@ -544,6 +567,7 @@ export default class Badges extends Module {
 			return;
 
 		let url = null;
+		let click_badge = null;
 
 		for(const d of ds.data) {
 			const p = d.provider;
@@ -553,14 +577,14 @@ export default class Badges extends Module {
 				if ( ! bd )
 					continue;
 
-				if ( bd.click_url )
+				if ( mode == 1 && bd.click_url )
 					url = bd.click_url;
-				else if ( global_badge.click_url )
+				else if ( mode == 1 && global_badge.click_url )
 					url = global_badge.click_url;
-				else if ( (bd.click_action === 'sub' || global_badge.click_action === 'sub') && ds.room_login )
+				else if ( mode == 1 && (bd.click_action === 'sub' || global_badge.click_action === 'sub') && ds.room_login )
 					url = `https://www.twitch.tv/subs/${ds.room_login}`;
 				else
-					continue;
+					click_badge = bd;
 
 				break;
 
@@ -574,6 +598,17 @@ export default class Badges extends Module {
 				if ( badge?.click_url ) {
 					url = badge.click_url;
 					break;
+				}
+			}
+		}
+
+		if (click_badge) {
+			const fine = this.resolve('site.fine');
+			if (fine) {
+				const line = fine.searchParent(target, n => n.openBadgeDetails && n.props?.message);
+				if (line) {
+					line.openBadgeDetails(click_badge, event);
+					return;
 				}
 			}
 		}
@@ -630,7 +665,7 @@ export default class Badges extends Module {
 					bdata = tb && tb[badge_id],
 					cat = bdata && bdata.__cat || 'm-twitch';
 
-				if ( is_hidden || (is_hidden == null && hidden_badges[cat]) )
+				if ( ! badge_id || is_hidden || (is_hidden == null && hidden_badges[cat]) )
 					continue;
 
 				if ( has(BADGE_POSITIONS, badge_id) )
@@ -922,6 +957,8 @@ export default class Badges extends Module {
 
 
 	async loadGlobalBadges(tries = 0) {
+		this.load_tracker.schedule('chat-data', 'ffz-global-badges');
+
 		let response, data;
 
 		if ( this.experiments.getAssignment('api_load') && tries < 1 )
@@ -930,23 +967,27 @@ export default class Badges extends Module {
 			} catch(err) { /* do nothing */ }
 
 		try {
-			response = await fetch(`${API_SERVER}/v1/badges/ids`);
+			response = await fetch(`${this.staging.api}/v1/badges/ids`);
 		} catch(err) {
 			tries++;
 			if ( tries < 10 )
 				return setTimeout(() => this.loadGlobalBadges(tries), 500 * tries);
 
 			this.log.error('Error loading global badge data.', err);
+			this.load_tracker.notify('chat-data', 'ffz-global-badges', false);
 			return false;
 		}
 
-		if ( ! response.ok )
+		if ( ! response.ok ) {
+			this.load_tracker.notify('chat-data', 'ffz-global-badges', false);
 			return false;
+		}
 
 		try {
 			data = await response.json();
 		} catch(err) {
 			this.log.error('Error parsing global badge data.', err);
+			this.load_tracker.notify('chat-data', 'ffz-global-badges', false);
 			return false;
 		}
 
@@ -966,7 +1007,7 @@ export default class Badges extends Module {
 						name = badge?.name;
 					let c = 0;
 
-					if ( name === 'supporter' || name === 'bot' ) {
+					if ( name === 'supporter' || name === 'subwoofer' || name === 'bot' ) {
 						this.setBulk('ffz-global', badge_id, data.users[badge_id].map(x => String(x)));
 						/*this.supporter_id = badge_id;
 						for(const user_id of data.users[badge_id])
@@ -988,6 +1029,7 @@ export default class Badges extends Module {
 
 		this.log.info(`Loaded ${badges} badges and assigned them to ${users} users.`);
 		this.buildBadgeCSS();
+		this.load_tracker.notify('chat-data', 'ffz-global-badges');
 	}
 
 
@@ -1003,8 +1045,8 @@ export default class Badges extends Module {
 				data.replaces = true;
 			}
 
-			if ( ! data.addon && (data.name === 'developer' || data.name === 'supporter') )
-				data.click_url = 'https://www.frankerfacez.com/donate';
+			if ( ! data.addon && (data.name === 'developer' || data.name === 'subwoofer' || data.name === 'supporter') )
+				data.click_url = 'https://www.frankerfacez.com/subscribe';
 		}
 
 		if ( generate_css )

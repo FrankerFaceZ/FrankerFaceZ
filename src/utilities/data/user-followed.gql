@@ -1,0 +1,11 @@
+query FFZ_UserFollowed($id: ID, $login: String) {
+	user(id: $id, login: $login) {
+		id
+		self {
+			follower {
+				disableNotifications
+				followedAt
+			}
+		}
+	}
+}

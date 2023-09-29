@@ -19,9 +19,13 @@
 <script>
 
 export default {
-	props: ['act', 'color', 'tooltip', 'pad', 'renderers'],
+	props: ['act', 'process-color', 'tooltip', 'pad', 'renderers'],
 
 	computed: {
+		color() {
+			return this['processColor'](this.act.appearance.color);
+		},
+
 		renderer() {
 			return this.renderers[this.act.appearance.type]
 		}

@@ -51,7 +51,7 @@ export default class Game extends SiteModule {
 		});
 
 		this.settings.provider.on('changed', key => {
-			if ( key === 'directory.game.blocked-games' || key === 'directory.game.hidden-thumbnails' || key === 'directory.game.blocked-tags' ) {
+			if ( key === 'directory.game.blocked-games' || key === 'directory.game.hidden-thumbnails' ) {
 				this.parent.updateCards();
 
 				for(const inst of this.GameHeader.instances)

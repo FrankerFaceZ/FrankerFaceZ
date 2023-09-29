@@ -284,6 +284,58 @@ export default class TwitchData extends Module {
 		return get('data.user.self', data);
 	}
 
+
+	async getUserFollowed(id, login) {
+		const data = await this.queryApollo(
+			await import(/* webpackChunkName: 'queries' */ './data/user-followed.gql'),
+			{ id, login }
+		);
+
+		return get('data.user.self.follower', data);
+	}
+
+
+	async followUser(channel_id, disable_notifications = false) {
+		channel_id = String(channel_id);
+		disable_notifications = !! disable_notifications;
+
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/follow-user.gql'),
+			variables: {
+				input: {
+					targetID: channel_id,
+					disableNotifications: disable_notifications
+				}
+			}
+		});
+
+		console.log('result', data);
+		const err = get('data.followUser.error', data);
+		if ( err?.code )
+			throw new Error(err.code);
+
+		return get('data.followUser.follow', data);
+	}
+
+
+	async unfollowUser(channel_id, disable_notifications = false) {
+		channel_id = String(channel_id);
+		disable_notifications = !! disable_notifications;
+
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './data/unfollow-user.gql'),
+			variables: {
+				input: {
+					targetID: channel_id
+				}
+			}
+		});
+
+		console.log('result', data);
+		return get('data.unfollowUser.follow', data);
+	}
+
+
 	/**
 	 * Queries Apollo for the requested user's latest broadcast. One of (id, login) MUST be specified
 	 * @function getLastBroadcast
@@ -742,247 +794,6 @@ export default class TwitchData extends Module {
 	// Tags
 	// ========================================================================
 
-	memorizeTag(node, dispatch = true) {
-		// We want properly formed tags.
-		if ( ! node || ! node.id || ! node.tagName || ! node.localizedName )
-			return;
-
-		let tag = this.tag_cache.get(node.id);
-		if ( ! tag ) {
-			const match = node.isLanguageTag && LANGUAGE_MATCHER.exec(node.tagName),
-				lang = match && match[1] || null;
-
-			tag = {
-				id: node.id,
-				value: node.id,
-				is_auto: node.isAutomated,
-				is_language: node.isLanguageTag,
-				language: lang,
-				name: node.tagName,
-				scope: node.scope
-			};
-
-			this.tag_cache.set(node.id, tag);
-		}
-
-		if ( node.localizedName )
-			tag.label = node.localizedName;
-		if ( node.localizedDescription )
-			tag.description = node.localizedDescription;
-
-		if ( dispatch && tag.description && this._waiting_tags.has(tag.id) ) {
-			const promises = this._waiting_tags.get(tag.id);
-			this._waiting_tags.delete(tag.id);
-			for(const pair of promises)
-				pair[0](tag);
-		}
-
-		return tag;
-	}
-
-	async _loadTags() {
-		if ( this._loading_tags )
-			return;
-
-		this._loading_tags = true;
-
-		// Get the first 50 tags.
-		const ids = [...this._waiting_tags.keys()].slice(0, 50);
-
-		let nodes
-
-		try {
-			const data = await this.queryApollo(
-				await import(/* webpackChunkName: 'queries' */ './data/tags-fetch.gql'),
-				{
-					ids
-				}
-			);
-
-			nodes = get('data.contentTags', data);
-
-		} catch(err) {
-			for(const id of ids) {
-				const promises = this._waiting_tags.get(id);
-				this._waiting_tags.delete(id);
-
-				for(const pair of promises)
-					pair[1](err);
-			}
-
-			return;
-		}
-
-		const id_set = new Set(ids);
-
-		if ( Array.isArray(nodes) )
-			for(const node of nodes) {
-				const tag = this.memorizeTag(node, false),
-					promises = this._waiting_tags.get(tag.id);
-
-				this._waiting_tags.delete(tag.id);
-				id_set.delete(tag.id);
-
-				if ( promises )
-					for(const pair of promises)
-						pair[0](tag);
-			}
-
-		for(const id of id_set) {
-			const promises = this._waiting_tags.get(id);
-			this._waiting_tags.delete(id);
-
-			for(const pair of promises)
-				pair[0](null);
-		}
-
-		this._loading_tags = false;
-
-		if ( this._waiting_tags.size )
-			this._loadTags();
-	}
-
-	/**
-	 * Queries Apollo for tag information
-	 * @function getTag
-	 * @memberof TwitchData
-	 *
-	 * @param {int|string} id - the tag id
-	 * @param {bool} [want_description=false] - whether the description is also required
-	 * @returns {Promise} tag information
-	 *
-	 * @example
-	 *
-	 *  this.twitch_data.getTag(50).then(function(returnObj){console.log(returnObj);});
-	 */
-	getTag(id, want_description = false) {
-		// Make sure we weren't accidentally handed a tag object.
-		if ( id && id.id )
-			id = id.id;
-
-		if ( this.tag_cache.has(id) ) {
-			const out = this.tag_cache.get(id);
-			if ( out && (out.description || ! want_description) )
-				return Promise.resolve(out);
-		}
-
-		return new Promise((s, f) => {
-			if ( this._waiting_tags.has(id) )
-				this._waiting_tags.get(id).push([s, f]);
-			else {
-				this._waiting_tags.set(id, [[s, f]]);
-				if ( ! this._loading_tags )
-					this._loadTags();
-			}
-		});
-	}
-
-	/**
-	 * Queries the tag cache for tag information, queries Apollo on cache miss
-	 * @function getTagImmediate
-	 * @memberof TwitchData
-	 *
-	 * @param {int|string} id - the tag id
-	 * @param {getTagImmediateCallback} callback - callback function for use when requested tag information is not cached
-	 * @param {bool} [want_description=false] - whether the tag description is required
-	 * @returns {Object|null} tag information object, or on null, expect callback
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getTagImmediate(50));
-	 */
-	getTagImmediate(id, callback, want_description = false) {
-		// Make sure we weren't accidentally handed a tag object.
-		if ( id && id.id )
-			id = id.id;
-
-		let out = null;
-		if ( this.tag_cache.has(id) )
-			out = this.tag_cache.get(id);
-
-		if ( (want_description && (! out || ! out.description)) || (! out && callback) ) {
-			const promise = this.getTag(id, want_description);
-			if ( callback )
-				promise.then(tag => callback(id, tag)).catch(err => callback(id, null, err));
-		}
-
-		return out;
-	}
-
-	/**
-	 * Callback function used when getTagImmediate experiences a cache miss
-	 * @callback getTagImmediateCallback
-	 * @param {int} tag_id - The tag ID number
-	 * @param {Object} tag_object - the object containing tag data
-	 * @param {Object} [error_object] - returned error information on tag data fetch failure
-	 */
-
-	/**
-	 * Get top [n] tags
-	 * @function getTopTags
-	 * @memberof TwitchData
-	 * @async
-	 *
-	 * @param {int|string} limit=50 - the number of tags to return (can be an integer string)
-	 * @returns {string[]} an array containing the top tags up to the limit requested
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getTopTags(20));
-	 */
-	async getTopTags(limit = 50) {
-		const data = await this.queryApollo(
-			await import(/* webpackChunkName: 'queries' */ './data/tags-top.gql'),
-			{limit}
-		);
-
-		const nodes = get('data.topTags', data);
-		if ( ! Array.isArray(nodes) )
-			return [];
-
-		const out = [], seen = new Set;
-		for(const node of nodes) {
-			if ( ! node || seen.has(node.id) )
-				continue;
-
-			seen.add(node.id);
-			out.push(this.memorizeTag(node));
-		}
-
-		return out;
-	}
-
-	/**
-	 * Queries tag languages
-	 * @function getLanguagesFromTags
-	 * @memberof TwitchData
-	 *
-	 * @param {int[]} tags - an array of tag IDs
-	 * @returns {string[]} tag information
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getLanguagesFromTags([50, 53, 58, 84]));
-	 */
-	getLanguagesFromTags(tags, callback) { // TODO: actually use the callback
-		const out = [],
-			fn = callback ? debounce(() => {
-				this.getLanguagesFromTags(tags, callback);
-			}, 16) : null
-
-		if ( Array.isArray(tags) )
-			for(const tag_id of tags) {
-				const tag = this.getTagImmediate(tag_id, fn);
-				if ( tag && tag.is_language ) {
-					const match = LANGUAGE_MATCHER.exec(tag.name);
-					if ( match )
-						out.push(match[1]);
-				}
-			}
-
-		return out;
-	}
-
 	/**
 	 * Search tags
 	 * @function getMatchingTags
@@ -990,34 +801,28 @@ export default class TwitchData extends Module {
 	 * @async
 	 *
 	 * @param {string} query - the search string
-	 * @param {string} [locale] - UNUSED. the locale to return tags from
-	 * @param {string} [category=null] - the category to return tags from
 	 * @returns {string[]} an array containing tags that match the query string
 	 *
 	 * @example
 	 *
 	 *  console.log(await this.twitch_data.getMatchingTags("Rainbo"));
 	 */
-	async getMatchingTags(query, locale, category = null) {
-		/*if ( ! locale )
-			locale = this.locale;*/
-
+	async getMatchingTags(query) {
 		const data = await this.queryApollo({
-			query: await import(/* webpackChunkName: 'queries' */ './data/search-tags.gql'),
+			query: await import(/* webpackChunkName: 'queries' */ './data/tag-search.gql'),
 			variables: {
 				query,
-				categoryID: category || null,
-				limit: 100
+				first: 100
 			}
 		});
 
-		const nodes = data?.data?.searchLiveTags;
-		if ( ! Array.isArray(nodes) || ! nodes.length )
+		const edges = data?.data?.searchFreeformTags?.edges;
+		if ( ! Array.isArray(edges) || ! edges.length )
 			return [];
 
 		const out = [];
-		for(const node of nodes) {
-			const tag = this.memorizeTag(node);
+		for(const edge of edges) {
+			const tag = edge?.node?.tagName;
 			if ( tag )
 				out.push(tag);
 		}

@@ -104,5 +104,14 @@ export default [
 	"reply",
 	"threads",
 	"right-open",
-	"list-bullet"
+	"list-bullet",
+	"mastodon",
+	"volume-up",
+	"unmod",
+	"mod",
+	"flag",
+	"mange-suspicious",
+	"doc-text",
+	"fx",
+	"artist"
 ];

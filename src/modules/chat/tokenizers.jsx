@@ -6,15 +6,25 @@
 
 import {sanitize, createElement} from 'utilities/dom';
 import {has, getTwitchEmoteURL, split_chars, getTwitchEmoteSrcSet} from 'utilities/object';
+import { NoContent } from 'utilities/tooltip';
 
-import {EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS} from 'utilities/constants';
+import {EmoteTypes, REPLACEMENT_BASE, REPLACEMENTS, WEIRD_EMOTE_SIZES} from 'utilities/constants';
 import {CATEGORIES, JOINER_REPLACEMENT} from './emoji';
+
+import { MODIFIER_FLAGS } from './emotes';
+
+const SHRINK_X = MODIFIER_FLAGS.ShrinkX,
+	SLIDE_X = MODIFIER_FLAGS.Slide,
+	STRETCH_X = MODIFIER_FLAGS.GrowX;
+	//SHRINK_Y = MODIFIER_FLAGS.ShrinkY,
+	//STRETCH_Y = MODIFIER_FLAGS.GrowY,
 
 
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	//WHITESPACE = /^\s*$/,
 	//LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
-	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
+	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*[^\s\.!,?])?))/g,
+	//OLD_NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
 	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
 	MENTION_REGEX = /^(['"*([{<\\/]*)(@)((?:[^\u0000-\u007F]|[\w-])+)(?:\b|$)/; // eslint-disable-line no-control-regex
 
@@ -71,12 +81,13 @@ export const Links = {
 			rel="noopener noreferrer"
 			target="_blank"
 			href={token.url}
+			onClick={this.handleLinkClick}
 		>{token.text}</a>);
 	},
 
 	tooltip(target, tip) {
 		if ( ! this.context.get('tooltip.rich-links') && ! target.dataset.forceTooltip )
-			return '';
+			return NoContent;
 
 		if ( target.dataset.isMail === 'true' )
 			return [this.i18n.t('tooltip.email-link', 'E-Mail {address}', {address: target.textContent})];
@@ -97,6 +108,7 @@ export const Links = {
 				i18n: this.i18n,
 
 				fragments: data.fragments,
+				i18n_prefix: data.i18n_prefix,
 
 				allow_media: show_images,
 				allow_unsafe: show_unsafe,
@@ -303,6 +315,81 @@ export const Replies = {
 // Mentions
 // ============================================================================
 
+function mention_processAll(tokens, msg, user, color_mentions) {
+	const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
+		priority = this.context.get('chat.filtering.mention-priority');
+
+	let login, display, mentionable = false;
+	if ( user && user.login && ! can_highlight_user ) {
+		login = user.login.toLowerCase();
+		display = user.displayName && user.displayName.toLowerCase();
+		if ( display === login )
+			display = null;
+
+		mentionable = true;
+	}
+
+	const out = [];
+	for(const token of tokens) {
+		if ( token.type !== 'text' ) {
+			out.push(token);
+			continue;
+		}
+
+		let text = [];
+
+		for(const segment of token.text.split(/ +/)) {
+			const match = /^(@?)(\S+?)(?:\b|$)/.exec(segment);
+			if ( match ) {
+				let recipient = match[2],
+					has_at = match[1] === '@',
+					mentioned = false;
+
+				const rlower = recipient ? recipient.toLowerCase() : '',
+					color = this.color_cache ? this.color_cache.get(rlower) : null;
+
+				if ( rlower === login || rlower === display )
+					mentioned = true;
+
+				if ( ! has_at && ! color && ! mentioned ) {
+					text.push(segment);
+
+				} else {
+					// If we have pending text, join it together.
+					if ( text.length )  {
+						out.push({
+							type: 'text',
+							text: `${text.join(' ')} `
+						});
+						text = [];
+					}
+
+					out.push({
+						type: 'mention',
+						text: match[0],
+						me: mentioned,
+						color: color_mentions ? color : null,
+						recipient: rlower
+					});
+
+					if ( mentioned )
+						this.applyHighlight(msg, priority, null, 'mention', true);
+
+					// Push the remaining text from the token.
+					text.push(segment.substr(match[0].length));
+				}
+
+			} else
+				text.push(segment);
+		}
+
+		if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+			out.push({type: 'text', text: text.join(' ')})
+	}
+
+	return out;
+}
+
 export const Mentions = {
 	type: 'mention',
 	priority: 0,
@@ -335,6 +422,12 @@ export const Mentions = {
 	process(tokens, msg, user) {
 		if ( ! tokens || ! tokens.length )
 			return;
+
+		const all_mentions = this.context.get('chat.filtering.all-mentions'),
+			color_mentions = this.context.get('chat.filtering.color-mentions');
+
+		if ( all_mentions )
+			return mention_processAll.call(this, tokens, msg, user, color_mentions);
 
 		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
 			priority = this.context.get('chat.filtering.mention-priority');
@@ -386,7 +479,7 @@ export const Mentions = {
 					}
 
 					const rlower = recipient ? recipient.toLowerCase() : '',
-						color = this.color_cache ? this.color_cache.get(rlower) : null;
+						color = (color_mentions && this.color_cache) ? this.color_cache.get(rlower) : null;
 
 					out.push({
 						type: 'mention',
@@ -1135,7 +1228,7 @@ const render_emote = (token, createElement, wrapped) => {
 
 	const mods = token.modifiers || [], ml = mods.length,
 		emote = createElement('img', {
-			class: `${EMOTE_CLASS} ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
+			class: `${EMOTE_CLASS} ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
 			attrs: {
 				src,
 				srcSet,
@@ -1212,12 +1305,134 @@ export const AddonEmotes = {
 			hoverSrcSet = big ? token.animSrcSet2 : token.animSrcSet;
 		}
 
+		let style = undefined, outerStyle = undefined;
 		const mods = token.modifiers || [], ml = mods.length,
+			effects = token.modifier_flags,
+			is_big = (token.big && ! token.can_big && token.height);
+
+		let as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
+		let no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
+
+		if ( no_wide || effects || ml ) {
+			// We need to calculate the size of the emote and the biggest
+			// modifier so that everything can be nicely centered.
+			if ( token.provider === 'emoji' ) {
+				const factor = token.big_emoji ? 2 : 1,
+					size = factor * 1.5 * (this.context.get('chat.font-size') ?? 13);
+
+				style = {
+					width: size,
+					height: size,
+				};
+				outerStyle = {
+					width: size,
+					height: size
+				};
+			} else {
+				const factor = token.big ? 2 : 1;
+				style = {
+					width: token.width * factor,
+					height: token.height * factor
+				};
+				outerStyle = {
+					width: style.width,
+					height: style.height
+				};
+			}
+
+			for(const mod of mods) {
+				if ( mod.effect_bg )
+					as_bg = true;
+
+				if ( ! mod.mod_hidden && mod.set !== 'info' ) {
+					const factor = mod.big ? 2 : 1,
+						width = mod.width * factor,
+						height = mod.height * factor;
+
+					if ( width > outerStyle.width )
+						outerStyle.width = width;
+					if ( height > outerStyle.height )
+						outerStyle.height = height;
+				}
+			}
+
+			if ( effects ) {
+				this.emotes.ensureEffect(effects);
+
+				if ( (effects & SHRINK_X) === SHRINK_X && this.emotes.effects_enabled?.ShrinkX )
+					style.width *= 0.5;
+				if ( (effects & STRETCH_X) === STRETCH_X && this.emotes.effects_enabled?.GrowX )
+					style.width *= 2;
+				/*if ( (effects  & SHRINK_Y) === SHRINK_Y )
+					style.height *= 0.5;
+				if ( (effects & STRETCH_Y) === STRETCH_Y )
+					style.height *= 2;*/
+
+				style.width = Math.min(style.width, token.big ? 256 : 128);
+				style.height = Math.min(style.height, token.big ? 80 : 40);
+			}
+
+			if ( no_wide ) {
+				const limit = token.big ? 64 : 32;
+				if ( style.width > limit ) {
+					const factor = limit / style.width;
+					style.width *= factor;
+					style.height *= factor;
+				}
+			}
+
+			if ( style.width > outerStyle.width )
+				outerStyle.width = style.width;
+			if ( style.height > outerStyle.height )
+				outerStyle.height = style.height;
+
+			if ( style.width !== outerStyle.width )
+				style.marginLeft = (outerStyle.width - style.width) / 2;
+			if ( style.height !== outerStyle.height )
+				style.marginTop = (outerStyle.height - style.height) / 2;
+
+			if ( effects ) {
+				if ( (effects & SLIDE_X) === SLIDE_X ) {
+					style['--ffz-width'] = `${style.width}px`;
+					style['--ffz-speed-x'] = `${0.5 * (style.width / (token.big ? 64 : 32))}s`;
+				}
+			}
+		}
+
+		let emote;
+
+		if ( as_bg ) {
+			style = style || {};
+			style.backgroundImage = `url("${src}")`;
+			style.backgroundSize = '100%';
+
+			emote = (<div
+				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
+				style={style}
+				data-name={token.text}
+				data-tooltip-type="emote"
+				data-provider={token.provider}
+				data-id={token.id}
+				data-set={token.set}
+				data-code={token.code}
+				data-variant={token.variant}
+				data-normal-src={normalSrc}
+				data-normal-src-set={normalSrcSet}
+				data-hover-src={hoverSrc}
+				data-hover-src-set={hoverSrcSet}
+				data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
+				data-modifier-info={ml ? JSON.stringify(mods.map(x => [x.set, x.id])) : null}
+				onClick={this.emotes.handleClick}
+			><div class="ffz-alt-text">{ token.text }</div></div>);
+		}
+
+		else
 			emote = (<img
-				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
+				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
 				src={src}
 				srcSet={srcSet}
-				height={(token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined}
+				style={style}
+				height={style ? undefined : is_big ? `${token.height * 2}px` : undefined}
 				alt={token.text}
 				data-tooltip-type="emote"
 				data-provider={token.provider}
@@ -1234,7 +1449,7 @@ export const AddonEmotes = {
 				onClick={this.emotes.handleClick}
 			/>);
 
-		if ( ! ml ) {
+		if ( ! ml && ! token.modifier_flags ) {
 			if ( wrapped )
 				return emote;
 
@@ -1242,16 +1457,28 @@ export const AddonEmotes = {
 		}
 
 		return (<div
-			class="ffz--inline ffz--pointer-events modified-emote"
+			class={`ffz--inline ffz--pointer-events modified-emote${style ? ' scaled-modified-emote' : ''}`}
 			data-test-selector="emote-button"
 			data-provider={token.provider}
 			data-id={token.id}
 			data-set={token.set}
+			style={outerStyle}
 			data-modifiers={ml ? mods.map(x => x.id).join(' ') : null}
-			onClick={this.emotes.handleClick}
+			data-effects={effects ? effects : undefined}
+			//onClick={this.emotes.handleClick}
 		>
 			{emote}
-			{mods.map(t => <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement, true)}</span>)}
+			{mods.map(t => {
+				if (t.set === 'info')
+					return null;
+				if ((t.source_modifier_flags & 1) === 1 && t.text)
+					return null;
+					// This is currently weird and breaks copy/paste
+					// so since it doesn't *fix* copy/paste just leave
+					// it out for now.
+					//return <div class="ffz-alt-text">{` ${t.text}`}</div>;
+				return <span key={t.text}>{this.tokenizers.emote.render.call(this, t, createElement, true)}</span>
+			})}
 		</div>);
 	},
 
@@ -1260,13 +1487,20 @@ export const AddonEmotes = {
 			provider = ds.provider,
 			modifiers = ds.modifierInfo;
 
-		let name, preview, source, owner, mods, fav_source, emote_id,
+		let name, preview, source, artist, owner, mods, fav_source, emote_id,
+			original_name,
 			plain_name = false;
 
 		const hide_source = ds.noSource === 'true';
 
 		if ( modifiers && modifiers !== 'null' ) {
 			mods = JSON.parse(modifiers).map(([set_id, emote_id]) => {
+				if ( set_id === 'info' )
+					return (<span class="tw-mg-05">
+						{emote_id?.icon ? <img class="ffz__tooltip__mod-icon" src={emote_id.icon} /> : null}
+						{emote_id?.icon ? ` - ${emote_id?.label}` : emote_id?.label}
+					</span>);
+
 				const emote_set = this.emotes.emote_sets[set_id],
 					emote = emote_set && emote_set.emotes[emote_id];
 
@@ -1281,10 +1515,14 @@ export const AddonEmotes = {
 		if ( provider === 'twitch' ) {
 			emote_id = ds.id;
 			const set_id = hide_source ? null : await this.emotes.getTwitchEmoteSet(emote_id),
-				emote_set = set_id != null && await this.emotes.getTwitchSetChannel(set_id);
+				emote_set = set_id != null && await this.emotes.getTwitchSetChannel(set_id),
+				raw_artist = hide_source ? null : await this.emotes.getTwitchEmoteArtist(emote_id);
 
 			preview = `${getTwitchEmoteURL(ds.id, 4, true, true)}?_=preview`;
 			fav_source = 'twitch';
+
+			if ( raw_artist )
+				artist = raw_artist.displayName || raw_artist.login;
 
 			if ( emote_set ) {
 				const type = emote_set.type;
@@ -1339,6 +1577,15 @@ export const AddonEmotes = {
 			if ( emote ) {
 				emote_id = emote.id;
 
+				if ( emote.artist )
+					artist = emote.artist.display_name || emote.artist.name;
+
+				if ( emote.original_name && emote.original_name !== emote.name )
+					original_name = this.i18n.t(
+						'emote.original-name', 'Name: {name}',
+						{name: emote.original_name}
+					);
+
 				if ( emote.owner )
 					owner = this.i18n.t(
 						'emote.owner', 'By: {owner}',
@@ -1356,6 +1603,123 @@ export const AddonEmotes = {
 						preview = emote.urls[4];
 					else if ( emote.urls[2] )
 						preview = emote.urls[2];
+				}
+
+				if ( ds.effects && emote.modifier && emote.modifier_flags ) {
+					owner = null;
+
+					const effects = emote.modifier_flags;
+					this.emotes.ensureEffect(effects);
+
+					const target = this.emotes.getTargetEmote();
+
+					let style = {
+						width: (target.width ?? 28) * 2,
+						height: (target.height ?? 28) * 2
+					};
+
+					let outerStyle = {
+						width: style.width,
+						height: style.height
+					};
+
+
+					let as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
+					let no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
+
+					let changed = false;
+
+					if ( (effects & SHRINK_X) === SHRINK_X && this.emotes.effects_enabled?.ShrinkX ) {
+						style.width *= 0.5;
+						changed = true;
+					}
+					if ( (effects & STRETCH_X) === STRETCH_X && this.emotes.effects_enabled?.GrowX ) {
+						style.width *= 2;
+						changed = true;
+					}
+					/*if ( (effects  & SHRINK_Y) === SHRINK_Y ) {
+						style.height *= 0.5;
+						changed = true;
+					}
+					if ( (effects & STRETCH_Y) === STRETCH_Y ) {
+						style.height *= 2;
+						changed = true;
+					}*/
+
+					if ( changed ) {
+						if ( style.width > 512 )
+							style.width = 512;
+						if ( style.height > 160 )
+							style.height = 160;
+					}
+
+					if ( no_wide ) {
+						const limit = 64;
+						if ( style.width > limit ) {
+							const factor = limit / style.width;
+							style.width *= factor;
+							style.height *= factor;
+						}
+					}
+
+					if ( style.width > outerStyle.width )
+						outerStyle.width = style.width;
+					if ( style.height > outerStyle.height )
+						outerStyle.height = style.height;
+
+					if ( style.width !== outerStyle.width )
+						style.marginLeft = (outerStyle.width - style.width) / 2;
+					if ( style.height !== outerStyle.height )
+						style.marginTop = (outerStyle.height - style.height) / 2;
+
+					if ( (effects & SLIDE_X) === SLIDE_X ) {
+						style['--ffz-width'] = `${style.width}px`;
+						style['--ffz-speed-x'] = `${0.5 * style.width / 64}s`;
+					}
+
+					style.width = `${style.width}px`;
+					style.height = `${style.height}px`;
+
+					outerStyle.width = `${outerStyle.width}px`;
+					outerStyle.height = `${outerStyle.height}px`;
+
+					if ( as_bg ) {
+						style.backgroundImage = `url("${target.src}")`;
+						style.backgroundSize = '100%';
+					}
+
+					// Whip up a special preview.
+					preview = (<div class="ffz-effect-tip">
+						<img
+							src={target.src}
+							srcSet={target.srcSet}
+							width={(target.width ?? 28) * 2}
+							height={(target.height ?? 28) * 2}
+							onLoad={tip.update}
+						/>
+						<span class="ffz-i-right-open"></span>
+						<div
+							class={`ffz--inline ffz--pointer-events modified-emote${style ? ' scaled-modified-emote' : ''}`}
+							style={outerStyle}
+							data-modifiers={emote.id}
+							data-effects={effects}
+						>
+							{as_bg
+								? <div
+									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+									style={style}
+								/>
+								: <img
+									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+									src={target.src}
+									srcSet={target.srcSet}
+									style={style}
+									height={style ? undefined : `${target.height * 2}px`}
+									onLoad={tip.update}
+								/>
+							}
+						</div>
+					</div>);
 				}
 			}
 
@@ -1396,19 +1760,32 @@ export const AddonEmotes = {
 				onLoad={tip.update}
 			/>) : preview),
 
-			plain_name || (hide_source && ! owner) ? name : this.i18n.t('tooltip.emote', 'Emote: {name}', {name}),
+			plain_name || (hide_source && ! owner)
+				? name
+				: this.i18n.t('tooltip.emote', 'Emote: {name}', {name}),
 
 			! hide_source && source && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{source}
+			</div>),
+
+			original_name && (<div class="tw-pd-t-05">
+				{original_name}
 			</div>),
 
 			owner && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
 				{owner}
 			</div>),
 
+			artist && this.context.get('tooltip.emote-sources') && (<div class="tw-pd-t-05">
+				{this.i18n.t(
+					'emote.artist', 'Artist: {artist}',
+					{artist}
+				)}
+			</div>),
+
 			ds.sellout && (<div class="tw-mg-t-05 tw-border-t tw-pd-t-05">{ds.sellout}</div>),
 
-			mods && (<div class="tw-pd-t-1">{mods}</div>),
+			mods && (<div class="tw-pd-t-1 tw-pd-b-05">{mods}</div>),
 
 			favorite && (<figure class="ffz--favorite ffz-i-star" />)
 		];
@@ -1435,15 +1812,22 @@ export const AddonEmotes = {
 			anim = this.context.get('chat.emotes.animated'),
 			out = [];
 
+		let had_prefix_mods = false;
+		let had_no_space = false;
 		let last_token, emote;
+
+		const NoSpace = this.emotes.ModifierFlags?.NoSpace;
+
 		for(const token of tokens) {
 			if ( ! token )
 				continue;
 
 			if ( token.type !== 'text' ) {
 				if ( token.type === 'emote' ) {
-					if ( ! token.modifiers )
+					if ( ! token.modifiers ) {
 						token.modifiers = [];
+						token.modifier_flags = 0;
+					}
 				}
 
 				out.push(token);
@@ -1458,8 +1842,16 @@ export const AddonEmotes = {
 					emote = emotes[segment];
 
 					// Is this emote a modifier?
-					if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
+					if ( emote.modifier && emote.modifier_prefix )
+						had_prefix_mods = true;
+					else if ( emote.modifier && last_token && last_token.modifiers && (!text.length || (text.length === 1 && text[0] === '')) ) {
 						if ( last_token.modifiers.indexOf(emote.token) === -1 ) {
+							if ( emote.modifier_flags ) {
+								last_token.modifier_flags |= emote.modifier_flags;
+								if ( NoSpace && (emote.modifier_flags & NoSpace) === NoSpace )
+									had_no_space = true;
+							}
+
 							last_token.modifiers.push(
 								Object.assign({
 										big,
@@ -1485,6 +1877,7 @@ export const AddonEmotes = {
 
 					const t = Object.assign({
 						modifiers: [],
+						modifier_flags: 0,
 						big,
 						anim
 					}, emote.token);
@@ -1500,6 +1893,66 @@ export const AddonEmotes = {
 			if ( text.length > 1 || (text.length === 1 && text[0] !== '') ) {
 				const t = {type: 'text', text: text.join(' ')};
 				out.push(t);
+			}
+		}
+
+		if ( had_prefix_mods ) {
+			// We need to scan through and apply prefix modifiers as appropriate.
+			let last_emote,
+				had_text = false;
+
+			let i = out.length;
+			while(i--) {
+				const token = out[i];
+
+				// Is it a new emote?
+				if ( token.type === 'emote' && ! token.mod ) {
+					last_emote = token;
+					had_text = false;
+				}
+
+				// Is it a prefix mod with a target emote?
+				else if ( last_emote && token.type === 'emote' && token.mod && token.mod_prefix ) {
+					last_emote.modifiers.push(token);
+					if ( token.source_modifier_flags ) {
+						last_emote.modifier_flags |= token.source_modifier_flags;
+						if ( NoSpace && (token.source_modifier_flags & NoSpace) === NoSpace )
+							had_no_space = true;
+					}
+
+					// Remove one or two tokens, depending on if we had a space.
+					// (We should always have a space, but be flexible.)
+					out.splice(i, had_text ? 2 : 1);
+					had_text = false;
+				}
+
+				// Make a note of at most one space.
+				else if ( last_emote && ! had_text && token.type === 'text' && token.text === ' ' ) {
+					had_text = true;
+				}
+
+				// Absolutely anything else means it's a broken sequence.
+				else {
+					last_emote = null;
+					had_text = false;
+				}
+			}
+		}
+
+		if ( had_no_space ) {
+			// We need to remove prefix spaces before emotes with the no-space effect.
+			let no_space = false;
+			let i = out.length;
+			while(i--) {
+				const token = out[i];
+				if ( token.type === 'emote' && (token.modifier_flags & NoSpace) === NoSpace )
+					no_space = true;
+				else {
+					if ( no_space && token.type === 'text' && token.text === ' ' )
+						out.splice(i, 1);
+
+					no_space = false;
+				}
 			}
 		}
 
@@ -1531,6 +1984,7 @@ export const Emoji = {
 			return;
 
 		const splitter = this.emoji.splitter,
+			big = this.context.get('chat.emotes.2x') > 1,
 			replace = this.context.get('chat.emoji.replace-joiner') > 0,
 			style = this.context.get('chat.emoji.style');
 
@@ -1576,12 +2030,15 @@ export const Emoji = {
 					code: key[0],
 					variant: key[1],
 
+					big_emoji: big,
+
 					src: this.emoji.getFullImage(variant.image, style),
 					srcSet: this.emoji.getFullImageSet(variant.image, style),
 
 					text: match[0],
 					length,
-					modifiers: []
+					modifiers: [],
+					modifier_flags: 0
 				});
 
 				idx = start + match[0].length;
@@ -1652,6 +2109,15 @@ export const TwitchEmotes = {
 			while( eix < e_length ) {
 				const [e_id, e_start, e_end] = emotes[eix];
 
+				// Do not honor fake emotes that were created for the sake
+				// of WYSIWYG / autocompletion.
+				if ( typeof e_id === 'string' ) {
+					if ( e_id.startsWith('__FFZ__') || e_id.startsWith('__BTTV__') ) {
+						eix++;
+						continue;
+					}
+				}
+
 				// Does this emote go outside the bounds of this token?
 				if ( e_start > t_end || e_end > t_end ) {
 					// Output the remainder of this token.
@@ -1716,6 +2182,11 @@ export const TwitchEmotes = {
 					}
 				}
 
+				const sizes = WEIRD_EMOTE_SIZES[e_id];
+
+				const width = sizes ? sizes[0] : 28,
+					height = sizes ? sizes[1] : 28;
+
 				out.push({
 					type: 'emote',
 					id: e_id,
@@ -1731,9 +2202,11 @@ export const TwitchEmotes = {
 					anim,
 					big,
 					can_big,
-					height: 28, // Not always accurate but close enough.
+					width,
+					height,
 					text: text.slice(e_start - t_start, e_end - t_start).join(''),
-					modifiers: []
+					modifiers: [],
+					modifier_flags: 0
 				});
 
 				idx = e_end;

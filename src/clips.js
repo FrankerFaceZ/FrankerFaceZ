@@ -13,10 +13,16 @@ import SettingsManager from './settings/index';
 import AddonManager from './addons';
 import ExperimentManager from './experiments';
 import {TranslationManager} from './i18n';
+import PubSubClient from './pubsub';
+import StagingSelector from './staging';
+import LoadTracker from './load_tracker';
 
 import Site from './sites/clips';
+import Vue from 'utilities/vue';
+
 import Tooltips from 'src/modules/tooltips';
 import Chat from 'src/modules/chat';
+import EmoteCard from 'src/modules/emote_card';
 
 class FrankerFaceZ extends Module {
 	constructor() {
@@ -52,28 +58,50 @@ class FrankerFaceZ extends Module {
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);
 		this.inject('i18n', TranslationManager);
+		this.inject('staging', StagingSelector);
+		this.inject('load_tracker', LoadTracker);
+		this.inject('pubsub', PubSubClient);
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
+
+		this.register('vue', Vue);
 
 		// ========================================================================
 		// Startup
 		// ========================================================================
 
 		this.inject('tooltips', Tooltips);
-		this.register('chat', Chat);
 
-		this.enable().then(() => {
-			const duration = performance.now() - start_time;
-			this.core_log.info(`Initialization complete in ${duration.toFixed(5)}ms.`);
-			this.log.init = false;
-		}).catch(err => {
-			this.core_log.error(`An error occurred during initialization.`, err);
-			this.log.init = false;
-		});
+		this.register('chat', Chat);
+		this.register('emote_card', EmoteCard);
+
+		this.enable()
+			.then(() => this.enableInitialModules())
+			.then(() => {
+				const duration = performance.now() - start_time;
+				this.core_log.info(`Initialization complete in ${duration.toFixed(5)}ms.`);
+				this.log.init = false;
+
+			}).catch(err => {
+				this.core_log.error(`An error occurred during initialization.`, err);
+				this.log.init = false;
+			});
 	}
 
 	static get() {
 		return FrankerFaceZ.instance;
+	}
+
+	async enableInitialModules() {
+		const promises = [];
+		/* eslint guard-for-in: off */
+		for(const key in this.__modules) {
+			const module = this.__modules[key];
+			if ( module instanceof Module && module.should_enable )
+				promises.push(module.enable());
+		}
+
+		await Promise.all(promises);
 	}
 
 	// ========================================================================
@@ -121,20 +149,22 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 
 FrankerFaceZ.Logger = Logger;
 
-const VER = FrankerFaceZ.version_info = {
+const VER = FrankerFaceZ.version_info = Object.freeze({
 	major: __version_major__,
 	minor: __version_minor__,
 	revision: __version_patch__,
 	extra: __version_prerelease__?.length && __version_prerelease__[0],
 	commit: __git_commit__,
-	build: __webpack_hash__,
+	build: __version_build__,
+	hash: __webpack_hash__,
 	toString: () =>
-		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
-}
+		`${VER.major}.${VER.minor}.${VER.revision}${VER.build ? `.${VER.build}` : ''}${VER.extra || ''}${DEBUG ? '-dev' : ''}`
+});
 
 // We don't support addons in the player right now, so
 FrankerFaceZ.utilities = {
 	addon: require('utilities/addon'),
+	blobs: require('utilities/blobs'),
 	color: require('utilities/color'),
 	constants: require('utilities/constants'),
 	dom: require('utilities/dom'),

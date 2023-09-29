@@ -6,12 +6,13 @@
 		<div class="tw-flex tw-align-items-center">
 			<label :for="item.full_key">
 				{{ item.i18n_key ? t(item.i18n_key, item.title) : item.title }}
-				<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+				<span v-if="unseen" class="ffz-pill ffz-pill--success">{{ t('setting.new', 'New') }}</span>
 			</label>
 
 			<key-picker
 				:id="item.full_key"
 				ref="control"
+				:disabled="isReadOnly"
 				:value="value"
 				class="tw-mg-05"
 				@input="onInput"
@@ -35,7 +36,13 @@
 				</span>
 			</button>
 
-			<button v-if="has_value" class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container" @click="clear">
+			<button
+				v-if="has_value"
+				:disabled="isReadOnly"
+				class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
+				:class="{'tw-button--disabled': isReadOnly}"
+				@click="clear"
+			>
 				<span class="tw-button__text ffz-i-cancel" />
 				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
 					{{ t('setting.reset', 'Reset to Default') }}

@@ -4,6 +4,117 @@
 			{{ t('setting.experiments.about', 'This feature allows you to override experiment values. Please note that, for most experiments, you may have to refresh the page for your changes to take effect.') }}
 		</div>
 
+		<div class="tw-mg-b-2 tw-flex tw-align-items-center">
+			<div class="tw-flex-grow-1">
+				{{ t('setting.experiments.unique-id', 'Unique ID: {id}', {id: unique_id}) }}
+			</div>
+			<select
+				ref="sort_select"
+				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+				@change="onSort"
+			>
+				<option :selected="sort_by === 0">
+					{{ t('setting.experiments.sort-name', 'Sort By: Name') }}
+				</option>
+				<option :selected="sort_by === 1">
+					{{ t('setting.experiments.sort-rarity', 'Sort By: Rarity') }}
+				</option>
+			</select>
+		</div>
+		<div class="tw-mg-b-2 tw-flex tw-align-items-center">
+			<div class="tw-flex-grow-1" />
+			<div class="ffz-checkbox tw-relative">
+				<input
+					id="unused"
+					ref="unused"
+					v-model="unused"
+					type="checkbox"
+					class="ffz-checkbox__input"
+				>
+
+				<label for="unused" class="ffz-checkbox__label">
+					<span class="tw-mg-l-1">
+						{{ t('setting.experiments.show-unused', 'Display unused experiments.') }}
+					</span>
+				</label>
+			</div>
+		</div>
+
+		<h3 class="tw-mg-b-1">
+			<span>
+				{{ t('setting.experiments.ffz', 'FrankerFaceZ Experiments') }}
+			</span>
+			<span v-if="filter" class="tw-mg-l-1 tw-font-size-base tw-regular tw-c-text-alt-2">
+				{{ t('setting.experiments.visible', '(Showing {visible,number} of {total,number})', {
+					visible: visible_ffz.length,
+					total: sorted_ffz.length
+				}) }}
+			</span>
+		</h3>
+
+		<div class="ffz--experiment-list">
+			<section
+				v-for="({key, exp}) of visible_ffz"
+				:key="key"
+				:data-key="key"
+			>
+				<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
+					<div class="tw-flex-grow-1">
+						<h4>{{ exp.name }}</h4>
+						<div v-if="exp.description" class="description">
+							{{ exp.description }}
+						</div>
+					</div>
+
+					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
+						<select
+							:data-key="key"
+							class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+							@change="onChange($event)"
+						>
+							<option
+								v-for="(i, idx) in exp.groups"
+								:key="idx"
+								:selected="i.value === exp.value"
+							>
+								{{ t('setting.experiments.entry', '{value,tostring} (weight: {weight,tostring})', i) }}
+							</option>
+						</select>
+
+						<button
+							:disabled="exp.default"
+							:class="{'tw-button--disabled': exp.default}"
+							class="tw-mg-t-05 tw-button tw-button--text ffz-il-tooltip__container"
+							@click="reset(key)"
+						>
+							<span class="tw-button__text ffz-i-cancel" />
+							<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+								{{ t('setting.reset', 'Reset to Default') }}
+							</span>
+						</button>
+					</div>
+				</div>
+			</section>
+			<div v-if="! Object.keys(ffz_data).length">
+				{{ t('setting.experiments.none', 'There are no current experiments.') }}
+			</div>
+			<div v-else-if="! visible_ffz.length">
+				{{ t('setting.experiments.none-filter', 'There are no matching experiments.') }}
+			</div>
+		</div>
+
+		<h3 class="tw-mg-t-5 tw-mg-b-1">
+			<span>
+				{{ t('setting.experiments.twitch', 'Twitch Experiments') }}
+			</span>
+			<span v-if="experiments_locked && filter" class="tw-mg-l-1 tw-font-size-base tw-regular tw-c-text-alt-2">
+				{{ t('setting.experiments.visible', '(Showing {visible,number} of {total,number})', {
+					visible: visible_twitch.length,
+					total: sorted_twitch.length
+				}) }}
+			</span>
+		</h3>
+
 		<section v-if="experiments_locked">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-2">
 				<h3 class="ffz-i-attention">
@@ -16,7 +127,7 @@
 				<input
 					ref="code"
 					type="text"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-b-5"
 					autocapitalize="off"
 					autocorrect="off"
 					@keydown.enter="enterCode"
@@ -25,117 +136,6 @@
 		</section>
 
 		<section v-else>
-			<div class="tw-mg-b-2 tw-flex tw-align-items-center">
-				<div class="tw-flex-grow-1">
-					{{ t('setting.experiments.unique-id', 'Unique ID: {id}', {id: unique_id}) }}
-				</div>
-				<select
-					ref="sort_select"
-					class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
-					@change="onSort"
-				>
-					<option :selected="sort_by === 0">
-						{{ t('setting.experiments.sort-name', 'Sort By: Name') }}
-					</option>
-					<option :selected="sort_by === 1">
-						{{ t('setting.experiments.sort-rarity', 'Sort By: Rarity') }}
-					</option>
-				</select>
-			</div>
-			<div class="tw-mg-b-2 tw-flex tw-align-items-center">
-				<div class="tw-flex-grow-1" />
-				<div class="ffz-checkbox tw-relative">
-					<input
-						id="unused"
-						ref="unused"
-						v-model="unused"
-						type="checkbox"
-						class="ffz-checkbox__input"
-					>
-
-					<label for="unused" class="ffz-checkbox__label">
-						<span class="tw-mg-l-1">
-							{{ t('setting.experiments.show-unused', 'Display unused experiments.') }}
-						</span>
-					</label>
-				</div>
-			</div>
-
-			<h3 class="tw-mg-b-1">
-				<span>
-					{{ t('setting.experiments.ffz', 'FrankerFaceZ Experiments') }}
-				</span>
-				<span v-if="filter" class="tw-mg-l-1 tw-font-size-base tw-regular tw-c-text-alt-2">
-					{{ t('setting.experiments.visible', '(Showing {visible,number} of {total,number})', {
-						visible: visible_ffz.length,
-						total: sorted_ffz.length
-					}) }}
-				</span>
-			</h3>
-
-			<div class="ffz--experiment-list">
-				<section
-					v-for="({key, exp}) of visible_ffz"
-					:key="key"
-					:data-key="key"
-				>
-					<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
-						<div class="tw-flex-grow-1">
-							<h4>{{ exp.name }}</h4>
-							<div v-if="exp.description" class="description">
-								{{ exp.description }}
-							</div>
-						</div>
-
-						<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
-							<select
-								:data-key="key"
-								class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
-								@change="onChange($event)"
-							>
-								<option
-									v-for="(i, idx) in exp.groups"
-									:key="idx"
-									:selected="i.value === exp.value"
-								>
-									{{ t('setting.experiments.entry', '{value,tostring} (weight: {weight,tostring})', i) }}
-								</option>
-							</select>
-
-							<button
-								:disabled="exp.default"
-								:class="{'tw-button--disabled': exp.default}"
-								class="tw-mg-t-05 tw-button tw-button--text ffz-il-tooltip__container"
-								@click="reset(key)"
-							>
-								<span class="tw-button__text ffz-i-cancel" />
-								<span class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
-									{{ t('setting.reset', 'Reset to Default') }}
-								</span>
-							</button>
-						</div>
-					</div>
-				</section>
-				<div v-if="! Object.keys(ffz_data).length">
-					{{ t('setting.experiments.none', 'There are no current experiments.') }}
-				</div>
-				<div v-else-if="! visible_ffz.length">
-					{{ t('setting.experiments.none-filter', 'There are no matching experiments.') }}
-				</div>
-			</div>
-
-			<h3 class="tw-mg-t-5 tw-mg-b-1">
-				<span>
-					{{ t('setting.experiments.twitch', 'Twitch Experiments') }}
-				</span>
-				<span v-if="filter" class="tw-mg-l-1 tw-font-size-base tw-regular tw-c-text-alt-2">
-					{{ t('setting.experiments.visible', '(Showing {visible,number} of {total,number})', {
-						visible: visible_twitch.length,
-						total: sorted_twitch.length
-					}) }}
-				</span>
-			</h3>
-
 			<div class="ffz--experiment-list">
 				<section
 					v-for="({key, exp}) of visible_twitch"

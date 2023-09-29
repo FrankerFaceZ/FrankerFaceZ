@@ -26,6 +26,17 @@
 			>
 
 			<button
+				v-if="originalName"
+				class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
+				@click="setOriginalName"
+			>
+				<span class="tw-button__text ffz-i-plus" />
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+					{{ t('setting.set-to-current', 'Set to Current') }}
+				</div>
+			</button>
+
+			<button
 				class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
 				:class="{'tw-button--disabled': name == null}"
 				@click="clearName"
@@ -50,6 +61,17 @@
 				:value="editColor"
 				@input="updateColor"
 			/>
+
+			<button
+				v-if="originalColor"
+				class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
+				@click="setOriginalColor"
+			>
+				<span class="tw-button__text ffz-i-plus" />
+				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+					{{ t('setting.set-to-current', 'Set to Current') }}
+				</div>
+			</button>
 
 			<button
 				class="tw-mg-l-05 tw-button tw-button--text ffz-il-tooltip__container"
@@ -93,6 +115,16 @@ export default {
 	},
 
 	methods: {
+		setOriginalName() {
+			this.name = this.originalName;
+			this.setName(this.name);
+		},
+
+		setOriginalColor() {
+			this.color = this.originalColor;
+			this.setColor(this.color);
+		},
+
 		clearName() {
 			this.name = null;
 			this.deleteName();

@@ -48,6 +48,8 @@ export default class ExperimentManager extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.get = this.getAssignment;
+
 		this.inject('settings');
 
 		this.settings.addUI('experiments', {
@@ -301,7 +303,12 @@ export default class ExperimentManager extends Module {
 
 	setTwitchOverride(key, value = null) {
 		const overrides = Cookie.getJSON(OVERRIDE_COOKIE) || {};
-		overrides[key] = value;
+		const experiments = overrides.experiments = overrides.experiments || {};
+		const disabled = overrides.disabled = overrides.disabled || [];
+		experiments[key] = value;
+		const idx = disabled.indexOf(key);
+		if (idx != -1)
+			disabled.remove(idx);
 		Cookie.set(OVERRIDE_COOKIE, overrides, COOKIE_OPTIONS);
 
 		const core = this.resolve('site')?.getCore?.();
@@ -312,12 +319,13 @@ export default class ExperimentManager extends Module {
 	}
 
 	deleteTwitchOverride(key) {
-		const overrides = Cookie.getJSON(OVERRIDE_COOKIE);
-		if ( ! overrides || ! has(overrides, key) )
+		const overrides = Cookie.getJSON(OVERRIDE_COOKIE),
+			experiments = overrides?.experiments;
+		if ( ! experiments || ! has(experiments, key) )
 			return;
 
-		const old_val = overrides[key];
-		delete overrides[key];
+		const old_val = experiments[key];
+		delete experiments[key];
 		Cookie.set(OVERRIDE_COOKIE, overrides, COOKIE_OPTIONS);
 
 		const core = this.resolve('site')?.getCore?.();
@@ -328,8 +336,9 @@ export default class ExperimentManager extends Module {
 	}
 
 	hasTwitchOverride(key) { // eslint-disable-line class-methods-use-this
-		const overrides = Cookie.getJSON(OVERRIDE_COOKIE);
-		return overrides && has(overrides, key);
+		const overrides = Cookie.getJSON(OVERRIDE_COOKIE),
+			experiments = overrides?.experiments;
+		return experiments && has(experiments, key);
 	}
 
 	getTwitchAssignment(key, channel = null) {

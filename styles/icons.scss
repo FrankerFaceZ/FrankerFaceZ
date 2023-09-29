@@ -43,7 +43,7 @@
 	/* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
 
-.ffz-mod-icon .ffz-i-reply {
+.ffz--inline-actions .ffz-mod-icon .ffz-i-reply {
 	font-size: 0.8em;
 }
 
@@ -58,6 +58,11 @@
 	[class^="ffz-i-"], [class*=" ffz-i-"] {
 		font-size: 1.6rem
 	}
+}
+
+.ffz-i-fx:before {
+	margin-top: 0.2rem;
+	vertical-align: middle;
 }
 
 .ffz-i-zreknarf:before {

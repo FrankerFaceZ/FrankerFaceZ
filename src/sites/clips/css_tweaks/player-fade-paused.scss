@@ -1,0 +1,4 @@
+.video-player__container[data-paused="true"] video,
+.video-player__container[data-buffering="true"] video {
+	filter: grayscale(0.25) brightness(0.5);
+}

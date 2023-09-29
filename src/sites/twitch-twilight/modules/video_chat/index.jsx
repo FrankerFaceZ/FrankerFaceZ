@@ -47,25 +47,26 @@ export default class VideoChatHook extends Module {
 		this.inject('site.web_munch');
 
 		this.inject('chat');
+		this.inject('chat.emotes');
 		this.inject('chat.overrides');
 		this.injectAs('site_chat', 'site.chat');
 		this.inject('site.chat.chat_line.rich_content');
 
 		this.VideoChatController = this.fine.define(
 			'video-chat-controller',
-			n => n.onMessageScrollAreaMount && n.createReply,
+			n => n.onError && n.videoData && n.props?.comments,
 			['user-video', 'user-clip', 'video']
 		);
 
-		this.VideoChatMenu = this.fine.define(
+		/*this.VideoChatMenu = this.fine.define(
 			'video-chat-menu',
 			n => n.onToggleMenu && n.getContent && n.props && has(n.props, 'isExpandedLayout'),
 			['user-video', 'user-clip', 'video']
-		);
+		);*/
 
 		this.VideoChatLine = this.fine.define(
 			'video-chat-line',
-			n => n.onReplyClickHandler && n.shouldFocusMessage,
+			n => n.onTimestampClickHandler && n.props?.messageContext,
 			['user-video', 'user-clip', 'video']
 		);
 
@@ -89,6 +90,8 @@ export default class VideoChatHook extends Module {
 				component: 'setting-check-box'
 			}
 		});
+
+		this.active_room = null;
 	}
 
 
@@ -102,6 +105,7 @@ export default class VideoChatHook extends Module {
 		this.on('chat:update-line-tokens', this.updateLineTokens, this);
 		this.on('chat:update-line-badges', this.updateLineBadges, this);
 		this.on('i18n:update', this.rerenderLines, this);
+		this.on('chat.emotes:update-effects', this.checkEffects, this);
 
 		for(const setting of RERENDER_SETTINGS)
 			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
@@ -126,63 +130,6 @@ export default class VideoChatHook extends Module {
 			React = await this.web_munch.findModule('react');
 		if ( ! React )
 			return;
-
-		/*this.MessageMenu = class FFZMessageMenu extends React.Component {
-			constructor(props) {
-				super(props);
-
-				this.onClick = () => this.setState({open: ! this.state.open});
-				this.onClickOutside = () => this.state.open && this.setState({open: false});
-
-				this.element = null;
-				this.saveRef = element => this.element = element;
-
-				this.state = {
-					open: false
-				}
-			}
-
-			componentDidMount() {
-				if ( this.element )
-					this._clicker = new ClickOutside(this.element, this.onClickOutside);
-			}
-
-			componentWillUnmount() {
-				this._clicker.destroy();
-				this._clicker = null;
-			}
-
-			render() {
-				const is_open = this.state.open;
-
-				return (<div ref={this.saveRef} data-test-selector="menu-options-wrapper" class={`tw-flex-shrink-0 video-chat__message-menu${is_open ? ' video-chat__message-menu--force-visible' : ''}`}>
-					<div class="tw-relative">
-						<button class="tw-interactive tw-button-icon tw-button-icon--secondary tw-button-icon--small" data-test-selector="menu-button" onClick={this.onClick}>
-							<span class="tw-button-icon__icon">
-								<figure class="ffz-i-ellipsis-vert" />
-							</span>
-						</button>
-						<div class={`tw-absolute ffz-balloon ffz-balloon--down ffz-balloon--right ffz-balloon--sm ${is_open ? 'tw-block' : 'tw-hide'}`}>
-							<div class="tw-absolute ffz-balloon__tail tw-overflow-hidden">
-								<div class="tw-absolute ffz-balloon__tail-symbol tw-border-b tw-border-l tw-border-r tw-border-t tw-c-background-base" />
-							</div>
-							<div class="tw-border-b tw-border-l tw-border-r tw-border-radius-medium tw-border-t tw-c-background-base tw-elevation-1 tw-pd-y-1">
-								<button class="ffz-interactable ffz-interactable--inverted tw-full-width tw-pd-y-05 tw-pd-x-1">{
-									t.i18n.t('video-chat.copy-link', 'Copy Link')
-								}</button>
-								<button class="ffz-interactable ffz-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
-									t.i18n.t('video-chat.delete', 'Delete')
-								}</button>
-								<div class="tw-mg-1 tw-border-b" />
-								<button class="ffz-interactable ffz-interactable--alert tw-full-width tw-pd-y-05 tw-pd-x-1">{
-									t.i18n.t('video-chat.ban', 'Ban User')
-								}</button>
-							</div>
-						</div>
-					</div>
-				</div>)
-			}
-		}*/
 
 		const createElement = React.createElement,
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
@@ -222,10 +169,10 @@ export default class VideoChatHook extends Module {
 			}
 
 			render() {
-				if ( ! t.VideoChatMenu._class )
+				//if ( ! t.VideoChatMenu._class )
 					return null;
 
-				return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
+				/*return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
 					<t.VideoChatMenu._class
 						context={this.props.context}
 						isCurrentUserModerator={this.props.isCurrentUserModerator}
@@ -236,7 +183,7 @@ export default class VideoChatHook extends Module {
 						onOpen={this.onOpen}
 						onReplyClick={this.props.onReplyClick}
 					/>
-				</div>);
+				</div>);*/
 			}
 		}
 
@@ -404,7 +351,7 @@ export default class VideoChatHook extends Module {
 				try {
 					this._ffz_no_scan = true;
 
-					if ( this.state.showReplyForm || ! t.chat.context.get('chat.video-chat.enabled') )
+					if ( this.state?.showReplyForm || ! t.chat.context.get('chat.video-chat.enabled') )
 						return old_render.call(this);
 
 					const context = this.props.messageContext,
@@ -441,7 +388,7 @@ export default class VideoChatHook extends Module {
 						<div class="tw-full-width">
 							{ main_message }
 							{ this.props.isExpandedLayout && this.ffzRenderExpanded(msg) }
-							{ context.replies.length > 0 && (<div class="qa-vod-chat-reply tw-mg-l-05 tw-mg-y-05 vod-message__reply">
+							{ context.replies && context.replies.length > 0 && (<div class="qa-vod-chat-reply tw-mg-l-05 tw-mg-y-05 vod-message__reply">
 								{ context.comment.moreReplies && (<div class="tw-inline-block vod-message__show-more-replies">
 									<button class="tw-interactive tw-button tw-button--text" onClick={this.onLoadMoreRepliesClickHandler}>
 										<span class="tw-button__text" data-a-target="tw-button-text">{
@@ -521,6 +468,21 @@ export default class VideoChatHook extends Module {
 	}
 
 
+	checkEffects() {
+		for(const inst of this.VideoChatLine.instances) {
+			const context = inst.props.messageContext,
+				msg = context?.comment?._ffz_message,
+				tokens = msg?.ffz_tokens;
+
+			if ( tokens )
+				for(const token of tokens) {
+					if ( token.type === 'emote' && token.modifier_flags )
+						this.emotes.ensureEffect(token.modifier_flags);
+				}
+		}
+	}
+
+
 	// ========================================================================
 	// Message Standardization
 	// ========================================================================
@@ -529,7 +491,7 @@ export default class VideoChatHook extends Module {
 		if ( comment._ffz_message )
 			return comment._ffz_message;
 
-		const room = this.chat.getRoom(comment.channelId, null, true, true),
+		const room = this.active_room || this.chat.getRoom(comment.channelId, null, true, true),
 			params = comment.message.userNoticeParams,
 			msg_id = params && params['msg-id'];
 
@@ -543,7 +505,7 @@ export default class VideoChatHook extends Module {
 				type: author.type
 			},
 			roomLogin: room && room.login,
-			roomID: room && room.id,
+			roomID: room && room.id || comment.channelId,
 			ffz_badges: this.chat.badges.getBadges(author.id, author.login, room?.id, room?.login),
 			badges: comment.userBadges,
 			messageParts: comment.message.tokens,
@@ -618,6 +580,7 @@ export default class VideoChatHook extends Module {
 		if ( ! this.addRoom(chat, props) )
 			return;
 
+		this.active_room = chat._ffz_room;
 		this.chat.badges.updateTwitchBadges(get('data.badges', props));
 
 		this.updateRoomBadges(chat, get('data.video.owner.broadcastBadges', props));
@@ -662,6 +625,9 @@ export default class VideoChatHook extends Module {
 
 
 	chatUnmounted(chat) {
+		if (this.active_room === chat._ffz_room)
+			this.active_room = null;
+
 		this.removeRoom(chat);
 	}
 

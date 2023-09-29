@@ -30,7 +30,16 @@ export default class Channel extends Module {
 		this.inject('site.twitch_data');
 		this.inject('metadata');
 		this.inject('socket');
+		this.inject('pubsub');
 
+		this.settings.add('channel.auto-click-off-featured', {
+			default: false,
+			ui: {
+				path: 'Channel > Behavior >> General',
+				title: 'Automatically un-check "Featured Clips Only" when viewing a channel\'s clips.',
+				component: 'setting-check-box'
+			}
+		});
 
 		this.settings.add('channel.panel-tips', {
 			default: false,
@@ -79,7 +88,7 @@ export default class Channel extends Module {
 			changed: () => this.updateLinks()
 		});
 
-		this.settings.add('channel.hosting.enable', {
+		/*this.settings.add('channel.hosting.enable', {
 			default: true,
 			ui: {
 				path: 'Channel > Behavior >> Hosting',
@@ -87,8 +96,7 @@ export default class Channel extends Module {
 				component: 'setting-check-box'
 			},
 			changed: val => ! val && this.InfoBar.each(el => this.updateBar(el))
-		});
-
+		});*/
 
 		this.ChannelPanels = this.fine.define(
 			'channel-panels',
@@ -116,7 +124,7 @@ export default class Channel extends Module {
 			{childNodes: true, subtree: true}, 1
 		);
 
-		const strip_host = resp => {
+		/*const strip_host = resp => {
 			if ( this.settings.get('channel.hosting.enable') )
 				return;
 
@@ -130,7 +138,7 @@ export default class Channel extends Module {
 		};
 
 		this.apollo.registerModifier('UseHosting', strip_host, false);
-		this.apollo.registerModifier('PlayerTrackingContextQuery', strip_host, false);
+		this.apollo.registerModifier('PlayerTrackingContextQuery', strip_host, false);*/
 	}
 
 	onEnable() {
@@ -162,7 +170,7 @@ export default class Channel extends Module {
 		this.InfoBar.on('unmount', this.removeBar, this);
 		this.InfoBar.each(el => this.updateBar(el));
 
-		this.subpump.on(':pubsub-message', this.onPubSub, this);
+		//this.subpump.on(':pubsub-message', this.onPubSub, this);
 
 		this.router.on(':route', this.checkNavigation, this);
 		this.checkNavigation();
@@ -213,7 +221,26 @@ export default class Channel extends Module {
 		}
 	}
 
+	checkFeaturedClips() {
+		if ( this.router.current_name !== 'user-clips' && this.router.current_name !== 'user-videos' )
+			return;
+
+		if ( this._featured_waiting || ! this.settings.get('channel.auto-click-off-featured') )
+			return;
+
+		this._featured_waiting = this.parent.awaitElement('input#featured-clips-toggle').then(el => {
+			if ( el.checked )
+				el.click();
+
+			this._featured_waiting = false;
+		}).catch(() => {
+			this._featured_waiting = false;
+		});
+	}
+
 	checkNavigation() {
+		this.checkFeaturedClips();
+
 		if ( ! this.settings.get('channel.auto-click-chat') || this.router.current_name !== 'user-home' )
 			return;
 
@@ -230,7 +257,7 @@ export default class Channel extends Module {
 		}
 	}
 
-	setHost(channel_id, channel_login, target_id, target_login) {
+	/*setHost(channel_id, channel_login, target_id, target_login) {
 		const topic = `stream-chat-room-v1.${channel_id}`;
 
 		this.subpump.inject(topic, {
@@ -272,16 +299,26 @@ export default class Channel extends Module {
 			event.message.data.num_viewers = 0;
 			event.markChanged();
 		}
-	}
+	}*/
 
 
-	updateSubscription(login) {
-		if ( this._subbed_login === login )
+	updateSubscription(id, login) {
+		if ( this._subbed_login === login && this._subbed_id === id )
 			return;
+
+		if ( this._subbed_id ) {
+			this.pubsub.unsubscribe(this, `twitch/${this._subbed_id}/channel/#`);
+			this._subbed_id = null;
+		}
 
 		if ( this._subbed_login ) {
 			this.socket.unsubscribe(this, `channel.${this._subbed_login}`);
 			this._subbed_login = null;
+		}
+
+		if ( id ) {
+			this.pubsub.subscribe(this, `twitch/${id}/channel`);
+			this._subbed_id = id;
 		}
 
 		if ( login ) {
@@ -314,12 +351,12 @@ export default class Channel extends Module {
 		}
 
 		if ( ! el._ffz_cont ) {
-			const report = el.querySelector('.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"]');
+			const report = el.querySelector('.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"],button[data-a-target="report-button-more-button"]');
 			let cont = report && (report.closest('.tw-flex-wrap.tw-justify-content-end') || report.closest('.tw-justify-content-end'));
 
 			if ( ! cont && report ) {
 				cont = report.parentElement?.parentElement;
-				if ( cont && cont.parentElement?.childElementCount === 2 )
+				if ( cont && cont.parentElement?.childElementCount === 2 && report.dataset.aTarget !== 'report-button-more-button' )
 					cont = cont.parentElement.firstElementChild;
 			}
 
@@ -353,7 +390,7 @@ export default class Channel extends Module {
 		});
 
 		if ( ! el._ffz_cont || ! props?.channelID ) {
-			this.updateSubscription(null);
+			this.updateSubscription(null, null);
 			return;
 		}
 
@@ -389,6 +426,30 @@ export default class Channel extends Module {
 				el._ffz_links.innerHTML = '';
 		}
 
+		// This is awful, but it works.
+		let channel = null;
+		this.fine.searchNode(react, node => {
+			let state = node?.memoizedState, i = 0;
+			while(state != null && channel == null && i < 50 ) {
+				state = state?.next;
+				channel = state?.memoizedState?.current?.previous?.result?.data?.user;
+				if (!channel?.lastBroadcast?.game)
+					channel = null;
+				i++;
+			}
+			return channel != null;
+		});
+
+		const game = channel?.lastBroadcast?.game,
+			title = channel?.lastBroadcast?.title;
+
+		if (game?.id !== el._ffz_game_cache || title !== el._ffz_title_cache)
+			this.settings.updateContext({
+				category: game?.displayName,
+				categoryID: game?.id,
+				title
+			});
+
 		// TODO: See if we can read this data directly from Apollo's cache.
 		// Also, test how it works with videos and clips.
 		/*const raw_game = el.querySelector('a[data-a-target="stream-game-link"]')?.textContent;
@@ -405,7 +466,7 @@ export default class Channel extends Module {
 			}).catch(() => {
 				el._ffz_game_cache_updating = false;
 			});
-		}*/
+		}
 
 		const other_props = react.child.child?.child?.child?.child?.child?.child?.child?.child?.child?.memoizedProps,
 			title = other_props?.title;
@@ -415,17 +476,17 @@ export default class Channel extends Module {
 			this.settings.updateContext({
 				title
 			});
-		}
+		}*/
 
-		if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
-			this.setHost(props.channelID, props.channelLogin, null, null);
+		//if ( ! this.settings.get('channel.hosting.enable') && props.hostLogin )
+		//	this.setHost(props.channelID, props.channelLogin, null, null);
 
-		this.updateSubscription(props.channelLogin);
+		this.updateSubscription(props.channelID, props.channelLogin);
 		this.updateMetadata(el);
 	}
 
 	removeBar(el) {
-		this.updateSubscription(null);
+		this.updateSubscription(null, null);
 
 		if ( el._ffz_cont )
 			el._ffz_cont.classList.remove('ffz--meta-tray');
@@ -468,10 +529,10 @@ export default class Channel extends Module {
 					live_since: props.liveSince
 				},
 				props,
-				hosted: {
+				/*hosted: {
 					login: props.hostLogin,
 					display_name: props.hostDisplayName
-				},
+				},*/
 				el,
 				getViewerCount: () => {
 					const thing = cont.querySelector('p[data-a-target="animated-channel-viewers-count"]'),

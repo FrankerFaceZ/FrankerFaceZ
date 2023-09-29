@@ -31,6 +31,14 @@ export default {
 		}
 	},
 
+	mounted() {
+		const scroller = this.$refs.scroller;
+		if (!scroller || ! window.ffzSimplebar || scroller.SimpleBar)
+			return;
+
+		new ffzSimplebar(scroller, ffzSimplebar.getElOptions(scroller));
+	},
+
 	methods: {
 		onScroll() {
 			// We do this to avoid the scroll position getting screwed up on

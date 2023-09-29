@@ -14,7 +14,7 @@ import Apollo from 'utilities/compat/apollo';
 import TwitchData from 'utilities/twitch-data';
 import Subpump from 'utilities/compat/subpump';
 
-import Switchboard from './switchboard';
+//import Switchboard from './switchboard';
 
 import {createElement} from 'utilities/dom';
 import {has} from 'utilities/object';
@@ -36,7 +36,7 @@ export default class Twilight extends BaseSite {
 		this.inject('router', FineRouter);
 		this.inject(Apollo, false);
 		this.inject(TwitchData);
-		this.inject(Switchboard);
+		//this.inject(Switchboard);
 		this.inject(Subpump);
 
 		this._dom_updates = [];
@@ -66,6 +66,11 @@ export default class Twilight extends BaseSite {
 
 	onEnable() {
 		this.settings = this.resolve('settings');
+
+		this.web_munch.findModule('simplebar').then(sb => {
+			if (! window.ffzSimplebar && sb )
+				window.ffzSimplebar = sb;
+		}).catch(() => {});
 
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
@@ -100,6 +105,18 @@ export default class Twilight extends BaseSite {
 
 		window.addEventListener('resize', update_size);
 		update_size();
+
+		const update_fullscreen = () => {
+			this.settings.updateContext({
+				fullscreen: !! document.fullscreenElement
+			});
+			this.emit(':fullscreen');
+		}
+
+		document.addEventListener('fullscreenchange', update_fullscreen);
+		this.settings.updateContext({
+			fullscreen: !! document.fullscreenElement
+		});
 
 		// Share Context
 		store.subscribe(() => this.updateContext());
@@ -227,6 +244,8 @@ Twilight.KNOWN_MODULES = {
 		if ( n.S && n.S.toString().includes('.visit') )
 			return n.S;
 	},
+	'user-report': n => n['a3']?.displayName === 'Loadable(ReportUserModal)' && n['a3'],
+	'sub-form': n => typeof n.T === 'function' && String(n.T).includes('CheckoutModal') && n.T,
 	mousetrap: n => n.bindGlobal && n.unbind && n.handleKey,
 	'algolia-search': n => {
 		if ( n.a?.prototype?.queryTopResults && n.a.prototype.queryForType )
@@ -249,21 +268,22 @@ Twilight.KNOWN_MODULES = {
 	}
 }
 
-const VEND_CHUNK = n => n && n.includes('vendor');
+//const VEND_CHUNK = n => ! n || n.includes('vendor');
+const VEND_CORE = n => ! n || n.includes('vendor') || n.includes('core');
 
 Twilight.KNOWN_MODULES.core.use_result = true;
 //Twilight.KNOWN_MODULES.core.chunks = 'core';
 
-Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CHUNK;
-Twilight.KNOWN_MODULES.react.chunks = VEND_CHUNK;
-Twilight.KNOWN_MODULES.cookie.chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CORE;
+Twilight.KNOWN_MODULES.react.chunks = VEND_CORE;
+Twilight.KNOWN_MODULES.cookie.chunks = VEND_CORE;
 
 Twilight.KNOWN_MODULES['gql-printer'].use_result = true;
-Twilight.KNOWN_MODULES['gql-printer'].chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES['gql-printer'].chunks = VEND_CORE;
 
-Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CHUNK;
+Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CORE;
 
-const CHAT_CHUNK = n => n && n.includes('chat');
+const CHAT_CHUNK = n => ! n || n.includes('chat');
 
 Twilight.KNOWN_MODULES['chat-types'].use_result = true;
 Twilight.KNOWN_MODULES['chat-types'].chunks = CHAT_CHUNK;
@@ -273,6 +293,11 @@ Twilight.KNOWN_MODULES['highlightstack'].chunks = CHAT_CHUNK;
 Twilight.KNOWN_MODULES['algolia-search'].use_result = true;
 Twilight.KNOWN_MODULES['algolia-search'].chunks = 'core';
 
+Twilight.KNOWN_MODULES['user-report'].use_result = true;
+Twilight.KNOWN_MODULES['user-report'].chunks = 'core';
+
+Twilight.KNOWN_MODULES['sub-form'].use_result = true;
+Twilight.KNOWN_MODULES['sub-form'].chunks = 'core';
 
 
 Twilight.POPOUT_ROUTES = [
@@ -412,6 +437,6 @@ Twilight.ROUTES = {
 };
 
 
-Twilight.DIALOG_EXCLUSIVE = '.moderation-root,.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root,#root>div>div';
+Twilight.DIALOG_EXCLUSIVE = '.moderation-root,.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root,#root';
 Twilight.DIALOG_MAXIMIZED = '.moderation-view-page > div[data-highlight-selector="main-grid"],.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area,.teams-page-body__outer-container .scrollable-area';
 Twilight.DIALOG_SELECTOR = '.moderation-root,.sunlight-root,#root>div,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';

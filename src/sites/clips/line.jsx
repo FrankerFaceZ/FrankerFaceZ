@@ -107,7 +107,7 @@ export default class Line extends Module {
 						}, user_block)
 					] : user_block);
 
-					return (<div class="tw-mg-b-1" style={{marginBottom:'0 !important'}}>
+					return (<div class="tw-mg-b-1">
 						<div
 							data-a-target="tw-animation-target"
 							class="ffz--clip-chat-line tw-animation tw-animation--animate tw-animation--duration-short tw-animation--fill-mode-both tw-animation--slide-in-bottom tw-animation--timing-ease"
@@ -200,7 +200,7 @@ export default class Line extends Module {
 
 		if ( msg.message.userBadges )
 			for(const badge of msg.message.userBadges)
-				if ( badge )
+				if ( badge?.setID )
 					badges[badge.setID] = badge.version;
 
 		const out = {
@@ -215,6 +215,7 @@ export default class Line extends Module {
 			roomLogin: room && room.login,
 			roomID: room && room.id,
 			badges,
+			id: msg.id,
 			ffz_badges: this.chat.badges.getBadges(author.id, author.login, room?.id, room?.login),
 			messageParts: msg.message.fragments
 		};

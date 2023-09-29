@@ -13,6 +13,9 @@ import { getFontsList, useFont } from 'utilities/fonts';
 
 const STYLE_VALIDATOR = createElement('span');
 
+const LEFT_CONTROLS = '.video-player__default-player .player-controls__left-control-group';
+const RIGHT_CONTROLS = '.video-player__default-player .player-controls__right-control-group';
+
 const HAS_COMPRESSOR = window.AudioContext && window.DynamicsCompressorNode != null,
 	HAS_GAIN = HAS_COMPRESSOR && window.GainNode != null;
 
@@ -75,6 +78,9 @@ export default class PlayerBase extends Module {
 
 		this.onShortcut = this.onShortcut.bind(this);
 
+		this.LEFT_CONTROLS = LEFT_CONTROLS;
+		this.RIGHT_CONTROLS = RIGHT_CONTROLS;
+
 		this.registerSettings();
 	}
 
@@ -85,6 +91,32 @@ export default class PlayerBase extends Module {
 				path: 'Player > General >> Embed and Popout',
 				title: 'Show metadata when mousing over the player.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('player.fade-pause-buffer', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Playback',
+				title: 'Fade the player when paused or buffering to make the UI easier to see.',
+				component: 'setting-check-box'
+			},
+
+			changed: val => this.css_tweaks.toggle('player-fade-paused', val)
+		});
+
+		this.settings.add('player.disable-content-warnings', {
+			default: false,
+			ui: {
+				path: 'Player > General >> General',
+				title: 'Do not display content warnings.',
+				description: 'When this is enabled, FFZ will automatically skip content warnings. This feature is intended for use by adults only.',
+				component: 'setting-check-box'
+			},
+
+			changed: () => {
+				for(const inst of this.Player.instances)
+					this.skipContentWarnings(inst);
 			}
 		});
 
@@ -115,6 +147,17 @@ export default class PlayerBase extends Module {
 				changed: () => {
 					for(const inst of this.Player.instances)
 						this.compressPlayer(inst);
+				}
+			});
+
+			this.settings.add('player.compressor.force-legacy', {
+				default: false,
+				ui: {
+					path: 'Player > Compressor >> Advanced',
+					title: 'Force use of legacy browser API.',
+					description: 'This setting forces FrankerFaceZ to attempt to use an older browser API to create the compressor. Please reset your player after changing this setting.',
+					component: 'setting-check-box',
+					force_seen: true
 				}
 			});
 
@@ -542,6 +585,15 @@ export default class PlayerBase extends Module {
 			},
 			changed: val => this.css_tweaks.toggle('player-hide-mouse', val)
 		});
+
+		this.settings.add('player.single-click-pause', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Playback',
+				title: "Pause/Unpause the player by clicking.",
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	async onEnable() {
@@ -552,6 +604,7 @@ export default class PlayerBase extends Module {
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
+		this.css_tweaks.toggle('player-fade-paused', this.settings.get('player.fade-pause-buffer'));
 
 		this.installVisibilityHook();
 		this.updateHideExtensions();
@@ -626,8 +679,6 @@ export default class PlayerBase extends Module {
 
 
 	onShortcut(e) {
-		this.log.info('Compressor Hotkey', e);
-
 		for(const inst of this.Player.instances)
 			this.compressPlayer(inst, e);
 	}
@@ -682,6 +733,7 @@ export default class PlayerBase extends Module {
 
 			const events = this.props.playerEvents;
 			if ( events ) {
+				on(events, 'Buffering', this._ffzUpdateState);
 				on(events, 'Playing', this._ffzUpdateState);
 				on(events, 'PlayerError', this._ffzUpdateState);
 				on(events, 'PlayerError', this._ffzErrorReset);
@@ -794,6 +846,7 @@ export default class PlayerBase extends Module {
 
 			ds.ended = state === 'Ended';
 			ds.paused = state === 'Idle';
+			ds.buffering = state === 'Buffering';
 		}
 
 		cls.prototype.ffzAttachListeners = function() {
@@ -808,10 +861,14 @@ export default class PlayerBase extends Module {
 			if ( ! this._ffz_click_handler )
 				this._ffz_click_handler = this.ffzClickHandler.bind(this);
 
+			if ( ! this._ffz_dblclick_handler )
+				this._ffz_dblclick_handler = this.ffzDblClickHandler.bind(this);
+
 			if ( ! this._ffz_menu_handler )
 				this._ffz_menu_handler = this.ffzMenuHandler.bind(this);
 
 			on(cont, 'wheel', this._ffz_scroll_handler);
+			on(cont, 'dblclick', this._ffz_dblclick_handler);
 			on(cont, 'mousedown', this._ffz_click_handler);
 			on(cont, 'contextmenu', this._ffz_menu_handler);
 		}
@@ -836,7 +893,33 @@ export default class PlayerBase extends Module {
 				this._ffz_menu_handler = null;
 			}
 
+			if ( this._ffz_dblclick_handler ) {
+				off(cont, 'dblclick', this._ffz_dblclick_handler);
+				this._ffz_dblclick_handler = null;
+			}
+
 			this._ffz_listeners = false;
+		}
+
+		cls.prototype.ffzDelayPause = function() {
+			if ( this._ffz_pause_timer )
+				clearTimeout(this._ffz_pause_timer);
+
+			const player = this.props?.mediaPlayerInstance;
+			if (! player.isPaused())
+				this._ffz_pause_timer = setTimeout(() => {
+					const player = this.props?.mediaPlayerInstance;
+					if (!player.isPaused())
+						player.pause();
+				}, 500);
+		}
+
+		cls.prototype.ffzDblClickHandler = function(event) {
+			if ( ! event )
+				return;
+
+			if ( this._ffz_pause_timer )
+				clearTimeout(this._ffz_pause_timer);
 		}
 
 		cls.prototype.ffzClickHandler = function(event) {
@@ -845,14 +928,25 @@ export default class PlayerBase extends Module {
 
 			const vol_scroll = t.settings.get('player.volume-scroll'),
 				gain_scroll = t.settings.get('player.gain.scroll'),
+				click_pause = t.settings.get('player.single-click-pause'),
 
 				wants_rmb = wantsRMB(vol_scroll) || wantsRMB(gain_scroll);
 
+			// Left Click
+			if (click_pause && event.button === 0) {
+				if (! event.target || ! event.target.classList.contains('click-handler'))
+					return;
+
+				this.ffzDelayPause();
+			}
+
+			// Right Click
 			if ( wants_rmb && event.button === 2 ) {
 				this.ffz_rmb = true;
 				this.ffz_scrolled = false;
 			}
 
+			// Middle Click
 			if ( ! t.settings.get('player.mute-click') || event.button !== 1 )
 				return;
 
@@ -1129,7 +1223,19 @@ export default class PlayerBase extends Module {
 		this.css_tweaks.toggleHide('player-ext', val === 2);
 	}
 
+	skipContentWarnings(inst) {
+		if ( ! this.settings.get('player.disable-content-warnings') )
+			return;
+
+		const cont = this.fine.getHostNode(inst),
+			btn = cont && cont.querySelector('button[data-a-target="content-classification-gate-overlay-start-watching-button"]');
+
+		if ( btn )
+			btn.click();
+	}
+
 	updateGUI(inst) {
+		this.skipContentWarnings(inst);
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
 		this.addCompressorButton(inst, false);
@@ -1160,7 +1266,7 @@ export default class PlayerBase extends Module {
 	addGainSlider(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
-			container = outer && outer.querySelector('.player-controls__left-control-group');
+			container = outer && outer.querySelector(LEFT_CONTROLS);
 		let gain = video != null && video._ffz_compressed && video._ffz_gain;
 
 		if ( this.areControlsDisabled(inst) )
@@ -1291,7 +1397,7 @@ export default class PlayerBase extends Module {
 	addCompressorButton(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
-			container = outer && outer.querySelector('.player-controls__left-control-group'),
+			container = outer && outer.querySelector(LEFT_CONTROLS),
 			has_comp = HAS_COMPRESSOR && video != null && this.settings.get('player.compressor.enable');
 
 		if ( ! container ) {
@@ -1304,7 +1410,7 @@ export default class PlayerBase extends Module {
 			return;
 		}
 
-		let icon, tip, extra, ff_el, btn, cont = container.querySelector('.ffz--player-comp');
+		let icon, tip, extra, btn, cont = container.querySelector('.ffz--player-comp');
 		if ( ! has_comp || this.areControlsDisabled(inst) ) {
 			if ( cont )
 				cont.remove();
@@ -1329,7 +1435,6 @@ export default class PlayerBase extends Module {
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="ffz--p-extra tw-pd-t-05 ffz--tooltip-explain" />)}
-						{ff_el = IS_FIREFOX ? (<div class="ffz--p-ff tw-pd-t-05 ffz--tooltip-explain" />) : null}
 					</div>
 				</div>
 			</div>);
@@ -1357,15 +1462,53 @@ export default class PlayerBase extends Module {
 		if ( can_apply && this._shortcut_bound )
 			label = `${label} (${this._shortcut_bound})`;
 
-		if ( ff_el )
-			ff_el.textContent += `\n${this.i18n.t('player.comp_button.firefox', 'Playback Speed controls will not function for Firefox users when the Compressor has been enabled.')}`;
-
 		icon.classList.toggle('ffz-i-comp-on', comp_active);
 		icon.classList.toggle('ffz-i-comp-off', ! comp_active);
 		btn.disabled = ! can_apply;
 
 		btn.setAttribute('aria-label', label);
 		tip.textContent = label;
+	}
+
+	replaceVideoElement(player, video) {
+		const new_vid = createElement('video'),
+			vol = video?._ffz_pregain_volume ?? video?.volume ?? player.getVolume(),
+			muted = player.isMuted();
+
+		new_vid._ffz_gain_value = video._ffz_gain_value;
+		new_vid._ffz_state = video._ffz_state;
+		new_vid._ffz_toggled = video._ffz_toggled;
+		new_vid._ffz_maybe_compress = video._ffz_compressed;
+		new_vid.volume = vol;
+		if ( muted )
+			new_vid.muted = true;
+		new_vid.playsInline = true;
+
+		this.installPlaybackRate(new_vid);
+		video.replaceWith(new_vid);
+		player.attachHTMLVideoElement(new_vid);
+		return new_vid;
+	}
+
+	hookPlayerLoad(player) {
+		if ( ! player || player._ffz_load )
+			return;
+
+		player._ffz_load = player.load;
+
+		player.load = (...args) => {
+			try {
+				const video = player.getHTMLVideoElement();
+				if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
+					this.log.info('Recreating video element due to player load with compressor installed.');
+					this.replaceVideoElement(player, video);
+				}
+			} catch(err) {
+				t.log.error('Error while handling player load.', err);
+			}
+
+			return player._ffz_load(...args);
+		}
 	}
 
 	compressPlayer(inst, e) {
@@ -1375,6 +1518,21 @@ export default class PlayerBase extends Module {
 
 		if ( ! video || ! HAS_COMPRESSOR )
 			return;
+
+		// Backup the player load method.
+		this.hookPlayerLoad(player);
+
+		// Backup and replace the setSrc method.
+		if ( ! inst._ffz_setSrc ) {
+			inst._ffz_setSrc = inst.setSrc;
+			inst.setSrc = async function(...args) {
+				console.log('setSrc', args);
+				const vid = inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+				if ( vid && vid._ffz_compressor )
+					await this.resetPlayer(inst);
+				return inst._ffz_setSrc(...args);
+			}
+		}
 
 		// Backup the setVolume method.
 		if ( ! core._ffz_setVolume ) {
@@ -1419,12 +1577,24 @@ export default class PlayerBase extends Module {
 			return;
 
 		if ( want_gain && ! gain ) {
-			gain = video._ffz_gain = ctx.createGain();
 			let value = video._ffz_gain_value;
 			if ( value == null )
 				value = this.settings.get('player.gain.default');
 
-			gain.gain.value = value;
+			try {
+				if (this.settings.get('player.compressor.force-legacy'))
+					throw new Error();
+
+				gain = video._ffz_gain = new GainNode(ctx, {
+					gain: value
+				});
+
+			} catch(err) {
+				this.log.info('Unable to use new GainNode. Falling back to old method.');
+				gain = video._ffz_gain = ctx.createGain();
+				gain.gain.value = value;
+			}
+
 			comp.connect(gain);
 
 			if ( compressed ) {
@@ -1514,41 +1684,96 @@ export default class PlayerBase extends Module {
 		if ( ! video )
 			return false;
 
+		if ( ! video.src && ! video.srcObject )
+			return false;
+
 		if ( video.src ) {
 			const url = new URL(video.src);
 			if ( url.protocol !== 'blob:' )
 				return false;
-		} else
-			return false;
+		}
+
+		// TODO: Validation for srcObject (if we need it)
 
 		return true;
 	}
 
-	createCompressor(inst, video) {
+	createCompressor(inst, video, _cmp) {
 		if ( ! this.canCompress(inst) )
 			return;
 
 		let comp = video._ffz_compressor;
 		if ( ! comp ) {
-			const ctx = new AudioContext();
+			const ctx = _cmp || new AudioContext();
 			if ( ! IS_FIREFOX && ctx.state === 'suspended' ) {
-				this.log.info('Aborting due to browser auto-play policy.');
+				let timer;
+				const evt = () => {
+					clearTimeout(timer);
+					ctx.removeEventListener('statechange', evt);
+					if (ctx.state === 'suspended') {
+						this.log.info('Aborting due to browser auto-play policy.');
+						return;
+					}
+
+					this.createCompressor(inst, video, comp);
+				}
+
+				this.log.info('Attempting to resume suspended AudioContext.');
+				timer = setTimeout(evt, 100);
+				try {
+					ctx.addEventListener('statechange', evt);
+					ctx.resume();
+				} catch(err) { }
+
 				return;
 			}
 
 			video._ffz_context = ctx;
-			const src = video._ffz_source = ctx.createMediaElementSource(video);
+			let src;
+			try {
+				if (this.settings.get('player.compressor.force-legacy'))
+					throw new Error();
+
+				src = video._ffz_source = new MediaElementAudioSourceNode(ctx, {
+					mediaElement: video
+				});
+			} catch(err) {
+				this.log.info('Unable to use new MediaElementAudioSourceNode. Falling back to old method.');
+				src = video._ffz_source = ctx.createMediaElementSource(video);
+			}
 
 			src.connect(ctx.destination);
 
-			comp = video._ffz_compressor = ctx.createDynamicsCompressor();
+			try {
+				if (this.settings.get('player.compressor.force-legacy'))
+					throw new Error();
+
+				comp = video._ffz_compressor = new DynamicsCompressorNode(ctx);
+			} catch (err) {
+				this.log.info('Unable to use new DynamicsCompressorNode. Falling back to old method.');
+				comp = video._ffz_compressor = ctx.createDynamicsCompressor();
+			}
 
 			if ( this.settings.get('player.gain.enable') ) {
-				const gain = video._ffz_gain = ctx.createGain();
+				let gain;
 				let value = video._ffz_gain_value;
 				if ( value == null )
 					value = this.settings.get('player.gain.default');
-				gain.gain.value = value;
+
+				try {
+					if (this.settings.get('player.compressor.force-legacy'))
+						throw new Error();
+
+					gain = video._ffz_gain = new GainNode(ctx, {
+						gain: value
+					});
+
+				} catch(err) {
+					this.log.info('Unable to use new GainNode. Falling back to old method.');
+					gain = video._ffz_gain = ctx.createGain();
+					gain.gain.value = value;
+				}
+
 				comp.connect(gain);
 			}
 
@@ -1656,7 +1881,7 @@ export default class PlayerBase extends Module {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
 			is_fs = video && document.fullscreenElement && document.fullscreenElement.contains(video),
-			container = outer && outer.querySelector('.player-controls__right-control-group'),
+			container = outer && outer.querySelector(RIGHT_CONTROLS),
 			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
 
 		if ( ! container ) {
@@ -1759,7 +1984,7 @@ export default class PlayerBase extends Module {
 
 	addResetButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			container = outer && outer.querySelector('.player-controls__right-control-group'),
+			container = outer && outer.querySelector(RIGHT_CONTROLS),
 			has_reset = this.settings.get('player.button.reset');
 
 		if ( ! container ) {
@@ -1886,7 +2111,7 @@ export default class PlayerBase extends Module {
 	}
 
 
-	resetPlayer(inst, e) {
+	async resetPlayer(inst, e) {
 		const player = inst ? ((inst.mediaSinkManager || inst.core?.mediaSinkManager) ? inst : inst?.props?.mediaPlayerInstance) : null;
 
 		if ( e ) {
@@ -1922,39 +2147,19 @@ export default class PlayerBase extends Module {
 
 		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
 		if ( video?._ffz_compressor && player.attachHTMLVideoElement ) {
-			const new_vid = createElement('video'),
-				vol = video?._ffz_pregain_volume ?? video?.volume ?? player.getVolume(),
-				muted = player.isMuted();
-
-			new_vid._ffz_gain_value = video._ffz_gain_value;
-			new_vid._ffz_state = video._ffz_state;
-			new_vid._ffz_toggled = video._ffz_toggled;
+			const new_vid = this.replaceVideoElement(player, video);
 			new_vid._ffz_maybe_compress = true;
-			new_vid.volume = muted ? 0 : vol;
-			new_vid.playsInline = true;
-
-			this.installPlaybackRate(new_vid);
-			video.replaceWith(new_vid);
-			player.attachHTMLVideoElement(new_vid);
-			setTimeout(() => {
-				player.setVolume(vol);
-				player.setMuted(muted);
-
-				//localStorage.volume = vol;
-				//localStorage.setItem('video-muted', JSON.stringify({default: muted}));
-			}, 0);
 		}
 
 		this.PlayerSource.check();
 		for(const inst of this.PlayerSource.instances) {
 			if ( ! player || player === inst.props?.mediaPlayerInstance )
-				inst.setSrc({isNewMediaPlayerInstance: false});
+				await inst.setSrc({isNewMediaPlayerInstance: false});
 		}
 
 		if ( position > 0 )
 			setTimeout(() => player.seekTo(position), 250);
 	}
-
 
 	addMetadata(inst) {
 		if ( ! this.metadata )
@@ -1981,7 +2186,7 @@ export default class PlayerBase extends Module {
 				return;
 
 			const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-				container = outer && outer.querySelector('.player-controls__right-control-group');
+				container = outer && outer.querySelector(RIGHT_CONTROLS);
 
 			if ( ! container )
 				return;
@@ -2009,7 +2214,7 @@ export default class PlayerBase extends Module {
 		else if ( ! Array.isArray(keys) )
 			keys = [keys];
 
-		const source = this.parent.data,
+		const source = this.getData(),
 			user = source?.props?.data?.user;
 
 		const timers = inst._ffz_meta_timers = inst._ffz_meta_timers || {},
@@ -2032,6 +2237,25 @@ export default class PlayerBase extends Module {
 
 		for(const key of keys)
 			this.metadata.renderPlayer(key, data, cont, timers, refresh_fn);
+	}
+
+
+	getUptime(inst) {
+		// TODO: Support multiple instances.
+		const source = this.getData(),
+			user = source?.props?.data?.user;
+
+		let created = user?.stream?.createdAt;
+
+		if ( ! created )
+			return null;
+
+		if ( !(created instanceof Date) )
+			created = new Date(created);
+
+		const now = Date.now();
+
+		return (now - created.getTime()) / 1000;
 	}
 
 

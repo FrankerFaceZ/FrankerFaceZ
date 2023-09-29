@@ -8,6 +8,25 @@
 	margin: -.5rem 0;
 }
 
+.modified-emote {
+	margin: -.5rem 0;
+
+	& > .chat-line__message--emote {
+		margin: 0;
+	}
+}
+
+.scaled-modified-emote {
+	display: inline-block;
+	vertical-align: middle;
+
+	& > .chat-line__message--emote {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+}
+
 .chat-author__display-name,
 .chat-author__intl-login {
 	cursor: pointer;
@@ -329,6 +348,11 @@
 		}
 	}
 
+	.emote-picker__tab-content {
+		height: unset !important;
+		max-height: 30.5rem;
+	}
+
 	&.ffz--emote-picker__tall {
 		.whispers-thread .emote-picker-and-button & .emote-picker__tab-content {
 			max-height: 30rem;
@@ -450,6 +474,52 @@
 
 		.tw-pd-1 {
 			padding: 0.5rem !important;
+		}
+	}
+}
+
+.ffz--hover-actions {
+	position: absolute;
+	right: 0.5rem;
+	top: -1rem;
+	display: none;
+
+	--ffz-chat-actions-size: var(--ffz-chat-actions-hover-size);
+	--ffz-chat-actions-padding: var(--ffz-chat-actions-hover-padding);
+
+	.ffz-notice-line:hover &,
+	.chat-line__message:hover & {
+		display: block;
+	}
+}
+
+
+.ffz-hover-action {
+	display: inline-block;
+	margin-left: 0.5rem;
+	margin-bottom: 0.5rem;
+
+	box-shadow: var(--shadow-elevation-1);
+	background-color: var(--color-background-base);
+	border-radius: var(--border-radius-medium);
+
+	figure {
+		line-height: 1em;
+	}
+
+	&.ffz-has-modifier {
+		display: none;
+	}
+
+	& > .ffz-mod-icon {
+		padding: var(--ffz-chat-actions-padding);
+
+		background-color: var(--color-background-button-text-default);
+		color: var(--color-fill-button-icon);
+
+		&:hover {
+			background-color: var(--color-background-button-text-hover);
+			color: var(--color-fill-button-icon-hover);
 		}
 	}
 }

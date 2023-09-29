@@ -191,7 +191,7 @@ export class TranslationManager extends Module {
 				},
 				data: () => {
 					const out = [], now = new Date;
-					for (const [key,fmt] of Object.entries(this._.formats.date)) {
+					for (const [key, fmt] of Object.entries(this._.formats.date)) {
 						out.push({
 							value: key, title: `${this.formatDate(now, key)} (${key})`
 						})
@@ -451,6 +451,10 @@ export class TranslationManager extends Module {
 	}
 
 
+	get dayjsLocale() {
+		return this._?._dayjs_locale;
+	}
+
 	get locale() {
 		return this._ && this._.locale;
 	}
@@ -661,6 +665,9 @@ export class TranslationManager extends Module {
 
 
 	async loadLocale(locale, chunk = null) {
+		// Normalize the locale.
+		locale = locale.toLowerCase();
+
 		if ( locale === 'en' )
 			return {};
 
@@ -710,11 +717,12 @@ export class TranslationManager extends Module {
 	}
 
 	async setLocale(new_locale) {
+		// Normalize the locale.
+		new_locale = new_locale.toLowerCase();
+
 		const old_locale = this._.locale;
 		if ( new_locale === old_locale )
 			return [];
-
-		await this.loadDayjsLocale(new_locale);
 
 		this._.locale = new_locale;
 		this._.clear();
@@ -726,14 +734,26 @@ export class TranslationManager extends Module {
 			// All the built-in messages are English. We don't need special
 			// logic to load the translations.
 			this.emit(':loaded', []);
+			this._._dayjs_locale = 'en';
 			return [];
 		}
 
 		const data = this.localeData[new_locale];
 		const phrases = await this.loadLocale(data?.id || new_locale);
 
+		let djs;
+		try {
+			djs = data?.dayjs_override || new_locale;
+			await this.loadDayjsLocale(djs);
+		} catch (err) {
+			this.log.warn(`Unable to load DayJS locale for ${new_locale}`);
+			djs = 'en';
+		}
+
 		if ( this._.locale !== new_locale )
 			throw new Error('locale has changed since we started loading');
+
+		this._._dayjs_locale = djs;
 
 		const added = this._.extend(phrases);
 		if ( added.length ) {
@@ -780,6 +800,10 @@ export class TranslationManager extends Module {
 		return this._.formatNumber(...args);
 	}
 
+	formatCurrency(...args) {
+		return this._.formatCurrency(...args);
+	}
+
 	formatDuration(...args) {
 		return this._.formatDuration(...args);
 	}
@@ -815,6 +839,28 @@ export class TranslationManager extends Module {
 const DOLLAR_REGEX = /\$/g;
 const REPLACE = String.prototype.replace;
 
+const FORMAT_REGEX = /^\s*([^(]+?)\s*(?:\(\s*([^)]+?)\s*\))?\s*$/;
+
+export function parseFormatters(fmt) {
+	if (!fmt || ! fmt.length)
+		return;
+
+	const result = [];
+
+	for(const token of fmt.split(/\|/g)) {
+		const match = FORMAT_REGEX.exec(token);
+		if (!match)
+			continue;
+
+		result.push({
+			fmt: match[1],
+			extra: match[2]
+		});
+	}
+
+	return result;
+}
+
 export function transformPhrase(phrase, substitutions, locale, token_regex, formatters) {
 	const is_array = Array.isArray(phrase);
 	if ( substitutions == null )
@@ -828,14 +874,23 @@ export function transformPhrase(phrase, substitutions, locale, token_regex, form
 
 	if ( typeof result === 'string' )
 		result = REPLACE.call(result, token_regex, (expr, arg, fmt) => {
-			let val = get(arg, options);
+			let val = get(arg.trim(), options);
 			if ( val == null )
 				return '';
 
-			const formatter = formatters[fmt];
-			if ( typeof formatter === 'function' )
-				val = formatter(val, locale, options);
-			else if ( typeof val === 'string' )
+			const fmts = parseFormatters(fmt);
+			let formatted = false;
+			if (fmts) {
+				for(const format of fmts) {
+					const formatter = formatters[format.fmt];
+					if (typeof formatter === 'function') {
+						val = formatter(val, locale, options, format.extra);
+						formatted = true;
+					}
+				}
+			}
+
+			if (! formatted && typeof val === 'string' )
 				val = REPLACE.call(val, DOLLAR_REGEX, '$$');
 
 			return val;

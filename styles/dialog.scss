@@ -24,8 +24,12 @@
 		height: 50vh;
 		height: var(--height);
 
+		border-radius: var(--border-radius-extra-large);
+
 		> header {
 			cursor: move;
+			border-top-left-radius: var(--border-radius-extra-large);
+			border-top-right-radius: var(--border-radius-extra-large);
 		}
 
 		&.faded {
@@ -76,7 +80,7 @@
 .ffz-has-dialog {
 	position: relative;
 
-	& > :not(.ffz-dialog) {
+	& > :not(.ffz-dialog):not(.ffz__tooltip) {
 		visibility: hidden;
 	}
 }

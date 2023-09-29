@@ -7,9 +7,11 @@
 import dayjs from 'dayjs';
 
 import Module from 'utilities/module';
-import {createElement, ManagedStyle} from 'utilities/dom';
-import {timeout, has, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
 import {Color} from 'utilities/color';
+import {createElement, ManagedStyle} from 'utilities/dom';
+import {FFZEvent} from 'utilities/events';
+import {getFontsList} from 'utilities/fonts';
+import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -20,11 +22,10 @@ import Room from './room';
 import User from './user';
 import * as TOKENIZERS from './tokenizers';
 import * as RICH_PROVIDERS from './rich_providers';
+import * as LINK_PROVIDERS from './link_providers';
 
-import Actions from './actions';
-import { getFontsList } from 'src/utilities/fonts';
+import Actions from './actions/actions';
 
-export const SEPARATORS = '[\\s`~<>!-#%-\\x2A,-/:;\\x3F@\\x5B-\\x5D_\\x7B}\\u00A1\\u00A7\\u00AB\\u00B6\\u00B7\\u00BB\\u00BF\\u037E\\u0387\\u055A-\\u055F\\u0589\\u058A\\u05BE\\u05C0\\u05C3\\u05C6\\u05F3\\u05F4\\u0609\\u060A\\u060C\\u060D\\u061B\\u061E\\u061F\\u066A-\\u066D\\u06D4\\u0700-\\u070D\\u07F7-\\u07F9\\u0830-\\u083E\\u085E\\u0964\\u0965\\u0970\\u0AF0\\u0DF4\\u0E4F\\u0E5A\\u0E5B\\u0F04-\\u0F12\\u0F14\\u0F3A-\\u0F3D\\u0F85\\u0FD0-\\u0FD4\\u0FD9\\u0FDA\\u104A-\\u104F\\u10FB\\u1360-\\u1368\\u1400\\u166D\\u166E\\u169B\\u169C\\u16EB-\\u16ED\\u1735\\u1736\\u17D4-\\u17D6\\u17D8-\\u17DA\\u1800-\\u180A\\u1944\\u1945\\u1A1E\\u1A1F\\u1AA0-\\u1AA6\\u1AA8-\\u1AAD\\u1B5A-\\u1B60\\u1BFC-\\u1BFF\\u1C3B-\\u1C3F\\u1C7E\\u1C7F\\u1CC0-\\u1CC7\\u1CD3\\u2010-\\u2027\\u2030-\\u2043\\u2045-\\u2051\\u2053-\\u205E\\u207D\\u207E\\u208D\\u208E\\u2329\\u232A\\u2768-\\u2775\\u27C5\\u27C6\\u27E6-\\u27EF\\u2983-\\u2998\\u29D8-\\u29DB\\u29FC\\u29FD\\u2CF9-\\u2CFC\\u2CFE\\u2CFF\\u2D70\\u2E00-\\u2E2E\\u2E30-\\u2E3B\\u3001-\\u3003\\u3008-\\u3011\\u3014-\\u301F\\u3030\\u303D\\u30A0\\u30FB\\uA4FE\\uA4FF\\uA60D-\\uA60F\\uA673\\uA67E\\uA6F2-\\uA6F7\\uA874-\\uA877\\uA8CE\\uA8CF\\uA8F8-\\uA8FA\\uA92E\\uA92F\\uA95F\\uA9C1-\\uA9CD\\uA9DE\\uA9DF\\uAA5C-\\uAA5F\\uAADE\\uAADF\\uAAF0\\uAAF1\\uABEB\\uFD3E\\uFD3F\\uFE10-\\uFE19\\uFE30-\\uFE52\\uFE54-\\uFE61\\uFE63\\uFE68\\uFE6A\\uFE6B\\uFF01-\\uFF03\\uFF05-\\uFF0A\\uFF0C-\\uFF0F\\uFF1A\\uFF1B\\uFF1F\\uFF20\\uFF3B-\\uFF3D\\uFF3F\\uFF5B\\uFF5D\\uFF5F-\\uFF65]';
 
 function sortPriorityColorTerms(list) {
 	list.sort((a,b) => {
@@ -37,11 +38,11 @@ function sortPriorityColorTerms(list) {
 	return list;
 }
 
-function addSeparators(str) {
-	return `(^|.*?${SEPARATORS})(?:${str})(?=$|${SEPARATORS})`
-}
-
 const TERM_FLAGS = ['g', 'gi'];
+
+const UNBLOCKABLE_TOKENS = [
+	'filter_test'
+];
 
 function formatTerms(data) {
 	const out = [];
@@ -49,7 +50,7 @@ function formatTerms(data) {
 	for(let i=0; i < data.length; i++) {
 		const list = data[i];
 		if ( list[0].length )
-			list[1].push(addSeparators(list[0].join('|')));
+			list[1].push(addWordSeparators(list[0].join('|')));
 
 		out.push(list[1].length ? new RegExp(list[1].join('|'), TERM_FLAGS[i] || 'gi') : null);
 	}
@@ -71,17 +72,20 @@ export default class Chat extends Module {
 		this.inject('i18n');
 		this.inject('tooltips');
 		this.inject('experiments');
+		this.inject('staging');
+		this.inject('load_tracker');
 
 		this.inject(Badges);
 		this.inject(Emotes);
 		this.inject(Emoji);
 		this.inject(Actions);
-		this.inject(Overrides);
+		this.inject('overrides', Overrides);
 
 		this._link_info = {};
 
 		// Bind for JSX stuff
 		this.clickToReveal = this.clickToReveal.bind(this);
+		this.handleLinkClick = this.handleLinkClick.bind(this);
 		this.handleMentionClick = this.handleMentionClick.bind(this);
 		this.handleReplyClick = this.handleReplyClick.bind(this);
 
@@ -100,6 +104,9 @@ export default class Chat extends Module {
 
 		this.rich_providers = {};
 		this.__rich_providers = [];
+
+		this.link_providers = {};
+		this.__link_providers = [];
 
 		this._hl_reasons = {};
 		this.addHighlightReason('mention', 'Mentioned');
@@ -444,6 +451,29 @@ export default class Chat extends Module {
 					{value: 60000, title: 'Why??? (1m)'},
 					{value: 788400000000, title: 'The CBenni Option (Literally 25 Years)'}
 				]
+			}
+		});
+
+		this.settings.add('chat.filtering.hidden-tokens', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			process(ctx, val) {
+				const out = new Set;
+				for(const v of val)
+					if ( v?.v || ! UNBLOCKABLE_TOKENS.includes(v.v) )
+						out.add(v.v);
+
+				return out;
+			},
+
+			ui: {
+				path: 'Chat > Appearance >> Hidden Token Types @{"description":"This filter allows you to prevent specific content token types from appearing chat messages, such as hiding all cheers or emotes."}',
+				component: 'blocked-types',
+				data: () => Object
+					.keys(this.tokenizers)
+					.filter(key => ! UNBLOCKABLE_TOKENS.includes(key) && this.tokenizers[key]?.render)
+					.sort()
 			}
 		});
 
@@ -873,6 +903,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.filtering.all-mentions', {
+			default: false,
+			ui: {
+				component: 'setting-check-box',
+				path: 'Chat > Filtering > General >> Appearance',
+				title: 'Display mentions for all users without requiring an at sign (@).',
+				description: '**Note**: This setting can increase memory usage and impact chat performance.'
+			}
+		});
+
 		this.settings.add('chat.filtering.color-mentions', {
 			default: false,
 			ui: {
@@ -880,6 +920,13 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Display mentions in chat with username colors.',
 				description: '**Note:** Not compatible with color overrides as mentions do not include user IDs.'
+			}
+		});
+
+		this.settings.add('chat.filtering.need-colors', {
+			requires: ['chat.filtering.all-mentions' ,'chat.filtering.color-mentions'],
+			process(ctx) {
+				return ctx.get('chat.filtering.all-mentions') || ctx.get('chat.filtering.color-mentions')
 			}
 		});
 
@@ -1191,7 +1238,7 @@ export default class Chat extends Module {
 				room.buildBitsCSS();
 		});
 
-		this.context.on('changed:chat.filtering.color-mentions', async val => {
+		this.context.on('changed:chat.filtering.need-colors', async val => {
 			if ( val )
 				await this.createColorCache();
 			else
@@ -1199,6 +1246,9 @@ export default class Chat extends Module {
 
 			this.emit(':update-line-tokens');
 		});
+
+		this.context.on('changed:chat.filtering.all-mentions', () => this.emit(':update-line-tokens'));
+		this.context.on('changed:chat.filtering.color-mentions', () => this.emit(':update-line-tokens'));
 	}
 
 
@@ -1219,8 +1269,11 @@ export default class Chat extends Module {
 
 	onEnable() {
 		this.socket = this.resolve('socket');
+		this.pubsub = this.resolve('pubsub');
 
-		if ( this.context.get('chat.filtering.color-mentions') )
+		this.on('site.subpump:pubsub-message', this.onPubSub, this);
+
+		if ( this.context.get('chat.filtering.need-colors') )
 			this.createColorCache().then(() => this.emit(':update-line-tokens'));
 
 		for(const key in TOKENIZERS)
@@ -1230,6 +1283,85 @@ export default class Chat extends Module {
 		for(const key in RICH_PROVIDERS)
 			if ( has(RICH_PROVIDERS, key) )
 				this.addRichProvider(RICH_PROVIDERS[key]);
+
+		for(const key in LINK_PROVIDERS)
+			if ( has(LINK_PROVIDERS, key) )
+				this.addLinkProvider(LINK_PROVIDERS[key]);
+
+		this.on('chat:reload-data', flags => {
+			for(const room of this.iterateRooms())
+				room.load_data();
+		});
+
+		this.on('chat:get-tab-commands', event => {
+			event.commands.push({
+				name: 'ffz:reload',
+				description: this.i18n.t('chat.command.reload', 'Reload FFZ and add-on chat data (emotes, badges, etc.)'),
+				permissionLevel: 0,
+				ffz_group: 'FrankerFaceZ'
+			});
+		});
+
+		this.triggered_reload = false;
+
+		this.on('chat:ffz-command:reload', event => {
+			if ( this.triggered_reload )
+				return;
+
+			const sc = this.resolve('site.chat');
+			if ( sc?.addNotice )
+				sc.addNotice('*', this.i18n.t('chat.command.reload.starting', 'FFZ is reloading data...'));
+
+			this.triggered_reload = true;
+			this.emit('chat:reload-data');
+		});
+
+		this.on('load_tracker:complete:chat-data', (list) => {
+			if ( this.triggered_reload ) {
+				const sc = this.resolve('site.chat');
+				if ( sc?.addNotice )
+					sc.addNotice('*', this.i18n.t('chat.command.reload.done', 'FFZ has finished reloading data. (Sources: {list})', {list: list.join(', ')}));
+			}
+
+			this.triggered_reload = false;
+		});
+	}
+
+
+	onPubSub(event) {
+		if ( event.prefix === 'stream-chat-room-v1' && event.message.type === 'chat_rich_embed' ) {
+			const data = event.message.data,
+				url = data.request_url,
+
+				providers = this.__link_providers;
+
+			// Don't re-cache.
+			if ( this._link_info[url] )
+				return;
+
+			for(const provider of providers) {
+				const match = provider.test.call(this, url);
+				if ( match ) {
+					const processed = provider.receive ? provider.receive.call(this, match, data) : data;
+					let result = provider.process.call(this, match, processed);
+
+					if ( !(result instanceof Promise) )
+						result = Promise.resolve(result);
+
+					result.then(value => {
+						// If something is already running, don't override it.
+						let info = this._link_info[url];
+						if ( info )
+							return;
+
+						// Save the value.
+						this._link_info[url] = [true, Date.now() + 120000, value];
+					});
+
+					return;
+				}
+			}
+		}
 	}
 
 
@@ -1375,6 +1507,31 @@ export default class Chat extends Module {
 	}
 
 
+	handleLinkClick(event) {
+		if ( event.ctrlKey || event.shiftKey )
+			return;
+
+		const target = event.currentTarget,
+			ds = target?.dataset;
+
+		if ( ! ds )
+			return;
+
+		const evt = new FFZEvent({
+			url: ds.url ?? target.href,
+			source: event
+		});
+
+		this.emit('chat:click-link', evt);
+		if ( evt.defaultPrevented ) {
+			event.preventDefault();
+			event.stopPropagation();
+			return true;
+		}
+
+	}
+
+
 	handleReplyClick(event) {
 		const target = event.target,
 			fine = this.resolve('site.fine');
@@ -1497,7 +1654,9 @@ export default class Chat extends Module {
 			{
 				type: 'reply',
 				text: reply.parentDisplayName,
-				color: this.color_cache ? this.color_cache.get(reply.parentUserLogin) : null,
+				color: (this.context.get('chat.filtering.color-mentions') && this.color_cache)
+					? this.color_cache.get(reply.parentUserLogin)
+					: null,
 				recipient: reply.parentUserLogin
 			},
 			{
@@ -1599,6 +1758,10 @@ export default class Chat extends Module {
 			for(const item of ext.displayBadges)
 				b[item.setID] = item.version;
 		}
+
+		// Validate User Type
+		if ( user.type == null && msg.badges && msg.badges.moderator )
+			user.type = 'mod';
 
 		// Standardize Timestamp
 		if ( ! msg.timestamp && msg.sentAt )
@@ -1790,7 +1953,7 @@ export default class Chat extends Module {
 				className: 'chat-author__intl-login'
 			}, ` (${user.login})`));
 
-		return [out];
+		return out;
 	}
 
 
@@ -1834,6 +1997,11 @@ export default class Chat extends Module {
 
 	addTokenizer(tokenizer) {
 		const type = tokenizer.type;
+		if ( has(this.tokenizers, type) ) {
+			this.log.warn(`Tried adding tokenizer of type '${type}' when one was already present.`);
+			return;
+		}
+
 		this.tokenizers[type] = tokenizer;
 		if ( tokenizer.priority == null )
 			tokenizer.priority = 0;
@@ -1873,8 +2041,48 @@ export default class Chat extends Module {
 		return tokenizer;
 	}
 
+	addLinkProvider(provider) {
+		const type = provider.type;
+		if ( has(this.link_providers, type) ) {
+			this.log.warn(`Tried adding link provider of type '${type}' when one was already present.`);
+			return;
+		}
+
+		this.link_providers[type] = provider;
+		if ( provider.priority == null )
+			provider.priority = 0;
+
+		this.__link_providers.push(provider);
+		this.__link_providers.sort((a,b) => {
+			if ( a.priority > b.priority ) return -1;
+			if ( a.priority < b.priority ) return 1;
+			return a.type < b.type;
+		});
+	}
+
+	removeLinkProvider(provider) {
+		let type;
+		if ( typeof provider === 'string' ) type = provider;
+		else type = provider.type;
+
+		provider = this.link_providers[type];
+		if ( ! provider )
+			return null;
+
+		const idx = this.__link_providers.indexOf(provider);
+		if ( idx !== -1 )
+			this.__link_providers.splice(idx, 1);
+
+		return provider;
+	}
+
 	addRichProvider(provider) {
 		const type = provider.type;
+		if ( has(this.rich_providers, type) ) {
+			this.log.warn(`Tried adding rich provider of type '${type}' when one was already present.`);
+			return;
+		}
+
 		this.rich_providers[type] = provider;
 		if ( provider.priority == null )
 			provider.priority = 0;
@@ -1937,11 +2145,12 @@ export default class Chat extends Module {
 		const want_mid = this.context.get('chat.rich.want-mid');
 
 		for(const token of tokens) {
-			for(const provider of providers)
-				if ( provider.test.call(this, token, msg) ) {
-					token.hidden = provider.can_hide_token && (this.context.get('chat.rich.hide-tokens') || provider.hide_token);
-					return provider.process.call(this, token, want_mid);
-				}
+			if ( token.allow_rich ?? true )
+				for(const provider of providers)
+					if ( provider.test.call(this, token, msg) ) {
+						token.hidden = provider.can_hide_token && (this.context.get('chat.rich.hide-tokens') || provider.hide_token);
+						return provider.process.call(this, token, want_mid);
+					}
 		}
 	}
 
@@ -1984,12 +2193,14 @@ export default class Chat extends Module {
 			tokenizers = this.tokenizers,
 			l = tokens.length;
 
+		const hidden = this.context.get('chat.filtering.hidden-tokens');
+
 		for(let i=0; i < l; i++) {
 			const token = tokens[i],
 				type = token.type,
 				tk = tokenizers[type];
 
-			if ( token.hidden )
+			if ( token.hidden || hidden.has(type) )
 				continue;
 
 			let res;
@@ -2085,6 +2296,17 @@ export default class Chat extends Module {
 						cbs[success ? 0 : 1](data);
 			}
 
+			// Try using a link provider.
+			for(const lp of this.__link_providers) {
+				const match = lp.test.call(this, url);
+				if ( match ) {
+					timeout(lp.process.call(this, match), 15000)
+						.then(data => handle(true, data))
+						.catch(err => handle(false, err));
+					return;
+				}
+			}
+
 			let provider = this.settings.get('debug.link-resolver.source');
 			if ( provider == null )
 				provider = this.experiments.getAssignment('api_links') ? 'test' : 'socket';
@@ -2109,6 +2331,9 @@ export default class Chat extends Module {
 	}
 
 	fixLinkInfo(data) {
+		if ( ! data )
+			return data;
+
 		if ( data.error && data.message )
 			data.error = data.message;
 
@@ -2122,7 +2347,9 @@ export default class Chat extends Module {
 					image: {type: 'image', url: ERROR_IMAGE},
 					title: {type: 'i18n', key: 'card.error', phrase: 'An error occurred.'},
 					subtitle: data.error
-				}
+				},
+				unsafe: data.unsafe,
+				urls: data.urls
 			}
 
 		if ( data.v < 5 && ! data.short && ! data.full && (data.title || data.desc_1 || data.desc_2) ) {

@@ -1,3 +1,4 @@
+.ffz--emote-picker__list,
 .ffz--icon-picker__list {
 	max-height: 15rem;
 	font-size: 1.6rem;
@@ -8,5 +9,13 @@
 		figure {
 			pointer-events: none;
 		}
+	}
+}
+
+.ffz--emote-picker {
+	.ffz-preview-emote {
+		width: 2rem;
+		height: 2rem;
+		object-fit: contain;
 	}
 }

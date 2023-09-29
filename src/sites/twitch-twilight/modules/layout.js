@@ -162,6 +162,15 @@ export default class Layout extends Module {
 			changed: val => this.css_tweaks.toggle('portrait-metadata-top', val)
 		});
 
+		this.settings.add('layout.is-theater-mode', {
+			requires: ['context.ui.theatreModeEnabled', 'context.fullscreen'],
+			process(ctx) {
+				if ( ctx.get('context.fullscreen') )
+					return false;
+				return ctx.get('context.ui.theatreModeEnabled');
+			}
+		});
+
 		this.settings.add('layout.show-portrait-chat', {
 			requires: ['layout.use-portrait', 'layout.portrait-extra-height', 'layout.portrait-extra-width'],
 			process() {
@@ -172,10 +181,10 @@ export default class Layout extends Module {
 		});
 
 		this.settings.add('layout.portrait-extra-height', {
-			requires: ['context.new_channel', 'context.squad_bar', 'context.hosting', 'context.ui.theatreModeEnabled', 'player.theatre.no-whispers', 'whispers.show', 'layout.minimal-navigation'],
+			requires: ['context.new_channel', 'context.squad_bar', /*'context.hosting',*/ 'layout.is-theater-mode', 'player.theatre.no-whispers', 'whispers.show', 'layout.minimal-navigation'],
 			process(ctx) {
 				let height = 0;
-				if ( ctx.get('context.ui.theatreModeEnabled') ) {
+				if ( ctx.get('layout.is-theater-mode') ) {
 					if ( ctx.get('layout.minimal-navigation') )
 						height += 1;
 
@@ -192,8 +201,8 @@ export default class Layout extends Module {
 
 					height += ctx.get('context.new_channel') ? 1 : 5;
 
-					if ( ctx.get('context.hosting') )
-						height += 4;
+					/*if ( ctx.get('context.hosting') )
+						height += 4;*/
 				}
 
 				return height;
@@ -203,9 +212,9 @@ export default class Layout extends Module {
 		})
 
 		this.settings.add('layout.portrait-extra-width', {
-			require: ['layout.side-nav.show', 'context.ui.theatreModeEnabled', 'context.ui.sideNavExpanded'],
+			require: ['layout.side-nav.show', 'layout.is-theater-mode', 'context.ui.sideNavExpanded'],
 			process(ctx) {
-				if ( ! ctx.get('layout.side-nav.show') || ctx.get('context.ui.theatreModeEnabled') )
+				if ( ! ctx.get('layout.side-nav.show') || ctx.get('layout.is-theater-mode') )
 					return 0;
 
 				return ctx.get('context.ui.sideNavExpanded') ? 24 : 5
@@ -359,9 +368,24 @@ export default class Layout extends Module {
 				game = stream?.game?.displayName,
 				offline = props?.offline ?? false;
 
+			let should_hide = false;
+			if ( game && blocked_games.includes(game) )
+				should_hide = true;
+			if ( props?.isPromoted && this.settings.get('directory.hide-promoted') )
+				should_hide = true;
+			else {
+				const regexes = this.settings.get('__filter:directory.block-titles');
+				const title = stream?.broadcaster?.broadcastSettings?.title;
+				if ( regexes && title &&
+					(( regexes[0] && regexes[0].test(title) ) ||
+					( regexes[1] && regexes[1].test(title) ))
+				)
+					should_hide = true;
+			}
+
 			card.classList.toggle('ffz--side-nav-card-rerun', rerun);
 			card.classList.toggle('ffz--side-nav-card-offline', offline);
-			card.classList.toggle('tw-hide', game ? blocked_games.includes(game) : false);
+			card.classList.toggle('tw-hide', should_hide);
 		}
 	}
 

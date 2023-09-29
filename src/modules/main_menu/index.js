@@ -63,18 +63,21 @@ export default class MainMenu extends Module {
 		this.settings.addUI('backup', {
 			path: 'Data Management > Backup and Restore @{"profile_warning": false}',
 			component: 'backup-restore',
+			getExtraTerms: () => ['restore'],
 			getFFZ: () => this.resolve('core')
 		});
 
 		this.settings.addUI('clear', {
 			path: 'Data Management > Storage @{"profile_warning": false} >> tabs ~> Clear',
 			component: 'clear-settings',
+			getExtraTerms: () => ['reset'],
 			force_seen: true
 		});
 
 		this.settings.addUI('provider', {
 			path: 'Data Management > Storage >> tabs ~> Provider',
 			component: 'provider',
+			getExtraTerms: () => ['storage', 'local', 'indexeddb', 'localstorage'],
 			force_seen: true
 		});
 
@@ -148,6 +151,13 @@ export default class MainMenu extends Module {
 			}
 		});
 
+		this.settings.addUI('debug.graphql-test', {
+			path: 'Debugging > GraphQL >> Inspector',
+			component: 'graphql-inspect',
+			getFFZ: () => this.resolve('core'),
+			force_seen: true
+		});
+
 		this.settings.addUI('faq', {
 			path: 'Home > FAQ @{"profile_warning": false}',
 			component: 'md-page',
@@ -215,7 +225,12 @@ export default class MainMenu extends Module {
 		this.on('settings:added-definition', (key, definition) => {
 			this._addDefinitionToTree(key, definition);
 			this.scheduleUpdate();
-		})
+		});
+
+		this.on('settings:removed-definition', key => {
+			this._removeDefinitionFromTree(key);
+			this.scheduleUpdate();
+		});
 
 		this.on('socket:command:new_version', version => {
 			if ( version === window.FrankerFaceZ.version_info.commit )
@@ -361,6 +376,7 @@ export default class MainMenu extends Module {
 				this.log.info('Context proxy gone.');
 				this.updateContext({proxied: false});
 			}
+
 		});
 
 		try {
@@ -507,6 +523,58 @@ export default class MainMenu extends Module {
 			this._addDefinitionToTree(key, def);
 	}
 
+
+	_removeDefinitionFromTree(key) {
+		if ( ! this._settings_tree )
+			return;
+
+		let page;
+		for(const val of Object.values(this._settings_tree)) {
+			if ( ! val || ! Array.isArray(val.settings) )
+				continue;
+
+			for(let i = 0; i < val.settings.length; i++) {
+				const entry = val.settings[i];
+				if ( entry && entry[0] === key ) {
+					val.settings.splice(i, 1);
+					page = val;
+					break;
+				}
+			}
+
+			if ( page )
+				break;
+		}
+
+		// Was it found?
+		if ( ! page )
+			return;
+
+		this._maybeDeleteSection(page);
+	}
+
+	_maybeDeleteSection(page) {
+		// Is the section empty?
+		if ( page.settings && page.settings.length )
+			return;
+
+		const id = page.full_key;
+
+		// Check for children.
+		for(const val of Object.values(this._settings_tree)) {
+			if ( val.parent === id )
+				return;
+		}
+
+		// Nope~
+		delete this._settings_tree[id];
+
+		if ( page.parent ) {
+			const parent = this._settings_tree[page.parent];
+			if ( parent )
+				this._maybeDeleteSection(parent);
+		}
+	}
 
 	_addDefinitionToTree(key, def) {
 		if ( ! def.ui || ! this._settings_tree )
@@ -779,6 +847,8 @@ export default class MainMenu extends Module {
 			title: profile.name,
 			i18n_key: profile.i18n_key,
 
+			ephemeral: profile.ephemeral,
+
 			description: profile.description,
 			desc_i18n_key: profile.desc_i18n_key || profile.i18n_key && `${profile.i18n_key}.description`,
 
@@ -825,7 +895,7 @@ export default class MainMenu extends Module {
 
 		if ( ! currentProfile ) {
 			for(let i=profiles.length - 1; i >= 0; i--) {
-				if ( profiles[i].live ) {
+				if ( profiles[i].live && ! profiles[i].ephemeral && profiles[i].title && ! /7tv/i.test(profiles[i].title) ) {
 					currentProfile = profiles[i];
 					break;
 				}
@@ -1147,7 +1217,7 @@ export default class MainMenu extends Module {
 				if ( this.dialog.exclusive || this.site?.router?.current_name === 'squad' || this.site?.router?.current_name === 'command-center' )
 					return;
 
-				if ( this.settings.get('context.ui.theatreModeEnabled') )
+				if ( this.settings.get('layout.is-theater-mode') )
 					return;
 
 				this.dialog.toggleSize(e);
