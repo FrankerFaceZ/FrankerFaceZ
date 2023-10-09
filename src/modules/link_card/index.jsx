@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { createElement } from 'utilities/dom';
+import { getDialogNextZ } from 'utilities/dialog';
 import { deep_copy } from 'utilities/object';
 
 import Module from 'utilities/module';
@@ -44,7 +45,7 @@ export default class LinkCard extends Module {
 			}
 		});
 
-		this.last_z = 9000;
+		//this.last_z = 9000;
 		this.open_cards = {};
 		this.last_card = null;
 	}
@@ -106,7 +107,7 @@ export default class LinkCard extends Module {
 			old_card = this.open_cards[card_key];
 
 		if ( old_card ) {
-			old_card.$el.style.zIndex = ++this.last_z;
+			old_card.$el.style.zIndex = getDialogNextZ();
 			old_card.focus();
 			return;
 		}
@@ -154,7 +155,7 @@ export default class LinkCard extends Module {
 					use_dest: this.settings.get('link-cards.use-destination'),
 
 					getFFZ: () => this,
-					getZ: () => ++this.last_z
+					getZ: getDialogNextZ
 				},
 
 				on: {

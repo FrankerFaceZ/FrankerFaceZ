@@ -413,6 +413,8 @@ export default {
 					handle: this.$el.querySelector('.ffz-viewer-card__header'),
 					highlightInputs: true,
 					constrain: true,
+					onMouseDown: () => this.onFocus(),
+					onTouchStart: () => this.onFocus(),
 					ignoreFn: e => e.target.closest('.viewer-card-drag-cancel') != null
 				});
 			})

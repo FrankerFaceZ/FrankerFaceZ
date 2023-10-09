@@ -121,6 +121,10 @@ export const DEFAULT_FORMATS = {
 		},
 		percent: {
 			style: 'percent'
+		},
+		long_percent: {
+			style: 'percent',
+			minimumFractionDigits: 2
 		}
 	},
 

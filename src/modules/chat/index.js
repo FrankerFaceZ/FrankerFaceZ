@@ -25,6 +25,7 @@ import * as RICH_PROVIDERS from './rich_providers';
 import * as LINK_PROVIDERS from './link_providers';
 
 import Actions from './actions/actions';
+import { LINK_DATA_HOSTS } from 'src/utilities/constants';
 
 
 function sortPriorityColorTerms(list) {
@@ -131,6 +132,20 @@ export default class Chat extends Module {
 		});*/
 
 		this.settings.add('debug.link-resolver.source', {
+			process(ctx, val) {
+				if ( val == null ) {
+					const exp = this.experiments.getAssignment('api_links');
+					if ( exp === 'cf' )
+						val = 'test-cf';
+					else if ( exp )
+						val = 'test';
+					else
+						val = 'socket';
+				}
+
+				return LINK_DATA_HOSTS[val] ?? LINK_DATA_HOSTS.test;
+			},
+
 			default: null,
 			ui: {
 				path: 'Debugging > Data Sources >> Links',
@@ -139,11 +154,10 @@ export default class Chat extends Module {
 				force_seen: true,
 				data: [
 					{value: null, title: 'Automatic'},
-					{value: 'dev', title: 'localhost'},
-					{value: 'test', title: 'API Test'},
-					{value: 'prod', title: 'API Production' },
-					{value: 'socket', title: 'Socket Cluster (Deprecated)'}
-				]
+				].concat(Object.entries(LINK_DATA_HOSTS).map(x => ({
+					value: x[0],
+					title: x[1].title
+				})))
 			},
 
 			changed: () => this.clearLinkCache()
@@ -2307,23 +2321,16 @@ export default class Chat extends Module {
 				}
 			}
 
-			let provider = this.settings.get('debug.link-resolver.source');
-			if ( provider == null )
-				provider = this.experiments.getAssignment('api_links') ? 'test' : 'socket';
+			let provider = this.settings.get('debug.link-resolver.source').value;
+			if ( provider === 'special:socket' && ! this.socket )
+				provider = LINK_DATA_HOSTS.test.value;
 
-			if ( provider === 'socket' && ! this.socket )
-				provider = 'test';
-
-			if ( provider === 'socket' ) {
+			if ( provider === 'special:socket' ) {
 				timeout(this.socket.call('get_link', url), 15000)
 					.then(data => handle(true, data))
 					.catch(err => handle(false, err));
 			} else {
-				const host = provider === 'dev' ? 'https://localhost:8002/' :
-					provider === 'test' ? 'https://api-test.frankerfacez.com/v2/link' :
-						'https://api.frankerfacez.com/v2/link';
-
-				timeout(fetch(`${host}?url=${encodeURIComponent(url)}`).then(r => r.json()), 15000)
+				timeout(fetch(`${provider}?url=${encodeURIComponent(url)}`).then(r => r.json()), 15000)
 					.then(data => handle(true, data))
 					.catch(err => handle(false, err));
 			}

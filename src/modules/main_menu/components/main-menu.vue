@@ -1,7 +1,10 @@
 <template lang="html">
 	<div
+		:style="{zIndex: z}"
 		:class="{ maximized: maximized || exclusive, exclusive, faded }"
 		class="ffz-dialog ffz-main-menu tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
+		@focusin="onFocus"
+		@click="onFocus"
 	>
 		<header ref="header" class="tw-c-background-base tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="maybeResize($event)">
 			<h3 class="ffz-i-zreknarf ffz-i-pd-1">
@@ -123,10 +126,15 @@
 <script>
 
 import displace from 'displacejs';
+import { getDialogNextZ } from 'src/utilities/dialog';
 
 export default {
 	data() {
-		return this.$vnode.data;
+		const out = this.$vnode.data;
+
+		out.z = getDialogNextZ();
+
+		return out;
 	},
 
 	computed: {
@@ -242,11 +250,18 @@ export default {
 						handle: this.$el.querySelector('header'),
 						highlightInputs: true,
 						constrain: true,
+						onMouseDown: () => this.onFocus(),
+						onTouchStart: () => this.onFocus(),
 						ignoreFn(event) {
 							return event.target.closest('button') != null
 						}
 					});
 			})
+		},
+
+		onFocus() {
+			if ( ! this.exclusive )
+				this.z = getDialogNextZ();
 		},
 
 		handleResize() {

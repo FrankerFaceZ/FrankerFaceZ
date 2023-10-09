@@ -240,10 +240,39 @@ export const WS_CLUSTERS = {
 }
 
 
+export const LINK_DATA_HOSTS = {
+	socket: {
+		title: 'Socket Cluster (Deprecated)',
+		value: 'special:socket'
+	},
+	localhost: {
+		title: 'Local Dev Server (Port 8002)',
+		value: 'https://localhost:8002',
+		has_sse: true
+	},
+	'localhost-cf': {
+		title: 'Local Dev Worker (Wrangler, Port 8787)',
+		value: 'https://localhost:8787'
+	},
+	test: {
+		title: 'API Test Server',
+		value: 'https://api-test.frankerfacez.com/v2/link'
+	},
+	'test-cf': {
+		title: 'Cloudflare Test Worker',
+		value: 'https://link-service.workers.frankerfacez.com'
+	},
+	Production: {
+		title: 'Production',
+		value: 'https://api.frankerfacez.com/v2/link'
+	}
+};
+
+
 export const PUBSUB_CLUSTERS = {
 	Production: 'wss://pubsub.frankerfacez.com/mqtt',
 	Staging: 'wss://pubsub-staging.frankerfacez.com/mqtt',
-	Development: 'wss://127.0.0.1:8084/mqtt'
+	Development: 'wss://stendec.dev/mqtt/ws'
 }
 
 

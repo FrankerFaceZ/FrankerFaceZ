@@ -368,7 +368,7 @@
 			grid-column-end: 3;
 
 			img, video {
-				object-fit:contain;
+				object-fit: contain;
 			}
 
 			.ffz-aspect { img, video { object-fit: cover; } }
@@ -386,10 +386,18 @@
 
 		&[data-items="2"] > * {
 			min-height: calc(50% - 2px);
+
+			img, video {
+				max-height: calc(calc(350px + 4px) / 2);
+			}
 		}
 
 		&[data-items="1"] > * {
 			min-height: 100%;
+
+			img, video {
+				max-height: calc(350px + 4px);
+			}
 		}
 
 		img, video {

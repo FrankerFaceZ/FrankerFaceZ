@@ -144,7 +144,7 @@ export default class PubSubClient extends Module {
 		try {
 			const mqtt = await this.loadMQTT();
 			client = this._client = mqtt.mqtt_v5({
-
+				keep_alive: 30
 			})
 				.with_websock(cluster)
 				.with_autoreconnect();

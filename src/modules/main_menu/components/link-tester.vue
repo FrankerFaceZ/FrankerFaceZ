@@ -138,6 +138,7 @@
 					data-is-mail="false"
 					rel="noopener noreferrer"
 					target="_blank"
+					@click="handleClick"
 				>
 					{{ decodeURI(url) }}
 				</a>
@@ -222,6 +223,7 @@
 
 import { debounce, timeout, pick_random } from 'utilities/object'
 import { highlightJson } from 'utilities/dom';
+import { LINK_DATA_HOSTS } from 'src/utilities/constants';
 
 const STOCK_URLS = [
 	'https://www.twitch.tv/sirstendec',
@@ -274,6 +276,7 @@ export default {
 			force_tooltip: state?.ffz_lt_tip ?? false,
 
 			events: {
+				emit: (...args) => this.item.getChat().emit(...args),
 				on: (...args) => this.item.getChat().on(...args),
 				off: (...args) => this.item.getChat().off(...args)
 			}
@@ -384,6 +387,10 @@ export default {
 	},
 
 	methods: {
+		handleClick(event) {
+			return this.chat.handleLinkClick(event);
+		},
+
 		changeProvider() {
 			this.updateEventSource();
 			this.updateExamples();
@@ -391,7 +398,7 @@ export default {
 
 		updateEventSource() {
 			const provider = this.settings.get('debug.link-resolver.source');
-			if ( provider !== 'dev' ) {
+			if ( ! provider.has_sse ) {
 				if ( this.es ) {
 					this.es.close();
 					this.es = null;
@@ -404,7 +411,7 @@ export default {
 			if ( this.es )
 				return;
 
-			this.es = new EventSource('https://localhost:8002/sse');
+			this.es = new EventSource(`${provider.value}/sse`);
 			this.es.addEventListener('error', () => {
 				this.es_waiting = true;
 			});
@@ -467,22 +474,15 @@ export default {
 				return;
 
 			this.examples_loading = true;
-			const provider = this.settings.get('debug.link-resolver.source');
-			let examples;
-			if ( provider === 'dev' ) {
-				try {
-					examples = (await timeout(fetch('https://localhost:8002/examples'), 15000).then(resp => resp.ok ? resp.json() : null)).examples;
-				} catch(err) {
-					console.error(err);
-				}
-			}
+			let provider = this.settings.get('debug.link-resolver.source').value;
+			if ( provider === 'special:socket')
+				provider = LINK_DATA_HOSTS.test.value;
 
-			if ( ! examples ) {
-				try {
-					examples = (await timeout(fetch('https://api-test.frankerfacez.com/v2/link/examples'), 15000).then(resp => resp.ok ? resp.json() : null)).examples;
-				} catch(err) {
-					console.error(err);
-				}
+			let examples;
+			try {
+				examples = (await timeout(fetch(`${provider}/examples`), 15000).then(resp => resp.ok ? resp.json() : null)).examples;
+			} catch(err) {
+				console.error(err);
 			}
 
 			if ( ! examples )

@@ -5,6 +5,7 @@
 // ============================================================================
 
 import {createElement} from 'utilities/dom';
+import { getDialogNextZ } from 'utilities/dialog';
 import {deep_copy, getTwitchEmoteURL} from 'utilities/object';
 import { EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS } from 'utilities/constants';
 
@@ -61,7 +62,7 @@ export default class EmoteCard extends Module {
 
 		this.vue = this.resolve('vue');
 
-		this.last_z = 9000;
+		//this.last_z = 9000;
 		this.open_cards = {};
 		this.last_card = null;
 	}
@@ -463,7 +464,7 @@ export default class EmoteCard extends Module {
 			old_card = this.open_cards[card_key];
 
 		if ( old_card ) {
-			old_card.$el.style.zIndex = ++this.last_z;
+			old_card.$el.style.zIndex = getDialogNextZ();
 			old_card.focus();
 			return;
 		}
@@ -512,7 +513,7 @@ export default class EmoteCard extends Module {
 
 					getFFZ: () => this,
 					reportTwitchEmote: (...args) => this.reportTwitchEmote(...args),
-					getZ: () => ++this.last_z
+					getZ: getDialogNextZ
 				},
 
 				on: {

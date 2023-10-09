@@ -8,6 +8,14 @@ import {EventEmitter} from 'utilities/events';
 
 import Site from 'site';
 
+
+let last_z = 9000;
+
+export function getDialogNextZ() {
+	return last_z++;
+}
+
+
 export class Dialog extends EventEmitter {
 	constructor(element, options = {}) {
 		super();
@@ -203,9 +211,6 @@ export class Dialog extends EventEmitter {
 		this.emit('resize');
 	}
 }
-
-
-Dialog.lastZ = 99999999;
 
 
 Dialog.EXCLUSIVE = Site.DIALOG_EXCLUSIVE;

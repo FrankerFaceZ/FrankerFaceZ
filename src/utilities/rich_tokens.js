@@ -8,7 +8,7 @@ import {has} from 'utilities/object';
 import Markdown from 'markdown-it';
 import MILA from 'markdown-it-link-attributes';
 
-export const VERSION = 8;
+export const VERSION = 9;
 
 export const TOKEN_TYPES = {};
 
@@ -967,6 +967,53 @@ TOKEN_TYPES.i18n = function(token, createElement, ctx) {
 
 
 // ============================================================================
+// Token Type: I18n Select
+// ============================================================================
+
+function findMatchingLocale(locale, list) {
+
+	// Is the locale present exactly?
+	for(const item of list) {
+		if ( item.localeCompare(locale, undefined, {sensitivity: 'accent'}) === 0 )
+			return locale;
+	}
+
+	// What about partials?
+	let prefixed = `${locale.toLowerCase()}-`;
+	for(const item of list) {
+		if ( item.toLowerCase().startsWith(prefixed) )
+			return item;
+	}
+
+	// Last resort, do we have a - in the locale?
+	const idx = locale.indexOf('-');
+	if ( idx !== -1 )
+		return findMatchingLocale(locale.slice(0, idx), list);
+
+}
+
+TOKEN_TYPES.i18n_select = function(token, createElement, ctx) {
+
+	// What locale and choices do we have.
+	const choices = token.choices || {};
+	let locale = ctx.i18n?.locale ?? 'en';
+
+	// Try to find a valid match, or use the default.
+	let selected = findMatchingLocale(locale, Object.keys(choices));
+	if ( ! selected )
+		selected = token.default;
+
+	// Render it.
+	return renderTokens(
+		choices[selected],
+		createElement,
+		ctx,
+		token.markdown
+	);
+}
+
+
+// ============================================================================
 // Token Type: Link
 // ============================================================================
 
@@ -1078,19 +1125,25 @@ TOKEN_TYPES.overlay = function(token, createElement, ctx) {
 
 function handlePlayerClick(token, id, ctx, event) {
 	//console.log('clicked player', token, id, ctx, event);
-	if ( ctx.togglePlayer ) {
-		ctx.togglePlayer(id);
+	const target = event.currentTarget,
+		is_av = target instanceof HTMLVideoElement || target instanceof HTMLAudioElement;
+
+	if ( is_av || ctx.togglePlayer ) {
 		event.preventDefault();
 		event.stopPropagation();
 	}
 
-	const target = event.currentTarget;
-	if ( target instanceof HTMLVideoElement ) {
+	if ( is_av ) {
 		if ( target.paused )
 			target.play();
 		else
 			target.pause();
+
+		return;
 	}
+
+	if ( ctx.togglePlayer )
+		ctx.togglePlayer(id);
 }
 
 TOKEN_TYPES.player = function(token, createElement, ctx) {
@@ -1100,6 +1153,9 @@ TOKEN_TYPES.player = function(token, createElement, ctx) {
 		active = ctx.player_state?.[id];
 
 	const handler = handlePlayerClick.bind(this, token, id, ctx);
+
+	if ( ! active && (token.content || token.iframe) )
+		return render_player_content(id, handler, token, createElement, ctx);
 
 	if ( token.iframe )
 		return render_player_iframe(id, active ?? false, handler, token, createElement, ctx);
@@ -1120,7 +1176,7 @@ TOKEN_TYPES.player = function(token, createElement, ctx) {
 			style.aspectRatio = aspect;
 
 	if ( ctx.vue )
-		return createElement('video', {
+		return createElement(token.audio ? 'audio' : 'video', {
 			style,
 			attrs: {
 				autoplay: playing,
@@ -1141,7 +1197,7 @@ TOKEN_TYPES.player = function(token, createElement, ctx) {
 			}
 		})));
 
-	return createElement('video', {
+	return createElement(token.audio ? 'audio' : 'video', {
 		style,
 		muted,
 		autoplay: playing,
@@ -1155,33 +1211,7 @@ TOKEN_TYPES.player = function(token, createElement, ctx) {
 	})));
 }
 
-function render_player_iframe(id, active, handler, token, createElement, ctx) {
-
-	if ( active ) {
-		const style = {},
-			attrs = {
-				src: token.iframe,
-				frameborder: 0,
-				allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-				allowfullscreen: true
-			};
-
-		const aspect = token.active_aspect ?? token.aspect;
-		if ( aspect )
-			style.aspectRatio = aspect;
-
-		if ( ctx.vue )
-			return createElement('iframe', {
-				style,
-				attrs
-			});
-
-		return createElement('iframe', {
-			style,
-			...attrs
-		});
-	}
-
+function render_player_content(id, handler, token, createElement, ctx) {
 	const content = renderTokens(token.content, createElement, ctx, token.markdown),
 		classes = ['ffz--rich-player'],
 		style = {};
@@ -1203,6 +1233,33 @@ function render_player_iframe(id, active, handler, token, createElement, ctx) {
 		onClick: handler,
 		style
 	}, content);
+}
+
+function render_player_iframe(id, active, handler, token, createElement, ctx) {
+
+	const style = {},
+		attrs = {
+			src: token.iframe,
+			frameborder: 0,
+			allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+			allowfullscreen: true
+		};
+
+	const aspect = token.active_aspect ?? token.aspect;
+	if ( aspect )
+		style.aspectRatio = aspect;
+
+	if ( ctx.vue )
+		return createElement('iframe', {
+			style,
+			attrs
+		});
+
+	return createElement('iframe', {
+		style,
+		...attrs
+	});
+
 }
 
 

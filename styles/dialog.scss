@@ -80,7 +80,7 @@
 .ffz-has-dialog {
 	position: relative;
 
-	& > :not(.ffz-dialog):not(.ffz__tooltip) {
+	& > :not(.ffz-dialog):not(.ffz__tooltip):not(.ffz-viewer-card) {
 		visibility: hidden;
 	}
 }
