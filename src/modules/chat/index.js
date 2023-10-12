@@ -132,7 +132,7 @@ export default class Chat extends Module {
 		});*/
 
 		this.settings.add('debug.link-resolver.source', {
-			process(ctx, val) {
+			process: (ctx, val) => {
 				if ( val == null ) {
 					const exp = this.experiments.getAssignment('api_links');
 					if ( exp === 'cf' )

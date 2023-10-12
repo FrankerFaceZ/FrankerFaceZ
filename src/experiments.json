@@ -12,8 +12,8 @@
 		"description": "Use the new API to look up links instead of the socket cluster.",
 		"groups": [
 			{"value": true, "weight": 30},
-			{"value": "cf", "weight": 5},
-			{"value": false, "weight": 65}
+			{"value": "cf", "weight": 10},
+			{"value": false, "weight": 60}
 		]
 	},
 	"pubsub": {

@@ -61,16 +61,16 @@ function applySpacing(term, token, classes, styles) {
 				const thing = term === 'pd' ? 'padding' : 'margin';
 				if ( mode === '' )
 					styles[thing] = value;
-				if ( mode === 'x' || mode === 'l' )
+				if ( mode === '-x' || mode === '-l' )
 					styles[`${thing}-left`] = value;
 
-				if ( mode === 'x' || mode === 'r' )
+				if ( mode === '-x' || mode === '-r' )
 					styles[`${thing}-right`] = value;
 
-				if ( mode === 'y' || mode === 't' )
+				if ( mode === '-y' || mode === '-t' )
 					styles[`${thing}-top`] = value;
 
-				if ( mode === 'y' || mode === 'b' )
+				if ( mode === '-y' || mode === '-b' )
 					styles[`${thing}-bottom`] = value;
 			}
 		}
@@ -501,7 +501,9 @@ TOKEN_TYPES.gallery = function(token, createElement, ctx) {
 	if ( ! token.items )
 		return null;
 
-	let items = token.items.map(item => renderTokens(item, createElement, ctx)).filter(x => x);
+	let items = token.items
+		.map(item => renderTokens(item, createElement, ctx))
+		.filter(x => x);
 	if ( ! items.length )
 		return null;
 
