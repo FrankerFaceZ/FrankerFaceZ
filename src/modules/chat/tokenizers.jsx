@@ -1230,7 +1230,7 @@ const render_emote = (token, createElement, wrapped) => {
 		emote = createElement('img', {
 			class: `${EMOTE_CLASS} ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
 			attrs: {
-				src: IS_FIREFOX ? undefined : src,
+				src: (IS_FIREFOX && srcSet?.length) ? undefined : src,
 				srcSet,
 				alt: token.text,
 				height: (token.big && ! token.can_big && token.height) ? `${token.height * 2}px` : undefined,
@@ -1429,7 +1429,7 @@ export const AddonEmotes = {
 		else
 			emote = (<img
 				class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`}
-				src={IS_FIREFOX ? undefined : src}
+				src={(IS_FIREFOX && srcSet?.length) ? undefined : src}
 				srcSet={srcSet}
 				style={style}
 				height={style ? undefined : is_big ? `${token.height * 2}px` : undefined}

@@ -307,7 +307,7 @@ export default class Channel extends Module {
 			return;
 
 		if ( this._subbed_id ) {
-			this.pubsub.unsubscribe(this, `twitch/${this._subbed_id}/channel/#`);
+			this.pubsub.unsubscribe(this, `twitch/${this._subbed_id}/channel`);
 			this._subbed_id = null;
 		}
 

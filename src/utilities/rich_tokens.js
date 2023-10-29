@@ -498,60 +498,73 @@ TOKEN_TYPES.format = function(token, createElement, ctx) {
 // ============================================================================
 
 TOKEN_TYPES.gallery = function(token, createElement, ctx) {
-	if ( ! token.items )
+
+	if ( ! Array.isArray(token.items) || ! token.items.length )
 		return null;
 
-	let items = token.items
-		.map(item => renderTokens(item, createElement, ctx))
-		.filter(x => x);
-	if ( ! items.length )
-		return null;
+	let first_column = [],
+		second_column = [],
+		first = true,
+		i = 0;
 
-	if ( items.length > 4 )
-		items = items.slice(0, 4);
+	for(const item of token.items) {
+		const content = renderTokens(item, createElement, ctx);
+		if ( content ) {
+			(first ? first_column : second_column).push(content);
+			first = ! first;
+			i++;
+			if ( i >= 4 )
+				break;
+		}
+	}
 
-	const divisions = [],
-		count = items.length < 4 ? 1 : 2;
+	if ( second_column.length && first_column.length > second_column.length )
+		second_column.push(first_column.pop());
 
-	divisions.push(ctx.vue ?
+	if ( ! i )
+		return null
+
+	const columns = [];
+
+	columns.push(ctx.vue ?
 		createElement('div', {
 			class: 'ffz--gallery-column',
 			attrs: {
-				'data-items': count
+				'data-items': first_column.length
 			}
-		}, items.slice(0, count)) :
+		}, first_column) :
 		createElement('div', {
 			className: 'ffz--gallery-column',
-			'data-items': count
-		}, items.slice(0, count))
+			'data-items': first_column.length
+		}, first_column)
 	);
 
-	if ( items.length > 1 )
-		divisions.push(ctx.vue ?
+	if ( second_column.length )
+		columns.push(ctx.vue ?
 			createElement('div', {
 				class: 'ffz--gallery-column',
 				attrs: {
-					'data-items': items.length - count
+					'data-items': second_column.length
 				}
-			}, items.slice(count)) :
+			}, second_column) :
 			createElement('div', {
 				className: 'ffz--gallery-column',
-				'data-items': items.length - count
-			}, items.slice(count))
+				'data-items': second_column.length
+			}, second_column)
 		);
 
 	if ( ctx.vue )
 		return createElement('div', {
 			class: 'ffz--rich-gallery',
 			attrs: {
-				'data-items': items.length
+				'data-items': first_column.length + second_column.length
 			}
-		}, divisions);
+		}, columns);
 
 	return createElement('div', {
 		className: 'ffz--rich-gallery',
-		'data-items': items.length
-	}, divisions);
+		'data-items': first_column.length + second_column.length
+	}, columns);
 }
 
 

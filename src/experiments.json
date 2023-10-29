@@ -16,7 +16,7 @@
 			{"value": false, "weight": 60}
 		]
 	},
-	"pubsub": {
+	"cf_pubsub": {
 		"name": "MQTT-Based PubSub",
 		"description": "An experimental new pubsub system that should be more reliable than the existing socket cluster.",
 		"groups": [

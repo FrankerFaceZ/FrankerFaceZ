@@ -5,17 +5,10 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {DEBUG, PUBSUB_CLUSTERS} from 'utilities/constants';
+import { PUBSUB_CLUSTERS } from 'utilities/constants';
 
 
-export const State = {
-	DISCONNECTED: 0,
-	CONNECTING: 1,
-	CONNECTED: 2
-}
-
-
-export default class PubSubClient extends Module {
+export default class PubSub extends Module {
 	constructor(...args) {
 		super(...args);
 
@@ -23,7 +16,11 @@ export default class PubSubClient extends Module {
 		this.inject('experiments');
 
 		this.settings.add('pubsub.use-cluster', {
-			default: 'Staging',
+			default: ctx => {
+				if ( this.experiments.getAssignment('cf_pubsub') )
+					return 'Staging';
+				return null;
+			},
 
 			ui: {
 				path: 'Debugging @{"expanded": false, "sort": 9999} > PubSub >> General',
@@ -42,52 +39,42 @@ export default class PubSubClient extends Module {
 				})))
 			},
 
-			changed: () => {
-				if ( this.experiments.getAssignment('pubsub') )
-					this.reconnect();
-			}
+			changed: () => this.reconnect()
 		});
 
 		this._topics = new Map;
 		this._client = null;
-		this._state = 0;
 	}
 
-	loadMQTT() {
+	loadPubSubClient() {
 		if ( this._mqtt )
 			return Promise.resolve(this._mqtt);
 
-		if ( this._mqtt_loader )
-			return new Promise((s,f) => this._mqtt_loader.push([s,f]));
-
-		return new Promise((s,f) => {
-			const loaders = this._mqtt_loader = [[s,f]];
-
-			import('u8-mqtt')
+		if ( ! this._mqtt_loader )
+			this._mqtt_loader = import('utilities/pubsub')
 				.then(thing => {
-					this._mqtt = thing;
-					this._mqtt_loader = null;
-					for(const pair of loaders)
-						pair[0](thing);
+					this._mqtt = thing.default;
+					return thing.default;
 				})
-				.catch(err => {
-					this._mqtt_loader = null;
-					for(const pair of loaders)
-						pair[1](err);
-				});
-		});
+				.finally(() => this._mqtt_loader = null);
+
+		return this._mqtt_loader;
 	}
 
 	onEnable() {
-		// Check to see if we should be using PubSub.
-		if ( ! this.experiments.getAssignment('pubsub') )
-			return;
+		this.on('experiments:changed:cf_pubsub', this._updateSetting, this);
 
 		this.connect();
 	}
 
 	onDisable() {
 		this.disconnect();
+
+		this.off('experiments:changed:cf_pubsub', this._updateSetting, this);
+	}
+
+	_updateSetting() {
+		this.settings.update('pubsub.use-cluster');
 	}
 
 
@@ -96,17 +83,18 @@ export default class PubSubClient extends Module {
 	// ========================================================================
 
 	get connected() {
-		return this._state === State.CONNECTED;
+		return this._client?.connected ?? false;
 	}
 
 
 	get connecting() {
-		return this._state === State.CONNECTING;
+		return this._client?.connecting ?? false;
 	}
 
 
 	get disconnected() {
-		return this._state === State.DISCONNECTED;
+		// If this is null, we have no client, so we aren't connected.
+		return this._client?.disconnected ?? true;
 	}
 
 
@@ -136,43 +124,39 @@ export default class PubSubClient extends Module {
 			cluster = PUBSUB_CLUSTERS.Production;
 		}
 
-		this.log.info(`Using Cluster: ${cluster_id}`);
+		this.log.info(`Using PubSub: ${cluster_id} (${cluster})`);
 
-		this._state = State.CONNECTING;
-		let client;
+		const user = this.resolve('site')?.getUser?.();
 
-		try {
-			const mqtt = await this.loadMQTT();
-			client = this._client = mqtt.mqtt_v5({
-				keep_alive: 30
-			})
-				.with_websock(cluster)
-				.with_autoreconnect();
+		// The client class handles everything for us. We only
+		// maintain a separate list of topics in case topics are
+		// subscribed when the client does not exist, or if the
+		// client needs to be recreated.
 
-			await client.connect({
-				client_id: [`ffz_${FrankerFaceZ.version_info}--`, '']
-			});
-			this._state = State.CONNECTED;
+		const PubSubClient = await this.loadPubSubClient();
 
-		} catch(err) {
-			this._state = State.DISCONNECTED;
-			if ( this._client )
-				try {
-					this._client.end(true);
-				} catch(err) { /* no-op */ }
-			this._client = null;
-			throw err;
-		}
+		const client = this._client = new PubSubClient(cluster, {
+			user: user?.id ? {
+				provider: 'twitch',
+				id: user.id
+			} : null
+		});
 
-		client.on_topic('*', pkt => {
-			const topic = pkt.topic;
-			let data;
-			try {
-				data = pkt.json();
-			} catch(err) {
-				this.log.warn(`Error decoding PubSub message on topic "${topic}":`, err);
-				return;
-			}
+		client.on('connect', () => {
+			this.log.info('Connected to PubSub.');
+		});
+
+		client.on('disconnect', () => {
+			this.log.info('Disconnected from PubSub.');
+		});
+
+		client.on('error', err => {
+			this.log.error('Error in PubSub', err);
+		});
+
+		client.on('message', event => {
+			const topic = event.topic,
+				data = event.data;
 
 			if ( ! data?.cmd ) {
 				this.log.warn(`Received invalid PubSub message on topic "${topic}":`, data);
@@ -188,6 +172,9 @@ export default class PubSubClient extends Module {
 		// Subscribe to topics.
 		const topics = [...this._topics.keys()];
 		client.subscribe(topics);
+
+		// And start the client.
+		await client.connect();
 	}
 
 	disconnect() {
@@ -196,7 +183,6 @@ export default class PubSubClient extends Module {
 
 		this._client.disconnect();
 		this._client = null;
-		this._state = State.DISCONNECTED;
 	}
 
 
@@ -253,6 +239,3 @@ export default class PubSubClient extends Module {
 	}
 
 }
-
-
-PubSubClient.State = State;

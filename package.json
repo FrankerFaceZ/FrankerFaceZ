@@ -1,7 +1,7 @@
 {
   "name": "frankerfacez",
   "author": "Dan Salvato LLC",
-  "version": "4.55.3",
+  "version": "4.56.0",
   "description": "FrankerFaceZ is a Twitch enhancement suite.",
   "private": true,
   "license": "Apache-2.0",
@@ -56,6 +56,7 @@
     "@popperjs/core": "^2.10.2",
     "crypto-js": "^3.3.0",
     "dayjs": "^1.10.7",
+    "denoflare-mqtt": "^0.0.2",
     "displacejs": "^1.4.1",
     "emoji-regex": "^9.2.2",
     "file-saver": "^2.0.5",
@@ -73,7 +74,6 @@
     "sortablejs": "^1.14.0",
     "sourcemapped-stacktrace": "^1.1.11",
     "text-diff": "^1.0.1",
-    "u8-mqtt": "^0.5.3",
     "vue": "^2.6.14",
     "vue-clickaway": "^2.2.2",
     "vue-color": "^2.8.1",
@@ -83,6 +83,7 @@
   "pnpm": {
     "overrides": {
       "ansi-regex@>2.1.1 <5.0.1": ">=5.0.1",
+      "chalk@<4": ">=4 <5",
       "set-value@<4.0.1": ">=4.0.1",
       "glob-parent@<5.1.2": ">=5.1.2"
     }

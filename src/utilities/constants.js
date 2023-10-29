@@ -270,9 +270,9 @@ export const LINK_DATA_HOSTS = {
 
 
 export const PUBSUB_CLUSTERS = {
-	Production: 'wss://pubsub.frankerfacez.com/mqtt',
-	Staging: 'wss://pubsub-staging.frankerfacez.com/mqtt',
-	Development: 'wss://stendec.dev/mqtt/ws'
+	Production: `https://pubsub.frankerfacez.com`,
+	Staging: `https://pubsub-staging-alt.frankerfacez.com`,
+	Development: `https://stendec.dev/ps/`
 }
 
 

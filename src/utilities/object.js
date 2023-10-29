@@ -865,3 +865,48 @@ export class SourcedSet {
 		this._rebuild();
 	}
 }
+
+
+export function b64ToArrayBuffer(input) {
+	const bin = atob(input),
+		len = bin.length,
+		buffer = new ArrayBuffer(len),
+		view = new Uint8Array(buffer);
+
+	for(let i = 0, len = bin.length; i < len; i++)
+		view[i] = bin.charCodeAt(i);
+
+	return buffer;
+}
+
+
+const PEM_HEADER = /-----BEGIN (.+?) KEY-----/,
+	PEM_FOOTER = /-----END (.+?) KEY-----/;
+
+export function importRsaKey(pem, uses = ['verify']) {
+	const start_match = PEM_HEADER.exec(pem),
+		end_match = PEM_FOOTER.exec(pem);
+
+	if ( ! start_match || ! end_match || start_match[1] !== end_match[1] )
+		throw new Error('invalid key');
+
+	const is_private = /\bPRIVATE\b/i.test(start_match[1]),
+		start = start_match.index + start_match[0].length,
+		end = end_match.index;
+
+	const content = pem.slice(start, end).replace(/\n/g, '').trim();
+	//console.debug('content', JSON.stringify(content));
+
+	const buffer = b64ToArrayBuffer(content);
+
+	return crypto.subtle.importKey(
+		is_private ? 'pkcs8' : 'spki',
+		buffer,
+		{
+			name: "RSA-PSS",
+			hash: "SHA-256"
+		},
+		true,
+		uses
+	);
+}
