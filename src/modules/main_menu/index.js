@@ -232,7 +232,7 @@ export default class MainMenu extends Module {
 			this.scheduleUpdate();
 		});
 
-		this.on('socket:command:new_version', version => {
+		this.on('pubsub:command:new_version', version => {
 			if ( version === window.FrankerFaceZ.version_info.commit )
 				return;
 

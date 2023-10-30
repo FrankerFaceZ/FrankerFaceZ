@@ -64,11 +64,15 @@ export default class PubSub extends Module {
 	onEnable() {
 		this.on('experiments:changed:cf_pubsub', this._updateSetting, this);
 
+		this.subscribe(null, 'global');
+
 		this.connect();
 	}
 
 	onDisable() {
 		this.disconnect();
+
+		this.unsubscribe(null, 'global');
 
 		this.off('experiments:changed:cf_pubsub', this._updateSetting, this);
 	}
@@ -159,14 +163,15 @@ export default class PubSub extends Module {
 				data = event.data;
 
 			if ( ! data?.cmd ) {
-				this.log.warn(`Received invalid PubSub message on topic "${topic}":`, data);
+				this.log.debug(`Received message on topic "${topic}":`, data);
+				this.emit(`pubsub:message`, topic, data);
 				return;
 			}
 
 			data.topic = topic;
 
 			this.log.debug(`Received command on topic "${topic}" for command "${data.cmd}":`, data.data);
-			this.emit(`socket:command:${data.cmd}`, data.data, data);
+			this.emit(`pubsub:command:${data.cmd}`, data.data, data);
 		});
 
 		// Subscribe to topics.

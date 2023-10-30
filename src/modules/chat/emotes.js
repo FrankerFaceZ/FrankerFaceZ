@@ -638,7 +638,9 @@ export default class Emotes extends Module {
 				}
 		}
 
-		this.on('socket:command:follow_sets', this.updateFollowSets, this);
+		this.on('pubsub:command:follow_sets', this.updateFollowSets, this);
+
+		// TODO: Implement emote updates.
 
 		this.on('chat:reload-data', flags => {
 			if ( ! flags || flags.emotes )

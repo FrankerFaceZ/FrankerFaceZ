@@ -164,8 +164,8 @@ export default class ExperimentManager extends Module {
 
 
 	onEnable() {
-		this.on('socket:command:reload_experiments', this.loadExperiments, this);
-		this.on('socket:command:update_experiment', this.updateExperiment, this);
+		this.on('pubsub:command:reload_experiments', this.loadExperiments, this);
+		this.on('pubsub:command:update_experiment', this.updateExperiment, this);
 	}
 
 

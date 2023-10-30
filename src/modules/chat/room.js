@@ -33,7 +33,7 @@ export default class Room {
 			this.manager.room_ids[id] = this;
 
 		if ( id && this.manager.pubsub )
-			this.manager.pubsub.subscribe(this, `twitch/${id}/chat`);
+			this.manager.pubsub.subscribe(this, `twitch/${id}`);
 
 		this.manager.emit(':room-add', this);
 		this.load_data();
@@ -85,7 +85,7 @@ export default class Room {
 		}
 
 		if ( this._id && this.manager.pubsub )
-			this.manager.pubsub.unsubscribe(this, `twitch/${this._id}/chat`);
+			this.manager.pubsub.unsubscribe(this, `twitch/${this._id}`);
 
 		if ( this.manager.room_ids[this._id] === this )
 			this.manager.room_ids[this._id] = null;
