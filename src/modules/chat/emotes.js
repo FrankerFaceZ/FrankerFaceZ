@@ -648,6 +648,8 @@ export default class Emotes extends Module {
 				return;
 
 			this.addEmoteToSet(set_id, emote);
+
+			// TODO: Notify users?
 		});
 
 		this.on('pubsub:command:remove_emote', msg => {
@@ -658,6 +660,8 @@ export default class Emotes extends Module {
 				return;
 
 			this.removeEmoteFromSet(set_id, emote_id);
+
+			// TODO: Notify users?
 		});
 
 		this.on('chat:reload-data', flags => {

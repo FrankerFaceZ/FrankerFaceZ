@@ -480,7 +480,7 @@ export default class PubSubClient extends EventEmitter {
 						this._live_topics.delete(topic);
 
 					// Call sendSubscribes again after a bit.
-					return delay(2000).then(() => this._sendSubscribes());
+					return sleep(2000).then(() => this._sendSubscribes());
 				});
 		else
 			return Promise.resolve();
