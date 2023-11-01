@@ -640,7 +640,25 @@ export default class Emotes extends Module {
 
 		this.on('pubsub:command:follow_sets', this.updateFollowSets, this);
 
-		// TODO: Implement emote updates.
+		this.on('pubsub:command:add_emote', msg => {
+			const set_id = msg.set_id,
+				emote = msg.emote;
+
+			if ( ! this.emote_sets[set_id] )
+				return;
+
+			this.addEmoteToSet(set_id, emote);
+		});
+
+		this.on('pubsub:command:remove_emote', msg => {
+			const set_id = msg.set_id,
+				emote_id = msg.emote_id;
+
+			if ( ! this.emote_sets[set_id] )
+				return;
+
+			this.removeEmoteFromSet(set_id, emote_id);
+		});
 
 		this.on('chat:reload-data', flags => {
 			if ( ! flags || flags.emotes )
