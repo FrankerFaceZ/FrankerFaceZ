@@ -1919,7 +1919,8 @@ export default class PlayerBase extends Module {
 			</div>);
 
 			const thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
-				container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				//container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				container.querySelector('button[aria-label*="Theat"]') ||
 				container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
 			if ( thing ) {
@@ -2024,7 +2025,8 @@ export default class PlayerBase extends Module {
 
 			const thing = container.querySelector('.ffz--player-pip button') ||
 				container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
-				container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				//container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				container.querySelector('button[aria-label*="Theat"]') ||
 				container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
 			if ( thing ) {
