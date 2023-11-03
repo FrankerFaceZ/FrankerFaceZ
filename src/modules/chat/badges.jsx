@@ -1209,7 +1209,7 @@ export default class Badges extends Module {
 			if ( ! data.addon && (data.name === 'developer' || data.name === 'subwoofer' || data.name === 'supporter') )
 				data.click_url = 'https://www.frankerfacez.com/subscribe';
 
-			if ( ! data.addon && (data.name === 'subwoofer') )
+			if ( ! data.addon && (data.name === 'subwoofer') ) {
 				data.base_id = data.id;
 
 				data.tooltipExtra = data => {
@@ -1229,6 +1229,7 @@ export default class Badges extends Module {
 							});
 						})
 				};
+			}
 		}
 
 		if ( generate_css )
