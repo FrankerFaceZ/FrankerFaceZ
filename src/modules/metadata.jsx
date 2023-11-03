@@ -557,6 +557,31 @@ export default class Metadata extends Module {
 		}
 	}
 
+
+	getAddonProxy(addon_id) {
+		if ( ! addon_id )
+			return this;
+
+		const overrides = {};
+
+		overrides.define = (key, definition) => {
+			if ( definition )
+				definition.__source = addon_id;
+
+			return this.define(key, definition);
+		};
+
+		return new Proxy(this, {
+			get(obj, prop) {
+				const thing = overrides[prop];
+				if ( thing )
+					return thing;
+				return Reflect.get(...arguments);
+			}
+		});
+	}
+
+
 	onEnable() {
 		const md = this.tooltips.types.metadata = target => {
 			let el = target;
@@ -592,6 +617,19 @@ export default class Metadata extends Module {
 			opts.modifiers.flip = {behavior: ['bottom','top']};
 			return opts;
 		}
+
+		this.on('addon:fully-unload', addon_id => {
+			const removed = new Set;
+			for(const [key,def] of Object.entries(this.definitions)) {
+				if ( def?.__source === addon_id ) {
+					removed.add(key);
+					this.definitions[key] = undefined;
+				}
+			}
+
+			if ( removed.size )
+				this.updateMetadata([...removed]);
+		});
 	}
 
 

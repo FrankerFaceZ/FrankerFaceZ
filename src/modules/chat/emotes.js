@@ -599,6 +599,54 @@ export default class Emotes extends Module {
 		this.animLeave = this.animLeave.bind(this);
 	}
 
+
+	getAddonProxy(addon_id, addon, module) {
+		if ( ! addon_id )
+			return this;
+
+		const overrides = {};
+
+		if ( addon?.dev ) {
+			overrides.addDefaultSet = (provider, ...args) => {
+				if ( ! provider.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet did not include addon ID in provider:', provider);
+
+				return this.addDefaultSet(provider, ...args);
+			}
+
+			overrides.removeDefaultSet = (provider, ...args) => {
+				if ( ! provider.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to emotes.removeDefaultSet did not include addon ID in provider:', provider);
+
+				return this.removeDefaultSet(provider, ...args);
+			}
+
+			overrides.addSubSet = (provider, ...args) => {
+				if ( ! provider.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to emotes.addSubSet did not include addon ID in provider:', provider);
+
+				return this.addSubSet(provider, ...args);
+			}
+
+			overrides.removeSubSet = (provider, ...args) => {
+				if ( ! provider.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to emotes.removeSubSet did not include addon ID in provider:', provider);
+
+				return this.removeSubSet(provider, ...args);
+			}
+		}
+
+		return new Proxy(this, {
+			get(obj, prop) {
+				const thing = overrides[prop];
+				if ( thing )
+					return thing;
+				return Reflect.get(...arguments);
+			}
+		});
+	}
+
+
 	onEnable() {
 		this.style = new ManagedStyle('emotes');
 		this.effect_style = new ManagedStyle('effects');

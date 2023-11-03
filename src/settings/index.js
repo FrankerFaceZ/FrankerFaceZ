@@ -997,22 +997,23 @@ export default class SettingsManager extends Module {
 	// Add-On Proxy
 	// ========================================================================
 
-	getAddonProxy(module) {
-		const path = module.__path;
+	getAddonProxy(addon_id) {
+		if ( ! addon_id )
+			return this;
 
 		const add = (key, definition) => {
-			return this.add(key, definition, path);
+			return this.add(key, definition, addon_id);
 		}
 
 		const addUI = (key, definition) => {
-			return this.addUI(key, definition, path);
+			return this.addUI(key, definition, addon_id);
 		}
 
 		const addClearable = (key, definition) => {
-			return this.addClearable(key, definition, path);
+			return this.addClearable(key, definition, addon_id);
 		}
 
-		const handler = {
+		return new Proxy(this, {
 			get(obj, prop) {
 				if ( prop === 'add' )
 					return add;
@@ -1022,9 +1023,7 @@ export default class SettingsManager extends Module {
 					return addClearable;
 				return Reflect.get(...arguments);
 			}
-		}
-
-		return new Proxy(this, handler);
+		});
 	}
 
 	// ========================================================================

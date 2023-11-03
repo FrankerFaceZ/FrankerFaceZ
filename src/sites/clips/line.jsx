@@ -100,7 +100,9 @@ export default class Line extends Module {
 					const override_name = t.overrides.getName(user.id);
 
 					let user_class = msg.ffz_user_class;
-					if ( Array.isArray(user_class) )
+					if ( user_class instanceof Set )
+						user_class = [...user_class].join(' ');
+					else if ( Array.isArray(user_class) )
 						user_class = user_class.join(' ');
 
 					const user_props = {

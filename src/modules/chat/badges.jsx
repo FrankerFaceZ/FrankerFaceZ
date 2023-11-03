@@ -395,6 +395,14 @@ export default class Badges extends Module {
 				else
 					store = badge.addon ? addon : ffz;
 
+				let name = badge.title;
+				let extra;
+				try {
+					extra = maybe_call(badge.tooltipExtra, this, null, badge);
+				} catch(err) { extra = null; }
+				if ( extra && !(extra instanceof Promise) )
+					name = name + extra;
+
 				const id = badge.base_id ?? key,
 					is_this = id === key;
 				let existing = addon_badges_by_id[id];
@@ -411,14 +419,14 @@ export default class Badges extends Module {
 
 					existing.versions.push({
 						version: key,
-						name: badge.title,
+						name,
 						color,
 						image: image1x,
 						styleImage: `url("${image1x}")`
 					});
 
 					if ( is_this ) {
-						existing.name = badge.title;
+						existing.name = name;
 						existing.color = color;
 						existing.image = image;
 						existing.styleImage = `url("${image}")`;
@@ -429,7 +437,7 @@ export default class Badges extends Module {
 						id,
 						key,
 						provider: 'ffz',
-						name: badge.title,
+						name,
 						color,
 						image,
 						image1x,
@@ -542,8 +550,9 @@ export default class Badges extends Module {
 					</div>);
 
 				} else if ( p === 'ffz' ) {
-					const badge = this.badges[d.id],
-						extra = maybe_call(badge?.tooltipExtra, this, ds, d, target, tip);
+					const full_badge = this.badges[d.id],
+						badge = d.badge,
+						extra = maybe_call(badge?.tooltipExtra ?? full_badge?.tooltipExtra, this, ds, badge, target, tip);
 
 					if ( extra instanceof Promise ) {
 						promises = true;
@@ -582,31 +591,53 @@ export default class Badges extends Module {
 	// Add-On Proxy
 	// ========================================================================
 
-	getAddonProxy(module) {
-		const path = module.__path;
-		if ( ! path.startsWith('addon.') )
+	getAddonProxy(addon_id, addon, module) {
+		if ( ! addon_id )
 			return this;
 
-		const addon_id = path.slice(6);
+		const is_dev = addon?.dev ?? false;
 
-		const loadBadgeData = (badge_id, data, ...args) => {
+		const overrides = {};
+
+		overrides.loadBadgeData = (badge_id, data, ...args) => {
 			if ( data && data.addon === undefined )
 				data.addon = addon_id;
 
 			return this.loadBadgeData(badge_id, data, ...args);
 		};
 
-		const handler = {
+		if ( is_dev ) {
+			overrides.setBulk = (source, ...args) => {
+				if ( ! source.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to badges.setBulk did not include addon ID in source:', source);
+
+				return this.setBulk(source, ...args);
+			};
+
+			overrides.deleteBulk = (source, ...args) => {
+				if ( ! source.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to badges.deleteBulk did not include addon ID in source:', source);
+
+				return this.deleteBulk(source, ...args);
+			}
+
+			overrides.extendBulk = (source, ...args) => {
+				if ( ! source.includes(addon_id) )
+					module.log.warn('[DEV-CHECK] Call to badges.extendBulk did not include addon ID in source:', source);
+
+				return this.extendBulk(source, ...args);
+			}
+		}
+
+		return new Proxy(this, {
 			get(obj, prop) {
-				if ( prop === 'loadBadgeData' )
-					return loadBadgeData;
+				const thing = overrides[prop];
+				if ( thing )
+					return thing;
 				return Reflect.get(...arguments);
 			}
-		};
-
-		return new Proxy(this, handler);
+		});
 	}
-
 
 
 	getBadgeData(target) {
@@ -860,6 +891,7 @@ export default class Badges extends Module {
 						bd = {
 							provider: 'ffz',
 							id: badge.id,
+							badge,
 							image: bu[4] || bu[2] || bu[1],
 							color: badge.color || full_badge.color,
 							title: badge.title || full_badge.title,
@@ -1165,17 +1197,22 @@ export default class Badges extends Module {
 				data.click_url = 'https://www.frankerfacez.com/subscribe';
 
 			if ( ! data.addon && (data.name === 'subwoofer') )
-				data.tooltipExtra = async data => {
-					const d = await this.getSubwooferMonths(data.user_id);
-					if ( ! d?.months )
-						return;
+				data.tooltipExtra = data => {
+					if ( ! data?.user_id )
+						return null;
 
-					if ( d.lifetime )
-						return '\n' + this.i18n.t('badges.subwoofer.lifetime', 'Lifetime Subwoofer');
+					return this.getSubwooferMonths(data.user_id)
+						.then(d => {
+							if ( ! d?.months )
+								return;
 
-					return '\n' + this.i18n.t('badges.subwoofer.months', '({count, plural, one {# Month} other {# Months}})', {
-						count: d.months
-					});
+							if ( d.lifetime )
+								return '\n' + this.i18n.t('badges.subwoofer.lifetime', 'Lifetime Subwoofer');
+
+							return '\n' + this.i18n.t('badges.subwoofer.months', '({count, plural, one {# Month} other {# Months}})', {
+								count: d.months
+							});
+						})
 				};
 		}
 

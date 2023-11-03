@@ -1,9 +1,18 @@
 import Module from 'utilities/module';
 
+const EXTRACTOR = /^addon\.([^.]+)(?:\.|$)/i;
+
+function extractAddonId(path) {
+	const match = EXTRACTOR.exec(path);
+	if ( match )
+		return match[1];
+}
+
 export class Addon extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.addon_id = extractAddonId(this.__path);
 		this.addon_root = this;
 
 		this.inject('i18n');

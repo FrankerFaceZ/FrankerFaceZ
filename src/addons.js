@@ -346,6 +346,9 @@ export default class AddonManager extends Module {
 				other[name] = null;
 		}
 
+		// Send off a signal for other modules to unload related data.
+		this.emit('addon:fully-unload', module.addon_id);
+
 		// Clean up the global reference.
 		if ( this.__modules[module.__path] === module )
 			delete this.__modules[module.__path]; /* = [
@@ -363,7 +366,7 @@ export default class AddonManager extends Module {
 
 		// Clean up all settings.
 		for(const [key, def] of Array.from(this.settings.definitions.entries())) {
-			if ( def && def.__source === module.__path ) {
+			if ( def && def.__source === module.addon_id ) {
 				this.settings.remove(key);
 			}
 		}

@@ -37,7 +37,10 @@ export class Module extends EventEmitter {
 		this.__modules = parent ? parent.__modules : {};
 		this.children = {};
 
-		this.addon_root = parent ? parent.addon_root : null;
+		if ( parent?.addon_id ) {
+			this.addon_id = parent.addon_id;
+			this.addon_root = parent.addon_root;
+		}
 
 		if ( parent && ! parent.children[this.name] )
 			parent.children[this.name] = this;
@@ -547,8 +550,22 @@ export class Module extends EventEmitter {
 
 
 	__processModule(module, name) {
-		if ( this.addon_root && module.getAddonProxy )
-			return module.getAddonProxy(this.addon_root, this);
+		if ( this.addon_root && module.getAddonProxy ) {
+			const addon_id = this.addon_id;
+			if ( ! module.__proxies )
+				module.__proxies = {};
+
+			if ( module.__proxies[addon_id] )
+				return module.__proxies[addon_id];
+
+			const addon = this.resolve('addons')?.getAddon?.(addon_id),
+				out = module.getAddonProxy(addon_id, addon, this.addon_root, this);
+
+			if ( out !== module )
+				module.__proxies[addon_id] = out;
+
+			return out;
+		}
 
 		return module;
 	}

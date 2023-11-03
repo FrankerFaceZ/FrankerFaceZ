@@ -1711,14 +1711,14 @@ export default class PlayerBase extends Module {
 					clearTimeout(timer);
 					ctx.removeEventListener('statechange', evt);
 					if (ctx.state === 'suspended') {
-						this.log.info('Aborting due to browser auto-play policy.');
+						this.log.debug('Aborting due to browser auto-play policy.');
 						return;
 					}
 
 					this.createCompressor(inst, video, comp);
 				}
 
-				this.log.info('Attempting to resume suspended AudioContext.');
+				this.log.debug('Attempting to resume suspended AudioContext.');
 				timer = setTimeout(evt, 100);
 				try {
 					ctx.addEventListener('statechange', evt);
