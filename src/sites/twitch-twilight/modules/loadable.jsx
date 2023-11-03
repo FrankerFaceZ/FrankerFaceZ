@@ -15,7 +15,7 @@ export default class Loadable extends Module {
 
 		this.inject('settings');
 		this.inject('site.fine');
-		this.inject('site.web_munch');
+		this.inject('site');
 
 		this.LoadableComponent = this.fine.define(
 			'loadable-component',
@@ -74,7 +74,7 @@ export default class Loadable extends Module {
 					if ( t.overrides.has(type) ) {
 						let cmp = this.state.Component;
 						if ( typeof cmp === 'function' && ! cmp.ffzWrapped ) {
-							const React = t.web_munch.getModule('react'),
+							const React = t.site.getReact(),
 								createElement = React && React.createElement;
 
 							if ( createElement ) {

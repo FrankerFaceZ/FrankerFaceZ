@@ -56,6 +56,19 @@ export default class Line extends Module {
 		this.chat.context.on('changed:tooltip.link-images', this.maybeUpdateLines, this);
 		this.chat.context.on('changed:tooltip.link-nsfw-images', this.maybeUpdateLines, this);
 
+		this.on('chat:get-messages', (include_chat, include_whisper, include_video, messages) => {
+			if ( include_chat )
+				for(const inst of this.ChatLine.instances) {
+					const msg = this.standardizeMessage(inst.props.node, inst.props.video);
+					if ( msg )
+						messages.push({
+							message: msg,
+							_instance: inst,
+							update: () => inst.forceUpdate()
+						});
+				}
+		});
+
 		this.site = this.resolve('site');
 
 		this.ChatLine.ready(cls => {
@@ -86,8 +99,12 @@ export default class Line extends Module {
 					const user_block = t.chat.formatUser(user, createElement);
 					const override_name = t.overrides.getName(user.id);
 
+					let user_class = msg.ffz_user_class;
+					if ( Array.isArray(user_class) )
+						user_class = user_class.join(' ');
+
 					const user_props = {
-						className: `clip-chat__message-author tw-font-size-5 ffz-link notranslate tw-strong${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${msg.ffz_user_class ?? ''}`,
+						className: `clip-chat__message-author tw-font-size-5 ffz-link notranslate tw-strong${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
 						href: `https://www.twitch.tv/${user.login}/clips`,
 						style: { color }
 					};

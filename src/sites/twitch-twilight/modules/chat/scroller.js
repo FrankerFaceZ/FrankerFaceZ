@@ -24,6 +24,7 @@ export default class Scroller extends Module {
 		this.inject('settings');
 		this.inject('i18n');
 		this.inject('chat');
+		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.web_munch');
 
@@ -159,8 +160,8 @@ export default class Scroller extends Module {
 		});
 
 		const t = this,
-			React = await this.web_munch.findModule('react'),
-			createElement = React && React.createElement;
+			React = await this.site.findReact(),
+			createElement = React?.createElement;
 
 		if ( ! createElement )
 			return t.log.warn(`Unable to get React.`);

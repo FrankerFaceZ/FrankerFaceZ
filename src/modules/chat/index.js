@@ -1521,6 +1521,13 @@ export default class Chat extends Module {
 	}
 
 
+	iterateMessages(include_chat = true, include_whisper = true, include_video = true) {
+		const messages = [];
+		this.emit('chat:get-messages', include_chat, include_whisper, include_video, messages);
+		return messages;
+	}
+
+
 	handleLinkClick(event) {
 		if ( event.ctrlKey || event.shiftKey )
 			return;

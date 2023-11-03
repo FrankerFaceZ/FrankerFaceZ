@@ -68,7 +68,7 @@ export default class Input extends Module {
 		this.inject('settings');
 
 		this.inject('site.fine');
-		this.inject('site.web_munch');
+		this.inject('site');
 
 
 		// Settings
@@ -260,7 +260,7 @@ export default class Input extends Module {
 				}
 		});
 
-		const React = await this.web_munch.findModule('react'),
+		const React = await this.site.findReact(),
 			createElement = React && React.createElement;
 
 		if ( ! createElement )
@@ -937,8 +937,8 @@ export default class Input extends Module {
 			return limitResults && results.length > 25 ? results.slice(0, 25) : results;
 		}
 
-		const React = this.web_munch.getModule('react'),
-			createElement = React && React.createElement;
+		const React = this.site.getReact(),
+			createElement = React?.createElement;
 
 		inst.renderFFZEmojiSuggestion = function(data) {
 			return (<React.Fragment>

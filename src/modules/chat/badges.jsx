@@ -10,6 +10,7 @@ import {createElement, ManagedStyle} from 'utilities/dom';
 import {has, maybe_call, SourcedSet} from 'utilities/object';
 import Module from 'utilities/module';
 import { ColorAdjuster } from 'src/utilities/color';
+import { NoContent } from 'src/utilities/tooltip';
 
 const CSS_BADGES = {
 	1: {
@@ -194,11 +195,7 @@ export default class Badges extends Module {
 		// objects when we don't need to do so.
 		this.bulk = new Map;
 
-		// Special data structure for supporters to greatly reduce
-		// memory usage and speed things up for people who only have
-		// a supporter badge.
-		//this.supporter_id = null;
-		//this.supporters = new Set;
+		this._woofer_months = {};
 
 		this.badges = {};
 		this.twitch_badges = {};
@@ -316,6 +313,7 @@ export default class Badges extends Module {
 			tcon = [],
 			game = [],
 			ffz = [],
+			specific_addons = {},
 			addon = [];
 
 		const twitch_keys = Object.keys(this.twitch_badges);
@@ -374,40 +372,104 @@ export default class Badges extends Module {
 				}
 			}
 
-		if ( include_addons )
-			for(const key in this.badges)
-				if ( has(this.badges, key) ) {
-					const badge = this.badges[key];
-					if ( badge.no_visibility )
-						continue;
+		if ( include_addons ) {
+			const addon_badges_by_id = {};
 
-					let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
-						color = badge.color || 'transparent';
+			for(const [key, badge] of Object.entries(this.badges)) {
+				if ( badge.no_visibility )
+					continue;
 
-					if ( ! badge.addon ) {
-						image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
-						color = 'transparent';
+				let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
+					image1x = badge.urls?.[1] || badge.image,
+					color = badge.color || 'transparent';
+
+				if ( ! badge.addon ) {
+					image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
+					image1x = `//cdn.frankerfacez.com/badge/${badge.id}/1/rounded`;
+					color = 'transparent';
+				}
+
+				let store;
+				if ( typeof badge.addon === 'string' )
+					store = specific_addons[badge.addon] = specific_addons[badge.addon] || [];
+				else
+					store = badge.addon ? addon : ffz;
+
+				const id = badge.base_id ?? key,
+					is_this = id === key;
+				let existing = addon_badges_by_id[id];
+
+				if ( existing ) {
+					if ( ! existing.versions )
+						existing.versions = [{
+							version: existing.key,
+							name: existing.name,
+							color: existing.color,
+							image: existing.image1x,
+							styleImage: `url("${existing.image1x}")`
+						}];
+
+					existing.versions.push({
+						version: key,
+						name: badge.title,
+						color,
+						image: image1x,
+						styleImage: `url("${image1x}")`
+					});
+
+					if ( is_this ) {
+						existing.name = badge.title;
+						existing.color = color;
+						existing.image = image;
+						existing.styleImage = `url("${image}")`;
 					}
 
-					(badge.addon ? addon : ffz).push({
-						id: key,
+				} else {
+					existing = {
+						id,
+						key,
 						provider: 'ffz',
 						name: badge.title,
 						color,
 						image,
+						image1x,
 						styleImage: `url("${image}")`
-					});
-				}
+					};
 
-		return [
+					addon_badges_by_id[id] = existing;
+					store.push(existing);
+				}
+			}
+		}
+
+		const out = [
 			{title: 'Twitch', id: 'm-twitch', badges: twitch},
 			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
 			{title: 'Twitch: Other', id: 'm-other', badges: other},
 			{title: 'Twitch: Overwatch League', id: 'm-owl', badges: owl},
-			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game},
-			{title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz},
-			{title: 'Add-on', id: 'm-addon', badges: addon}
+			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game}
 		];
+
+		if ( ffz.length )
+			out.push({title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz});
+
+		const addons = this.resolve('addons'),
+			addon_chunks = [];
+
+		for(const [key, val] of Object.entries(specific_addons)) {
+			const addon = addons?.getAddon?.(key),
+				title = addon?.short_name ?? addon?.name ?? key;
+
+			addon_chunks.push({title: `Add-On: ${title}`, id: `m-addon-${key}`, badges: val});
+		}
+
+		addon_chunks.sort((a,b) => a.title.localeCompare(b.title));
+		out.push(...addon_chunks);
+
+		if ( addon.length )
+			out.push({title: 'Add-on', id: 'm-addon', badges: addon});
+
+		return out;
 	}
 
 
@@ -436,10 +498,11 @@ export default class Badges extends Module {
 			const show_previews = this.parent.context.get('tooltip.badge-images');
 			const ds = this.getBadgeData(target);
 
-			const out = [];
-
 			if ( ds.data == null )
-				return out;
+				return NoContent;
+
+			const out = [];
+			let promises = false;
 
 			for(const d of ds.data) {
 				const p = d.provider;
@@ -479,22 +542,71 @@ export default class Badges extends Module {
 					</div>);
 
 				} else if ( p === 'ffz' ) {
-					out.push(<div class="ffz-badge-tip">
-						{show_previews && d.image && <div
-							class="preview-image ffz-badge"
-							style={{
-								backgroundColor: d.color,
-								backgroundImage: `url("${d.image}")`
-							}}
-						/>}
-						{d.title}
-					</div>);
+					const badge = this.badges[d.id],
+						extra = maybe_call(badge?.tooltipExtra, this, ds, d, target, tip);
+
+					if ( extra instanceof Promise ) {
+						promises = true;
+						out.push(extra.then(stuff => (<div class="ffz-badge-tip">
+							{show_previews && d.image && <div
+								class="preview-image ffz-badge"
+								style={{
+									backgroundColor: d.color,
+									backgroundImage: `url("${d.image}")`
+								}}
+							/>}
+							{d.title}{stuff||''}
+						</div>)));
+
+					} else
+						out.push(<div class="ffz-badge-tip">
+							{show_previews && d.image && <div
+								class="preview-image ffz-badge"
+								style={{
+									backgroundColor: d.color,
+									backgroundImage: `url("${d.image}")`
+								}}
+							/>}
+							{d.title}{extra||''}
+						</div>);
 				}
 			}
 
+			if ( promises )
+				return Promise.all(out);
 			return out;
 		}
 	}
+
+	// ========================================================================
+	// Add-On Proxy
+	// ========================================================================
+
+	getAddonProxy(module) {
+		const path = module.__path;
+		if ( ! path.startsWith('addon.') )
+			return this;
+
+		const addon_id = path.slice(6);
+
+		const loadBadgeData = (badge_id, data, ...args) => {
+			if ( data && data.addon === undefined )
+				data.addon = addon_id;
+
+			return this.loadBadgeData(badge_id, data, ...args);
+		};
+
+		const handler = {
+			get(obj, prop) {
+				if ( prop === 'loadBadgeData' )
+					return loadBadgeData;
+				return Reflect.get(...arguments);
+			}
+		};
+
+		return new Proxy(this, handler);
+	}
+
 
 
 	getBadgeData(target) {
@@ -638,9 +750,6 @@ export default class Badges extends Module {
 			is_colored = badge_style !== 5,
 			has_image = badge_style !== 3 && badge_style !== 4,
 
-			ffz_hidden = hidden_badges['m-ffz'],
-			addon_hidden = hidden_badges['m-addon'],
-
 			tb = this.twitch_badges,
 
 			slotted = new Map,
@@ -729,9 +838,15 @@ export default class Badges extends Module {
 					handled_ids.add(badge.id);
 
 					const full_badge = this.badges[badge.id] || {},
-						is_hidden = hidden_badges[badge.id];
+						cat = typeof full_badge.addon === 'string'
+							? `m-addon-${full_badge.addon}`
+							: full_badge.addon
+								? 'm-addon'
+								: 'm-ffz',
+						hide_key = badge.base_id ?? badge.id,
+						is_hidden = hidden_badges[hide_key];
 
-					if ( is_hidden || (is_hidden == null && (full_badge.addon ? addon_hidden : ffz_hidden)) )
+					if ( is_hidden || (is_hidden == null && hidden_badges[cat]) )
 						continue;
 
 					const slot = has(badge, 'slot') ? badge.slot : full_badge.slot,
@@ -744,6 +859,7 @@ export default class Badges extends Module {
 						bu = (urls || full_badge.urls || {1: full_badge.image}),
 						bd = {
 							provider: 'ffz',
+							id: badge.id,
 							image: bu[4] || bu[2] || bu[1],
 							color: badge.color || full_badge.color,
 							title: badge.title || full_badge.title,
@@ -1047,10 +1163,66 @@ export default class Badges extends Module {
 
 			if ( ! data.addon && (data.name === 'developer' || data.name === 'subwoofer' || data.name === 'supporter') )
 				data.click_url = 'https://www.frankerfacez.com/subscribe';
+
+			if ( ! data.addon && (data.name === 'subwoofer') )
+				data.tooltipExtra = async data => {
+					const d = await this.getSubwooferMonths(data.user_id);
+					if ( ! d?.months )
+						return;
+
+					if ( d.lifetime )
+						return '\n' + this.i18n.t('badges.subwoofer.lifetime', 'Lifetime Subwoofer');
+
+					return '\n' + this.i18n.t('badges.subwoofer.months', '({count, plural, one {# Month} other {# Months}})', {
+						count: d.months
+					});
+				};
 		}
 
 		if ( generate_css )
 			this.buildBadgeCSS();
+	}
+
+
+	getSubwooferMonths(user_id) {
+		let info = this._woofer_months[user_id];
+		if ( info instanceof Promise )
+			return info;
+
+		const expires = info?.expires;
+		if ( expires && Date.now() >= expires )
+			info = this._woofer_months[user_id] = null;
+
+		if ( info?.value )
+			return Promise.resolve(info.value);
+
+		return this._woofer_months[user_id] = fetch(`https://api.frankerfacez.com/v1/_user/id/${user_id}`)
+			.then(resp => resp.ok ? resp.json() : null)
+			.then(data => {
+				let out = null;
+				if ( data?.user?.sub_months )
+					out = {
+						months: data.user.sub_months,
+						lifetime: data.user.sub_lifetime
+					};
+
+				this._woofer_months[user_id] = {
+					expires: Date.now() + (5 * 60 * 1000),
+					value: out
+				};
+
+				return out;
+			})
+			.catch(err => {
+				console.error('Error getting subwoofer data for user', user_id, err);
+
+				this._woofer_months[user_id] = {
+					expires: Date.now() + (60 * 1000),
+					value: null
+				};
+
+				return null;
+			});
 	}
 
 

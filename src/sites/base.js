@@ -20,6 +20,31 @@ export default class BaseSite extends Module {
 	// DOM Manipulation
 	// ========================================================================
 
+	getReact() {
+		if ( this._react )
+			return this._react;
+
+		let react;
+		try {
+			react = this.getCore?.()?.intl?.react;
+		} catch(err) { /* no-op */ }
+
+		if ( react?.Component && react.createElement )
+			return this._react = react;
+
+		react = this.resolve('web_munch')?.getModule?.('react');
+		if ( react?.Component && react.createElement )
+			return this._react = react;
+	}
+
+	findReact() {
+		const react = this.getReact();
+		if ( react )
+			return Promise.resolve(react);
+
+		return this.resolve('web_munch').findModule('react');
+	}
+
 	awaitElement(selector, parent, timeout = 60000) {
 		if ( ! parent )
 			parent = document.documentElement;

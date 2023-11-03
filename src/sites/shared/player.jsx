@@ -1918,9 +1918,9 @@ export default class PlayerBase extends Module {
 				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			let thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]');
-			if ( ! thing )
-				thing = container.querySelector('button[data-a-target="player-fullscreen-button"]');
+			const thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
+				container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
 			if ( thing ) {
 				container.insertBefore(cont, thing.parentElement);
@@ -2022,7 +2022,11 @@ export default class PlayerBase extends Module {
 				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			const thing = container.querySelector('.ffz--player-pip button') || container.querySelector('button[data-a-target="player-theatre-mode-button"]') || container.querySelector('button[data-a-target="player-fullscreen-button"]');
+			const thing = container.querySelector('.ffz--player-pip button') ||
+				container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
+				container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				container.querySelector('button[data-a-target="player-fullscreen-button"]');
+
 			if ( thing ) {
 				container.insertBefore(cont, thing.parentElement);
 			} else

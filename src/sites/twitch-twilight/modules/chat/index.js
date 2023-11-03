@@ -1436,7 +1436,7 @@ export default class ChatHook extends Module {
 
 			cls.prototype.render = function() {
 				if ( this.state.ffz_errors > 0 ) {
-					const React = t.web_munch.getModule('react'),
+					const React = t.site.getReact(),
 						createElement = React && React.createElement;
 
 					if ( ! createElement )
@@ -1486,7 +1486,7 @@ export default class ChatHook extends Module {
 			cls.prototype.render = function() {
 				try {
 					if ( t.CommunityStackHandler ) {
-						const React = t.web_munch.getModule('react'),
+						const React = t.site.getReact(),
 							out = this.ffzRender(),
 							thing = out?.props?.children?.props?.children;
 
@@ -1702,8 +1702,8 @@ export default class ChatHook extends Module {
 			return true;
 
 		const t = this,
-			React = this.web_munch.getModule('react'),
-			createElement = React && React.createElement,
+			React = this.site.getReact(),
+			createElement = React?.createElement,
 			StackMod = this.web_munch.getModule('highlightstack');
 
 		if ( ! createElement || ! StackMod )

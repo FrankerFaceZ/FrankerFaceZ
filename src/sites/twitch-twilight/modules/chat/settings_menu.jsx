@@ -17,7 +17,7 @@ export default class SettingsMenu extends Module {
 		this.inject('chat');
 		this.inject('chat.badges');
 		this.inject('site.fine');
-		this.inject('site.web_munch');
+		this.inject('site');
 		this.inject('site.css_tweaks');
 
 		this.settings.add('chat.input.hide-identity', {
@@ -53,7 +53,7 @@ export default class SettingsMenu extends Module {
 		this.css_tweaks.toggle('hide-chat-identity', this.chat.context.get('chat.input.hide-identity'));
 
 		const t = this,
-			React = await this.web_munch.findModule('react');
+			React = await this.site.findReact();
 		if ( ! React )
 			return;
 

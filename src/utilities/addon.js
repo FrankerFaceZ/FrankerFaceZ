@@ -4,15 +4,10 @@ export class Addon extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.addon_root = this;
+
 		this.inject('i18n');
 		this.inject('settings');
-	}
-
-	__processModule(module, name) {
-		if ( module.getAddonProxy )
-			return module.getAddonProxy(this);
-
-		return module;
 	}
 
 	static register(id, info) {

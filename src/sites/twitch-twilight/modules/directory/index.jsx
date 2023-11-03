@@ -66,6 +66,12 @@ export default class Directory extends SiteModule {
 			DIR_ROUTES
 		);
 
+		this.DirectorySorter = this.fine.define(
+			'directory-sorter',
+			n => n.getSortOptionLink && n.getSortOptionText && n.getSortOptionOnClick && n.getFilterIDs,
+			DIR_ROUTES
+		);
+
 		this.settings.add('directory.hidden.style', {
 			default: 2,
 
@@ -268,6 +274,38 @@ export default class Directory extends SiteModule {
 			changed: () => this.DirectoryLatestVideos.forceUpdate()
 		});*/
 
+		this.settings.add('directory.default-sort', {
+			default: false,
+			ui: {
+				path: 'Directory > General >> General',
+				title: 'Force Default Sorting',
+				component: 'setting-select-box',
+				data: [
+					{
+						value: false,
+						title: 'Disabled'
+					},
+					{
+						value: 'RELEVANCE',
+						title: 'Recommended For You'
+					},
+					{
+						value: 'VIEWER_COUNT',
+						title: 'Viewers (High to Low)'
+					},
+					{
+						value: 'VIEWER_COUNT_ASC',
+						title: 'Viewers (Low to High)'
+					},
+					{
+						value: 'RECENT',
+						title: 'Recently Started'
+					}
+				]
+			},
+			changed: () => this.updateSorting()
+		});
+
 		this.routeClick = this.routeClick.bind(this);
 	}
 
@@ -293,6 +331,9 @@ export default class Directory extends SiteModule {
 		this.DirectoryGameCard.on('mutate', this.updateGameCard, this);
 		//this.DirectoryGameCard.on('unmount', this.clearGameCard, this);
 		this.DirectoryGameCard.each(el => this.updateGameCard(el));
+
+		this.DirectorySorter.on('mount', this.updateSorting, this);
+		this.DirectorySorter.ready(() => this.updateSorting());
 
 		const t = this;
 
@@ -337,6 +378,29 @@ export default class Directory extends SiteModule {
 		});
 	}
 
+	updateSorting(inst) {
+		if ( ! inst ) {
+			for(const inst of this.DirectorySorter.instances)
+				this.updateSorting(inst);
+			return;
+		}
+
+		const mode = this.settings.get('directory.default-sort');
+		if ( ! mode || mode === inst.state?.activeOption )
+			return;
+
+		const link = inst.getSortOptionLink(mode, false, inst.props);
+		if ( ! link?.props?.linkTo )
+			return;
+
+		// Handle the onClick logic. This sets localStorage values
+		// to restore this sort in the future.
+		if ( link.props.onClick )
+			link.props.onClick();
+
+		// And follow the generated link.
+		this.router.history.push(link.props.linkTo);
+	}
 
 	updateGameCard(el) {
 		const react = this.fine.getReactInstance(el);

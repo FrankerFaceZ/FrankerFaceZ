@@ -47,16 +47,19 @@ export default class FineRouter extends Module {
 		this.log.debug('New Location', location);
 		const host = window.location.host,
 			path = location.pathname,
+			search = location.search,
 			state = location.state;
 
-		if ( path === this.location && host === this.domain && deep_equals(state, this.current_state) )
+		if ( path === this.location && host === this.domain && search === this.search && deep_equals(state, this.current_state) )
 			return;
 
 		this.old_location = this.location;
+		this.old_search = this.search;
 		this.old_domain = this.domain;
 		this.old_state = this.current_state;
 
 		this.location = path;
+		this.search = search;
 		this.domain = host;
 		this.current_state = state;
 

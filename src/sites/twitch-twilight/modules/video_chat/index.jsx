@@ -44,7 +44,6 @@ export default class VideoChatHook extends Module {
 		this.inject('site');
 		this.inject('site.router');
 		this.inject('site.fine');
-		this.inject('site.web_munch');
 
 		this.inject('chat');
 		this.inject('chat.emotes');
@@ -116,6 +115,21 @@ export default class VideoChatHook extends Module {
 		for(const setting of UPDATE_BADGE_SETTINGS)
 			this.chat.context.on(`changed:${setting}`, this.updateLineBadges, this);
 
+		this.on('chat:get-messages', (include_chat, include_whisper, include_video, messages) => {
+			if ( include_video )
+				for(const inst of this.VideoChatLine.instances) {
+					const context = inst.props.messageContext;
+					if ( ! context.comment?._ffz_message )
+						continue;
+
+					messages.push({
+						message: context.comment._ffz_message,
+						_instance: inst,
+						update: () => inst.forceUpdate()
+					});
+				}
+		});
+
 		this.VideoChatController.on('mount', this.chatMounted, this);
 		this.VideoChatController.on('unmount', this.chatUnmounted, this);
 		this.VideoChatController.on('receive-props', this.chatUpdated, this);
@@ -127,7 +141,7 @@ export default class VideoChatHook extends Module {
 		});
 
 		const t = this,
-			React = await this.web_munch.findModule('react');
+			React = await this.site.findReact();
 		if ( ! React )
 			return;
 
@@ -265,8 +279,12 @@ export default class VideoChatHook extends Module {
 				const user_block = t.chat.formatUser(user, createElement);
 				const override_name = t.overrides.getName(user.id);
 
+				let user_class = msg.ffz_user_class;
+				if ( Array.isArray(user_class) )
+					user_class = user_class.join(' ');
+
 				const user_props = {
-					className: `video-chat__message-author notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${msg.ffz_user_class ?? ''}`,
+					className: `video-chat__message-author notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
 					'data-test-selector': 'comment-author-selector',
 					href: `/${user.login}`,
 					rel: 'noopener noreferrer',

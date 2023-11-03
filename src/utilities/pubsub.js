@@ -451,7 +451,8 @@ export default class PubSubClient extends EventEmitter {
 		if ( ! this._client )
 			return Promise.resolve();
 
-		const topics = [];
+		const topics = [],
+			batch = [];
 
 		for(const topic of this._active_topics) {
 			if ( this._live_topics.has(topic) )
@@ -469,6 +470,7 @@ export default class PubSubClient extends EventEmitter {
 
 				// Make a note, we're subscribing to this topic.
 				this._live_topics.add(topic);
+				batch.push(topic);
 			}
 		}
 
@@ -476,7 +478,7 @@ export default class PubSubClient extends EventEmitter {
 			return this._client.subscribe({topicFilter: topics })
 				.catch(() => {
 					// If there was an error, we did NOT subscribe.
-					for(const topic of topics)
+					for(const topic of batch)
 						this._live_topics.delete(topic);
 
 					// Call sendSubscribes again after a bit.

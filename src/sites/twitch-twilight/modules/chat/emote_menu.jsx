@@ -180,7 +180,6 @@ export default class EmoteMenu extends Module {
 		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.apollo');
-		this.inject('site.web_munch');
 		this.inject('site.css_tweaks');
 
 		this.SUB_STATUS = SUB_STATUS;
@@ -435,7 +434,7 @@ export default class EmoteMenu extends Module {
 		this.css_tweaks.setVariable('emoji-menu--size', 36);
 
 		const t = this,
-			React = await this.web_munch.findModule('react'),
+			React = await this.site.findReact(),
 			createElement = React && React.createElement;
 
 		if ( ! createElement )
@@ -509,7 +508,7 @@ export default class EmoteMenu extends Module {
 	defineClasses() {
 		const t = this,
 			storage = this.settings.provider,
-			React = this.web_munch.getModule('react'),
+			React = this.site.getReact(),
 			createElement = React && React.createElement;
 
 		this.EmojiTonePicker = class FFZEmojiTonePicker extends React.Component {

@@ -37,6 +37,8 @@ export class Module extends EventEmitter {
 		this.__modules = parent ? parent.__modules : {};
 		this.children = {};
 
+		this.addon_root = parent ? parent.addon_root : null;
+
 		if ( parent && ! parent.children[this.name] )
 			parent.children[this.name] = this;
 
@@ -541,6 +543,14 @@ export class Module extends EventEmitter {
 			return this.load_requires;
 		if ( has(this.constructor, 'load_requires') )
 			return this.constructor.load_requires;
+	}
+
+
+	__processModule(module, name) {
+		if ( this.addon_root && module.getAddonProxy )
+			return module.getAddonProxy(this.addon_root, this);
+
+		return module;
 	}
 
 

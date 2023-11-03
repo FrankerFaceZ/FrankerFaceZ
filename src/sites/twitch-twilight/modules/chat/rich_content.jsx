@@ -15,7 +15,7 @@ export default class RichContent extends Module {
 
 		this.inject('chat');
 		this.inject('i18n');
-		this.inject('site.web_munch');
+		this.inject('site');
 
 		this.RichContent = null;
 		this.has_tokenizer = false;
@@ -32,7 +32,7 @@ export default class RichContent extends Module {
 
 	async onEnable() {
 		const t = this,
-			React = await this.web_munch.findModule('react');
+			React = await this.site.findReact();
 		if ( ! React )
 			return;
 
