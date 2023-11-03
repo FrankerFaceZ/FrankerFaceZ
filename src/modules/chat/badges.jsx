@@ -411,7 +411,7 @@ export default class Badges extends Module {
 					if ( ! existing.versions )
 						existing.versions = [{
 							version: existing.key,
-							name: existing.name,
+							name: existing.tipname,
 							color: existing.color,
 							image: existing.image1x,
 							styleImage: `url("${existing.image1x}")`
@@ -426,7 +426,8 @@ export default class Badges extends Module {
 					});
 
 					if ( is_this ) {
-						existing.name = name;
+						existing.name = badge.title;
+						existing.tipname = name;
 						existing.color = color;
 						existing.image = image;
 						existing.styleImage = `url("${image}")`;
@@ -437,12 +438,24 @@ export default class Badges extends Module {
 						id,
 						key,
 						provider: 'ffz',
-						name,
+						name: badge.title,
+						tipname: name,
 						color,
 						image,
 						image1x,
 						styleImage: `url("${image}")`
 					};
+
+					if ( badge.base_id ) {
+						existing.always_versions = true;
+						existing.versions = [{
+							version: existing.key,
+							name: existing.tipname,
+							color: existing.color,
+							image: existing.image1x,
+							styleImage: `url("${existing.image1x}")`
+						}];
+					}
 
 					addon_badges_by_id[id] = existing;
 					store.push(existing);
@@ -1197,6 +1210,8 @@ export default class Badges extends Module {
 				data.click_url = 'https://www.frankerfacez.com/subscribe';
 
 			if ( ! data.addon && (data.name === 'subwoofer') )
+				data.base_id = data.id;
+
 				data.tooltipExtra = data => {
 					if ( ! data?.user_id )
 						return null;

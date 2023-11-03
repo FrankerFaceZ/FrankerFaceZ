@@ -42,6 +42,11 @@
 						author: addon.author_i18n ? t(addon.author_i18n, addon.author) : addon.author
 					}) }}
 				</span>
+				<span v-if="maintainer" class="tw-c-text-alt tw-mg-r-1">
+					{{ t('addon.maintainer', 'Maintainer: {maintainer}', {
+						maintainer
+					}) }}
+				</span>
 				<span v-if="version" class="tw-c-text-alt tw-mg-r-1">
 					{{ t('addon.version', 'Version {version}', {version}) }}
 				</span>
@@ -187,6 +192,13 @@ export default {
 				return this.t(this.addon.description_i18n, this.addon.description);
 
 			return this.addon.description;
+		},
+
+		maintainer() {
+			if ( this.addon.maintainer_i18n )
+				return this.t(this.addon.maintainer_i18n, this.addon.maintainer);
+
+			return this.addon.maintainer;
 		},
 
 		lines() {

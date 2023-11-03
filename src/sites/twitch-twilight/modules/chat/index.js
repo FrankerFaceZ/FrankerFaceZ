@@ -1122,6 +1122,42 @@ export default class ChatHook extends Module {
 		this.updateLineBorders();
 		//this.updateMentionCSS();
 
+		this.on('chat:get-messages-late', (include_chat, include_whisper, include_video, messages) => {
+			if ( ! include_chat )
+				return;
+
+			const msg_ids = new Set(messages.map(x => x.message?.id));
+
+			for(const inst of this.ChatBuffer.instances) {
+				for(const msg of inst.buffer) {
+					const msg_id = msg?.id;
+					if ( ! msg_id || msg_ids.has(msg_id) || ! msg.ffz_standardized )
+						continue;
+
+					msg_ids.add(msg_id);
+					messages.push({
+						message: msg,
+						_instance: null,
+						update: () => null
+					});
+				}
+
+				for(const raw of inst.delayedMessageBuffer) {
+					const msg = raw?.event,
+						msg_id = msg?.id;
+					if ( ! msg_id || msg_ids.has(msg_id) || ! msg.ffz_standardized )
+						continue;
+
+					msg_ids.add(msg_id);
+					messages.push({
+						message: msg,
+						_instance: null,
+						update: () => null
+					});
+				}
+			}
+		});
+
 		this.on('chat:get-tab-commands', e => {
 			e.commands.push({
 				name: 'reconnect',

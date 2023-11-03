@@ -2,7 +2,7 @@
 	<div class="ffz-input">
 		<header>
 			{{ item.i18n_key ? t(item.i18n_key, item.title) : item.title }}
-			<span v-if="unseen" class="tw-pill">{{ t('setting.new', 'New') }}</span>
+			<span v-if="unseen" class="ffz-pill">{{ t('setting.new', 'New') }}</span>
 		</header>
 		<section
 			v-if="item.description"

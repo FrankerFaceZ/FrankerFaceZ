@@ -66,12 +66,12 @@
 			<header v-else>
 				{{ sec.title }}
 			</header>
-			<ul v-if="! sec.id || badgeChecked(sec.id)" class="tw-flex tw-flex-wrap tw-align-content-start">
+			<ul v-if="! sec.id || badgeChecked(sec.id)" class="tw-flex tw-flex-wrap tw-align-content-start tw-align-items-start">
 				<li
 					v-for="i in sec.badges"
 					:key="i.id"
 					:class="{default: badgeDefault(i.id)}"
-					class="ffz--badge-info tw-pd-y-1 tw-pd-r-1 tw-flex ffz-checkbox"
+					class="ffz--badge-info ffz--pointer-events--none tw-mg-y-05 tw-mg-r-05 tw-flex ffz-checkbox ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-border-radius-large"
 				>
 					<input
 						:id="i.id"
@@ -81,7 +81,7 @@
 						@click="onChange(i.id, $event)"
 					>
 
-					<label :for="i.id" class="ffz-checkbox__label">
+					<label :for="i.id" class="ffz-checkbox__label tw-flex-grow-1 tw-mg-05 ffz--pointer-events">
 						<div class="tw-mg-l-1 tw-flex">
 							<div
 								:style="{backgroundColor: i.color, backgroundImage: i.styleImage }"
@@ -90,7 +90,7 @@
 							<div>
 								<h5>{{ i.name }}</h5>
 								<section
-									v-if="i.versions && i.versions.length > 1"
+									v-if="i.versions && (i.always_versions || i.versions.length > 1)"
 									class="tw-mg-t-05"
 								>
 									<span

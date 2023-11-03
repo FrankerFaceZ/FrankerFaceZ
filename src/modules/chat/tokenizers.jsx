@@ -143,7 +143,7 @@ export const Links = {
 				url_table.push(<tr>
 					<td>{this.i18n.formatNumber(i + 1)}.</td>
 					<td class="tw-c-text-alt-2 tw-pd-x-05 tw-word-break-all">{url.url}</td>
-					<td>{url.flags ? url.flags.map(flag => <span class="tw-pill">{flag.toLowerCase()}</span>) : null}</td>
+					<td>{url.flags ? url.flags.map(flag => <span class="ffz-pill">{flag.toLowerCase()}</span>) : null}</td>
 				</tr>);
 			}
 

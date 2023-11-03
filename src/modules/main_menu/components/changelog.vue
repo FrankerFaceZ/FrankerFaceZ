@@ -35,7 +35,7 @@
 		<ul>
 			<li v-for="commit of display" :key="commit.sha" class="tw-mg-b-2">
 				<div class="tw-flex tw-align-items-center tw-border-b tw-mg-b-05">
-					<div v-if="! addons && commit.active" class="tw-pill tw-mg-r-05">
+					<div v-if="! addons && commit.active" class="ffz-pill tw-mg-r-05">
 						{{ t('home.changelog.current', 'Current Version') }}
 					</div>
 					<div v-if="commit.title" class="tw-font-size-4">

@@ -1524,6 +1524,7 @@ export default class Chat extends Module {
 	iterateMessages(include_chat = true, include_whisper = true, include_video = true) {
 		const messages = [];
 		this.emit('chat:get-messages', include_chat, include_whisper, include_video, messages);
+		this.emit('chat:get-messages-late', include_chat, include_whisper, include_video, messages);
 		return messages;
 	}
 
@@ -1728,6 +1729,8 @@ export default class Chat extends Module {
 	standardizeMessage(msg) { // eslint-disable-line class-methods-use-this
 		if ( ! msg )
 			return msg;
+
+		msg.ffz_standardized = true;
 
 		// Standardize User
 		if ( msg.sender && ! msg.user )
