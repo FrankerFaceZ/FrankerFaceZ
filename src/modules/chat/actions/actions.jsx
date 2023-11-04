@@ -4,7 +4,8 @@
 // Emoji Handling
 // ============================================================================
 
-import Module from 'utilities/module';
+import { DEBUG } from 'utilities/constants';
+import Module, { buildAddonProxy } from 'utilities/module';
 import {has, maybe_call, deep_copy} from 'utilities/object';
 import {createElement, ClickOutside} from 'utilities/dom';
 import Tooltip from 'utilities/tooltip';
@@ -261,6 +262,91 @@ export default class Actions extends Module {
 		for(const key in RENDERERS)
 			if ( has(RENDERERS, key) )
 				this.addRenderer(key, RENDERERS[key]);
+
+		this.on('addon:fully-unload', addon_id => {
+			let removed = 0;
+			for(const [key, def] of Object.entries(this.actions)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					delete this.actions[key];
+				}
+			}
+
+			for(const [key, def] of Object.entries(this.renderers)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					delete this.renderers[key];
+				}
+			}
+
+			if ( removed ) {
+				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
+				this._updateContexts();
+			}
+		});
+	}
+
+
+	getAddonProxy(addon_id, addon, module) {
+		if ( ! addon_id )
+			return this;
+
+		const overrides = {},
+			warnings = {},
+			is_dev = DEBUG || addon?.dev;
+
+		overrides.addAction = (key, data) => {
+			if ( data )
+				data.__source = addon_id;
+
+			if ( is_dev && ! key.includes(addon_id) )
+				module.log.warn('[DEV-CHECK] Call to actions.addAction() did not include add-on ID in key:', key);
+
+			return this.addAction(key, data);
+		}
+
+		overrides.addRenderer = (key, data) => {
+			if ( data )
+				data.__source = addon_id;
+
+			if ( is_dev && ! key.includes(addon_id) )
+				module.log.warn('[DEV-CHECK] Call to actions.addRenderer() did not include add-on ID in key:', key);
+
+			return this.addRenderer(key, data);
+		}
+
+		if ( is_dev ) {
+			overrides.removeAction = key => {
+				const existing = this.actions[key];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned action with actions.removeAction:', key, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeAction(key);
+			};
+
+			overrides.removeRenderer = key => {
+				const existing = this.renderers[key];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned renderer with actions.removeRenderer:', key, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeRenderer(key);
+			}
+
+			warnings.actions = 'Please use addAction() or removeAction()';
+			warnings.renderers = 'Please use addRenderer() or removeRenderer()';
+		}
+
+		return buildAddonProxy(module, this, 'actions', overrides, warnings);
+	}
+
+
+	_updateContexts() {
+		for(const ctx of this.settings.__contexts) {
+			ctx.update('chat.actions.inline');
+			ctx.update('chat.actions.hover');
+			ctx.update('chat.actions.user-context');
+			ctx.update('chat.actions.room');
+		}
 	}
 
 
@@ -269,13 +355,7 @@ export default class Actions extends Module {
 			return this.log.warn(`Attempted to add action "${key}" which is already defined.`);
 
 		this.actions[key] = data;
-
-		for(const ctx of this.settings.__contexts) {
-			ctx.update('chat.actions.inline');
-			ctx.update('chat.actions.hover');
-			ctx.update('chat.actions.user-context');
-			ctx.update('chat.actions.room');
-		}
+		this._updateContexts();
 	}
 
 
@@ -284,14 +364,25 @@ export default class Actions extends Module {
 			return this.log.warn(`Attempted to add renderer "${key}" which is already defined.`);
 
 		this.renderers[key] = data;
+		this._updateContexts();
+	}
 
-		for(const ctx of this.settings.__contexts) {
-			ctx.update('chat.actions.inline');
-			ctx.update('chat.actions.inline');
-			ctx.update('chat.actions.hover');
-			ctx.update('chat.actions.user-context');
-			ctx.update('chat.actions.room');
-		}
+
+	removeAction(key) {
+		if ( ! has(this.actions, key) )
+			return;
+
+		delete this.actions[key];
+		this._updateContexts();
+	}
+
+
+	removeRenderer(key) {
+		if ( ! has(this.renderers, key) )
+			return;
+
+		delete this.renderers[key];
+		this._updateContexts();
 	}
 
 
@@ -1127,7 +1218,7 @@ export default class Actions extends Module {
 		if ( target._ffz_tooltip )
 			target._ffz_tooltip.hide();
 
-		
+
 
 		return data.definition.click.call(this, event, data);
 	}

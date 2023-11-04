@@ -4,14 +4,14 @@
 // Emote Handling and Default Provider
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { buildAddonProxy } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
-import {get, has, timeout, SourcedSet, make_enum_flags} from 'utilities/object';
-import {NEW_API, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS} from 'utilities/constants';
+import { FFZEvent } from 'utilities/events';
+import {get, has, timeout, SourcedSet, make_enum_flags, makeAddonIdChecker} from 'utilities/object';
+import {NEW_API, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, DEBUG} from 'utilities/constants';
 
 import GET_EMOTE from './emote_info.gql';
 import GET_EMOTE_SET from './emote_set_info.gql';
-import { FFZEvent } from 'src/utilities/events';
 
 const HoverRAF = Symbol('FFZ:Hover:RAF');
 const HoverState = Symbol('FFZ:Hover:State');
@@ -434,6 +434,7 @@ export default class Emotes extends Module {
 		this.EmoteTypes = EmoteTypes;
 		this.ModifierFlags = MODIFIER_FLAGS;
 
+		this.inject('i18n');
 		this.inject('settings');
 		this.inject('experiments');
 		this.inject('staging');
@@ -604,46 +605,72 @@ export default class Emotes extends Module {
 		if ( ! addon_id )
 			return this;
 
-		const overrides = {};
+		const is_dev = DEBUG || addon?.dev,
+			id_checker = makeAddonIdChecker(addon_id);
 
-		if ( addon?.dev ) {
-			overrides.addDefaultSet = (provider, ...args) => {
-				if ( ! provider.includes(addon_id) )
+		const overrides = {},
+			warnings = {};
+
+		overrides.addDefaultSet = (provider, set_id, data) => {
+			if ( is_dev && ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet did not include addon ID in provider:', provider);
 
-				return this.addDefaultSet(provider, ...args);
+			if ( data ) {
+				if ( is_dev && ! id_checker.test(set_id) )
+					module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet loaded set data but did not include addon ID in set ID:', set_id);
+
+				data.__source = addon_id;
 			}
 
+			return this.addDefaultSet(provider, set_id, data);
+		}
+
+		overrides.addSubSet = (provider, set_id, data) => {
+			if ( is_dev && ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to emotes.addSubSet did not include addon ID in provider:', provider);
+
+			if ( data ) {
+				if ( is_dev && ! id_checker.test(set_id) )
+					module.log.warn('[DEV-CHECK] Call to emotes.addSubSet loaded set data but did not include addon ID in set ID:', set_id);
+
+				data.__source = addon_id;
+			}
+
+			return this.addSubSet(provider, set_id, data);
+		}
+
+		overrides.loadSetData = (set_id, data, ...args) => {
+			if ( is_dev && ! id_checker.test(set_id) )
+				module.log.warn('[DEV-CHECK] Call to emotes.loadSetData did not include addon ID in set ID:', set_id);
+
+			if ( data )
+				data.__source = addon_id;
+
+			return this.loadSetData(set_id, data, ...args);
+		}
+
+		if ( is_dev ) {
 			overrides.removeDefaultSet = (provider, ...args) => {
-				if ( ! provider.includes(addon_id) )
+				if ( ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to emotes.removeDefaultSet did not include addon ID in provider:', provider);
 
 				return this.removeDefaultSet(provider, ...args);
 			}
 
-			overrides.addSubSet = (provider, ...args) => {
-				if ( ! provider.includes(addon_id) )
-					module.log.warn('[DEV-CHECK] Call to emotes.addSubSet did not include addon ID in provider:', provider);
-
-				return this.addSubSet(provider, ...args);
-			}
-
 			overrides.removeSubSet = (provider, ...args) => {
-				if ( ! provider.includes(addon_id) )
+				if ( ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to emotes.removeSubSet did not include addon ID in provider:', provider);
 
 				return this.removeSubSet(provider, ...args);
 			}
+
+			warnings.style = true;
+			warnings.effect_style = true;
+			warnings.emote_sets = true;
+			warnings.loadSetUserIds = warnings.loadSetUsers = 'This method is meant for internal use.';
 		}
 
-		return new Proxy(this, {
-			get(obj, prop) {
-				const thing = overrides[prop];
-				if ( thing )
-					return thing;
-				return Reflect.get(...arguments);
-			}
-		});
+		return buildAddonProxy(module, this, 'emotes', overrides, warnings);
 	}
 
 
@@ -690,14 +717,21 @@ export default class Emotes extends Module {
 
 		this.on('pubsub:command:add_emote', msg => {
 			const set_id = msg.set_id,
-				emote = msg.emote;
+				emote = msg.emote,
 
-			if ( ! this.emote_sets[set_id] )
+				emote_set = this.emote_sets[set_id];
+
+			if ( ! emote_set )
 				return;
 
-			this.addEmoteToSet(set_id, emote);
+			const has_old = !! emote_set.emotes?.[emote.id];
+			const processed = this.addEmoteToSet(set_id, emote);
 
-			// TODO: Notify users?
+			this.maybeNotifyChange(
+				has_old ? 'modified' : 'added',
+				set_id,
+				processed
+			);
 		});
 
 		this.on('pubsub:command:remove_emote', msg => {
@@ -707,9 +741,17 @@ export default class Emotes extends Module {
 			if ( ! this.emote_sets[set_id] )
 				return;
 
-			this.removeEmoteFromSet(set_id, emote_id);
+			// If removing it returns nothing, there was no
+			// emote to remove with that ID.
+			const removed = this.removeEmoteFromSet(set_id, emote_id);
+			if ( ! removed )
+				return;
 
-			// TODO: Notify users?
+			this.maybeNotifyChange(
+				'removed',
+				set_id,
+				removed
+			);
 		});
 
 		this.on('chat:reload-data', flags => {
@@ -717,7 +759,119 @@ export default class Emotes extends Module {
 				this.loadGlobalSets();
 		});
 
+		this.on('addon:fully-unload', addon_id => {
+			let removed = 0;
+			for(const [key, set] of Object.entries(this.emote_sets)) {
+				if ( set?.__source === addon_id ) {
+					removed++;
+					this.loadSetData(key, null, true);
+				}
+			}
+
+			if ( removed ) {
+				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
+				// TODO: Debounced retokenize all chat messages.
+			}
+		})
+
 		this.loadGlobalSets();
+	}
+
+
+	// ========================================================================
+	// Chat Notices
+	// ========================================================================
+
+	maybeNotifyChange(action, set_id, emote) {
+		if ( ! this._pending_notifications )
+			this._pending_notifications = [];
+
+		this._pending_notifications.push({action, set_id, emote});
+
+		if ( ! this._pending_timer )
+			this._pending_timer = setTimeout(() => this._handleNotifyChange(), 1000);
+	}
+
+	_handleNotifyChange() {
+		clearTimeout(this._pending_timer);
+		this._pending_timer = null;
+
+		const notices = this._pending_notifications;
+		this._pending_notifications = null;
+
+		// Make sure we are equipped to send notices.
+		const chat = this.resolve('site.chat');
+		if ( ! chat?.addNotice )
+			return;
+
+		// Get the current user.
+		const me = this.resolve('site').getUser();
+		if ( ! me?.id )
+			return;
+
+		// Get the current channel.
+		let room_id = this.parent.context.get('context.channelID'),
+			room_login = this.parent.context.get('context.channel');
+
+		// And now get the current user's available emote sets.
+		const sets = this.getSetIDs(me.id, me.login, room_id, room_login);
+		const set_changes = {};
+
+		// Build a data structure for reducing the needed number of notices.
+		for(const notice of notices) {
+			// Make sure the set ID is a string.
+			const set_id = `${notice.set_id}`,
+				action = notice.action;
+
+			if ( sets.includes(set_id) ) {
+				const changes = set_changes[set_id] = set_changes[set_id] || {},
+					list = changes[action] = changes[action] || [];
+
+				// Deduplicate while we're at it.
+				if ( list.find(em => em.id === notice.emote.id) )
+					continue;
+
+				list.push(notice.emote);
+			}
+		}
+
+		// Iterate over everything, sending chat notices.
+		for(const [set_id, notices] of Object.entries(set_changes)) {
+			const emote_set = this.emote_sets[set_id];
+			if ( ! emote_set )
+				continue;
+
+			for(const [action, emotes] of Object.entries(notices)) {
+				const emote_list = emotes
+					.map(emote => emote.name)
+					.join(', ');
+
+				let msg;
+				if ( action === 'added' )
+					msg = this.i18n.t('emote-updates.added', 'The {count, plural, one {emote {emotes} has} other {emotes {emotes} have}} been added to {set}.', {
+						count: emotes.length,
+						emotes: emote_list,
+						set: emote_set.title
+					});
+
+				else if ( action === 'modified' )
+					msg = this.i18n.t('emote-updates.modified', 'The {count, plural, one {emote {emotes} has} other {emotes {emotes} have}} been updated in {set}.', {
+						count: emotes.length,
+						emotes: emote_list,
+						set: emote_set.title
+					});
+
+				else if ( action === 'removed' )
+					msg = this.i18n.t('emote-updates.removed', 'The {count, plural, one {emote {emotes} has} other {emotes {emotes} have}} been removed from {set}.', {
+						count: emotes.length,
+						emotes: emote_list,
+						set: emote_set.title
+					});
+
+				if ( msg )
+					chat.addNotice('*', `[FFZ] ${msg}`);
+			}
+		}
 	}
 
 
@@ -1845,6 +1999,9 @@ export default class Emotes extends Module {
 
 		// Send a loaded event because this emote set changed.
 		this.emit(':loaded', set_id, set);
+
+		// Return the processed emote object.
+		return processed;
 	}
 
 
@@ -1894,14 +2051,20 @@ export default class Emotes extends Module {
 
 		// Send a loaded event because this emote set changed.
 		this.emit(':loaded', set_id, set);
+
+		// Return the removed emote.
+		return emote;
 	}
 
 
 	loadSetData(set_id, data, suppress_log = false) {
 		const old_set = this.emote_sets[set_id];
 		if ( ! data ) {
-			if ( old_set )
+			if ( old_set ) {
+				if ( this.style )
+					this.style.delete(`es--${set_id}`);
 				this.emote_sets[set_id] = null;
+			}
 
 			return;
 		}

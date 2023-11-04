@@ -64,6 +64,11 @@ export default class User {
 		}
 	}
 
+	_unloadAddon(addon_id) {
+		// TODO: This
+		return 0;
+	}
+
 	get id() {
 		return this._id;
 	}
@@ -152,6 +157,18 @@ export default class User {
 			}
 	}
 
+
+	removeAllBadges(provider) {
+		if ( this.destroyed || ! this.badges )
+			return false;
+
+		if ( ! this.badges.has(provider) )
+			return false;
+
+		// Just yeet them all since we don't ref badges.
+		this.badges.delete(provider);
+		return true;
+	}
 
 
 	// ========================================================================

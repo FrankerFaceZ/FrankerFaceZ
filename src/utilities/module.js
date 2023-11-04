@@ -132,7 +132,7 @@ export class Module extends EventEmitter {
 			return Promise.reject(new CyclicDependencyError(`cyclic load requirements when loading ${initial}`, [...chain, this]));
 		else if ( this.load_requires )
 			for(const name of this.load_requires) {
-				const module = this.resolve(name);
+				const module = this.__resolve(name);
 				if ( module && chain.includes(module) )
 					return Promise.reject(new CyclicDependencyError(`cyclic load requirements when loading ${initial}`, [...chain, this, module]));
 			}
@@ -154,7 +154,7 @@ export class Module extends EventEmitter {
 			if ( this.load_requires ) {
 				const promises = [];
 				for(const name of this.load_requires) {
-					const module = this.resolve(name);
+					const module = this.__resolve(name);
 					if ( ! module || !(module instanceof Module) )
 						throw new ModuleError(`cannot find required module ${name} when loading ${path}`);
 
@@ -194,7 +194,7 @@ export class Module extends EventEmitter {
 			chain.push(this);
 
 			for(const dep of this.load_dependents) {
-				const module = this.resolve(dep);
+				const module = this.__resolve(dep);
 				if ( module ) {
 					if ( chain.includes(module) )
 						throw new CyclicDependencyError(`cyclic load requirements when checking if can unload ${initial}`, [...chain, this, module]);
@@ -229,7 +229,7 @@ export class Module extends EventEmitter {
 			return Promise.reject(new CyclicDependencyError(`cyclic load requirements when unloading ${initial}`, [...chain, this]));
 		else if ( this.load_dependents )
 			for(const dep of this.load_dependents) {
-				const module = this.resolve(dep);
+				const module = this.__resolve(dep);
 				if ( module && chain.includes(module) )
 					return Promise.reject(new CyclicDependencyError(`cyclic load requirements when unloading ${initial}`, [...chain, this, module]));
 			}
@@ -257,8 +257,8 @@ export class Module extends EventEmitter {
 			if ( this.load_dependents ) {
 				const promises = [];
 				for(const name of this.load_dependents) {
-					const module = this.resolve(name);
-					if ( ! module )
+					const module = this.__resolve(name);
+					if ( ! module || !(module instanceof Module) )
 						//throw new ModuleError(`cannot find depending module ${name} when unloading ${path}`);
 						continue;
 
@@ -296,7 +296,7 @@ export class Module extends EventEmitter {
 			return Promise.reject(new CyclicDependencyError(`cyclic requirements when enabling ${initial}`, [...chain, this]));
 		else if ( this.requires )
 			for(const name of this.requires) {
-				const module = this.resolve(name);
+				const module = this.__resolve(name);
 				if ( module && chain.includes(module) )
 					return Promise.reject(new CyclicDependencyError(`cyclic requirements when enabling ${initial}`, [...chain, this, module]));
 			}
@@ -329,7 +329,7 @@ export class Module extends EventEmitter {
 
 			if ( requires )
 				for(const name of requires) {
-					const module = this.resolve(name);
+					const module = this.__resolve(name);
 					if ( ! module || !(module instanceof Module) )
 						throw new ModuleError(`cannot find required module ${name} when enabling ${path}`);
 
@@ -368,8 +368,8 @@ export class Module extends EventEmitter {
 			chain.push(this);
 
 			for(const dep of this.dependents) {
-				const module = this.resolve(dep);
-				if ( module ) {
+				const module = this.__resolve(dep);
+				if ( module && (module instanceof Module) ) {
 					if ( chain.includes(module) )
 						throw new CyclicDependencyError(`cyclic load requirements when checking if can disable ${initial}`, [...chain, this, module]);
 
@@ -400,7 +400,7 @@ export class Module extends EventEmitter {
 			return Promise.reject(new CyclicDependencyError(`cyclic requirements when disabling ${initial}`, [...chain, this]));
 		else if ( this.dependents )
 			for(const dep of this.dependents) {
-				const module = this.resolve(dep);
+				const module = this.__resolve(dep);
 				if ( module && chain.includes(module) )
 					return Promise.reject(new CyclicDependencyError(`cyclic requirements when disabling ${initial}`, [...chain, this, dep]));
 			}
@@ -430,8 +430,8 @@ export class Module extends EventEmitter {
 			if ( this.dependents ) {
 				const promises = [];
 				for(const name of this.dependents) {
-					const module = this.resolve(name);
-					if ( ! module )
+					const module = this.__resolve(name);
+					if ( ! module || !(module instanceof Module) )
 						// Assume a non-existent module isn't enabled.
 						//throw new ModuleError(`cannot find depending module ${name} when disabling ${path}`);
 						continue;
@@ -499,19 +499,19 @@ export class Module extends EventEmitter {
 	// ========================================================================
 
 	loadModules(...names) {
-		return Promise.all(names.map(n => this.resolve(n).load()))
+		return Promise.all(names.map(n => this.__resolve(n).load()))
 	}
 
 	unloadModules(...names) {
-		return Promise.all(names.map(n => this.resolve(n).unload()))
+		return Promise.all(names.map(n => this.__resolve(n).unload()))
 	}
 
 	enableModules(...names) {
-		return Promise.all(names.map(n => this.resolve(n).enable()))
+		return Promise.all(names.map(n => this.__resolve(n).enable()))
 	}
 
 	disableModules(...names) {
-		return Promise.all(names.map(n => this.resolve(n).disable()))
+		return Promise.all(names.map(n => this.__resolve(n).disable()))
 	}
 
 
@@ -519,11 +519,22 @@ export class Module extends EventEmitter {
 	// Module Management
 	// ========================================================================
 
-	resolve(name) {
+	__resolve(name) {
 		if ( name instanceof Module )
 			return name;
 
 		return this.__modules[this.abs_path(name)];
+	}
+
+	resolve(name) {
+		let module = this.__resolve(name);
+		if ( !(module instanceof Module) )
+			return null;
+
+		if ( this.__processModule )
+			module = this.__processModule(module);
+
+		return module;
 	}
 
 
@@ -549,7 +560,7 @@ export class Module extends EventEmitter {
 	}
 
 
-	__processModule(module, name) {
+	__processModule(module) {
 		if ( this.addon_root && module.getAddonProxy ) {
 			const addon_id = this.addon_id;
 			if ( ! module.__proxies )
@@ -558,7 +569,7 @@ export class Module extends EventEmitter {
 			if ( module.__proxies[addon_id] )
 				return module.__proxies[addon_id];
 
-			const addon = this.resolve('addons')?.getAddon?.(addon_id),
+			const addon = this.__resolve('addons')?.getAddon?.(addon_id),
 				out = module.getAddonProxy(addon_id, addon, this.addon_root, this);
 
 			if ( out !== module )
@@ -596,7 +607,7 @@ export class Module extends EventEmitter {
 			// Just a Name
 			const full_name = name;
 			name = name.replace(/^(?:[^.]*\.)+/, '');
-			module = this.resolve(full_name);
+			module = this.__resolve(full_name);
 
 			// Allow injecting a module that doesn't exist yet?
 
@@ -625,8 +636,8 @@ export class Module extends EventEmitter {
 
 		module.references.push([this.__path, name]);
 
-		if ( this.__processModule )
-			module = this.__processModule(module, name);
+		if ( (module instanceof Module) && this.__processModule )
+			module = this.__processModule(module);
 
 		return this[name] = module;
 	}
@@ -657,7 +668,7 @@ export class Module extends EventEmitter {
 			// Just a Name
 			const full_name = name;
 			name = name.replace(/^(?:[^.]*\.)+/, '');
-			module = this.resolve(full_name);
+			module = this.__resolve(full_name);
 
 			// Allow injecting a module that doesn't exist yet?
 
@@ -687,7 +698,7 @@ export class Module extends EventEmitter {
 
 		module.references.push([this.__path, variable]);
 
-		if ( this.__processModule )
+		if ( (module instanceof Module) && this.__processModule )
 			module = this.__processModule(module, name);
 
 		return this[variable] = module;
@@ -711,9 +722,9 @@ export class Module extends EventEmitter {
 		if ( old_val instanceof Module )
 			throw new ModuleError(`Name Collision for Module ${path}`);
 
-		const dependents = old_val || [[], [], []],
-			inst = this.__modules[path] = new module(name, this),
-			requires = inst.requires = inst.__get_requires() || [],
+		const dependents = old_val || [[], [], []];
+		let inst = this.__modules[path] = new module(name, this);
+		const requires = inst.requires = inst.__get_requires() || [],
 			load_requires = inst.load_requires = inst.__get_load_requires() || [];
 
 		inst.dependents = dependents[0];
@@ -748,12 +759,15 @@ export class Module extends EventEmitter {
 		}
 
 		for(const [in_path, in_name] of dependents[2]) {
-			const in_mod = this.resolve(in_path);
+			const in_mod = this.__resolve(in_path);
 			if ( in_mod )
 				in_mod[in_name] = inst;
 			else
 				this.log.warn(`Unable to find module "${in_path}" that wanted "${in_name}".`);
 		}
+
+		if ( (inst instanceof Module) && this.__processModule )
+			inst = this.__processModule(inst, name);
 
 		if ( inject_reference )
 			this[name] = inst;
@@ -804,6 +818,45 @@ export class SiteModule extends Module {
 }
 
 export default Module;
+
+
+export function buildAddonProxy(accessor, thing, name, overrides, access_warnings, no_proxy = false) {
+
+	const handler = {
+		get(obj, prop) {
+			// First, handle basic overrides behavior.
+			let value = overrides[prop];
+			if ( value !== undefined ) {
+				// Check for functions, and bind their this.
+				if ( typeof value === 'function' )
+					return value.bind(obj);
+				return value;
+			}
+
+			// Next, handle access warnings.
+			const warning = access_warnings && access_warnings[prop];
+			if ( accessor?.log && warning )
+				accessor.log.warn(`[DEV-CHECK] Accessed ${name}.${prop} directly. ${typeof warning === 'string' ? warning : ''}`)
+
+			// Check for functions, and bind their this.
+			value = obj[prop];
+			if ( typeof value === 'function' )
+				return value.bind(obj);
+
+			// Make sure all module access is proxied.
+			if ( accessor && (value instanceof Module) )
+				return accessor.resolve(value);
+
+			// Return whatever it would be normally.
+			return Reflect.get(...arguments);
+		}
+	};
+
+	return no_proxy ? handler : new Proxy(thing, handler);
+
+}
+
+Module.buildAddonProxy = buildAddonProxy;
 
 
 // ============================================================================

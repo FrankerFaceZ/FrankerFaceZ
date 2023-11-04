@@ -10,6 +10,7 @@ import {has, maybe_call, once} from 'utilities/object';
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
 import awaitMD, {getMD} from 'utilities/markdown';
+import { DEBUG } from 'src/utilities/constants';
 
 export default class TooltipProvider extends Module {
 	constructor(...args) {
@@ -74,6 +75,41 @@ export default class TooltipProvider extends Module {
 		this.onFSChange = this.onFSChange.bind(this);
 	}
 
+
+	getAddonProxy(addon_id, addon, module) {
+		if ( ! addon_id )
+			return this;
+
+		const overrides = {},
+			is_dev = DEBUG || addon?.dev;
+
+		overrides.define = (key, handler) => {
+			if ( handler )
+				handler.__source = addon_id;
+
+			return this.define(key, handler);
+		};
+
+		if ( is_dev )
+			overrides.cleanup = () => {
+				module.log.warn('[DEV-CHECK] Instead of calling tooltips.cleanup(), you can emit the event "tooltips:cleanup"');
+				return this.cleanup();
+			};
+
+		return new Proxy(this, {
+			get(obj, prop) {
+				const thing = overrides[prop];
+				if ( thing )
+					return thing;
+				if ( prop === 'types' && is_dev )
+					module.log.warn('[DEV-CHECK] Accessed tooltips.types directly. Please use tooltips.define()');
+
+				return Reflect.get(...arguments);
+			}
+		});
+	}
+
+
 	onEnable() {
 		const container = this.getRoot();
 
@@ -86,7 +122,28 @@ export default class TooltipProvider extends Module {
 		this.tips = this._createInstance(container);
 
 		this.on(':cleanup', this.cleanup);
+
+		this.on('addon:fully-unload', addon_id => {
+			let removed = 0;
+			for(const [key, handler] of Object.entries(this.types)) {
+				if ( handler?.__source === addon_id ) {
+					removed++;
+					this.types[key] = undefined;
+				}
+			}
+
+			if ( removed ) {
+				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
+				this.cleanup();
+			}
+		});
 	}
+
+
+	define(key, handler) {
+		this.types[key] = handler;
+	}
+
 
 	getRoot() { // eslint-disable-line class-methods-use-this
 		return document.querySelector('.sunlight-root') ||

@@ -6,12 +6,13 @@
 
 import dayjs from 'dayjs';
 
-import Module from 'utilities/module';
+import { DEBUG, LINK_DATA_HOSTS } from 'utilities/constants';
+import Module, { buildAddonProxy } from 'utilities/module';
 import {Color} from 'utilities/color';
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {FFZEvent} from 'utilities/events';
 import {getFontsList} from 'utilities/fonts';
-import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars} from 'utilities/object';
+import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -25,7 +26,6 @@ import * as RICH_PROVIDERS from './rich_providers';
 import * as LINK_PROVIDERS from './link_providers';
 
 import Actions from './actions/actions';
-import { LINK_DATA_HOSTS } from 'src/utilities/constants';
 
 
 function sortPriorityColorTerms(list) {
@@ -1281,6 +1281,208 @@ export default class Chat extends Module {
 	}
 
 
+	getAddonProxy(addon_id, addon, module) {
+		if ( ! addon_id )
+			return this;
+
+		const is_dev = DEBUG || addon?.dev,
+			id_checker = makeAddonIdChecker(addon_id);
+
+		const overrides = {},
+			warnings = {};
+
+		const user_proxy = buildAddonProxy(module, null, 'getUser()', {
+			addBadge: is_dev ? function(provider, ...args) {
+				if ( ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getUser().addBadge() did not include addon ID in provider:', provider);
+
+				return this.addBadge(provider, ...args);
+			} : undefined,
+
+			removeBadge: is_dev ? function(provider, ...args) {
+				if ( ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getUser().removeBadge() did not include addon ID in provider:', provider);
+
+				return this.removeBadge(provider, ...args);
+			} : undefined,
+
+			addSet(provider, set_id, data) {
+				if ( is_dev && ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getUser().addSet() did not include addon ID in provider:', provider);
+
+				if ( data ) {
+					if ( is_dev && ! id_checker.test(set_id) )
+						module.log.warn('[DEV-CHECK] Call to getUser().addSet() loaded set data but did not include addon ID in set ID:', set_id);
+					data.__source = addon_id;
+				}
+
+				return this.addSet(provider, set_id, data);
+			},
+
+			removeAllSets: is_dev ? function(provider) {
+				if ( ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getUser().removeAllSets() did not include addon ID in provider:', provider);
+
+				return this.removeAllSets(provider);
+			} : undefined,
+
+			removeSet: is_dev ? function(provider, ...args) {
+				if ( ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getUser().removeSet() did not include addon ID in provider:', provider);
+
+				return this.removeSet(provider, ...args);
+			} : undefined
+
+		}, is_dev ? {
+			badges: 'Please use addBadge(), getBadge(), or removeBadge()',
+			emote_sets: 'Please use addSet(), removeSet(), or removeAllSets()',
+			room: true
+		} : null, true);
+
+		const room_proxy = buildAddonProxy(module, null, 'getRoom()', {
+			getUser(...args) {
+				const result = this.getUser(...args);
+				if ( result )
+					return new Proxy(result, user_proxy);
+			},
+
+			addSet(provider, set_id, data) {
+				if ( is_dev && ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getRoom().addSet() did not include addon ID in provider:', provider);
+
+				if ( data ) {
+					if ( is_dev && ! id_checker.test(set_id) )
+						module.log.warn('[DEV-CHECK] Call to getRoom().addSet() loaded set data but did not include addon ID in set ID:', set_id);
+					data.__source = addon_id;
+				}
+
+				return this.addSet(provider, set_id, data);
+			},
+
+			removeAllSets: is_dev ? function(provider) {
+				if ( ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getRoom().removeAllSets() did not include addon ID in provider:', provider);
+
+				return this.removeAllSets(provider);
+			} : undefined,
+
+			removeSet: is_dev ? function(provider, ...args) {
+				if ( ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to getRoom().removeSet() did not include addon ID in provider:', provider);
+
+				return this.removeSet(provider, ...args);
+			} : undefined
+
+		}, {
+			badges: true,
+			load_data: true,
+			emote_sets: 'Please use addSet(), removeSet(), or removeAllSets()',
+			refs: 'Please use ref() or unref()',
+			style: true,
+			users: 'Please use getUser()',
+			user_ids: 'Please use getUser()'
+		}, true);
+
+		overrides.iterateUsers = function*() {
+			for(const user of this.iterateUsers())
+				yield new Proxy(user, user_proxy);
+		}
+
+		overrides.iterateRooms = function*() {
+			for(const room of this.iterateRooms())
+				yield new Proxy(room, room_proxy);
+		}
+
+		overrides.iterateAllRoomsAndUsers = function*() {
+			for(const thing of this.iterateAllRoomsAndUsers())
+				yield new Proxy(thing, (thing instanceof Room)
+					? room_proxy
+					: user_proxy
+				);
+		}
+
+		overrides.addTokenizer = tokenizer => {
+			if ( tokenizer )
+				tokenizer.__source = addon_id;
+
+			return this.addTokenizer(tokenizer);
+		}
+
+		overrides.addLinkProvider = provider => {
+			if ( provider )
+				provider.__source = addon_id;
+
+			return this.addLinkProvider(provider);
+		}
+
+		overrides.addRichProvider = provider => {
+			if ( provider )
+				provider.__source = addon_id;
+
+			return this.addRichProvider(provider);
+		}
+
+		if ( is_dev ) {
+			overrides.getUser = (...args) => {
+				let result = this.getUser(...args);
+				if ( result )
+					return new Proxy(result, user_proxy);
+			}
+
+			overrides.getRoom = (...args) => {
+				let result = this.getRoom(...args);
+				if ( result )
+					return new Proxy(result, room_proxy);
+			}
+
+			overrides.removeTokenizer = tokenizer => {
+				let type;
+				if ( typeof tokenizer === 'string' )
+					type = tokenizer;
+				else
+					type = tokenizer.type;
+
+				const existing = this.tokenizers[type];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned tokenizer with chat.removeTokenizer:', type, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeTokenizer(tokenizer);
+			}
+
+			overrides.removeLinkProvider = provider => {
+				let type;
+				if ( typeof provider === 'string' )
+					type = provider;
+				else
+					type = provider.type;
+
+				const existing = this.link_providers[type];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned link provider with chat.removeLinkProvider:', type, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeLinkProvider(provider);
+			}
+
+			overrides.removeRichProvider = provider => {
+				let type;
+				if ( typeof provider === 'string' )
+					type = provider;
+				else
+					type = provider.type;
+
+				const existing = this.link_providers[type];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned rich provider with chat.removeRichProvider:', type, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeRichProvider(provider);
+			}
+		}
+
+		return buildAddonProxy(module, this, 'chat', overrides, warnings);
+	}
+
+
+
 	onEnable() {
 		this.socket = this.resolve('socket');
 		this.pubsub = this.resolve('pubsub');
@@ -1338,6 +1540,40 @@ export default class Chat extends Module {
 			}
 
 			this.triggered_reload = false;
+		});
+
+		this.on('addon:fully-unload', addon_id => {
+			let removed = 0;
+			for(const [key, def] of Object.entries(this.link_providers)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					this.removeLinkProvider(key);
+				}
+			}
+
+			for(const [key, def] of Object.entries(this.rich_providers)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					this.removeRichProvider(key);
+				}
+			}
+
+			for(const [key, def] of Object.entries(this.tokenizers)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					this.removeTokenizer(key);
+				}
+			}
+
+			for(const item of this.iterateAllRoomsAndUsers())
+				removed += item._unloadAddon(addon_id) ?? 0;
+
+			// If we removed things, retokenize all chat messages.
+			// TODO: Debounce this.
+			if ( removed ) {
+				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
+				this.emit(':update-line-tokens');
+			}
 		});
 	}
 
@@ -1500,24 +1736,49 @@ export default class Chat extends Module {
 	}
 
 
+	*iterateAllRoomsAndUsers() {
+		for(const room of this.iterateRooms()) {
+			yield room;
+			for(const user of room.iterateUsers())
+				yield user;
+		}
+
+		for(const user of this.iterateUsers())
+			yield user;
+	}
+
+
+	*iterateUsers() {
+		const visited = new Set;
+
+		for(const user of Object.values(this.user_ids)) {
+			if ( user && ! user.destroyed ) {
+				visited.add(user);
+				yield user;
+			}
+		}
+
+		for(const user of Object.values(this.users)) {
+			if ( user && ! user.destroyed )
+				yield user;
+		}
+	}
+
+
 	*iterateRooms() {
 		const visited = new Set;
 
-		for(const id in this.room_ids)
-			if ( has(this.room_ids, id) ) {
-				const room = this.room_ids[id];
-				if ( room && ! room.destroyed ) {
-					visited.add(room);
-					yield room;
-				}
+		for(const room of Object.values(this.room_ids)) {
+			if ( room && ! room.destroyed ) {
+				visited.add(room);
+				yield room;
 			}
+		}
 
-		for(const login in this.rooms)
-			if ( has(this.rooms, login) ) {
-				const room = this.rooms[login];
-				if ( room && ! room.destroyed && ! visited.has(room) )
-					yield room;
-			}
+		for(const room of Object.values(this.rooms)) {
+			if ( room && ! room.destroyed && ! visited.has(room) )
+				yield room;
+		}
 	}
 
 

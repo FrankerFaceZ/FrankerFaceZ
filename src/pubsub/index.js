@@ -146,12 +146,12 @@ export default class PubSub extends Module {
 			} : null
 		});
 
-		client.on('connect', () => {
-			this.log.info('Connected to PubSub.');
+		client.on('connect', msg => {
+			this.log.info('Connected to PubSub.', msg);
 		});
 
-		client.on('disconnect', () => {
-			this.log.info('Disconnected from PubSub.');
+		client.on('disconnect', msg => {
+			this.log.info('Disconnected from PubSub.', msg);
 		});
 
 		client.on('error', err => {

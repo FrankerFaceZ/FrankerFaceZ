@@ -150,6 +150,12 @@ export default class Room {
 	}
 
 
+	_unloadAddon(addon_id) {
+		// TODO: This
+		return 0;
+	}
+
+
 	get id() {
 		return this._id;
 	}
@@ -185,6 +191,23 @@ export default class Room {
 		if ( this.manager.socket )
 			this.manager.socket.subscribe(this, `room.${val}`);
 		this.manager.emit(':room-update-login', this, val);
+	}
+
+
+	*iterateUsers() {
+		const visited = new Set;
+
+		for(const user of Object.values(this.user_ids)) {
+			if ( user && ! user.destroyed ) {
+				visited.add(user);
+				yield user;
+			}
+		}
+
+		for(const user of Object.values(this.users)) {
+			if ( user && ! user.destroyed )
+				yield user;
+		}
 	}
 
 

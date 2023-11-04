@@ -4,13 +4,13 @@
 // Badge Handling
 // ============================================================================
 
-import {NEW_API, SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT} from 'utilities/constants';
+import {NEW_API, SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT, DEBUG} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {has, maybe_call, SourcedSet} from 'utilities/object';
-import Module from 'utilities/module';
-import { ColorAdjuster } from 'src/utilities/color';
-import { NoContent } from 'src/utilities/tooltip';
+import {has, makeAddonIdChecker, maybe_call, SourcedSet} from 'utilities/object';
+import Module, { buildAddonProxy } from 'utilities/module';
+import { ColorAdjuster } from 'utilities/color';
+import { NoContent } from 'utilities/tooltip';
 
 const CSS_BADGES = {
 	1: {
@@ -513,6 +513,22 @@ export default class Badges extends Module {
 				this.loadGlobalBadges();
 		});
 
+		this.on('addon:fully-unload', addon_id => {
+			let removed = 0;
+			for(const [key, val] of Object.entries(this.badges)) {
+				if ( val?.__source === addon_id ) {
+					removed++;
+					this.removeBadge(key, false);
+				}
+			}
+
+			if ( removed ) {
+				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
+				this.generateBadgeCSS();
+				// TODO: Debounced re-badge all chat messages.
+			}
+		});
+
 		this.tooltips.types.badge = (target, tip) => {
 			tip.add_class = 'ffz__tooltip--badges';
 
@@ -608,48 +624,61 @@ export default class Badges extends Module {
 		if ( ! addon_id )
 			return this;
 
-		const is_dev = addon?.dev ?? false;
+		const is_dev = DEBUG || (addon?.dev ?? false),
+			id_checker = makeAddonIdChecker(addon_id);
 
-		const overrides = {};
+		const overrides = {},
+			warnings = {};
 
 		overrides.loadBadgeData = (badge_id, data, ...args) => {
 			if ( data && data.addon === undefined )
 				data.addon = addon_id;
 
+			if ( is_dev && ! id_checker.test(badge_id) )
+				module.log.warn('[DEV-CHECK] Call to chat.badges.loadBadgeData() did not include addon ID in badge_id:', badge_id);
+
 			return this.loadBadgeData(badge_id, data, ...args);
 		};
 
 		if ( is_dev ) {
+			overrides.removeBadge = (badge_id, ...args) => {
+				// Note: We aren't checking that the badge_id contains the add-on
+				// ID because that should be handled by loadBadgeData for badges
+				// from this add-on. Checking if we're removing a badge from
+				// another source covers the rest.
+
+				const existing = this.badges[badge_id];
+				if ( existing && existing.addon !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned badge with chat.badges.removeBadge():', key, ' owner:', existing.addon ?? 'ffz');
+
+				return this.removeBadge(badge_id, ...args);
+			};
+
 			overrides.setBulk = (source, ...args) => {
-				if ( ! source.includes(addon_id) )
-					module.log.warn('[DEV-CHECK] Call to badges.setBulk did not include addon ID in source:', source);
+				if ( ! id_checker.test(source) )
+					module.log.warn('[DEV-CHECK] Call to chat.badges.setBulk() did not include addon ID in source:', source);
 
 				return this.setBulk(source, ...args);
 			};
 
 			overrides.deleteBulk = (source, ...args) => {
-				if ( ! source.includes(addon_id) )
-					module.log.warn('[DEV-CHECK] Call to badges.deleteBulk did not include addon ID in source:', source);
+				if ( ! id_checker.test(source) )
+					module.log.warn('[DEV-CHECK] Call to chat.badges.deleteBulk() did not include addon ID in source:', source);
 
 				return this.deleteBulk(source, ...args);
 			}
 
 			overrides.extendBulk = (source, ...args) => {
-				if ( ! source.includes(addon_id) )
-					module.log.warn('[DEV-CHECK] Call to badges.extendBulk did not include addon ID in source:', source);
+				if ( ! id_checker.test(source) )
+					module.log.warn('[DEV-CHECK] Call to chat.badges.extendBulk() did not include addon ID in source:', source);
 
 				return this.extendBulk(source, ...args);
 			}
+
+			warnings.badges = 'Please use loadBadgeData() or removeBadge()';
 		}
 
-		return new Proxy(this, {
-			get(obj, prop) {
-				const thing = overrides[prop];
-				if ( thing )
-					return thing;
-				return Reflect.get(...arguments);
-			}
-		});
+		return buildAddonProxy(module, this, 'chat.badges', overrides, warnings);
 	}
 
 
@@ -1191,6 +1220,17 @@ export default class Badges extends Module {
 		this.log.info(`Loaded ${badges} badges and assigned them to ${users} users.`);
 		this.buildBadgeCSS();
 		this.load_tracker.notify('chat-data', 'ffz-global-badges');
+	}
+
+
+	removeBadge(badge_id, generate_css = true) {
+		if ( ! this.badges[badge_id] )
+			return;
+
+		delete this.badges[badge_id];
+
+		if ( generate_css )
+			this.buildBadgeCSS();
 	}
 
 

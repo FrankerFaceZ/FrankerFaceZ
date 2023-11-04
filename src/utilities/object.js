@@ -580,6 +580,27 @@ export function deep_copy(object, seen) {
 }
 
 
+export function normalizeAddonIdForComparison(input) {
+	return input.toLowerCase().replace(/[\.\_\-]+/, '-');
+}
+
+export function makeAddonIdChecker(input) {
+	input = escape_regex(normalizeAddonIdForComparison(input));
+	input = input.replace(/-+/g, '[\.\_\-]+');
+
+	// Special: ffzap-bttv
+	input = input.replace(/\bbttv\b/g, '(?:bttv|betterttv)');
+
+	// Special: which seven tho
+	input = input.replace(/\b7tv\b/g, '(?:7tv|seventv)');
+
+	// Special: pronouns (badges)
+	input = input.replace(/\bpronouns\b/g, '(?:pronouns|addon-pn)');
+
+	return new RegExp('\\b' + input + '\\b', 'i');
+}
+
+
 export function maybe_call(fn, ctx, ...args) {
 	if ( typeof fn === 'function' ) {
 		if ( ctx )

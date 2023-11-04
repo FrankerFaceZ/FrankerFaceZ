@@ -11,6 +11,7 @@ import {duration_to_string, durationForURL} from 'utilities/time';
 
 import Tooltip from 'utilities/tooltip';
 import Module from 'utilities/module';
+import { DEBUG } from 'src/utilities/constants';
 
 const CLIP_URL = /^https:\/\/[^/]+\.(?:twitch\.tv|twitchcdn\.net)\/.+?\.mp4(?:\?.*)?$/;
 
@@ -558,11 +559,12 @@ export default class Metadata extends Module {
 	}
 
 
-	getAddonProxy(addon_id) {
+	getAddonProxy(addon_id, addon, module) {
 		if ( ! addon_id )
 			return this;
 
-		const overrides = {};
+		const overrides = {},
+			is_dev = DEBUG || addon?.dev;
 
 		overrides.define = (key, definition) => {
 			if ( definition )
@@ -576,6 +578,9 @@ export default class Metadata extends Module {
 				const thing = overrides[prop];
 				if ( thing )
 					return thing;
+				if ( prop === 'definitions' && is_dev )
+					module.log.warn('[DEV-CHECK] Accessed metadata.definitions directly. Please use define()');
+
 				return Reflect.get(...arguments);
 			}
 		});
@@ -627,8 +632,10 @@ export default class Metadata extends Module {
 				}
 			}
 
-			if ( removed.size )
+			if ( removed.size ) {
+				this.log.debug(`Cleaned up ${removed.size} entries when unloading addon:`, addon_id);
 				this.updateMetadata([...removed]);
+			}
 		});
 	}
 

@@ -46,6 +46,11 @@ export default class PubSubClient extends EventEmitter {
 		// Topics is a map of topics to sub-topic IDs.
 		this._topics = new Map;
 
+		// Incorrect Topics is a map of every incorrect topic mapping
+		// we are currently subscribed to, for the purpose of unsubscribing
+		// from them.
+		this._incorrect_topics = new Map;
+
 		// Live Topics is a set of every topic we have sent subscribe
 		// packets to the server for.
 		this._live_topics = new Set;
@@ -60,6 +65,8 @@ export default class PubSubClient extends EventEmitter {
 		// Debounce a few things.
 		this.scheduleHeartbeat = this.scheduleHeartbeat.bind(this);
 		this._sendHeartbeat = this._sendHeartbeat.bind(this);
+		this.scheduleResub = this.scheduleResub.bind(this);
+		this._sendResub = this._sendResub.bind(this);
 
 		this._fetchNewTopics = this._fetchNewTopics.bind(this);
 		this._sendSubscribes = debounce(this._sendSubscribes, 250);
@@ -157,9 +164,28 @@ export default class PubSubClient extends EventEmitter {
 		// Record all the topic mappings we just got.
 		// TODO: Check for subtopic mismatches.
 		// TODO: Check for removed subtopic assignments.
-		if ( data.topics )
-			for(const [key, val] of Object.entries(data.topics))
+		if ( data.topics ) {
+			const removed = new Set(this._topics.keys());
+
+			for(const [key, val] of Object.entries(data.topics)) {
+				removed.delete(key);
+				const existing = this._topics.get(key);
+				if ( existing != null && existing != val )
+					this._incorrect_topics.set(key, existing);
 				this._topics.set(key, val);
+			}
+
+			for(const key of removed) {
+				const existing = this._topics.get(key);
+				this._topics.delete(key);
+				this._incorrect_topics.set(key, existing);
+			}
+
+			// If we have a mismatch, handle it.
+			if ( this._incorrect_topics.size )
+				this._sendUnsubscribes()
+					.then(() => this._sendSubscribes());
+		}
 
 		// Update the heartbeat timer.
 		this.scheduleHeartbeat();
@@ -307,7 +333,7 @@ export default class PubSubClient extends EventEmitter {
 	}
 
 	// ========================================================================
-	// Client Management
+	// Keep Alives
 	// ========================================================================
 
 	clearHeartbeat() {
@@ -329,9 +355,37 @@ export default class PubSubClient extends EventEmitter {
 			.finally(this.scheduleHeartbeat);
 	}
 
+
+	clearResubTimer() {
+		if ( this._resub_timer ) {
+			clearTimeout(this._resub_timer);
+			this._resub_timer = null;
+		}
+	}
+
+	scheduleResub() {
+		if ( this._resub_timer )
+			clearTimeout(this._resub_timer);
+
+		// Send a resubscription every 30 minutes.
+		this._resub_timer = setTimeout(this._sendResub, 30 * 60 * 1000);
+	}
+
+	_sendResub() {
+		this._resendSubscribes()
+			.finally(this.scheduleResub);
+	}
+
+
+	// ========================================================================
+	// Client Management
+	// ========================================================================
+
 	_destroyClient() {
 		if ( ! this._client )
 			return;
+
+		this.clearResubTimer();
 
 		try {
 			this._client.disconnect().catch(() => {});
@@ -361,8 +415,14 @@ export default class PubSubClient extends EventEmitter {
 			maxMessagesPerSecond: 10
 		});
 
+		let disconnected = false;
+
 		this._client.onMqttMessage = message => {
 			if ( message.type === DISCONNECT ) {
+				if ( disconnected )
+					return;
+
+				disconnected = true;
 				this.emit('disconnect', message);
 				this._destroyClient();
 
@@ -441,10 +501,62 @@ export default class PubSubClient extends EventEmitter {
 			clean: true
 		}).then(msg => {
 			this._state = State.Connected;
-			this.emit('connect');
+			this.emit('connect', msg);
+
+			// Periodically re-send our subscriptions. This
+			// is done because the broker seems to be forgetful
+			// for long-lived connections.
+			this.scheduleResub();
+
+			// Reconnect when this connection ends.
+			if ( client.connectionCompletion )
+				client.connectionCompletion.finally(() => {
+					if ( disconnected )
+						return;
+
+					disconnected = true;
+					this.emit('disconnect', null);
+					this._destroyClient();
+
+					if ( this._should_connect )
+						this._createClient(data);
+				});
 
 			return this._sendSubscribes()
 		});
+	}
+
+	_resendSubscribes() {
+		if ( ! this._client )
+			return Promise.resolve();
+
+		const topics = [],
+			batch = [];
+
+		for(const topic of this._live_topics) {
+			const subtopic = this._topics.get(topic);
+			if ( subtopic != null ) {
+				if ( subtopic === 0 )
+					topics.push(topic);
+				else
+					topics.push(`${topic}/s${subtopic}`);
+
+				batch.push(topic);
+			}
+		}
+
+		if ( ! topics.length )
+			return Promise.resolve();
+
+		return this._client.subscribe({topicFilter: topics})
+			.catch(() => {
+				// If there was an error, we did NOT subscribe.
+				for(const topic of batch)
+					this._live_topics.delete(topic);
+
+				if ( this._live_topics.size != this._active_topics.size )
+					return sleep(2000).then(() => this._sendSubscribes());
+			});
 	}
 
 	_sendSubscribes() {
@@ -474,25 +586,27 @@ export default class PubSubClient extends EventEmitter {
 			}
 		}
 
-		if ( topics.length )
-			return this._client.subscribe({topicFilter: topics })
-				.catch(() => {
-					// If there was an error, we did NOT subscribe.
-					for(const topic of batch)
-						this._live_topics.delete(topic);
-
-					// Call sendSubscribes again after a bit.
-					return sleep(2000).then(() => this._sendSubscribes());
-				});
-		else
+		if ( ! topics.length )
 			return Promise.resolve();
+
+		return this._client.subscribe({topicFilter: topics })
+			.catch(() => {
+				// If there was an error, we did NOT subscribe.
+				for(const topic of batch)
+					this._live_topics.delete(topic);
+
+				// Call sendSubscribes again after a bit.
+				if ( this._live_topics.size != this._active_topics.size )
+					return sleep(2000).then(() => this._sendSubscribes());
+			});
 	}
 
 	_sendUnsubscribes() {
 		if ( ! this._client )
 			return Promise.resolve();
 
-		const topics = [];
+		const topics = [],
+			batch = new Set;
 
 		// iterate over a copy to support removal
 		for(const topic of [...this._live_topics]) {
@@ -511,17 +625,32 @@ export default class PubSubClient extends EventEmitter {
 				real_topic = `${topic}/s${subtopic}`;
 
 			topics.push(real_topic);
+			batch.add(topic);
 			this._live_topics.delete(topic);
 		}
 
-		if ( topics.length )
-			return this._client.unsubscribe({topicFilter: topics})
-				.catch(error => {
-					if ( this.logger )
-						this.logger.warn('Received error when unsubscribing from topics:', error);
-				});
-		else
+		// handle incorrect topics
+		for(const [topic, subtopic] of this._incorrect_topics) {
+			if ( batch.has(topic) )
+				continue;
+
+			batch.add(topic);
+			if ( subtopic === 0 )
+				topics.push(topic);
+			else
+				topics.push(`${topic}/s${subtopic}`);
+
+			this._live_topics.delete(topic);
+		}
+
+		if ( ! topics.length )
 			return Promise.resolve();
+
+		return this._client.unsubscribe({topicFilter: topics})
+			.catch(error => {
+				if ( this.logger )
+					this.logger.warn('Received error when unsubscribing from topics:', error);
+			});
 	}
 
 }
