@@ -2316,6 +2316,8 @@ export default class Chat extends Module {
 		if ( ! tokenizer )
 			return null;
 
+		delete this.tokenizers[type];
+
 		if ( tokenizer.tooltip )
 			delete this.tooltips.types[type];
 
@@ -2354,6 +2356,8 @@ export default class Chat extends Module {
 		if ( ! provider )
 			return null;
 
+		delete this.link_providers[type];
+
 		const idx = this.__link_providers.indexOf(provider);
 		if ( idx !== -1 )
 			this.__link_providers.splice(idx, 1);
@@ -2388,6 +2392,8 @@ export default class Chat extends Module {
 		provider = this.rich_providers[type];
 		if ( ! provider )
 			return null;
+
+		delete this.rich_providers[type];
 
 		const idx = this.__rich_providers.indexOf(provider);
 		if ( idx !== -1 )

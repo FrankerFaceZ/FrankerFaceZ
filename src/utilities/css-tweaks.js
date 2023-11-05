@@ -19,6 +19,8 @@ export default class CSSTweaks extends Module {
 		this.chunks = {};
 		this.chunks_loaded = false;
 
+		this._state = {};
+
 		this.populate = once(this.populate);
 	}
 
@@ -43,18 +45,32 @@ export default class CSSTweaks extends Module {
 		this.style.set(k, `${this.rules[key]}{display:none !important}`);
 	}
 
-	async toggle(key, val) {
+	toggle(key, val) {
+		if ( this._state[key] == val )
+			return;
+
+		this._state[key] = val;
+		this._apply(key);
+	}
+
+	_apply(key) {
+		const val = this._state[key];
 		if ( ! val ) {
 			if ( this._style )
 				this._style.delete(key);
 			return;
 		}
 
-		if ( ! this.chunks_loaded )
-			await this.populate();
+		if ( this.style.has(key) )
+			return;
 
-		if ( ! has(this.chunks, key) )
-			throw new Error(`unknown chunk "${key}" for toggle`);
+		if ( ! this.chunks_loaded )
+			return this.populate().then(() => this._apply(key));
+
+		if ( ! has(this.chunks, key) ) {
+			this.log.warn(`Unknown chunk name "${key}" for toggle()`);
+			return;
+		}
 
 		this.style.set(key, this.chunks[key]);
 	}

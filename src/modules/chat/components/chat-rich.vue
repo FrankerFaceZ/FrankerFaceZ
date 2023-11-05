@@ -9,7 +9,7 @@ let tokenizer;
 
 
 export default {
-	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia', 'forceMid', 'noLink', 'noTooltip', 'noElevation', 'noUnsafe'],
+	props: ['data', 'url', 'events', 'forceFull', 'forceUnsafe', 'forceMedia', 'forceShort', 'forceMid', 'noLink', 'noTooltip', 'noElevation', 'noUnsafe'],
 
 	data() {
 		return {
@@ -256,9 +256,13 @@ export default {
 
 		renderBody(h) {
 			let body;
-			if ( this.forceFull === true || (this.forceFull !== false && this.full) )
+			if ( this.forceShort )
+				body = this.short;
+			else if ( this.forceMid )
+				body = this.mid;
+			else if ( this.forceFull || (this.forceFull !== false && this.full) )
 				body = this.full;
-			else if ( this.forceMid === true || (this.forceMid !== false && this.mid) )
+			else if ( this.forceMid || (this.forceMid !== false && this.mid) )
 				body = this.mid;
 			else
 				body = this.short;

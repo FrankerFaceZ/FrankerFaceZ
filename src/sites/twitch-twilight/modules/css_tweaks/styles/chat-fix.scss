@@ -20,6 +20,9 @@ body .channel-root__right-column*/ {
 	transform: none !important;
 }
 
-.channel-root--hold-chat+.persistent-player, .channel-root--watch-chat+.persistent-player, .channel-root__info--with-chat .channel-info-content, .channel-root__player--with-chat {
+.channel-root--hold-chat+.persistent-player,
+.channel-root--watch-chat+.persistent-player,
+.channel-root__info--with-chat .channel-info-content,
+.channel-root__player--with-chat {
 	width: 100% !important;
 }

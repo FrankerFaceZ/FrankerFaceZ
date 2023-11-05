@@ -111,7 +111,7 @@ export default class Layout extends Module {
 				description: 'When enabled, this minimizes the chat header and places the chat input box in line with the chat buttons in order to present a more compact chat able to display more lines with limited vertical space.',
 				component: 'setting-check-box'
 			},
-			changed: val => this.css_tweaks.toggle('portrait-chat', val)
+			//changed: val => this.css_tweaks.toggle('portrait-chat', val)
 		})
 
 		this.settings.add('layout.use-portrait', {
@@ -135,7 +135,7 @@ export default class Layout extends Module {
 			process(ctx) {
 				return ctx.get('layout.use-portrait') && ctx.get('context.ui.rightColumnExpanded');
 			},
-			changed: val => this.css_tweaks.toggle('portrait', val)
+			//changed: val => this.css_tweaks.toggle('portrait', val)
 		});
 
 		this.settings.add('layout.use-portrait-swapped', {
@@ -143,7 +143,7 @@ export default class Layout extends Module {
 			process(ctx) {
 				return ctx.get('layout.inject-portrait') && ctx.get('layout.swap-sidebars')
 			},
-			changed: val => this.css_tweaks.toggle('portrait-swapped', val)
+			//changed: val => this.css_tweaks.toggle('portrait-swapped', val)
 		});
 
 		this.settings.add('layout.use-portrait-meta', {
@@ -151,7 +151,7 @@ export default class Layout extends Module {
 			process(ctx) {
 				return ctx.get('layout.inject-portrait') && ctx.get('player.theatre.metadata')
 			},
-			changed: val => this.css_tweaks.toggle('portrait-metadata', val)
+			//changed: val => this.css_tweaks.toggle('portrait-metadata', val)
 		});
 
 		this.settings.add('layout.use-portrait-meta-top', {
@@ -159,7 +159,7 @@ export default class Layout extends Module {
 			process(ctx) {
 				return ctx.get('layout.use-portrait-meta') && ! ctx.get('layout.portrait-invert')
 			},
-			changed: val => this.css_tweaks.toggle('portrait-metadata-top', val)
+			//changed: val => this.css_tweaks.toggle('portrait-metadata-top', val)
 		});
 
 		this.settings.add('layout.is-theater-mode', {
@@ -208,7 +208,7 @@ export default class Layout extends Module {
 				return height;
 			},
 
-			changed: val => this.css_tweaks.setVariable('portrait-extra-height', `${val}rem`)
+			//changed: val => this.css_tweaks.setVariable('portrait-extra-height', `${val}rem`)
 		})
 
 		this.settings.add('layout.portrait-extra-width', {
@@ -220,7 +220,7 @@ export default class Layout extends Module {
 				return ctx.get('context.ui.sideNavExpanded') ? 24 : 5
 			},
 
-			changed: val => this.css_tweaks.setVariable('portrait-extra-width', `${val}rem`)
+			//changed: val => this.css_tweaks.setVariable('portrait-extra-width', `${val}rem`)
 		});
 
 		this.settings.add('layout.is-minimal', {
@@ -237,13 +237,22 @@ export default class Layout extends Module {
 		this.on(':update-nav', this.updateNavLinks, this);
 		this.on(':resize', this.handleResize, this);
 
-		this.css_tweaks.toggle('portrait-chat', this.settings.get('layout.portrait-min-chat'));
+		this.settings.getChanges('layout.portrait-min-chat', val => this.css_tweaks.toggle('portrait-chat', val));
+		this.settings.getChanges('layout.inject-portrait', val => this.css_tweaks.toggle('portrait', val));
+		this.settings.getChanges('layout.use-portrait-swapped', val => this.css_tweaks.toggle('portrait-swapped', val));
+		this.settings.getChanges('layout.use-portrait-meta', val => this.css_tweaks.toggle('portrait-metadata', val));
+		this.settings.getChanges('layout.use-portrait-meta-top', val => this.css_tweaks.toggle('portrait-metadata-top', val));
+
+		this.settings.getChanges('layout.portrait-extra-width', val => this.css_tweaks.setVariable('portrait-extra-width', `${val}rem`));
+		this.settings.getChanges('layout.portrait-extra-height', val => this.css_tweaks.setVariable('portrait-extra-height', `${val}rem`));
+
+		/*this.css_tweaks.toggle('portrait-chat', this.settings.get('layout.portrait-min-chat'));
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
 		this.css_tweaks.toggle('portrait-swapped', this.settings.get('layout.use-portrait-swapped'));
 		this.css_tweaks.toggle('portrait-metadata', this.settings.get('layout.use-portrait-meta'));
 		this.css_tweaks.toggle('portrait-metadata-top', this.settings.get('layout.use-portrait-meta-top'));
 		this.css_tweaks.setVariable('portrait-extra-width', `${this.settings.get('layout.portrait-extra-width')}rem`);
-		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);
+		this.css_tweaks.setVariable('portrait-extra-height', `${this.settings.get('layout.portrait-extra-height')}rem`);*/
 
 		this.on('site.directory:update-cards', () => {
 			this.SideBar.each(el => this._updateSidebar(el));

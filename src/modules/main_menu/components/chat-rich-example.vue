@@ -6,16 +6,19 @@
 		<chat-rich
 			:data="data"
 			:url="url"
+			:force-short="true"
 		/>
 	</div>
 </template>
 
 <script>
 
+import { maybe_call } from 'utilities/object';
+
 const VIDEOS = [
 	'https://www.twitch.tv/dansalvato',
 	'https://www.twitch.tv/sirstendec',
-	//'https://www.youtube.com/watch?v=BFSWlDpA6C4'
+	'https://www.youtube.com/watch?v=BFSWlDpA6C4'
 ];
 
 export default {
@@ -29,14 +32,18 @@ export default {
 	props: ['context', 'item'],
 
 	data() {
-		const url = VIDEOS[Math.floor(Math.random() * VIDEOS.length)],
-			token = {
+		let url = maybe_call(this.item.extra.url, this, this.item, this.context);
+		if ( ! url )
+			url = VIDEOS[Math.floor(Math.random() * VIDEOS.length)];
+
+		const token = {
 				type: 'link',
 				force_rich: true,
 				is_mail: false,
 				url,
 				text: url
 			},
+
 			chat = this.item.extra.getChat();
 
 		let data = null;

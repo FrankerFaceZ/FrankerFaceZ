@@ -276,6 +276,15 @@ export class EventEmitter {
 					item[2] = ttl - 1;
 			}
 
+			// Automatically wait for a promise, if the return value is a promise
+			// and we're dealing with a waitable event.
+			if ( ret instanceof Promise ) {
+				if ( (args[0] instanceof FFZWaitableEvent) )
+					args[0].waitFor(ret);
+				else if ( this.log )
+					this.log.error(`handler for event "${event}" returned a Promise but the event is not an FFZWaitableEvent`);
+			}
+
 			if ( (args[0] instanceof FFZEvent && args[0].propagationStopped) || ret === StopPropagation )
 				break;
 		}
@@ -306,88 +315,6 @@ export class EventEmitter {
 		this.__running.delete(event);
 	}
 
-	async emitAsync(event, ...args) {
-		let list = this.__listeners[event];
-		if ( ! list )
-			return [];
-
-		if ( this.__running.has(event) )
-			throw new Error(`concurrent access: tried to emit event while event is running`);
-
-		// Track removals separately to make iteration over the event list
-		// much, much simpler.
-		const removed = new Set,
-			promises = [];
-
-		// Set the current list of listeners to null because we don't want
-		// to enter some kind of loop if a new listener is added as the result
-		// of an existing listener.
-		this.__listeners[event] = null;
-		this.__running.add(event);
-
-		for(const item of list) {
-			const [fn, ctx] = item;
-			let ret;
-			try {
-				ret = fn.apply(ctx, args);
-			} catch(err) {
-				if ( this.log )
-					this.log.capture(err, {tags: {event}, extra: {args}});
-			}
-
-			if ( !(ret instanceof Promise) )
-				ret = Promise.resolve(ret);
-
-			promises.push(ret.then(r => {
-				const new_ttl = item[2];
-				if ( r === Detach )
-					removed.add(item);
-				else if ( new_ttl !== false ) {
-					if ( new_ttl <= 1 )
-						removed.add(item);
-					else
-						item[2] = new_ttl - 1;
-				}
-
-				if ( ret !== Detach )
-					return ret;
-			}).catch(err => {
-				if ( this.log )
-					this.log.capture(err, {event, args});
-
-				return null;
-			}));
-		}
-
-		const out = await Promise.all(promises);
-
-		// Remove any dead listeners from the list.
-		if ( removed.size ) {
-			for(const item of removed) {
-				const idx = list.indexOf(item);
-				if ( idx !== -1 )
-					list.splice(idx, 1);
-			}
-		}
-
-		// Were more listeners added while we were running? Just combine
-		// the two lists if so.
-		if ( this.__listeners[event] )
-			list = list.concat(this.__listeners[event]);
-
-		// If we have items, store the list back. Otherwise, mark that we
-		// have a dead listener.
-		if ( list.length )
-			this.__listeners[event] = list;
-		else {
-			this.__listeners[event] = null;
-			this.__dead_events++;
-		}
-
-		this.__running.delete(event);
-
-		return out;
-	}
 }
 
 EventEmitter.Detach = Detach;
@@ -416,6 +343,39 @@ export class FFZEvent {
 	}
 }
 
+
+export class FFZWaitableEvent extends FFZEvent {
+
+	_wait() {
+		if ( this.__waiter )
+			return this.__waiter;
+
+		if ( ! this.__promises )
+			return;
+
+		const promises = this.__promises;
+		this.__promises = null;
+
+		return this.__waiter = Promise.all(promises).finally(() => {
+			this.__waiter = null;
+			return this._wait();
+		});
+	}
+
+	_reset() {
+		super._reset();
+		this.__waiter = null;
+		this.__promises = null;
+	}
+
+	waitFor(promise) {
+		if ( ! this.__promises )
+			this.__promises = [promise];
+		else
+			this.__promises.push(promise);
+	}
+
+}
 
 
 export class HierarchicalEventEmitter extends EventEmitter {
@@ -507,7 +467,6 @@ export class HierarchicalEventEmitter extends EventEmitter {
 
 	emit(event, ...args) { return super.emit(this.abs_path(event), ...args) }
 	emitUnsafe(event, ...args) { return super.emitUnsafe(this.abs_path(event), ...args) }
-	emitAsync(event, ...args) { return super.emitAsync(this.abs_path(event), ...args) }
 
 	events(include_children) {
 		this.__cleanListeners();

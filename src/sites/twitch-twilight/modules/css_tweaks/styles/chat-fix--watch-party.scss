@@ -1,0 +1,19 @@
+.channel-root__right-column--host-player-above-chat {
+	transition: none !important;
+	transform: none !important;
+	position: initial !important;
+}
+
+.toggle-visibility__right-column--expanded {
+	transform: none !important;
+}
+
+body .channel-root--hold-chat + .persistent-player,
+body .channel-root--watch-chat + .persistent-player {
+	width: 100%;
+}
+
+.channel-root__info--with-chat .channel-info-content,
+.channel-root__player--with-chat {
+	width: 100% !important;
+}

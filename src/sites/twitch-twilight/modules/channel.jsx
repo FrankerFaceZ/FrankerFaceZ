@@ -483,6 +483,8 @@ export default class Channel extends Module {
 
 		this.updateSubscription(props.channelID, props.channelLogin);
 		this.updateMetadata(el);
+
+		this.emit(':update-bar', el, props, channel);
 	}
 
 	removeBar(el) {

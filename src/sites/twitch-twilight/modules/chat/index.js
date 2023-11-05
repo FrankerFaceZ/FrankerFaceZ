@@ -909,6 +909,7 @@ export default class ChatHook extends Module {
 
 		this.css_tweaks.toggle('chat-font', size !== 13 || font !== 'inherit');
 		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
+		this.css_tweaks.toggle('chat-fix--watch-party', this.settings.get('context.isWatchParty'));
 
 		this.css_tweaks.toggle('emote-alignment-padded', emote_alignment === 1);
 		this.css_tweaks.toggle('emote-alignment-baseline', emote_alignment === 2);

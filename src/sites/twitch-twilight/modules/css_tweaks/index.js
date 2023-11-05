@@ -72,6 +72,8 @@ export default class CSSTweaks extends Module {
 		this.chunks = {};
 		this.chunks_loaded = false;
 
+		this._state = {};
+
 		// Layout
 
 		this.settings.add('metadata.modview.hide-info', {
@@ -574,17 +576,33 @@ export default class CSSTweaks extends Module {
 	}
 
 
-	async toggle(key, val) {
+	toggle(key, val) {
+		val = !! val;
+		if ( (this._state[key] ?? false) === val )
+			return;
+
+		this._state[key] = val;
+		this._apply(key);
+	}
+
+	_apply(key) {
+		const val = this._state[key];
 		if ( ! val ) {
-			this.style.delete(key);
+			if ( this.style )
+				this.style.delete(key);
 			return;
 		}
 
-		if ( ! this.chunks_loaded )
-			await this.populate();
+		if ( this.style.has(key) )
+			return;
 
-		if ( ! has(this.chunks, key) )
-			throw new Error(`cannot find chunk "${key}"`);
+		if ( ! this.chunks_loaded )
+			return this.populate().then(() => this._apply(key));
+
+		if ( ! has(this.chunks, key) ) {
+			this.log.warn(`Unknown chunk name "${key}" for toggle()`);
+			return;
+		}
 
 		this.style.set(key, this.chunks[key]);
 	}
