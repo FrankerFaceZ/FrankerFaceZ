@@ -281,8 +281,8 @@ export class EventEmitter {
 			if ( ret instanceof Promise ) {
 				if ( (args[0] instanceof FFZWaitableEvent) )
 					args[0].waitFor(ret);
-				else if ( this.log )
-					this.log.error(`handler for event "${event}" returned a Promise but the event is not an FFZWaitableEvent`);
+				/*else if ( this.log )
+					this.log.debug(`handler for event "${event}" returned a Promise but the event is not an FFZWaitableEvent`);*/
 			}
 
 			if ( (args[0] instanceof FFZEvent && args[0].propagationStopped) || ret === StopPropagation )

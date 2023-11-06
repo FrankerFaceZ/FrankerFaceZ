@@ -140,6 +140,7 @@ export default class PubSub extends Module {
 		const PubSubClient = await this.loadPubSubClient();
 
 		const client = this._client = new PubSubClient(cluster, {
+			logger: this.log.get('client'),
 			user: user?.id ? {
 				provider: 'twitch',
 				id: user.id

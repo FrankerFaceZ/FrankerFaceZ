@@ -590,14 +590,34 @@ export default class PubSubClient extends EventEmitter {
 			return Promise.resolve();
 
 		return this._client.subscribe({topicFilter: topics })
-			.catch(() => {
+			.then(() => {
+				// Success. Reset the subscribe failures count.
+				this._sub_failures = 0;
+			})
+			.catch(msg => {
+				// TODO: Check the reason why.
+				if ( this.logger )
+					this.logger.debug('Subscribe failure for topics:', batch.join(', '), ' reason:', msg);
+
 				// If there was an error, we did NOT subscribe.
 				for(const topic of batch)
 					this._live_topics.delete(topic);
 
+				// See if we have more work.
+				if ( this._live_topics.size >= this._active_topics.size )
+					return;
+
 				// Call sendSubscribes again after a bit.
-				if ( this._live_topics.size != this._active_topics.size )
-					return sleep(2000).then(() => this._sendSubscribes());
+				this._sub_failures = (this._sub_failures || 0) + 1;
+
+				let delay = (this._sub_failures * Math.floor(Math.random() * 10) + 2) * 1000;
+				if ( delay > 60000 )
+					delay = (Math.floor(Math.random() * 60) + 30) * 1000;
+
+				if ( delay <= 2000 )
+					delay = 2000;
+
+				return sleep(delay).then(() => this._sendSubscribes());
 			});
 	}
 
