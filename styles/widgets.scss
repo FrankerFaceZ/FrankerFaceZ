@@ -397,6 +397,12 @@ textarea.ffz-input {
 	}
 }
 
+.ffz--changelog-segment {
+	ul {
+		list-style: disc;
+	}
+}
+
 .ffz--clear-settings code,
 .ffz--experiments code {
 	user-select: none;

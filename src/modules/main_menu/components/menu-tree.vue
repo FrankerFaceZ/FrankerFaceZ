@@ -13,7 +13,7 @@
 		<li
 			v-for="item in displayed"
 			:key="item.full_key"
-			:class="[currentItem === item ? 'active' : '']"
+			:class="[(currentItem === item || item.hide_children && containsCurrent(item)) ? 'active' : '']"
 			:data-key="item.full_key"
 			role="presentation"
 		>
@@ -26,7 +26,7 @@
 			>
 				<span
 					:class="[
-						item.items ? '' : 'ffz--invisible',
+						(item.items && ! item.hide_children) ? '' : 'ffz--invisible',
 						item.expanded ? 'ffz-i-down-dir' : 'ffz-i-right-dir'
 					]"
 					role="presentation"
@@ -46,10 +46,11 @@
 				</span>
 			</div>
 			<menu-tree
-				v-if="item.items && item.expanded"
+				v-if="item.items && item.expanded && ! item.hide_children"
 				:root="item"
 				:current-item="currentItem"
 				:modal="item.items"
+				:context="context"
 				:filter="filter"
 				@change-item="i => $emit('change-item', i)"
 				@mark-seen="i => $emit('mark-seen', i)"
@@ -97,7 +98,7 @@ function recursiveExpand(node, vue) {
 
 
 export default {
-	props: ['root', 'modal', 'currentItem', 'filter'],
+	props: ['root', 'modal', 'currentItem', 'filter', 'context'],
 
 	computed: {
 		tabIndex() {
@@ -110,18 +111,36 @@ export default {
 	},
 
 	methods: {
-		shouldShow(item) {
-			if ( ! this.filter || ! this.filter.length || this.containsCurrent(item) )
+		shouldShow(item, is_walking = false) {
+			if ( ! this.filter || this.containsCurrent(item) )
 				return true;
 
-			if ( item.search_terms && item.search_terms.includes(this.filter) )
-				return true;
+			if ( this.filter.flags ) {
+				if ( this.filter.flags.has('modified') ) {
+					// We need to tree walk for this one.
+					if ( ! is_walking ) {
+						for(const key of ['tabs', 'contents', 'items'])
+							if ( item[key] )
+								for(const thing of item[key])
+									if ( this.shouldShow(thing) )
+										return true;
+					}
 
-			return false;
+					if ( ! item.setting || ! this.context.currentProfile.has(item.setting) )
+						return false;
+				}
+			}
+
+			if ( this.filter.query ) {
+				if ( ! item.search_terms || ! item.search_terms.includes(this.filter.query) )
+					return false;
+			}
+
+			return true;
 		},
 
 		countMatches(item, seen) {
-			if ( ! this.filter || ! this.filter.length || ! item )
+			if ( ! this.filter || ! item )
 				return 0;
 
 			if ( seen && seen.has(item) )
@@ -139,7 +158,7 @@ export default {
 					for(const thing of item[key])
 						count += this.countMatches(thing, seen);
 
-			if ( item.setting && item.search_terms && item.search_terms.includes(this.filter) )
+			if ( item.setting && this.shouldShow(item, true) )
 				count++;
 
 			return count;

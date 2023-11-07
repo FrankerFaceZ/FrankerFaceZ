@@ -252,12 +252,15 @@ export default {
 		},
 
 		visible_ffz() {
-			const items = this.sorted_ffz,
-				f = this.filter && this.filter.toLowerCase();
-			if ( ! f )
-				return items;
+			let out = this.sorted_ffz;
 
-			return items.filter(x => matches(x, f));
+			if ( this.filter?.query )
+				out = out.filter(x => matches(x, this.filter.query));
+
+			if ( this.filter?.flags && this.filter.flags.has('modified') )
+				out = out.filter(x => this.item.hasOverride(x.key));
+
+			return out;
 		},
 
 		sorted_twitch() {
@@ -265,12 +268,15 @@ export default {
 		},
 
 		visible_twitch() {
-			const items = this.sorted_twitch,
-				f = this.filter && this.filter.toLowerCase();
-			if ( ! f )
-				return items;
+			let out = this.sorted_twitch;
 
-			return items.filter(x => matches(x, f));
+			if ( this.filter?.query )
+				out = out.filter(x => matches(x, this.filter.query));
+
+			if ( this.filter?.flags && this.filter.flags.has('modified') )
+				out = out.filter(x => this.item.hasTwitchOverride(x.key));
+
+			return out;
 		}
 	},
 

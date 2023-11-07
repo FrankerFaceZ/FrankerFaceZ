@@ -5,6 +5,9 @@
 	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev|gql|passport)\./.test(location.hostname) )
 		return;
 
+	if ( /disable_frankerfacez/.test(location.search) )
+		return;
+
 	const DEBUG = localStorage.ffzDebugMode == 'true' && document.body.classList.contains('ffz-dev'),
 		HOST = location.hostname,
 		SERVER = DEBUG ? '//localhost:8000' : '//cdn.frankerfacez.com',

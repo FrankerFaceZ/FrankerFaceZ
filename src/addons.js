@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 import { EXTENSION, SERVER_OR_EXT } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
-import { timeout, has } from 'utilities/object';
+import { timeout, has, deep_copy } from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
 const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -51,6 +51,7 @@ export default class AddonManager extends Module {
 
 			getExtraTerms: () => Object.values(this.addons).map(addon => addon.search_terms),
 
+			getFFZ: () => this,
 			isReady: () => this.enabled,
 			getAddons: () => Object.values(this.addons),
 			hasAddon: id => this.hasAddon(id),
@@ -215,6 +216,16 @@ export default class AddonManager extends Module {
 			else
 				this.addons[id] = [addon.id];
 		}
+
+		if ( ! old )
+			this.settings.addUI(`addon-changelog.${addon.id}`, {
+				path: `Add-Ons > Changelog > ${addon.name}`,
+				component: 'changelog',
+				force_seen: true,
+				addons: true,
+				addon: deep_copy(addon),
+				getFFZ: () => this
+			});
 
 		this.emit(':added');
 	}

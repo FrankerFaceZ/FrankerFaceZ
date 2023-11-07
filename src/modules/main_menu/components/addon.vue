@@ -145,6 +145,18 @@
 						</span>
 					</button>
 				</template>
+				<button
+					v-if="! external"
+					class="tw-button ffz-button--hollow tw-mg-r-1"
+					@click="openChangelog"
+				>
+					<span class="tw-button__icon tw-button__icon--left">
+						<figure class="ffz-i-doc-text" />
+					</span>
+					<span class="tw-button__text">
+						{{ t('addon.changelog', 'Changelog') }}
+					</span>
+				</button>
 				<a
 					v-if="addon.website"
 					:href="addon.website"
@@ -281,6 +293,16 @@ export default {
 				list.push(`add_ons.${this.addon.short_name.toSnakeCase()}`);
 			if ( this.addon.name )
 				list.push(`add_ons.${this.addon.name.toSnakeCase()}`);
+
+			this.$emit('navigate', ...list);
+		},
+
+		openChangelog() {
+			const list = [`add_ons.changelog.${this.id}`];
+			if ( this.addon.short_name )
+				list.push(`add_ons.changelog.${this.addon.short_name.toSnakeCase()}`);
+			if ( this.addon.name )
+				list.push(`add_ons.changelog.${this.addon.name.toSnakeCase()}`);
 
 			this.$emit('navigate', ...list);
 		},

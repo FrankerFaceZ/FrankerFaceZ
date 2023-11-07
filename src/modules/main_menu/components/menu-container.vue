@@ -57,11 +57,32 @@ export default {
 			this.$emit('navigate', ...args);
 		},
 
-		shouldShow(item) {
-			if ( ! this.filter || ! this.filter.length || ! item.search_terms )
+		shouldShow(item, is_walking = false) {
+			if ( ! this.filter || item.no_filter )
 				return true;
 
-			return item.search_terms.includes(this.filter);
+			if ( this.filter.flags ) {
+				if ( this.filter.flags.has('modified') ) {
+					// We need to tree walk for this one.
+					if ( ! is_walking ) {
+						for(const key of ['tabs', 'contents', 'items'])
+							if ( item[key] )
+								for(const thing of item[key])
+									if ( this.shouldShow(thing) )
+										return true;
+					}
+
+					if ( ! item.setting || ! this.context.currentProfile.has(item.setting) )
+						return false;
+				}
+			}
+
+			if ( this.filter.query ) {
+				if ( ! item.search_terms || ! item.search_terms.includes(this.filter.query) )
+					return false;
+			}
+
+			return true;
 		}
 	}
 }

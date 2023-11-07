@@ -103,6 +103,16 @@
 		background: linear-gradient(90deg, var(--color-background-body) 60%, transparent) !important;
 	}
 
+	.directory-header-new__banner-cover {
+		background: linear-gradient(0deg,
+			var(--color-background-body),
+			color-mix(in srgb, var(--color-background-body) 25%, transparent)
+		), linear-gradient(90deg,
+			var(--color-background-body),
+			color-mix(in srgb, var(--color-background-body) 25%, transparent)
+		);
+	}
+
 	.emote-picker__emote-link {
 		&:hover {
 			background-color: var(--color-background-button-text-hover) !important;

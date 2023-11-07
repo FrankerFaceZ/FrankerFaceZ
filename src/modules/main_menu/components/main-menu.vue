@@ -79,6 +79,7 @@
 							:current-item="currentItem"
 							:modal="nav"
 							:filter="filter"
+							:context="context"
 							@change-item="changeItem"
 							@mark-seen="markSeen"
 							@mark-expanded="markExpanded"
@@ -128,6 +129,10 @@
 import displace from 'displacejs';
 import { getDialogNextZ } from 'src/utilities/dialog';
 
+const VALID_FLAGS = [
+	'modified'
+];
+
 export default {
 	data() {
 		const out = this.$vnode.data;
@@ -139,7 +144,32 @@ export default {
 
 	computed: {
 		filter() {
-			return this.query.toLowerCase()
+			let query = this.query.toLowerCase();
+
+			let flags = new Set;
+			query = query.replace(/(?<=^|\s)@(\S+)(?:\s+|$)/g, (match, flag, index) => {
+				if ( VALID_FLAGS.includes(flag) ) {
+					flags.add(flag);
+					return '';
+				}
+
+				return match;
+			});
+
+			query = query.trim();
+			if ( ! query.length )
+				query = null;
+
+			if ( ! flags.size )
+				flags = null;
+
+			if ( ! query && ! flags )
+				return null;
+
+			return {
+				flags,
+				query
+			}
 		}
 	},
 

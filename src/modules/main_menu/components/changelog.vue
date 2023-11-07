@@ -1,12 +1,26 @@
 <template lang="html">
 	<div class="ffz--changelog tw-border-t tw-pd-t-1">
 		<div class="tw-align-center">
-			<h2 v-if="addons">
+			<h3 v-if="addon" class="tw-mg-b-1 tw-flex tw-align-items-center tw-justify-content-center">
+				<figure
+					v-if="addon.icon"
+					class="ffz-avatar ffz-avatar--size-30 tw-mg-r-05"
+				>
+					<img
+						:src="addon.icon"
+						class="tw-block tw-image tw-image-avatar"
+					>
+				</figure>
+				{{ t('setting.add_ons.specific-changelog', '{name} Changelog', {
+					name: addon.name
+				}) }}
+			</h3>
+			<h3 v-else-if="addons" class="tw-mg-b-1">
 				{{ t('setting.add_ons.changelog.title', 'Add-Ons Changelog') }}
-			</h2>
-			<h2 v-else>
+			</h3>
+			<h3 v-else class="tw-mg-b-1">
 				{{ t('home.changelog', 'Changelog') }}
-			</h2>
+			</h3>
 		</div>
 
 		<div v-if=" ! addons" class="tw-mg-b-1 tw-flex tw-align-items-center">
@@ -38,10 +52,30 @@
 					<div v-if="! addons && commit.active" class="ffz-pill tw-mg-r-05">
 						{{ t('home.changelog.current', 'Current Version') }}
 					</div>
-					<div v-if="commit.title" class="tw-font-size-4">
+					<figure
+						v-if="commit.icon"
+						class="ffz-avatar ffz-avatar--size-20 tw-mg-r-05"
+					>
+						<img
+							:src="commit.icon"
+							class="tw-block tw-image tw-image-avatar"
+						>
+					</figure>
+					<a
+						v-if="commit.title && commit.title_nav"
+						class="tw-font-size-5 ffz-link ffz-link--inherit"
+						href="#"
+						@click.prevent="titleNav(commit.title_nav)"
+					>
+						{{ commit.title }}
+					</a>
+					<div v-else-if="commit.title" class="tw-font-size-5">
 						{{ commit.title }}
 					</div>
-					<div v-if="commit.author">
+					<div v-if="commit.version" class="tw-font-size-4 tw-mg-l-05">
+						<span class="tw-c-text-alt-2">v</span>{{ commit.version }}
+					</div>
+					<div v-if="commit.author" class="tw-mg-l-05">
 						<t-list
 							phrase="home.changelog.by-line"
 							default="By: {user}"
@@ -86,6 +120,10 @@
 					>({{ formatDate(commit.date) }})</time>
 				</div>
 				<markdown :source="commit.message" />
+				<div v-for="entry in commit.segments" class="ffz--changelog-segment">
+					<strong>{{ entry.key }}</strong>
+					<markdown :source="entry.value" />
+				</div>
 			</li>
 		</ul>
 
@@ -111,7 +149,21 @@
 
 import {get} from 'utilities/object';
 
-const TITLE_MATCH = /^v?(\d+\.\d+\.\d+(?:-[^\n]+)?)\n+/;
+const TITLE_MATCH = /^(.+?)?\s*v?(\d+\.\d+\.\d+(?:\-[a-z0-9-]+)?)$/i,
+	SETTING_REGEX = /\]\(~([^)]+)\)/g,
+	CHANGE_REGEX = /^\*\s*([^:]+?):\s*(.+)$/i,
+	ISSUE_REGEX = /(^|\s)#(\d+)\b/g;
+
+
+function linkify(text, repo) {
+	text = text.replace(SETTING_REGEX, (_, link) => {
+		return `](~${link})`
+	});
+
+	return text.replace(ISSUE_REGEX, (_, space, number) => {
+		return `${space}[#${number}](https://github.com/FrankerFaceZ/${repo}/issues/${number})`;
+	});
+}
 
 
 export default {
@@ -120,6 +172,7 @@ export default {
 	data() {
 		return {
 			error: false,
+			addon: this.item.addon,
 			addons: this.item.addons,
 			nonversioned: false,
 			loading: false,
@@ -130,35 +183,130 @@ export default {
 
 	computed: {
 		display() {
+			window.thing = this;
+
 			const out = [],
+				addons = this.addons ? this.item.getFFZ().resolve('addons') : null,
 				old_commit = this.t('home.changelog.nonversioned', 'Non-Versioned Commit');
 
 			for(const commit of this.commits) {
-				let message = commit.commit.message,
+				const input = commit.commit.message;
+				let title = old_commit,
+					title_nav = null,
+					icon = null,
+					version = null,
 					author = null,
-					title = old_commit;
+					sections = {},
+					description = [];
 
-				if ( this.addons ) {
-					title = null;
-					author = commit.author;
+				if ( /\bskiplog\b/i.test(input) && ! this.nonversion )
+					continue;
 
-				} else {
-					const match = TITLE_MATCH.exec(message);
-
-					if ( match ) {
-						title = match[1];
-						message = message.slice(match[0].length);
-					} else if ( ! this.nonversioned )
-						continue;
-				}
+				const lines = input.split(/\r?\n/),
+					first = lines.shift(),
+					match = first ? TITLE_MATCH.exec(first) : null;
 
 				const date = new Date(commit.commit.author.date),
-					active = commit.sha === window.FrankerFaceZ.version_info.commit;
+					active = commit.sha === window.FrankerFaceZ.version_info.commit,
+					has_content = lines.length && match;
+
+				if ( ! this.nonversion && ! has_content )
+					continue;
+
+				let last_bit = null;
+
+				if ( match ) {
+					title = match[1];
+					version = match[2];
+				}
+
+				if ( has_content )
+					for(const line of lines) {
+						const trimmed = line.trim();
+						if ( ! trimmed.length ) {
+							if ( ! last_bit && description.length )
+								description.push(line);
+							continue;
+						}
+
+						const m = CHANGE_REGEX.exec(trimmed);
+						if ( ! m ) {
+							if ( ! last_bit )
+								description.push(line);
+							else
+								last_bit.push(trimmed);
+
+						} else {
+							const section = sections[m[1]] = sections[m[1]] || [];
+							last_bit = [m[2]];
+							section.push(last_bit);
+						}
+					}
+
+				else {
+					lines.unshift(first);
+					description = lines;
+				}
+
+				let message = description.join('\n').trim();
+
+				const segments = [];
+
+				for(const [key, val] of Object.entries(sections)) {
+					if ( ! val?.length )
+						continue;
+
+					const bit = val.map(x => `* ${x.join(' ')}`).join('\n').trim();
+
+					segments.push({
+						key,
+						value: linkify(bit, this.addons ? 'add-ons' : 'frankerfacez')
+					});
+				}
+
+				if ( this.addons ) {
+					author = commit.author;
+
+					if ( title ) {
+						const ltitle = title.toLowerCase();
+
+						if ( addons?.addons )
+							for(const addon of Object.values(addons.addons)) {
+								if ((addon.short_name && addon.short_name.toLowerCase() === ltitle) ||
+									(addon.name && addon.name.toLowerCase() === ltitle) ||
+									(addon.id && addon.id.toLowerCase() === ltitle)
+								) {
+									icon = addon.icon;
+
+									title_nav = [`add_ons.changelog.${addon.id}`];
+									if ( addon.short_name )
+										title_nav.push(`add_ons.changelog.${addon.short_name.toSnakeCase()}`);
+									if ( addon.name )
+										title_nav.push(`add_ons.changelog.${addon.name.toSnakeCase()}`);
+
+									break;
+								}
+							}
+
+						// Default Icon
+						if ( ! icon )
+							icon = 'https://cdn.frankerfacez.com/badge/2/4/solid';
+					}
+				}
+
+				if ( this.addon ) {
+					icon = null;
+					title = null;
+				}
 
 				out.push({
+					icon,
 					title,
+					title_nav,
+					version,
 					author,
 					message,
+					segments,
 					active,
 					hash: commit.sha && commit.sha.slice(0,7),
 					link: commit.html_url,
@@ -177,6 +325,11 @@ export default {
 	},
 
 	methods: {
+		titleNav(nav) {
+			if ( Array.isArray(nav) )
+				this.$emit('navigate', ...nav);
+		},
+
 		formatDate(value) {
 			if ( ! value )
 				return '';
@@ -197,8 +350,15 @@ export default {
 
 			this.loading = true;
 
+			const url = new URL(`https://api.github.com/repos/frankerfacez/${this.addons ? 'add-ons' : 'frankerfacez'}/commits`);
+			if ( until )
+				url.searchParams.append('until', until);
+
+			if ( this.addon )
+				url.searchParams.append('path', `src/${this.addon.id}`);
+
 			try {
-				const resp = await fetch(`https://api.github.com/repos/frankerfacez/${this.addons ? 'add-ons' : 'frankerfacez'}/commits${until ? `?until=${until}` : ''}`),
+				const resp = await fetch(url),
 					data = resp.ok ? await resp.json() : null;
 
 				if ( ! data || ! Array.isArray(data) ) {

@@ -196,14 +196,16 @@ export default class MainMenu extends Module {
 
 		this.settings.addUI('changelog', {
 			path: 'Home > Changelog @{"profile_warning": false}',
-			component: 'changelog'
+			component: 'changelog',
+			getFFZ: () => this
 		});
 
 		this.settings.addUI('addon-changelog', {
-			path: 'Add-Ons > Changelog @{"sort": -1000, "profile_warning": false}',
+			path: 'Add-Ons > Changelog @{"sort": -1000, "profile_warning": false, "hide_children": true}',
 			component: 'changelog',
 			force_seen: true,
-			addons: true
+			addons: true,
+			getFFZ: () => this
 		});
 
 		this.settings.addUI('legal', {

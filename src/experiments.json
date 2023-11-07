@@ -11,17 +11,17 @@
 		"name": "API-Based Link Lookups",
 		"description": "Use the new API to look up links instead of the socket cluster.",
 		"groups": [
-			{"value": true, "weight": 30},
-			{"value": "cf", "weight": 10},
-			{"value": false, "weight": 60}
+			{"value": true, "weight": 0},
+			{"value": "cf", "weight": 100},
+			{"value": false, "weight": 0}
 		]
 	},
 	"cf_pubsub": {
 		"name": "MQTT-Based PubSub",
 		"description": "An experimental new pubsub system that should be more reliable than the existing socket cluster.",
 		"groups": [
-			{"value": true, "weight": 10},
-			{"value": false, "weight": 90}
+			{"value": true, "weight": 5},
+			{"value": false, "weight": 95}
 		]
 	}
 }

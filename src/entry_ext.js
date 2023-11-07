@@ -5,6 +5,9 @@
 	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev|gql|passport)\./.test(location.hostname) )
 		return;
 
+	if ( /disable_frankerfacez/.test(location.search) )
+		return;
+
 	const browser = globalThis.browser ?? globalThis.chrome,
 
 		HOST = location.hostname,

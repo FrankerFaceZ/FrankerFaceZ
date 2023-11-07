@@ -60,6 +60,7 @@
 				:item="item"
 				:context="context"
 				@navigate="navigate"
+				@change-item="changeItem"
 			/>
 		</div>
 
@@ -68,7 +69,7 @@
 				visible: visible_addons.length,
 				total: listed_addons.length
 			}) }}
-			<template v-if="filter && filter.length">
+			<template v-if="filter">
 				{{ t('addon.displaying.filtered', 'The visible add-ons are being filtered by your search. Clear it to view all available add-ons.') }}
 			</template>
 		</div>
@@ -222,10 +223,14 @@ export default {
 			if ( this.filter_enabled && ! enabled )
 				return false;
 
-			if ( ! this.filter || ! this.filter.length )
-				return true;
+			if ( this.filter ) {
+				if ( this.filter.query ) {
+					if ( ! addon.search_terms || ! addon.search_terms.includes(this.filter.query) )
+						return false;
+				}
+			}
 
-			return addon.search_terms.includes(this.filter)
+			return true;
 		},
 
 		onAdded() {
@@ -242,6 +247,10 @@ export default {
 
 		navigate(...args) {
 			this.$emit('navigate', ...args);
+		},
+
+		changeItem(...args) {
+			this.$emit('change-item', ...args);
 		}
 	}
 }
