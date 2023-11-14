@@ -755,7 +755,7 @@ export default class Metadata extends Module {
 	}
 
 	/** @internal */
-	getAddonProxy(addon_id: string, addon: AddonInfo, module: GenericModule): GenericModule {
+	getAddonProxy(addon_id: string, addon: AddonInfo, module: GenericModule) {
 		if ( ! addon_id )
 			return this;
 

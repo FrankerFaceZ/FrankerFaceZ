@@ -4,7 +4,7 @@
 // Settings System
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { GenericModule, buildAddonProxy } from 'utilities/module';
 import {deep_equals, has, debounce, deep_copy} from 'utilities/object';
 import {parse as parse_path} from 'utilities/path-parser';
 
@@ -19,6 +19,7 @@ import * as CLEARABLES from './clearables';
 import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingsDefinition, SettingsProcessor, SettingsUiDefinition, SettingsValidator } from './types';
 import type { FilterType } from '../utilities/filtering';
 import { AdvancedSettingsProvider, IndexedDBProvider, LocalStorageProvider, Providers, type SettingsProvider } from './providers';
+import type { AddonInfo } from '../utilities/types';
 
 export {parse as parse_path} from 'utilities/path-parser';
 
@@ -121,6 +122,8 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			if ( provider.supported() )
 				this.providers[key] = provider;
 		}
+
+		const test = this.resolve('load_tracker');
 
 		// This cannot be modified at a future time, as providers NEED
 		// to be ready very early in FFZ intitialization. Seal it.
@@ -1113,33 +1116,26 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	// Add-On Proxy
 	// ========================================================================
 
-	getAddonProxy(addon_id: string) {
+	getAddonProxy(addon_id: string, addon: AddonInfo, module: GenericModule) {
 		if ( ! addon_id )
 			return this;
 
-		const add = (key, definition) => {
+		const overrides: Record<string, any> = {},
+			is_dev = DEBUG || addon?.dev;
+
+		overrides.add = <T,>(key: string, definition: SettingsDefinition<T>) => {
 			return this.add(key, definition, addon_id);
-		}
+		};
 
-		const addUI = (key, definition) => {
+		overrides.addUI = <T,>(key: string, definition: SettingsUiDefinition<T>) => {
 			return this.addUI(key, definition, addon_id);
-		}
+		};
 
-		const addClearable = (key, definition) => {
+		overrides.addClearable = (key: string, definition: SettingsClearable) => {
 			return this.addClearable(key, definition, addon_id);
 		}
 
-		return new Proxy(this, {
-			get(obj, prop) {
-				if ( prop === 'add' )
-					return add;
-				if ( prop === 'addUI' )
-					return addUI;
-				if ( prop === 'addClearable' )
-					return addClearable;
-				return Reflect.get(...arguments);
-			}
-		});
+		return buildAddonProxy(module, this, 'settings', overrides);
 	}
 
 	// ========================================================================

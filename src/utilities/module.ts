@@ -8,7 +8,7 @@
 import EventEmitter, { EventKey, EventListener, EventMap, NamespacedEventArgs, NamespacedEventKey, NamespacedEvents } from 'utilities/events';
 import {has} from 'utilities/object';
 import type Logger from './logging';
-import type { AddonInfo, KnownEvents, ModuleMap, OptionalPromise } from './types';
+import type { AddonInfo, KnownEvents, ModuleKeys, ModuleMap, ModuleMap, ModuleMap, ModuleMap, OptionalPromise } from './types';
 import type { Addon } from './addon';
 
 
@@ -805,12 +805,9 @@ export class Module<
 	}
 
 	resolve<
-		TPath extends string,
-		TModule extends Module =
-			TPath extends keyof ModuleMap
-				? ModuleMap[TPath]
-				: Module
-	>(name: TPath): TModule | null {
+		TPath extends ModuleKeys,
+		TReturn extends GenericModule = ModuleMap[TPath]
+	>(name: TPath): TReturn | null {
 		let module = this.__resolve(name);
 		if ( !(module instanceof Module) )
 			return null;
@@ -818,7 +815,7 @@ export class Module<
 		if ( this.__processModule )
 			module = this.__processModule(module);
 
-		return module as TModule;
+		return module as TReturn;
 	}
 
 

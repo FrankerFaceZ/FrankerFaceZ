@@ -179,3 +179,6 @@ export type ModuleMap = {
 	'translation_ui': TranslationUI;
 	'vue': Vue;
 };
+
+
+export type ModuleKeys = string & keyof ModuleMap;
