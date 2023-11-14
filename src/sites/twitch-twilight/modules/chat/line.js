@@ -8,11 +8,11 @@ import Twilight from 'site';
 import Module from 'utilities/module';
 
 import RichContent from './rich_content';
-import { has, maybe_call } from 'utilities/object';
+import { has } from 'utilities/object';
 import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
-import { FFZEvent } from 'utilities/events';
-import { getRewardTitle, getRewardCost, isHighlightedReward } from './points';
+
+import { getRewardTitle, getRewardCost } from './points';
 
 const SUB_TIERS = {
 	1000: 1,
@@ -431,21 +431,6 @@ export default class ChatLine extends Module {
 			this.updateLines();
 		});
 
-		/*this.on('experiments:changed:line_renderer', () => {
-			const value = this.experiments.get('line_renderer'),
-				cls = this.ChatLine._class;
-
-			this.log.debug('Changing line renderer:', value ? 'new' : 'old');
-
-			if (cls) {
-				cls.prototype.render = this.experiments.get('line_renderer')
-					? cls.prototype.ffzNewRender
-					: cls.prototype.ffzOldRender;
-
-				this.rerenderLines();
-			}
-		});*/
-
 		for(const setting of RERENDER_SETTINGS)
 			this.chat.context.on(`changed:${setting}`, this.rerenderLines, this);
 
@@ -839,7 +824,7 @@ other {# messages were deleted by a moderator.}
 								} catch(err) { /* nothing~! */ }
 							}
 
-							const fe = new FFZEvent({
+							const fe = t.makeEvent({
 								inst: this,
 								event,
 								message: msg,

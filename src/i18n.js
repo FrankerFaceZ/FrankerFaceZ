@@ -4,8 +4,6 @@
 // Localization
 // ============================================================================
 
-import Parser from '@ffz/icu-msgparser';
-
 import {DEBUG, SERVER} from 'utilities/constants';
 import {get, pick_random, shallow_copy, deep_copy} from 'utilities/object';
 import { getBuster } from 'utilities/time';
@@ -69,12 +67,10 @@ const FACES = ['(・`ω´・)', ';;w;;', 'owo', 'ono', 'oAo', 'oxo', 'ovo;', 'Uw
 // TranslationManager
 // ============================================================================
 
-export class TranslationManager extends Module {
+export default class TranslationManager extends Module {
 	constructor(...args) {
 		super(...args);
 		this.inject('settings');
-
-		this.parser = new Parser;
 
 		this._seen = new Set;
 

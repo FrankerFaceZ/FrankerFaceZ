@@ -17,8 +17,16 @@ for(const file of fs.readdirSync(dir)) {
 const config = JSON.parse(fs.readFileSync('fontello.config.json', 'utf8'));
 const icons = config.glyphs.map(x => x.css);
 
-fs.writeFileSync('src/utilities/ffz-icons.js', `'use strict';
-// This is a generated file. To update it, please run: npm run font:update
+fs.writeFileSync('src/utilities/ffz-icons.ts', `'use strict';
+// This is a generated file. To update it, please run: pnpm font:update
 /* eslint quotes: 0 */
 
-export default ${JSON.stringify(icons, null, '\t')};`);
+/**
+ * A list of all valid icon names in the FrankerFaceZ icon font. These
+ * icons can be used by adding a class to a DOM element with the name
+ * \`ffz-i-$\{name}\` where \`$\{name}\` is a name from this list.
+ *
+ * For example, to use the \`threads\` icon, you'd add the class
+ * \`ffz-i-threads\` to your element.
+ */
+export default ${JSON.stringify(icons, null, '\t')} as const;`);

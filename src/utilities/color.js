@@ -547,6 +547,19 @@ LUVAColor.prototype._a = function(a) { return new LUVAColor(this.l, this.u, this
 
 
 export class ColorAdjuster {
+
+	/*
+	private _base: string;
+	private _contrast: number;
+	private _mode: number;
+
+	private _dark: boolean = false;
+	private _cache: Map<string, string> = new Map;
+
+	private _luv: number = 0;
+	private _luma: number = 0;
+	*/
+
 	constructor(base = '#232323', mode = 0, contrast = 4.5) {
 		this._contrast = contrast;
 		this._base = base;

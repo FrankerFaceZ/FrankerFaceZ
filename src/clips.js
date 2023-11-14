@@ -12,7 +12,7 @@ import {timeout} from 'utilities/object';
 import SettingsManager from './settings/index';
 import AddonManager from './addons';
 import ExperimentManager from './experiments';
-import {TranslationManager} from './i18n';
+import TranslationManager from './i18n';
 import PubSubClient from './pubsub';
 import StagingSelector from './staging';
 import LoadTracker from './load_tracker';

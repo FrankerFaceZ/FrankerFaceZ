@@ -4,7 +4,7 @@
 // Directory
 // ============================================================================
 
-import {SiteModule} from 'utilities/module';
+import Module from 'utilities/module';
 import {duration_to_string} from 'utilities/time';
 import {createElement} from 'utilities/dom';
 import {get, glob_to_regex, escape_regex, addWordSeparators} from 'utilities/object';
@@ -33,12 +33,13 @@ function formatTerms(data, flags) {
 const DIR_ROUTES = ['front-page', 'dir', 'dir-community', 'dir-community-index', 'dir-creative', 'dir-following', 'dir-game-index', 'dir-game-clips', 'dir-game-videos', 'dir-all', 'dir-category', 'user-videos', 'user-clips'];
 
 
-export default class Directory extends SiteModule {
+export default class Directory extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.should_enable = true;
 
+		this.inject('site');
 		this.inject('site.elemental');
 		this.inject('site.fine');
 		this.inject('site.router');

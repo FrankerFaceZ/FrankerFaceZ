@@ -77,7 +77,7 @@ export default {
 		this.client = this.ffz.resolve('site.apollo')?.client;
 		this.has_client = !! this.client;
 
-		this.printer = this.ffz.resolve('site.web_munch')?.getModule?.('gql-printer');
+		this.printer = this.ffz.resolve('site.web_munch')?.getModule('gql-printer');
 		this.has_printer = !! this.printer;
 	},
 

@@ -597,7 +597,7 @@ export default class CSSTweaks extends Module {
 			return;
 
 		if ( ! this.chunks_loaded )
-			return this.populate().then(() => this._apply(key));
+			return this.loadFromContext().then(() => this._apply(key));
 
 		if ( ! has(this.chunks, key) ) {
 			this.log.warn(`Unknown chunk name "${key}" for toggle()`);
@@ -618,7 +618,7 @@ export default class CSSTweaks extends Module {
 	deleteVariable(key) { this.style.delete(`var--${key}`) }
 
 
-	populate() {
+	loadFromContext() {
 		if ( this.chunks_loaded )
 			return;
 

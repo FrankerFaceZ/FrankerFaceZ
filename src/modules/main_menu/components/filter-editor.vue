@@ -55,8 +55,8 @@
 <script>
 
 import Sortable from 'sortablejs';
-import {deep_copy, maybe_call, generateUUID} from 'utilities/object';
-import {findSharedParent} from 'utilities/dom';
+import { deep_copy, maybe_call, generateUUID } from 'utilities/object';
+import { hasSharedParent } from 'utilities/dom';
 
 export default {
 	props: {
@@ -131,7 +131,7 @@ export default {
 
 					// Check to see if we have a common ancester for the two
 					// draggables.
-					if ( ! findSharedParent(to.el, from.el, '.ffz--rule-list') )
+					if ( ! hasSharedParent(to.el, from.el, '.ffz--rule-list') )
 						return false;
 
 					return true;

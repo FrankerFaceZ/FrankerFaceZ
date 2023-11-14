@@ -6,7 +6,7 @@
 
 import Module, { buildAddonProxy } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
-import { FFZEvent } from 'utilities/events';
+
 import {get, has, timeout, SourcedSet, make_enum_flags, makeAddonIdChecker} from 'utilities/object';
 import {NEW_API, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, DEBUG} from 'utilities/constants';
 
@@ -1315,7 +1315,7 @@ export default class Emotes extends Module {
 			/* no-op */
 		}
 
-		const evt = new FFZEvent({
+		const evt = this.makeEvent({
 			provider,
 			id: ds.id,
 			set: ds.set,

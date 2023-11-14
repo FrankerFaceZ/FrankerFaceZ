@@ -781,29 +781,14 @@ export class FineWrapper extends EventEmitter {
 		return super.on(event, fn, ctx);
 	}
 
-	prependOn(event, fn, ctx) {
-		this._maybeWrap(event);
-		return super.prependOn(event, fn, ctx);
-	}
-
 	once(event, fn, ctx) {
 		this._maybeWrap(event);
 		return super.once(event, fn, ctx);
 	}
 
-	prependOnce(event, fn, ctx) {
-		this._maybeWrap(event);
-		return super.prependOnce(event, fn, ctx);
-	}
-
 	many(event, ttl, fn, ctx) {
 		this._maybeWrap(event);
 		return super.many(event, ttl, fn, ctx);
-	}
-
-	prependMany(event, ttl, fn, ctx) {
-		this._maybeWrap(event);
-		return super.prependMany(event, ttl, fn, ctx);
 	}
 
 	waitFor(event) {
