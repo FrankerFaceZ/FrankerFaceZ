@@ -1,5 +1,6 @@
 'use strict';
 
+import { TranslatableError } from 'src/utilities/object';
 import {createElement} from 'utilities/dom';
 
 
@@ -368,7 +369,11 @@ export const msg_delete = {
 	},
 
 	click(event, data) {
-		this.sendMessage(data.room.login, `/delete ${data.message_id}`);
+		const td = this.resolve('site.twitch_data');
+		return td.deleteChatMessage(data.room.id, data.message_id).catch(err => {
+			if ( err instanceof TranslatableError )
+				this.addNotice(data.room.login, this.i18n.t(err.i18n_key, err.message, err.data));
+		});
 	}
 }
 

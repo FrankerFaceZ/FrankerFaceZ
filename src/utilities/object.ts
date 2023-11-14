@@ -62,6 +62,33 @@ export function isValidShortcut(key: string) {
  */
 export const generateUUID = () => crypto.randomUUID();
 
+
+/**
+ * An error that can be localized using the i18n module.
+ */
+export class TranslatableError extends Error {
+
+	i18n_key: string;
+	data: any;
+
+	constructor(message: string, key: string, data?: any) {
+		super(message);
+		this.i18n_key = key;
+		this.data = data;
+	}
+
+	toString() {
+		const ffz = window.FrankerFaceZ?.get?.(),
+			i18n = ffz?.resolve?.('i18n');
+
+		if ( i18n && this.i18n_key )
+			return i18n.t(this.i18n_key, this.message, this.data);
+
+		return this.message;
+	}
+}
+
+
 /**
  * Get a SHA-256 hash of a string. Uses {@link crypto.subtle.digest}
  *
