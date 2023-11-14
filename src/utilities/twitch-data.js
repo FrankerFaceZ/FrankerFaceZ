@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {get, debounce} from 'utilities/object';
+import {get, debounce, TranslatableError} from 'utilities/object';
 
 const LANGUAGE_MATCHER = /^auto___lang_(\w+)$/;
 
@@ -168,6 +168,51 @@ export default class TwitchData extends Module {
 		);
 
 		return get('data.game', data);
+	}
+
+
+	// ========================================================================
+	// Chat
+	// ========================================================================
+
+	async deleteChatMessage(
+		channel_id/* :string*/,
+		message_id/* :string*/
+	) {
+		channel_id = String(channel_id);
+
+		const data = await this.mutate({
+			mutation: await import(/* webpackChunkName: 'queries' */ './mutations/delete-chat-message.gql'),
+			variables: {
+				input: {
+					channelID: channel_id,
+					messageID: message_id
+				}
+			}
+		});
+
+		const code = get('data.deleteChatMessage.responseCode', data);
+
+		if ( code === 'TARGET_IS_BROADCASTER' )
+			throw new TranslatableError(
+				"You cannot delete the broadcaster's messages.",
+				"chat.delete.forbidden.broadcaster"
+			);
+
+		if ( code === 'TARGET_IS_MODERATOR' )
+			throw new TranslatableError(
+				"You cannot delete messages from moderator {displayName}.",
+				"chat.delete.forbidden.moderator",
+				get('data.deleteChatMessage.message.sender', data)
+			);
+
+		if ( code !== 'SUCCESS' )
+			throw new TranslatableError(
+				"You don't have permission to delete messages.",
+				"chat.delete.forbidden"
+			);
+
+		return true;
 	}
 
 

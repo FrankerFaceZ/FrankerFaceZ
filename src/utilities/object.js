@@ -45,6 +45,25 @@ export function generateUUID(input) {
 }
 
 
+export class TranslatableError extends Error {
+	constructor(message/*:string*/, key/*:string*/, data/*:object*/) {
+		super(message);
+		this.i18n_key = key;
+		this.data = data;
+	}
+
+	toString() {
+		const ffz = window.FrankerFaceZ?.get?.(),
+			i18n = ffz?.resolve?.('i18n');
+
+		if ( i18n && this.i18n_key )
+			return i18n.t(this.i18n_key, this.message, this.data);
+
+		return this.message;
+	}
+}
+
+
 export async function sha256(message) {
 	// encode as UTF-8
 	const msgBuffer = new TextEncoder().encode(message);

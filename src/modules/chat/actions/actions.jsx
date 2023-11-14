@@ -1268,6 +1268,11 @@ export default class Actions extends Module {
 	}
 
 
+	addNotice(room, message) {
+		return this.resolve('site.chat').addNotice(room, message);
+	}
+
+
 	sendMessage(room, message) {
 		return this.resolve('site.chat').sendMessage(room, message);
 	}

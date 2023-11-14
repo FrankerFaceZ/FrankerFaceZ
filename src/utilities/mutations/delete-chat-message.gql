@@ -1,0 +1,16 @@
+mutation FFZ_DeleteChatMessage($input: DeleteChatMessageInput!) {
+	deleteChatMessage(input: $input) {
+		responseCode
+		message {
+			id
+			sender {
+				id
+				login
+				displayName
+				}
+			content {
+				text
+			}
+		}
+	}
+}
