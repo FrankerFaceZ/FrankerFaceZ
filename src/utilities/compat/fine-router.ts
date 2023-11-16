@@ -5,13 +5,56 @@
 // ============================================================================
 
 import {parse, tokensToRegExp, tokensToFunction} from 'path-to-regexp';
-import Module from 'utilities/module';
-import {has, deep_equals} from 'utilities/object';
+import Module, { GenericModule } from 'utilities/module';
+import {has, deep_equals, sleep} from 'utilities/object';
+import type Fine from './fine';
+import type { OptionalPromise } from 'utilities/types';
+
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+		'site.router': FineRouterEvents;
+	}
+	interface ModuleMap {
+		'site.router': FineRouter;
+	}
+}
 
 
-export default class FineRouter extends Module {
-	constructor(...args) {
-		super(...args);
+type FineRouterEvents = {
+	':updated-route-names': [];
+	':updated-routes': [];
+
+	':route': [route: RouteInfo | null, match: unknown];
+};
+
+export type RouteInfo = {
+	name: string;
+	domain: string | null;
+
+};
+
+
+export default class FineRouter extends Module<'site.router', FineRouterEvents> {
+
+	// Dependencies
+	fine: Fine = null as any;
+
+	// Storage
+	routes: Record<string, RouteInfo>;
+	route_names: Record<string, string>;
+	private __routes: RouteInfo[];
+
+	// State
+	current: RouteInfo | null;
+	current_name: string | null;
+	current_state: unknown | null;
+	match: unknown | null;
+	location: unknown | null;
+
+
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 		this.inject('..fine');
 
 		this.__routes = [];
@@ -20,16 +63,18 @@ export default class FineRouter extends Module {
 		this.route_names = {};
 		this.current = null;
 		this.current_name = null;
+		this.current_state = null;
 		this.match = null;
 		this.location = null;
 	}
 
-	onEnable() {
+	/** @internal */
+	onEnable(): OptionalPromise<void> {
 		const thing = this.fine.searchTree(null, n => n.props && n.props.history),
 			history = this.history = thing && thing.props && thing.props.history;
 
 		if ( ! history )
-			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
+			return sleep(50).then(() => this.onEnable());
 
 		history.listen(location => {
 			if ( this.enabled )
@@ -43,7 +88,7 @@ export default class FineRouter extends Module {
 		this.history.push(this.getURL(route, data, opts), state);
 	}
 
-	_navigateTo(location) {
+	private _navigateTo(location) {
 		this.log.debug('New Location', location);
 		const host = window.location.host,
 			path = location.pathname,
@@ -66,7 +111,7 @@ export default class FineRouter extends Module {
 		this._pickRoute();
 	}
 
-	_pickRoute() {
+	private _pickRoute() {
 		const path = this.location,
 			host = this.domain;
 
@@ -85,7 +130,6 @@ export default class FineRouter extends Module {
 				this.current_name = route.name;
 				this.match = match;
 				this.emit(':route', route, match);
-				this.emit(`:route:${route.name}`, ...match);
 				return;
 			}
 		}
@@ -117,7 +161,7 @@ export default class FineRouter extends Module {
 		return r.url(data, opts);
 	}
 
-	getRoute(name) {
+	getRoute(name: string) {
 		return this.routes[name];
 	}
 
@@ -132,7 +176,7 @@ export default class FineRouter extends Module {
 		return this.route_names;
 	}
 
-	getRouteName(route) {
+	getRouteName(route: string) {
 		if ( ! this.route_names[route] )
 			this.route_names[route] = route
 				.replace(/^dash-([a-z])/, (_, letter) =>
@@ -143,7 +187,7 @@ export default class FineRouter extends Module {
 		return this.route_names[route];
 	}
 
-	routeName(route, name, process = true) {
+	routeName(route: string | Record<string, string>, name?: string, process: boolean = true) {
 		if ( typeof route === 'object' ) {
 			for(const key in route)
 				if ( has(route, key) )
@@ -154,10 +198,12 @@ export default class FineRouter extends Module {
 			return;
 		}
 
-		this.route_names[route] = name;
+		if ( name ) {
+			this.route_names[route] = name;
 
-		if ( process )
-			this.emit(':updated-route-names');
+			if ( process )
+				this.emit(':updated-route-names');
+		}
 	}
 
 	route(name, path, domain = null, state_fn = null, process = true) {
@@ -173,6 +219,7 @@ export default class FineRouter extends Module {
 					this._pickRoute();
 				this.emit(':updated-routes');
 			}
+
 			return;
 		}
 

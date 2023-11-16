@@ -6,11 +6,28 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 
-export default class Elemental extends Module {
-	constructor(...args) {
-		super(...args);
+declare module 'utilities/types' {
+	interface ModuleMap {
+		'site.elemental': Elemental;
+	}
+}
+
+export default class Elemental extends Module<'site.elemental'> {
+
+	private _wrappers: Map<string, ElementalWrapper<any>>;
+	private _observer: MutationObserver | null;
+	private _watching: Set<ElementalWrapper<any>>;
+	private _live_watching: ElementalWrapper<any>[] | null;
+	private _route?: string | null;
+	private _timer?: number | null;
+
+	private _timeout?: ReturnType<typeof setTimeout> | null;
+	private _clean_all?: ReturnType<typeof requestAnimationFrame> | null;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 
 		this._pruneLive = this._pruneLive.bind(this);
 
@@ -21,27 +38,35 @@ export default class Elemental extends Module {
 		this._live_watching = null;
 	}
 
-
+	/** @internal */
 	onDisable() {
 		this._stopWatching();
 	}
 
 
-	define(key, selector, routes, opts = null, limit = 0, timeout = 5000, remove = true) {
+	define<TElement extends HTMLElement = HTMLElement>(
+		key: string,
+		selector: string,
+		routes?: string[] | false | null,
+		opts: MutationObserverInit | null = null,
+		limit = 0,
+		timeout = 5000,
+		remove = true
+	) {
 		if ( this._wrappers.has(key) )
-			return this._wrappers.get(key);
+			return this._wrappers.get(key) as ElementalWrapper<TElement>;
 
 		if ( ! selector || typeof selector !== 'string' || ! selector.length )
 			throw new Error('cannot find definition and no selector provided');
 
-		const wrapper = new ElementalWrapper(key, selector, routes, opts, limit, timeout, remove, this);
+		const wrapper = new ElementalWrapper<TElement>(key, selector, routes, opts, limit, timeout, remove, this);
 		this._wrappers.set(key, wrapper);
 
 		return wrapper;
 	}
 
 
-	route(route) {
+	route(route: string | null) {
 		this._route = route;
 		this._timer = Date.now();
 		this._updateLiveWatching();
@@ -76,24 +101,27 @@ export default class Elemental extends Module {
 	}
 
 
-	_isActive(watcher, now) {
+	private _isActive(watcher: ElementalWrapper<any>, now: number) {
+		if ( watcher.routes === false )
+			return false;
+
 		if ( this._route && watcher.routes.length && ! watcher.routes.includes(this._route) )
 			return false;
 
-		if ( watcher.timeout > 0 && (now - this._timer) > watcher.timeout )
+		if ( watcher.timeout > 0 && (now - (this._timer as number)) > watcher.timeout )
 			return false;
 
 		return true;
 	}
 
 
-	_updateLiveWatching() {
+	private _updateLiveWatching() {
 		if ( this._timeout ) {
 			clearTimeout(this._timeout);
 			this._timeout = null;
 		}
 
-		const lw = this._live_watching = [],
+		const lw: ElementalWrapper<any>[] = this._live_watching = [],
 			now = Date.now();
 		let min_timeout = Number.POSITIVE_INFINITY;
 
@@ -115,16 +143,17 @@ export default class Elemental extends Module {
 			this._startWatching();
 	}
 
-	_pruneLive() {
+	private _pruneLive() {
 		this._updateLiveWatching();
 	}
 
-	_checkWatchers(muts) {
-		for(const watcher of this._live_watching)
-			watcher.checkElements(muts);
+	private _checkWatchers(muts: Node[]) {
+		if ( this._live_watching )
+			for(const watcher of this._live_watching)
+				watcher.checkElements(muts as Element[]);
 	}
 
-	_startWatching() {
+	private _startWatching() {
 		if ( ! this._observer && this._live_watching && this._live_watching.length ) {
 			this.log.info('Installing MutationObserver.');
 
@@ -136,7 +165,7 @@ export default class Elemental extends Module {
 		}
 	}
 
-	_stopWatching() {
+	private _stopWatching() {
 		if ( this._observer ) {
 			this.log.info('Stopping MutationObserver.');
 			this._observer.disconnect();
@@ -152,7 +181,7 @@ export default class Elemental extends Module {
 	}
 
 
-	listen(inst, ensure_live = true) {
+	listen(inst: ElementalWrapper<any>, ensure_live = true) {
 		if ( this._watching.has(inst) )
 			return;
 
@@ -163,7 +192,7 @@ export default class Elemental extends Module {
 		this._updateLiveWatching();
 	}
 
-	unlisten(inst) {
+	unlisten(inst: ElementalWrapper<any>) {
 		if ( ! this._watching.has(inst) )
 			return;
 
@@ -175,20 +204,64 @@ export default class Elemental extends Module {
 
 let elemental_id = 0;
 
-export class ElementalWrapper extends EventEmitter {
-	constructor(name, selector, routes, opts, limit, timeout, remove, elemental) {
+type ElementalParam = `_ffz$elemental$${number}`;
+type ElementalRemoveParam = `_ffz$elemental_remove$${number}`;
+
+declare global {
+	interface HTMLElement {
+		[key: ElementalParam]: MutationObserver | null;
+		[key: ElementalRemoveParam]: MutationObserver | null;
+	}
+}
+
+type ElementalWrapperEvents<TElement extends HTMLElement> = {
+	mount: [element: TElement];
+	unmount: [element: TElement];
+	mutate: [element: TElement, mutations: MutationRecord[]];
+}
+
+export class ElementalWrapper<
+	TElement extends HTMLElement = HTMLElement
+> extends EventEmitter<ElementalWrapperEvents<TElement>> {
+
+	readonly id: number;
+	readonly name: string;
+	readonly selector: string;
+	readonly routes: string[] | false;
+	readonly opts: MutationObserverInit | null;
+	readonly limit: number;
+	readonly timeout: number;
+	readonly check_removal: boolean;
+	count: number;
+	readonly instances: Set<TElement>;
+	readonly elemental: Elemental;
+
+	readonly param: ElementalParam;
+	readonly remove_param: ElementalRemoveParam;
+
+	private _stimer?: ReturnType<typeof setTimeout> | null;
+
+	constructor(
+		name: string,
+		selector: string,
+		routes: string[] | false | undefined | null,
+		opts: MutationObserverInit | null,
+		limit: number,
+		timeout: number,
+		remove: boolean,
+		elemental: Elemental
+	) {
 		super();
 
 		this.id = elemental_id++;
 		this.param = `_ffz$elemental$${this.id}`;
 		this.remove_param = `_ffz$elemental_remove$${this.id}`;
-		this.mut_param = `_ffz$elemental_mutating${this.id}`;
 
 		this._schedule = this._schedule.bind(this);
 
 		this.name = name;
 		this.selector = selector;
-		this.routes = routes || [];
+		this.routes = routes ?? [];
 		this.opts = opts;
 		this.limit = limit;
 		this.timeout = timeout;
@@ -199,7 +272,6 @@ export class ElementalWrapper extends EventEmitter {
 
 		this.count = 0;
 		this.instances = new Set;
-		this.observers = new Map;
 		this.elemental = elemental;
 
 		this.check();
@@ -224,7 +296,8 @@ export class ElementalWrapper extends EventEmitter {
 	}
 
 	_schedule() {
-		clearTimeout(this._stimer);
+		if ( this._stimer )
+			clearTimeout(this._stimer);
 		this._stimer = null;
 
 		if ( this.limit === 0 || this.count < this.limit )
@@ -234,18 +307,19 @@ export class ElementalWrapper extends EventEmitter {
 	}
 
 	check() {
-		const matches = document.querySelectorAll(this.selector);
-		for(const el of matches)
+		const matches = document.querySelectorAll<TElement>(this.selector);
+		// TypeScript is stupid and thinks NodeListOf<Element> doesn't have an iterator
+		for(const el of matches as unknown as Iterable<TElement>)
 			this.add(el);
 	}
 
-	checkElements(els) {
+	checkElements(els: Iterable<Element>) {
 		if ( this.atLimit )
 			return this.schedule();
 
 		for(const el of els) {
-			const matches = el.querySelectorAll(this.selector);
-			for(const match of matches)
+			const matches = el.querySelectorAll<TElement>(this.selector);
+			for(const match of matches as unknown as Iterable<TElement>)
 				this.add(match);
 
 			if ( this.atLimit )
@@ -264,66 +338,66 @@ export class ElementalWrapper extends EventEmitter {
 		return Array.from(this.instances);
 	}
 
-	each(fn) {
+	each(fn: (element: TElement) => void) {
 		for(const el of this.instances)
 			fn(el);
 	}
 
-	add(el) {
-		if ( this.instances.has(el) )
+	add(element: TElement) {
+		if ( this.instances.has(element) )
 			return;
 
-		this.instances.add(el);
+		this.instances.add(element);
 		this.count++;
 
-		if ( this.check_removal ) {
+		if ( this.check_removal && element.parentNode ) {
 			const remove_check = new MutationObserver(() => {
 				requestAnimationFrame(() => {
-					if ( ! document.contains(el) )
-						this.remove(el);
+					if ( ! document.contains(element) )
+						this.remove(element);
 				});
 			});
 
-			remove_check.observe(el.parentNode, {childList: true});
-			el[this.remove_param] = remove_check;
+			remove_check.observe(element.parentNode, {childList: true});
+			(element as HTMLElement)[this.remove_param] = remove_check;
 		}
 
 		if ( this.opts ) {
 			const observer = new MutationObserver(muts => {
-				if ( ! document.contains(el) ) {
-					this.remove(el);
+				if ( ! document.contains(element) ) {
+					this.remove(element);
 				} else if ( ! this.__running.size )
-					this.emit('mutate', el, muts);
+					this.emit('mutate', element, muts);
 			});
 
-			observer.observe(el, this.opts);
-			el[this.param] = observer;
+			observer.observe(element, this.opts);
+			(element as HTMLElement)[this.param] = observer;
 		}
 
 		this.schedule();
-		this.emit('mount', el);
+		this.emit('mount', element);
 	}
 
-	remove(el) {
-		const observer = el[this.param];
+	remove(element: TElement) {
+		const observer = element[this.param];
 		if ( observer ) {
 			observer.disconnect();
-			el[this.param] = null;
+			(element as HTMLElement)[this.param] = null;
 		}
 
-		const remove_check = el[this.remove_param];
+		const remove_check = element[this.remove_param];
 		if ( remove_check ) {
 			remove_check.disconnect();
-			el[this.remove_param] = null;
+			(element as HTMLElement)[this.remove_param] = null;
 		}
 
-		if ( ! this.instances.has(el) )
+		if ( ! this.instances.has(element) )
 			return;
 
-		this.instances.delete(el);
+		this.instances.delete(element);
 		this.count--;
 
 		this.schedule();
-		this.emit('unmount', el);
+		this.emit('unmount', element);
 	}
 }

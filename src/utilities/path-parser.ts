@@ -15,8 +15,8 @@ type ParseContext = {
 export type PathNode = {
 	title: string;
 	key: string;
-	page: boolean;
-	tab: boolean;
+	page?: boolean;
+	tab?: boolean;
 }
 
 function parseAST(ctx: ParseContext) {

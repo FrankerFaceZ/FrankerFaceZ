@@ -1,7 +1,5 @@
 import type ExperimentManager from "../experiments";
 import type TranslationManager from "../i18n";
-import type LoadTracker from "../load_tracker";
-import type { LoadEvents } from "../load_tracker";
 import type Chat from "../modules/chat";
 import type Actions from "../modules/chat/actions/actions";
 import type Badges from "../modules/chat/badges";
@@ -11,25 +9,17 @@ import type Overrides from "../modules/chat/overrides";
 import type EmoteCard from "../modules/emote_card";
 import type LinkCard from "../modules/link_card";
 import type MainMenu from "../modules/main_menu";
-import type Metadata from "../modules/metadata";
-import type TooltipProvider from "../modules/tooltips";
-import type { TooltipEvents } from "../modules/tooltips";
 import type TranslationUI from "../modules/translation_ui";
 import type PubSub from "../pubsub";
-import type { SettingsEvents } from "../settings";
-import type SettingsManager from "../settings";
 import type SocketClient from "../socket";
 import type StagingSelector from "../staging";
 import type Apollo from "./compat/apollo";
 import type Elemental from "./compat/elemental";
 import type Fine from "./compat/fine";
-import type Subpump from "./compat/subpump";
-import type { SubpumpEvents } from "./compat/subpump";
 import type WebMunch from "./compat/webmunch";
 import type CSSTweaks from "./css-tweaks";
 import type { NamespacedEvents } from "./events";
 import type TwitchData from "./twitch-data";
-import type Vue from "./vue";
 
 /**
  * AddonInfo represents the data contained in an add-on's manifest.
@@ -98,6 +88,52 @@ export type AddonInfo = {
 
 };
 
+// These types are used by get()
+
+export type ExtractSegments<Input extends string> =
+	Input extends `${infer Match}.${infer Rest}`
+		? [ Match, ...ExtractSegments<Rest> ]
+		: [ Input ];
+
+export type ArrayShift<T extends any[]> = T extends [any, ...infer Rest]
+	// This is needed to avoid it returning an empty array. There's probably
+	// a more elegant solution, but I don't know it.
+	? Rest extends [any, ...any[]]
+		? Rest
+		: undefined
+	: undefined;
+
+export type ExtractType<T, Path extends string[], Key = Path[0], Rest = ArrayShift<Path>> =
+	Key extends "@each"
+		? ExtractEach<T, Rest>
+		:
+	Key extends "@last"
+		? T extends any[]
+			? ExtractEach<T, Rest>
+			: never
+		:
+	Key extends keyof T
+		? Rest extends string[]
+			? ExtractType<T[Key], Rest>
+			: T[Key]
+		:
+	never;
+
+export type ExtractEach<T, Rest> =
+	Rest extends string[]
+		? { [K in keyof T]: ExtractType<T[K], Rest> }
+		: T;
+
+
+
+export type AnyFunction = (...args: any[]) => any;
+
+export interface ClassType<T> {
+	new (...args: any[]): T;
+	prototype: T;
+}
+
+
 export type OptionallyThisCallable<TThis, TArgs extends any[], TReturn> = TReturn | ((this: TThis, ...args: TArgs) => TReturn);
 export type OptionallyCallable<TArgs extends any[], TReturn> = TReturn | ((...args: TArgs) => TReturn);
 
@@ -105,11 +141,57 @@ export type OptionalPromise<T> = T | Promise<T>;
 
 export type OptionalArray<T> = T | T[];
 
+export type UnionToIntersection<Union> = (
+    Union extends any ? (k: Union) => void : never
+) extends (k: infer Intersection) => void ? Intersection : never;
+
+
 export type RecursivePartial<T> = {
 	[K in keyof T]?: T[K] extends object
 		? RecursivePartial<T[K]>
 		: T[K];
 };
+
+
+export type JoinKeyPaths<K, P, Separator extends string = '.'> = K extends string ?
+	P extends string ?
+		`${K}${P extends '' ? '' : Separator}${P}`
+	: never : never;
+
+export type ObjectKeyPaths<T, Separator extends string = '.', Prefix extends string = ''> =
+	T extends object ?
+		(Prefix extends '' ? never : Prefix) | { [K in keyof T]-?: JoinKeyPaths<K, ObjectKeyPaths<T[K], Separator>, Separator> }[keyof T]
+		: Prefix;
+
+
+export type ExtractFunctionNames<T, IncludeOptional extends boolean = false> = {
+	[K in keyof T]:
+		T[K] extends AnyFunction
+			? K
+			: IncludeOptional extends true ?
+				T[K] extends AnyFunction | undefined
+					? K
+					: never
+				: never;
+}[keyof T];
+
+/**
+ * Extract all of the functions from a type. If IncludeOptional is set to
+ * true, then also include functions that are possibly undefined. If
+ * UnwrapOptional is set to true, which it is by default, the possibly
+ * undefined functions are unwrapped in the resulting type. This makes it
+ * easier to extract function parameters, etc.
+ */
+export type ExtractFunctions<T, IncludeOptional extends boolean = false, UnwrapOptional extends boolean = true> = {
+	[K in ExtractFunctionNames<T, IncludeOptional>]: T[K] extends undefined | (infer U)
+		? UnwrapOptional extends true
+			? U
+			: T[K]
+		: T[K];
+};
+
+
+export type MaybeParameters<T> = T extends AnyFunction ? Parameters<T> : never[];
 
 
 export type ClientVersion = {
@@ -135,6 +217,15 @@ export type Mousetrap = {
 export type DomFragment = Node | string | null | undefined | DomFragment[];
 
 
+export interface SettingsTypeMap {
+
+};
+
+export interface ProviderTypeMap {
+
+};
+
+
 
 // TODO: Move this event into addons.
 type AddonEvent = {
@@ -142,15 +233,9 @@ type AddonEvent = {
 };
 
 
-export type KnownEvents =
-	AddonEvent &
-	NamespacedEvents<'load_tracker', LoadEvents> &
-	NamespacedEvents<'settings', SettingsEvents> &
-	NamespacedEvents<'site.subpump', SubpumpEvents> &
-	NamespacedEvents<'tooltips', TooltipEvents>;
+export interface ModuleEventMap { };
 
-
-export type ModuleMap = {
+export interface ModuleMap {
 	'chat': Chat;
 	'chat.actions': Actions;
 	'chat.badges': Badges;
@@ -161,24 +246,22 @@ export type ModuleMap = {
 	'experiments': ExperimentManager;
 	'i18n': TranslationManager;
 	'link_card': LinkCard;
-	'load_tracker': LoadTracker;
 	'main_menu': MainMenu;
-	'metadata': Metadata;
 	'pubsub': PubSub;
-	'settings': SettingsManager;
 	'site.apollo': Apollo;
 	'site.css_tweaks': CSSTweaks;
 	'site.elemental': Elemental;
 	'site.fine': Fine;
-	'site.subpump': Subpump;
 	'site.twitch_data': TwitchData;
 	'site.web_munch': WebMunch;
 	'socket': SocketClient;
 	'staging': StagingSelector;
-	'tooltips': TooltipProvider;
 	'translation_ui': TranslationUI;
-	'vue': Vue;
 };
 
+
+export type KnownEvents = AddonEvent & UnionToIntersection<{
+	[K in keyof ModuleEventMap]: NamespacedEvents<K, ModuleEventMap[K]>
+}[keyof ModuleEventMap]>;
 
 export type ModuleKeys = string & keyof ModuleMap;

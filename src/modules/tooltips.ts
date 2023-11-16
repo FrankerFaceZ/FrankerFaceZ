@@ -20,6 +20,16 @@ declare global {
 	}
 }
 
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+		tooltips: TooltipEvents;
+	}
+	interface ModuleMap {
+		tooltips: TooltipProvider;
+	}
+}
+
+
 export type TooltipEvents = {
 	/**
 	 * When this event is emitted, the tooltip provider will attempt to remove

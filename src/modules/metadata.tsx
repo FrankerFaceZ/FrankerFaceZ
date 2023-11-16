@@ -34,6 +34,20 @@ declare global {
 	}
 }
 
+declare module 'utilities/types' {
+	interface ModuleMap {
+		metadata: Metadata
+	}
+	interface SettingsTypeMap {
+		'metadata.clip-download': boolean;
+		'metadata.clip-download.force': boolean;
+		'metadata.player-stats': boolean;
+		'metadata.uptime': number;
+		'metadata.stream-delay-warning': number;
+		'metadata.viewers': boolean;
+	}
+}
+
 
 export type MetadataState = {
 	/** Whether or not the metadata is being rendered onto the player directly. */
@@ -482,10 +496,17 @@ export default class Metadata extends Module {
 			icon: 'ffz-i-download',
 
 			click(src) {
-				const title = this.settings.get('context.title');
+				const title = this.settings.get('context.title') || 'Untitled';
 				const name = title.replace(/[\\/:"*?<>|]+/, '_') + '.mp4';
 
-				const link = createElement('a', {target: '_blank', download: name, href: src, style: {display: 'none'}});
+				const link = createElement('a', {
+					target: '_blank',
+					download: name,
+					href: src,
+					style: {
+						display: 'none'
+					}
+				});
 
 				document.body.appendChild(link);
 				link.click();

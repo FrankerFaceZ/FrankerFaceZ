@@ -4,29 +4,31 @@
 // Settings System
 // ============================================================================
 
+import { DEBUG } from 'utilities/constants';
 import Module, { GenericModule, buildAddonProxy } from 'utilities/module';
 import {deep_equals, has, debounce, deep_copy} from 'utilities/object';
-import {parse as parse_path} from 'utilities/path-parser';
+import {PathNode, parse as parse_path} from 'utilities/path-parser';
 
 import SettingsProfile from './profile';
 import SettingsContext from './context';
-//import MigrationManager from './migration';
 
 import * as PROCESSORS from './processors';
 import * as VALIDATORS from './validators';
 import * as FILTERS from './filters';
 import * as CLEARABLES from './clearables';
-import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingsDefinition, SettingsProcessor, SettingsUiDefinition, SettingsValidator } from './types';
-import type { FilterType } from '../utilities/filtering';
+
+import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys, ConcreteLocalStorageData } from './types';
+import type { FilterType } from 'utilities/filtering';
 import { AdvancedSettingsProvider, IndexedDBProvider, LocalStorageProvider, Providers, type SettingsProvider } from './providers';
-import type { AddonInfo } from '../utilities/types';
+import type { AddonInfo, SettingsTypeMap } from 'utilities/types';
 
 export {parse as parse_path} from 'utilities/path-parser';
 
 
-function postMessage(target: Window, msg) {
+// TODO: Special types for msg.
+function postMessage(target: MessageEventSource, msg: any) {
 	try {
-		target.postMessage(msg, '*');
+		(target as Window).postMessage(msg, '*');
 		return true;
 	} catch(err) {
 		return false;
@@ -36,14 +38,33 @@ function postMessage(target: Window, msg) {
 export const NO_SYNC_KEYS = ['session'];
 
 
+// ============================================================================
+// Registration
+// ============================================================================
+
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+		settings: SettingsEvents;
+	}
+	interface ModuleMap {
+		settings: SettingsManager;
+	}
+}
+
+
+// ============================================================================
+// Events
+// ============================================================================
+
 // TODO: Check settings keys for better typing on events.
 
 export type SettingsEvents = {
-	[key: `:changed:${string}`]: [value: any, old_value: any];
-	[key: `:uses_changed:${string}`]: [uses: number[], old_uses: number[]];
+	[K in keyof SettingsTypeMap as `:changed:${K}`]: [value: SettingsTypeMap[K], old_value: SettingsTypeMap[K]];
+} & {
+	[key: `:uses_changed:${string}`]: [uses: number[] | null, old_uses: number[] | null];
 
-	':added-definition': [key: string, definition: SettingsDefinition<any>];
-	':removed-definition': [key: string, definition: SettingsDefinition<any>];
+	':added-definition': [key: SettingsKeys, definition: SettingDefinition<any>];
+	':removed-definition': [key: SettingsKeys, definition: SettingDefinition<any>];
 
 	':quota-exceeded': [];
 	':change-provider': [];
@@ -81,29 +102,35 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	// Storage of Things
 	clearables: Record<string, SettingsClearable>;
 	filters: Record<string, FilterType<any, ContextData>>;
-	processors: Record<string, SettingsProcessor<any>>;
+	processors: Record<string, SettingProcessor<any>>;
 	providers: Record<string, typeof SettingsProvider>;
-	validators: Record<string, SettingsValidator<any>>;
+	validators: Record<string, SettingValidator<any>>;
 
 	// Storage of Settings
-	ui_structures: Map<string, SettingsUiDefinition<any>>;
-	definitions: Map<string, SettingsDefinition<any> | string[]>;
+	ui_structures: Map<string, SettingDefinition<any>>;
+	definitions: Map<string, SettingDefinition<any> | string[]>;
 
 	// Storage of State
-	provider: SettingsProvider | null = null;
+	// The provider *can* technically be null but it won't ever be in practice.
+	// So we don't set the type to null to avoid making annoying checks everywhere.
+	provider: SettingsProvider = null as any;
 	main_context: SettingsContext;
+
+	private _context_proxies: Set<MessageEventSource>;
 
 	private _update_timer?: ReturnType<typeof setTimeout> | null;
 	private _time_timer?: ReturnType<typeof setTimeout> | null;
+	private _time_next?: number | null;
 
 	private _active_provider: string = 'local';
-	private _idb: IndexedDBProvider | null = null;
 
 	private _provider_waiter?: Promise<SettingsProvider> | null;
 	private _provider_resolve?: ((input: SettingsProvider) => void) | null;
 
-	private __contexts: SettingsContext[];
-	private __profiles: SettingsProfile[];
+	/** @internal */
+	__contexts: SettingsContext[];
+	/** @internal */
+	__profiles: SettingsProfile[];
 	private __profile_ids: Record<number, SettingsProfile | null>;
 
 	/**
@@ -122,8 +149,6 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			if ( provider.supported() )
 				this.providers[key] = provider;
 		}
-
-		const test = this.resolve('load_tracker');
 
 		// This cannot be modified at a future time, as providers NEED
 		// to be ready very early in FFZ intitialization. Seal it.
@@ -204,11 +229,11 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		// Also create the main context as early as possible.
 		this.main_context = new SettingsContext(this);
 
-		this.main_context.on('changed', (key, new_value, old_value) => {
+		this.main_context.on('changed', (key: keyof SettingsTypeMap, new_value, old_value) => {
 			this.emit(`:changed:${key}`, new_value, old_value);
 		});
 
-		this.main_context.on('uses_changed', (key, new_uses, old_uses) => {
+		this.main_context.on('uses_changed', (key: keyof SettingsTypeMap, new_uses, old_uses) => {
 			this.emit(`:uses_changed:${key}`, new_uses, old_uses);
 		});
 
@@ -218,7 +243,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		window.addEventListener('message', event => {
 			const type = event.data?.ffz_type;
 
-			if ( type === 'request-context' ) {
+			if ( type === 'request-context' && event.source ) {
 				this._context_proxies.add(event.source);
 				this._updateContextProxies(event.source);
 			}
@@ -234,7 +259,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		this.enable();
 	}
 
-	_updateContextProxies(proxy) {
+	_updateContextProxies(proxy?: MessageEventSource) {
 		if ( ! proxy && ! this._context_proxies.size )
 			return;
 
@@ -266,7 +291,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 	generateLog() {
 		const out = [];
-		for(const [key, value] of this.main_context.__cache.entries())
+		for(const [key, value] of (this.main_context as any).__cache.entries())
 			out.push(`${key}: ${JSON.stringify(value)}`);
 
 		return out.join('\n');
@@ -390,6 +415,9 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			if ( ! this.__ls_timer )
 				this.__ls_timer = setTimeout(this._updateLS, 0);
 		}
+
+
+
 	}
 
 	private _hookLS() {
@@ -532,7 +560,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		out.file('settings.json', JSON.stringify(settings));
 
 		// Blob Settings
-		const metadata = {};
+		const metadata: Record<string, ExportedBlobMetadata> = {};
 
 		if ( this.provider instanceof AdvancedSettingsProvider && this.provider.supportsBlobs ) {
 			const keys = await this.provider.blobKeys();
@@ -542,7 +570,9 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 				if ( ! blob )
 					continue;
 
-				const md = {key};
+				const md: ExportedBlobMetadata = {
+					key
+				};
 
 				if ( blob instanceof File ) {
 					md.type = 'file';
@@ -664,9 +694,6 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 		if ( this.providers[wanted] ) {
 			const provider = new (this.providers[wanted] as any)(this) as SettingsProvider;
-			if ( wanted === 'idb' )
-				this._idb = provider as IndexedDBProvider;
-
 			this._active_provider = wanted;
 			return provider;
 		}
@@ -721,7 +748,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			return;
 
 		const old_provider = this.provider;
-		this.provider = null;
+		this.provider = null as any;
 
 		// Let all other tabs know what's up.
 		old_provider.broadcastTransfer();
@@ -1101,15 +1128,38 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	// Context Helpers
 	// ========================================================================
 
-	context(env) { return this.main_context.context(env) }
-	get(key) { return this.main_context.get(key); }
-	getChanges(key, fn, ctx) { return this.main_context.getChanges(key, fn, ctx); }
-	onChange(key, fn, ctx) { return this.main_context.onChange(key, fn, ctx); }
-	uses(key: string) { return this.main_context.uses(key) }
-	update(key: string) { return this.main_context.update(key) }
+	context(env: ContextData) { return this.main_context.context(env) }
 
-	updateContext(context: Partial<ContextData>) { return this.main_context.updateContext(context) }
-	setContext(context: Partial<ContextData>) { return this.main_context.setContext(context) }
+	get<
+		K extends AllSettingsKeys,
+		TValue = SettingType<K>
+	>(
+		key: K
+	): TValue { return this.main_context.get(key); }
+
+	getChanges<
+		K extends SettingsKeys,
+		TValue = SettingType<K>
+	>(
+		key: K,
+		fn: (val: TValue) => void,
+		ctx?: any
+	) { return this.main_context.getChanges(key, fn, ctx); }
+
+	onChange<
+		K extends SettingsKeys,
+		TValue = SettingType<K>
+	>(
+		key: K,
+		fn: (val: TValue) => void,
+		ctx?: any
+	) { return this.main_context.onChange(key, fn, ctx); }
+
+	uses<K extends AllSettingsKeys>(key: K) { return this.main_context.uses(key) }
+	update<K extends SettingsKeys>(key: K) { return this.main_context.update(key) }
+
+	updateContext(context: ContextData) { return this.main_context.updateContext(context) }
+	setContext(context: ContextData) { return this.main_context.setContext(context) }
 
 
 	// ========================================================================
@@ -1123,11 +1173,18 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		const overrides: Record<string, any> = {},
 			is_dev = DEBUG || addon?.dev;
 
-		overrides.add = <T,>(key: string, definition: SettingsDefinition<T>) => {
+		overrides.add = <
+			K extends SettingsKeys,
+			TValue = SettingType<K>,
+		>(key: K, definition: SettingDefinition<TValue>) => {
 			return this.add(key, definition, addon_id);
 		};
 
-		overrides.addUI = <T,>(key: string, definition: SettingsUiDefinition<T>) => {
+		// TODO: Update addUI here too
+		overrides.addUI = <
+			K extends string,
+			TValue = K extends SettingsKeys ? SettingType<K> : unknown,
+		>(key: K, definition: SettingUiDefinition<TValue>) => {
 			return this.addUI(key, definition, addon_id);
 		};
 
@@ -1142,7 +1199,10 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	// Definitions
 	// ========================================================================
 
-	add<T>(key: string, definition: SettingsDefinition<T>, source?: string) {
+	add<
+		K extends SettingsKeys,
+		TValue = SettingType<K>
+	>(key: K, definition: SettingDefinition<TValue>, source?: string) {
 
 		const old_definition = this.definitions.get(key),
 			required_by = (Array.isArray(old_definition)
@@ -1179,8 +1239,10 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			if ( ! ui.key && ui.title )
 				ui.key = ui.title.toSnakeCase();
 
-			if ( (ui.component === 'setting-select-box' || ui.component === 'setting-combo-box') && Array.isArray(ui.data) && ! ui.no_i18n
-					&& key !== 'ffzap.core.highlight_sound' ) { // TODO: Remove workaround.
+			if ( (ui.component === 'setting-select-box' ||
+				  ui.component === 'setting-combo-box') &&
+				Array.isArray(ui.data) && ! ui.no_i18n
+			) {
 				const i18n_base = `${ui.i18n_key || `setting.entry.${key}`}.values`;
 				for(const value of ui.data) {
 					if ( value.i18n_key === undefined && value.value !== undefined )
@@ -1190,7 +1252,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		}
 
 		if ( definition.changed )
-			this.on(`:changed:${key}`, definition.changed);
+			this.on(`:changed:${key}` as any, definition.changed);
 
 		this.definitions.set(key, definition);
 
@@ -1220,36 +1282,39 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		if ( Array.isArray(definition.requires) )
 			for(const req_key of definition.requires) {
 				let req = this.definitions.get(req_key);
-				if ( req.required_by )
-					req = req.required_by;
 				if ( Array.isArray(req) ) {
 					const idx = req.indexOf(key);
 					if ( idx !== -1 )
 						req.splice(idx, 1);
-				}
+
+				} else if ( req?.required_by )
+					req = req.required_by;
 			}
 
 		if ( definition.changed )
-			this.off(`:changed:${key}`, definition.changed);
+			this.off(`:changed:${key}` as any, definition.changed);
 
-		this.emit(':removed-definition', key, definition);
+		this.emit(':removed-definition', key as any, definition);
 	}
 
 
-	addUI(key, definition, source) {
-		if ( typeof key === 'object' ) {
-			for(const k in key)
-				if ( has(key, k) )
-					this.add(k, key[k]);
-			return;
-		}
+	// TODO: Update this because addUI doesn't use keys or types
+	addUI<
+		K extends string,
+		TValue = K extends SettingsKeys ? SettingType<K> : unknown
+	>(key: K, definition: Partial<SettingUiDefinition<TValue>>, source?: string) {
 
-		if ( ! definition.ui )
-			definition = {ui: definition};
+		let def: SettingDefinition<TValue>;
+		if ( (definition as any).ui )
+			def = (definition as any);
+		else
+			def = {
+				ui: definition as SettingUiDefinition<TValue>
+			} as SettingDefinition<TValue>;
 
-		definition.__source = source;
+		def.__source = source;
 
-		const ui = definition.ui;
+		const ui = def.ui as SettingUiDefinition<TValue>;
 		ui.path_tokens = ui.path_tokens ?
 			format_path_tokens(ui.path_tokens) :
 			ui.path ?
@@ -1260,12 +1325,12 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			ui.key = ui.title.toSnakeCase();
 
 		const old_definition = this.ui_structures.get(key);
-		this.ui_structures.set(key, definition);
+		this.ui_structures.set(key, def);
 
 		// Do not re-emit `added-definition` when re-adding an existing
 		// setting. Prevents the settings UI from goofing up.
 		if ( ! old_definition )
-			this.emit(':added-definition', key, definition);
+			this.emit(':added-definition', key as any, def);
 	}
 
 
@@ -1288,7 +1353,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	}
 
 
-	addProcessor(key: string | Record<string, SettingsProcessor<any>>, processor?: SettingsProcessor<any>) {
+	addProcessor(key: string | Record<string, SettingProcessor<any>>, processor?: SettingProcessor<any>) {
 		if ( typeof key === 'object' ) {
 			for(const [k, value] of Object.entries(key))
 				this.addProcessor(k, value);
@@ -1300,7 +1365,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			this.processors[key] = processor;
 	}
 
-	getProcessor<T>(key: string): SettingsProcessor<T> | null {
+	getProcessor<T>(key: string): SettingProcessor<T> | null {
 		return this.processors[key] ?? null;
 	}
 
@@ -1308,7 +1373,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		return deep_copy(this.processors);
 	}
 
-	addValidator(key: string | Record<string, SettingsValidator<any>>, validator?: SettingsValidator<any>) {
+	addValidator(key: string | Record<string, SettingValidator<any>>, validator?: SettingValidator<any>) {
 		if ( typeof key === 'object' ) {
 			for(const [k, value] of Object.entries(key))
 				this.addValidator(k, value);
@@ -1320,7 +1385,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			this.validators[key] = validator;
 	}
 
-	getValidator<T>(key: string): SettingsValidator<T> | null {
+	getValidator<T>(key: string): SettingValidator<T> | null {
 		return this.validators[key] ?? null;
 	}
 
@@ -1330,14 +1395,14 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 }
 
 
-export function format_path_tokens(tokens) {
+export function format_path_tokens(tokens: (string | PathNode)[]) {
 	for(let i=0, l = tokens.length; i < l; i++) {
 		const token = tokens[i];
 		if ( typeof token === 'string' ) {
 			tokens[i] = {
 				key: token.toSnakeCase(),
 				title: token
-			}
+			};
 
 			continue;
 		}
@@ -1346,5 +1411,5 @@ export function format_path_tokens(tokens) {
 			token.key = token.title.toSnakeCase();
 	}
 
-	return tokens;
+	return tokens as PathNode[];
 }

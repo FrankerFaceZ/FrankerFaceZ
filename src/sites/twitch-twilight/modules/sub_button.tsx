@@ -4,12 +4,50 @@
 // Sub Button
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import {createElement} from 'utilities/dom';
+import type SettingsManager from 'src/settings';
+import type TranslationManager from 'src/i18n';
+import type Fine from 'utilities/compat/fine';
+import type { FineWrapper } from 'utilities/compat/fine';
+import type { ReactStateNode } from 'root/src/utilities/compat/react-types';
+
+declare module 'utilities/types' {
+	interface ModuleMap {
+		'site.sub_button': SubButton;
+	}
+	interface SettingsTypeMap {
+		'layout.swap-sidebars': unknown;
+		'sub-button.prime-notice': boolean;
+	}
+}
+
+type SubButtonNode = ReactStateNode<{
+	data?: {
+		user?: {
+			self?: {
+				canPrimeSubscribe: boolean;
+				subscriptionBenefit: unknown;
+			}
+		}
+	}
+}> & {
+	handleSubMenuAction: any;
+	openSubModal: any;
+};
 
 export default class SubButton extends Module {
-	constructor(...args) {
-		super(...args);
+
+	// Dependencies
+	i18n: TranslationManager = null as any;
+	fine: Fine = null as any;
+	settings: SettingsManager = null as any;
+
+	// Stuff
+	SubButton: FineWrapper<SubButtonNode>;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 
 		this.should_enable = true;
 
@@ -32,39 +70,20 @@ export default class SubButton extends Module {
 
 		this.SubButton = this.fine.define(
 			'sub-button',
-			n => n.handleSubMenuAction && n.openSubModal,
+			n =>
+				(n as SubButtonNode).handleSubMenuAction &&
+				(n as SubButtonNode).openSubModal,
 			['user', 'user-home', 'user-video', 'user-clip', 'video', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following']
 		);
 	}
 
 	onEnable() {
-		this.settings.on(':changed:layout.swap-sidebars', () => this.SubButton.forceUpdate())
+		this.settings.on(':changed:layout.swap-sidebars', () =>
+			this.SubButton.forceUpdate());
 
 		this.SubButton.ready((cls, instances) => {
-			const t = this,
-				old_render = cls.prototype.render;
-
-			cls.prototype.render = function() {
-				try {
-					const old_direction = this.props.balloonDirection;
-					if ( old_direction !== undefined ) {
-						const should_be_left = t.settings.get('layout.swap-sidebars'),
-							is_left = old_direction.includes('--left');
-
-						if ( should_be_left && ! is_left )
-							this.props.balloonDirection = old_direction.replace('--right', '--left');
-						else if ( ! should_be_left && is_left )
-							this.props.balloonDirection = old_direction.replace('--left', '--right');
-					}
-				} catch(err) { /* no-op */ }
-
-				return old_render.call(this);
-			}
-
 			for(const inst of instances)
 				this.updateSubButton(inst);
-
-			this.SubButton.forceUpdate();
 		});
 
 		this.SubButton.on('mount', this.updateSubButton, this);
@@ -72,9 +91,9 @@ export default class SubButton extends Module {
 	}
 
 
-	updateSubButton(inst) {
-		const container = this.fine.getChildNode(inst),
-			btn = container && container.querySelector('button[data-a-target="subscribe-button"]');
+	updateSubButton(inst: SubButtonNode) {
+		const container = this.fine.getChildNode<HTMLElement>(inst),
+			btn = container?.querySelector('button[data-a-target="subscribe-button"]');
 		if ( ! btn )
 			return;
 

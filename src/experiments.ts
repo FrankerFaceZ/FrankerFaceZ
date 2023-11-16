@@ -5,12 +5,32 @@
 // ============================================================================
 
 import {DEBUG, SERVER} from 'utilities/constants';
-import Module from 'utilities/module';
-import {has, deep_copy} from 'utilities/object';
+import Module, { GenericModule } from 'utilities/module';
+import {has, deep_copy, fetchJSON} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
 import Cookie from 'js-cookie';
 import SHA1 from 'crypto-js/sha1';
+
+import type SettingsManager from './settings';
+
+declare module 'utilities/types' {
+	interface ModuleMap {
+		experiments: ExperimentManager;
+	}
+	interface ProviderTypeMap {
+		'experiment-overrides': Record<string, unknown>
+	}
+}
+
+declare global {
+	interface Window {
+		__twilightSettings?: {
+			experiments?: Record<string, TwitchExperimentData>;
+		}
+	}
+}
+
 
 const OVERRIDE_COOKIE = 'experiment_overrides',
 	COOKIE_OPTIONS = {
@@ -21,9 +41,68 @@ const OVERRIDE_COOKIE = 'experiment_overrides',
 
 // We want to import this so that the file is included in the output.
 // We don't load using this because we might want a newer file from the
-// server.
-import EXPERIMENTS from './experiments.json'; // eslint-disable-line no-unused-vars
+// server. Because of our webpack settings, this is imported as a URL
+// and not an object.
+const EXPERIMENTS: string = require('./experiments.json');
 
+// ============================================================================
+// Data Types
+// ============================================================================
+
+export enum TwitchExperimentType {
+	Unknown = 0,
+	Device = 1,
+	User = 2,
+	Channel = 3
+};
+
+export type ExperimentGroup = {
+	value: unknown;
+	weight: number;
+};
+
+export type FFZExperimentData = {
+	name: string;
+	seed?: number;
+	description: string;
+	groups: ExperimentGroup[];
+}
+
+export type TwitchExperimentData = {
+	name: string;
+	t: TwitchExperimentType;
+	v: number;
+	groups: ExperimentGroup[];
+};
+
+export type ExperimentData = FFZExperimentData | TwitchExperimentData;
+
+
+export type OverrideCookie = {
+	experiments: Record<string, string>;
+	disabled: string[];
+};
+
+
+type ExperimentEvents = {
+	':changed': [key: string, new_value: any, old_value: any];
+	':twitch-changed': [key: string, new_value: string | null, old_value: string | null];
+	[key: `:changed:${string}`]: [new_value: any, old_value: any];
+	[key: `:twitch-changed:${string}`]: [new_value: string | null, old_value: string | null];
+}
+
+
+// ============================================================================
+// Helper Methods
+// ============================================================================
+
+export function isTwitchExperiment(exp: ExperimentData): exp is TwitchExperimentData {
+	return 't' in exp;
+}
+
+export function isFFZExperiment(exp: ExperimentData): exp is FFZExperimentData {
+	return 'description' in exp;
+}
 
 function sortExperimentLog(a,b) {
 	if ( a.rarity < b.rarity )
@@ -44,9 +123,24 @@ function sortExperimentLog(a,b) {
 // Experiment Manager
 // ============================================================================
 
-export default class ExperimentManager extends Module {
-	constructor(...args) {
-		super(...args);
+export default class ExperimentManager extends Module<'experiments', ExperimentEvents> {
+
+	// Dependencies
+	settings: SettingsManager = null as any;
+
+	// State
+	unique_id?: string;
+	experiments: Record<string, FFZExperimentData>;
+
+	private cache: Map<string, unknown>;
+
+
+	// Helpers
+	Cookie: typeof Cookie;
+
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 
 		this.get = this.getAssignment;
 
@@ -81,23 +175,23 @@ export default class ExperimentManager extends Module {
 
 			unique_id: () => this.unique_id,
 
-			ffz_data: () => deep_copy(this.experiments),
+			ffz_data: () => deep_copy(this.experiments) ?? {},
 			twitch_data: () => deep_copy(this.getTwitchExperiments()),
 
-			usingTwitchExperiment: key => this.usingTwitchExperiment(key),
-			getTwitchAssignment: key => this.getTwitchAssignment(key),
-			getTwitchType: type => this.getTwitchType(type),
-			hasTwitchOverride: key => this.hasTwitchOverride(key),
-			setTwitchOverride: (key, val) => this.setTwitchOverride(key, val),
-			deleteTwitchOverride: key => this.deleteTwitchOverride(key),
+			usingTwitchExperiment: (key: string) => this.usingTwitchExperiment(key),
+			getTwitchAssignment: (key: string) => this.getTwitchAssignment(key),
+			getTwitchType: (type: TwitchExperimentType) => this.getTwitchType(type),
+			hasTwitchOverride: (key: string) => this.hasTwitchOverride(key),
+			setTwitchOverride: (key: string, val: string) => this.setTwitchOverride(key, val),
+			deleteTwitchOverride: (key: string) => this.deleteTwitchOverride(key),
 
-			getAssignment: key => this.getAssignment(key),
-			hasOverride: key => this.hasOverride(key),
-			setOverride: (key, val) => this.setOverride(key, val),
-			deleteOverride: key => this.deleteOverride(key),
+			getAssignment: (key: string) => this.getAssignment(key),
+			hasOverride: (key: string) => this.hasOverride(key),
+			setOverride: (key: string, val: any) => this.setOverride(key, val),
+			deleteOverride: (key: string) => this.deleteOverride(key),
 
-			on: (...args) => this.on(...args),
-			off: (...args) => this.off(...args)
+			on: (...args: Parameters<typeof this.on>) => this.on(...args),
+			off: (...args: Parameters<typeof this.off>) => this.off(...args)
 		});
 
 		this.unique_id = Cookie.get('unique_id');
@@ -112,7 +206,7 @@ export default class ExperimentManager extends Module {
 		if ( DEBUG )
 			return false;
 
-		const ts = this.settings.provider.get('exp-lock', 0);
+		const ts = this.settings.provider.get<number>('exp-lock', 0);
 		if ( isNaN(ts) || ! isFinite(ts) )
 			return true;
 
@@ -129,14 +223,17 @@ export default class ExperimentManager extends Module {
 
 
 	async loadExperiments() {
-		let data;
+		let data: Record<string, FFZExperimentData> | null;
 
 		try {
-			data = await fetch(DEBUG ? EXPERIMENTS : `${SERVER}/script/experiments.json?_=${getBuster()}`).then(r =>
-				r.ok ? r.json() : null);
+			data = await fetchJSON(DEBUG
+				? EXPERIMENTS
+				: `${SERVER}/script/experiments.json?_=${getBuster()}`
+			);
 
 		} catch(err) {
 			this.log.warn('Unable to load experiment data.', err);
+			return;
 		}
 
 		if ( ! data )
@@ -153,8 +250,8 @@ export default class ExperimentManager extends Module {
 			const new_val = this.getAssignment(key);
 			if ( old_val !== new_val ) {
 				changed++;
-				this.emit(':changed', key, new_val);
-				this.emit(`:changed:${key}`, new_val);
+				this.emit(':changed', key, new_val, old_val);
+				this.emit(`:changed:${key}`, new_val, old_val);
 			}
 		}
 
@@ -162,20 +259,24 @@ export default class ExperimentManager extends Module {
 		//this.emit(':loaded');
 	}
 
-
+	/** @internal */
 	onEnable() {
 		this.on('pubsub:command:reload_experiments', this.loadExperiments, this);
 		this.on('pubsub:command:update_experiment', this.updateExperiment, this);
 	}
 
 
-	updateExperiment(key, data) {
-		this.log.info(`Received updated data for experiment "${key}" via WebSocket.`, data);
+	updateExperiment(key: string, data: FFZExperimentData | ExperimentGroup[]) {
+		this.log.info(`Received updated data for experiment "${key}" via PubSub.`, data);
 
-		if ( data.groups )
-			this.experiments[key] = data;
-		else
+		if ( Array.isArray(data) ) {
+			if ( ! this.experiments[key] )
+				return;
+
 			this.experiments[key].groups = data;
+
+		} else if ( data?.groups )
+			this.experiments[key] = data;
 
 		this._rebuildKey(key);
 	}
@@ -261,7 +362,7 @@ export default class ExperimentManager extends Module {
 
 	// Twitch Experiments
 
-	getTwitchType(type) {
+	getTwitchType(type: number) {
 		const core = this.resolve('site')?.getCore?.();
 		if ( core?.experiments?.getExperimentType )
 			return core.experiments.getExperimentType(type);
@@ -275,10 +376,9 @@ export default class ExperimentManager extends Module {
 		return type;
 	}
 
-	getTwitchTypeByKey(key) {
-		const core = this.resolve('site')?.getCore?.(),
-			exps = core && core.experiments,
-			exp = exps?.experiments?.[key];
+	getTwitchTypeByKey(key: string) {
+		const exps = this.getTwitchExperiments(),
+			exp = exps?.[key];
 
 		if ( exp?.t )
 			return this.getTwitchType(exp.t);
@@ -286,30 +386,67 @@ export default class ExperimentManager extends Module {
 		return null;
 	}
 
-	getTwitchExperiments() {
+	getTwitchExperiments(): Record<string, TwitchExperimentData> {
 		if ( window.__twilightSettings )
-			return window.__twilightSettings.experiments;
+			return window.__twilightSettings.experiments ?? {};
 
 		const core = this.resolve('site')?.getCore?.();
-		return core && core.experiments.experiments;
+		return core && core.experiments.experiments || {};
 	}
 
 
-	usingTwitchExperiment(key) {
+	usingTwitchExperiment(key: string) {
 		const core = this.resolve('site')?.getCore?.();
 		return core && has(core.experiments.assignments, key)
 	}
 
 
-	setTwitchOverride(key, value = null) {
-		const overrides = Cookie.getJSON(OVERRIDE_COOKIE) || {};
-		const experiments = overrides.experiments = overrides.experiments || {};
-		const disabled = overrides.disabled = overrides.disabled || [];
+	private _getOverrideCookie() {
+		const raw = Cookie.get(OVERRIDE_COOKIE);
+		let out: OverrideCookie;
+
+		try {
+			out = raw ? JSON.parse(raw) : {};
+		} catch(err) {
+			out = {} as OverrideCookie;
+		}
+
+		if ( ! out.experiments )
+			out.experiments = {};
+
+		if ( ! out.disabled )
+			out.disabled = [];
+
+		return out;
+	}
+
+	private _saveOverrideCookie(value?: OverrideCookie) {
+		if ( value ) {
+			if ((! value.experiments || ! Object.keys(value.experiments).length) &&
+				(! value.disabled || ! value.disabled.length)
+			)
+				value = undefined;
+		}
+
+		if ( value )
+			Cookie.set(OVERRIDE_COOKIE, JSON.stringify(value), COOKIE_OPTIONS);
+		else
+			Cookie.remove(OVERRIDE_COOKIE, COOKIE_OPTIONS);
+	}
+
+
+	setTwitchOverride(key: string, value: string) {
+		const overrides = this._getOverrideCookie(),
+			experiments = overrides.experiments,
+			disabled = overrides.disabled;
+
 		experiments[key] = value;
+
 		const idx = disabled.indexOf(key);
 		if (idx != -1)
-			disabled.remove(idx);
-		Cookie.set(OVERRIDE_COOKIE, overrides, COOKIE_OPTIONS);
+			disabled.splice(idx, 1);
+
+		this._saveOverrideCookie(overrides);
 
 		const core = this.resolve('site')?.getCore?.();
 		if ( core )
@@ -318,15 +455,17 @@ export default class ExperimentManager extends Module {
 		this._rebuildTwitchKey(key, true, value);
 	}
 
-	deleteTwitchOverride(key) {
-		const overrides = Cookie.getJSON(OVERRIDE_COOKIE),
-			experiments = overrides?.experiments;
-		if ( ! experiments || ! has(experiments, key) )
+	deleteTwitchOverride(key: string) {
+		const overrides = this._getOverrideCookie(),
+			experiments = overrides.experiments;
+
+		if ( ! has(experiments, key) )
 			return;
 
 		const old_val = experiments[key];
 		delete experiments[key];
-		Cookie.set(OVERRIDE_COOKIE, overrides, COOKIE_OPTIONS);
+
+		this._saveOverrideCookie(overrides);
 
 		const core = this.resolve('site')?.getCore?.();
 		if ( core )
@@ -335,13 +474,14 @@ export default class ExperimentManager extends Module {
 		this._rebuildTwitchKey(key, false, old_val);
 	}
 
-	hasTwitchOverride(key) { // eslint-disable-line class-methods-use-this
-		const overrides = Cookie.getJSON(OVERRIDE_COOKIE),
-			experiments = overrides?.experiments;
-		return experiments && has(experiments, key);
+	hasTwitchOverride(key: string) { // eslint-disable-line class-methods-use-this
+		const overrides = this._getOverrideCookie(),
+			experiments = overrides.experiments;
+
+		return has(experiments, key);
 	}
 
-	getTwitchAssignment(key, channel = null) {
+	getTwitchAssignment(key: string, channel: string | null = null) {
 		const core = this.resolve('site')?.getCore?.(),
 			exps = core && core.experiments;
 
@@ -355,22 +495,47 @@ export default class ExperimentManager extends Module {
 				this.log.warn('Error attempting to initialize Twitch experiments tracker.', err);
 			}
 
-		if ( channel || this.getTwitchType(exps.experiments[key]?.t) === 'channel_id' )
-			return exps.getAssignmentById(key, {channel: channel ?? this.settings.get('context.channel')});
-
 		if ( exps.overrides && exps.overrides[key] )
 			return exps.overrides[key];
 
-		else if ( exps.assignments && exps.assignments[key] )
+		const exp_data = exps.experiments[key],
+			type = this.getTwitchType(exp_data?.t ?? 0);
+
+		// channel_id experiments always use getAssignmentById
+		if ( type === 'channel_id' ) {
+			return exps.getAssignmentById(key, {
+				bucketing: {
+					type: 1,
+					value: channel ?? this.settings.get('context.channelID')
+				}
+			});
+		}
+
+		// Otherwise, just use the default assignment?
+		if ( exps.assignments?.[key] )
 			return exps.assignments[key];
 
+		// If there is no default assignment, we should try to figure out
+		// what assignment they *would* get.
+
+		if ( type === 'device_id' )
+			return exps.selectTreatment(key, exp_data, this.unique_id);
+
+		else if ( type === 'user_id' )
+			// Technically, some experiments are expecting to get the user's
+			// login rather than user ID. But we don't care that much if an
+			// inactive legacy experiment is shown wrong. Meh.
+			return exps.selectTreatment(key, exp_data, this.resolve('site')?.getUser?.()?.id);
+
+		// We don't know what kind of experiment this is.
+		// Give up!
 		return null;
 	}
 
-	getTwitchKeyFromName(name) {
+	getTwitchKeyFromName(name: string) {
 		const experiments = this.getTwitchExperiments();
 		if ( ! experiments )
-			return undefined;
+			return;
 
 		name = name.toLowerCase();
 		for(const key in experiments)
@@ -381,30 +546,37 @@ export default class ExperimentManager extends Module {
 			}
 	}
 
-	getTwitchAssignmentByName(name, channel = null) {
-		return this.getTwitchAssignment(this.getTwitchKeyFromName(name), channel);
+	getTwitchAssignmentByName(name: string, channel: string | null = null) {
+		const key = this.getTwitchKeyFromName(name);
+		if ( ! key )
+			return null;
+		return this.getTwitchAssignment(key, channel);
 	}
 
-	_rebuildTwitchKey(key, is_set, new_val) {
+	_rebuildTwitchKey(
+		key: string,
+		is_set: boolean,
+		new_val: string | null
+	) {
 		const core = this.resolve('site')?.getCore?.(),
 			exps = core.experiments,
 
 			old_val = has(exps.assignments, key) ?
-				exps.assignments[key] :
-				undefined;
+				exps.assignments[key] as string :
+				null;
 
 		if ( old_val !== new_val ) {
 			const value = is_set ? new_val : old_val;
-			this.emit(':twitch-changed', key, value);
-			this.emit(`:twitch-changed:${key}`, value);
+			this.emit(':twitch-changed', key, value, old_val);
+			this.emit(`:twitch-changed:${key}`, value, old_val);
 		}
 	}
 
 
 	// FFZ Experiments
 
-	setOverride(key, value = null) {
-		const overrides = this.settings.provider.get('experiment-overrides') || {};
+	setOverride(key: string, value: unknown = null) {
+		const overrides = this.settings.provider.get('experiment-overrides', {});
 		overrides[key] = value;
 
 		this.settings.provider.set('experiment-overrides', overrides);
@@ -412,25 +584,30 @@ export default class ExperimentManager extends Module {
 		this._rebuildKey(key);
 	}
 
-	deleteOverride(key) {
+	deleteOverride(key: string) {
 		const overrides = this.settings.provider.get('experiment-overrides');
 		if ( ! overrides || ! has(overrides, key) )
 			return;
 
 		delete overrides[key];
-		this.settings.provider.set('experiment-overrides', overrides);
+		if ( Object.keys(overrides).length )
+			this.settings.provider.set('experiment-overrides', overrides);
+		else
+			this.settings.provider.delete('experiment-overrides');
 
 		this._rebuildKey(key);
 	}
 
-	hasOverride(key) {
+	hasOverride(key: string) {
 		const overrides = this.settings.provider.get('experiment-overrides');
-		return overrides && has(overrides, key);
+		return overrides ? has(overrides, key): false;
 	}
 
-	getAssignment(key) {
+	get: <T>(key: string) => T | null;
+
+	getAssignment<T>(key: string): T | null {
 		if ( this.cache.has(key) )
-			return this.cache.get(key);
+			return this.cache.get(key) as T;
 
 		const experiment = this.experiments[key];
 		if ( ! experiment ) {
@@ -440,14 +617,14 @@ export default class ExperimentManager extends Module {
 
 		const overrides = this.settings.provider.get('experiment-overrides'),
 			out = overrides && has(overrides, key) ?
-				overrides[key] :
-				ExperimentManager.selectGroup(key, experiment, this.unique_id);
+				overrides[key] as T :
+				ExperimentManager.selectGroup<T>(key, experiment, this.unique_id ?? '');
 
 		this.cache.set(key, out);
 		return out;
 	}
 
-	_rebuildKey(key) {
+	_rebuildKey(key: string) {
 		if ( ! this.cache.has(key) )
 			return;
 
@@ -456,13 +633,17 @@ export default class ExperimentManager extends Module {
 		const new_val = this.getAssignment(key);
 
 		if ( new_val !== old_val ) {
-			this.emit(':changed', key, new_val);
-			this.emit(`:changed:${key}`, new_val);
+			this.emit(':changed', key, new_val, old_val);
+			this.emit(`:changed:${key}`, new_val, old_val);
 		}
 	}
 
 
-	static selectGroup(key, experiment, unique_id) {
+	static selectGroup<T>(
+		key: string,
+		experiment: FFZExperimentData,
+		unique_id: string
+	): T | null {
 		const seed = key + unique_id + (experiment.seed || ''),
 			total = experiment.groups.reduce((a,b) => a + b.weight, 0);
 
@@ -471,7 +652,7 @@ export default class ExperimentManager extends Module {
 		for(const group of experiment.groups) {
 			value -= group.weight / total;
 			if ( value <= 0 )
-				return group.value;
+				return group.value as T;
 		}
 
 		return null;

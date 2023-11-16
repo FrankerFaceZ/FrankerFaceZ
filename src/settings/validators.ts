@@ -1,9 +1,9 @@
 'use strict';
 
-import type { SettingsUiDefinition, SettingsValidator } from "./types";
+import type { SettingUiDefinition, SettingValidator } from "./types";
 
 
-function do_number(value: any, definition: SettingsUiDefinition<number>) {
+function do_number(value: any, definition: SettingUiDefinition<number>) {
 	if ( typeof value !== 'number' || isNaN(value) || ! isFinite(value) )
 		return false;
 
@@ -29,7 +29,7 @@ function do_number(value: any, definition: SettingsUiDefinition<number>) {
 	return true;
 }
 
-export const process_to_int: SettingsValidator<number> = (
+export const process_to_int: SettingValidator<number> = (
 	value,
 	definition
 ) => {
@@ -41,7 +41,7 @@ export const process_to_int: SettingsValidator<number> = (
 	return do_number(value, definition);
 }
 
-export const process_to_float: SettingsValidator<number> = (
+export const process_to_float: SettingValidator<number> = (
 	value,
 	definition
 ) => {

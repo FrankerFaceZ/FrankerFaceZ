@@ -5,10 +5,19 @@
 // Get data, from Twitch.
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import {get, debounce, TranslatableError} from 'utilities/object';
+import type Apollo from './compat/apollo';
+import type { DocumentNode } from 'graphql';
 
-const LANGUAGE_MATCHER = /^auto___lang_(\w+)$/;
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+
+	}
+	interface ModuleMap {
+		'site.twitch_data': TwitchData;
+	}
+}
 
 /**
  * PaginatedResult
@@ -25,10 +34,23 @@ const LANGUAGE_MATCHER = /^auto___lang_(\w+)$/;
  * @extends Module
  */
 export default class TwitchData extends Module {
-	constructor(...args) {
-		super(...args);
 
-		this.site = this.parent;
+	apollo: Apollo = null as any;
+	site: GenericModule = null as any;
+
+
+	private _waiting_user_ids: Map<string, unknown>;
+	private _waiting_user_logins: Map<string, unknown>;
+	private _waiting_stream_ids: Map<string, unknown>;
+	private _waiting_stream_logins: Map<string, unknown>;
+
+	private tag_cache: Map<string, unknown>;
+	private _waiting_tags: Map<string, unknown>;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
+
+		this.site = this.parent as GenericModule;
 
 		this.inject('site.apollo');
 
@@ -41,17 +63,22 @@ export default class TwitchData extends Module {
 		this.tag_cache = new Map;
 		this._waiting_tags = new Map;
 
-		this._loadTags = debounce(this._loadTags, 50);
-		this._loadStreams = debounce(this._loadStreams, 50);
+		// The return type doesn't match, because this method returns
+		// a void and not a Promise. We don't care.
+		this._loadStreams = debounce(this._loadStreams, 50) as any;
 	}
 
-	queryApollo(query, variables, options) {
-		let thing;
-		if ( ! variables && ! options && query.query )
+	queryApollo(
+		query: DocumentNode | {query: DocumentNode, variables: any},
+		variables?: any,
+		options?: any
+	) {
+		let thing: {query: DocumentNode, variables: any};
+		if ( ! variables && ! options && 'query' in query && query.query )
 			thing = query;
 		else {
 			thing = {
-				query,
+				query: query as DocumentNode,
 				variables
 			};
 
@@ -62,13 +89,17 @@ export default class TwitchData extends Module {
 		return this.apollo.client.query(thing);
 	}
 
-	mutate(mutation, variables, options) {
-		let thing;
-		if ( ! variables && ! options && mutation.mutation )
+	mutate(
+		mutation: DocumentNode | {mutation: DocumentNode, variables: any},
+		variables?: any,
+		options?: any
+	) {
+		let thing: {mutation: DocumentNode, variables: any};
+		if ( ! variables && ! options && 'mutation' in mutation && mutation.mutation )
 			thing = mutation;
 		else {
 			thing = {
-				mutation,
+				mutation: mutation as DocumentNode,
 				variables
 			};
 
@@ -95,6 +126,7 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	async getBadges() {
+
 		const data = await this.queryApollo(
 			await import(/* webpackChunkName: 'queries' */ './data/global-badges.gql')
 		);
@@ -116,7 +148,11 @@ export default class TwitchData extends Module {
 	 * next page of results.
 	 * @returns {PaginatedResult} The results
 	 */
-	async getMatchingCategories(query, first = 15, cursor = null) {
+	async getMatchingCategories(
+		query: string,
+		first: number = 15,
+		cursor: string | null = null
+	) {
 		const data = await this.queryApollo(
 			await import(/* webpackChunkName: 'queries' */ './data/search-category.gql'),
 			{
@@ -852,7 +888,7 @@ export default class TwitchData extends Module {
 	 *
 	 *  console.log(await this.twitch_data.getMatchingTags("Rainbo"));
 	 */
-	async getMatchingTags(query) {
+	async getMatchingTags(query: string) {
 		const data = await this.queryApollo({
 			query: await import(/* webpackChunkName: 'queries' */ './data/tag-search.gql'),
 			variables: {

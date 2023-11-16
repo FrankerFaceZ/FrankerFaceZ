@@ -137,20 +137,24 @@ export class EventEmitter<
 		this.__dead_events = 0;
 	}
 
-	private __cleanListeners() {
+	protected __cleanListeners() {
 		if ( ! this.__dead_events )
-			return;
+			return [];
 
 		const new_listeners: Record<string, ListenerInfo[]> = {},
-			old_listeners = this.__listeners;
+			old_listeners = this.__listeners,
+			removed: string[] = [];
 
 		for(const [key, val] of Object.entries(old_listeners)) {
 			if ( val?.length )
 				new_listeners[key] = val;
+			else
+				removed.push(key);
 		}
 
 		this.__listeners = new_listeners;
 		this.__dead_events = 0;
+		return removed;
 	}
 
 	private __sortListeners(event: string) {
@@ -266,6 +270,8 @@ export class EventEmitter<
 			this.__sortListeners(event);
 		} else
 			this.__listeners[event] = [info];
+
+		return this;
 	}
 
 	/**
@@ -334,6 +340,8 @@ export class EventEmitter<
 			this.__sortListeners(event);
 		} else
 			this.__listeners[event] = [info];
+
+		return this;
 	}
 
 	/**
@@ -409,7 +417,7 @@ export class EventEmitter<
 					this.off(evt as any, fn, ctx);
 			}
 
-			return;
+			return this;
 		}
 
 		if ( this.__running.has(event) )
@@ -417,7 +425,7 @@ export class EventEmitter<
 
 		let list = this.__listeners[event];
 		if ( ! list )
-			return;
+			return this;
 
 		// If fn and ctx were both not provided, then clear the list.
 		if ( ! fn && ! ctx )
@@ -439,6 +447,8 @@ export class EventEmitter<
 		// dead event so we can clean it up later.
 		if ( ! list )
 			this.__dead_events++;
+
+		return this;
 	}
 
 	/**

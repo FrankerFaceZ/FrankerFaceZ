@@ -5,10 +5,10 @@
 // Modules are cool.
 // ============================================================================
 
-import EventEmitter, { EventKey, EventListener, EventMap, NamespacedEventArgs, NamespacedEventKey, NamespacedEvents } from 'utilities/events';
+import EventEmitter, { EventListener, EventMap, NamespacedEventArgs, NamespacedEventKey, NamespacedEvents } from 'utilities/events';
 import {has} from 'utilities/object';
 import type Logger from './logging';
-import type { AddonInfo, KnownEvents, ModuleKeys, ModuleMap, ModuleMap, ModuleMap, ModuleMap, OptionalPromise } from './types';
+import type { AddonInfo, KnownEvents, ModuleKeys, ModuleMap, OptionalPromise } from './types';
 import type { Addon } from './addon';
 
 
@@ -233,7 +233,7 @@ export class Module<
 		// to need to put conditional checks literally everywhere we use the
 		// logger system. Just no.
 		if ( ! this.__log )
-			this.__log = this.parent && (this.parent as Module).log?.get?.(this.name);
+			this.__log = this.parent && (this.parent as GenericModule).log?.get?.(this.name);
 		return this.__log as Logger;
 	}
 
@@ -805,8 +805,10 @@ export class Module<
 	}
 
 	resolve<
-		TPath extends ModuleKeys,
-		TReturn extends GenericModule = ModuleMap[TPath]
+		TPath extends string,
+		TReturn = TPath extends keyof ModuleMap
+			? ModuleMap[TPath]
+			: GenericModule
 	>(name: TPath): TReturn | null {
 		let module = this.__resolve(name);
 		if ( !(module instanceof Module) )

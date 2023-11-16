@@ -1,6 +1,6 @@
 'use strict';
 
-import type { SettingsDefinition, SettingsProcessor, SettingsUiDefinition } from "./types";
+import type { SettingDefinition, SettingProcessor, SettingUiDefinition } from "./types";
 
 const BAD = Symbol('BAD');
 type BadType = typeof BAD;
@@ -8,7 +8,7 @@ type BadType = typeof BAD;
 function do_number(
 	input: number | BadType,
 	default_value: number,
-	definition: SettingsUiDefinition<number>
+	definition: SettingUiDefinition<number>
 )  {
 	if ( typeof input !== 'number' || isNaN(input) || ! isFinite(input) )
 		input = BAD;
@@ -38,7 +38,7 @@ function do_number(
 	return input === BAD ? default_value : input;
 }
 
-export const to_int: SettingsProcessor<number> = (
+export const to_int: SettingProcessor<number> = (
 	value,
 	default_value,
 	definition
@@ -51,7 +51,7 @@ export const to_int: SettingsProcessor<number> = (
 	return do_number(value as number, default_value, definition);
 }
 
-export const to_float: SettingsProcessor<number> = (
+export const to_float: SettingProcessor<number> = (
 	value: unknown,
 	default_value,
 	definition

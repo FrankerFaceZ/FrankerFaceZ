@@ -8,6 +8,10 @@ import {EventEmitter} from 'utilities/events';
 import {has, get as getter, array_equals, set_equals, map_equals, deep_equals} from 'utilities/object';
 
 import * as DEFINITIONS from './typehandlers';
+import type { AllSettingsKeys, ContextData, SettingMetadata, SettingType, SettingDefinition, SettingsKeys } from './types';
+import type SettingsManager from '.';
+import type SettingsProfile from './profile';
+import type { SettingsTypeMap } from 'utilities/types';
 
 /**
  * Perform a basic check of a setting's requirements to see if they changed.
@@ -16,7 +20,11 @@ import * as DEFINITIONS from './typehandlers';
  * @param {Map} old_cache
  * @returns Whether or not they changed.
  */
-function compare_requirements(definition, cache, old_cache) {
+function compare_requirements(
+	definition: SettingDefinition<any>,
+	cache: Map<string, unknown>,
+	old_cache: Map<string, unknown>
+) {
 	if ( ! definition || ! Array.isArray(definition.requires) )
 		return false;
 
@@ -47,14 +55,44 @@ function compare_requirements(definition, cache, old_cache) {
 }
 
 
+export type SettingsContextEvents = {
+	[K in keyof SettingsTypeMap as `changed:${K}`]: [value: SettingsTypeMap[K], old_value: SettingsTypeMap[K]];
+} & {
+	[K in keyof SettingsTypeMap as `uses_changed:${K}`]: [uses: number[] | null, old_uses: number[] | null];
+} & {
+	changed: [key: SettingsKeys, value: any, old_value: any];
+	uses_changed: [key: SettingsKeys, uses: number[] | null, old_uses: number[] | null];
+
+	context_changed: [];
+	profiles_changed: [];
+}
+
+
 /**
  * The SettingsContext class provides a context through which to read
  * settings values in addition to emitting events when settings values
  * are changed.
- * @extends EventEmitter
  */
-export default class SettingsContext extends EventEmitter {
-	constructor(manager, context) {
+export default class SettingsContext extends EventEmitter<SettingsContextEvents> {
+
+	parent: SettingsContext | null;
+	manager: SettingsManager;
+
+	order: number[];
+
+	/** @internal */
+	_context: ContextData;
+	private __context: ContextData = null as any;
+
+	private __profiles: SettingsProfile[];
+
+	private __cache: Map<SettingsKeys, unknown>;
+	private __meta: Map<SettingsKeys, SettingMetadata>;
+
+	private __ls_listening: boolean;
+	private __ls_wanted: Map<string, Set<string>>;
+
+	constructor(manager: SettingsContext | SettingsManager, context?: ContextData) {
 		super();
 
 		if ( manager instanceof SettingsContext ) {
@@ -68,7 +106,7 @@ export default class SettingsContext extends EventEmitter {
 			this.manager = manager;
 		}
 
-		this.manager.__contexts.push(this);
+		(this.manager as any).__contexts.push(this);
 		this._context = context || {};
 
 		/*this._context_objects = new Set;
@@ -93,7 +131,7 @@ export default class SettingsContext extends EventEmitter {
 		for(const profile of this.__profiles)
 			profile.off('changed', this._onChanged, this);
 
-		const contexts = this.manager.__contexts,
+		const contexts = (this.manager as any).__contexts,
 			idx = contexts.indexOf(this);
 
 		if ( idx !== -1 )
@@ -106,26 +144,26 @@ export default class SettingsContext extends EventEmitter {
 	// ========================================================================
 
 	_watchLS() {
-		if ( this.__ls_watched )
+		if ( this.__ls_listening )
 			return;
 
-		this.__ls_watched = true;
+		this.__ls_listening = true;
 		this.manager.on(':ls-update', this._onLSUpdate, this);
 	}
 
 	_unwatchLS() {
-		if ( ! this.__ls_watched )
+		if ( ! this.__ls_listening )
 			return;
 
-		this.__ls_watched = false;
+		this.__ls_listening = false;
 		this.manager.off(':ls-update', this._onLSUpdate, this);
 	}
 
-	_onLSUpdate(key) {
+	_onLSUpdate(key: string) {
 		const keys = this.__ls_wanted.get(`ls.${key}`);
 		if ( keys )
 			for(const key of keys)
-				this._update(key, key, []);
+				this._update(key as SettingsKeys, key as SettingsKeys, []);
 	}
 
 
@@ -147,8 +185,8 @@ export default class SettingsContext extends EventEmitter {
 
 
 	selectProfiles() {
-		const new_profiles = [],
-			order = this.order = [];
+		const new_profiles: SettingsProfile[] = [],
+			order: number[] = this.order = [];
 
 		if ( ! this.manager.disable_profiles ) {
 			for(const profile of this.manager.__profiles)
@@ -171,13 +209,13 @@ export default class SettingsContext extends EventEmitter {
 
 		for(const profile of new_profiles)
 			if ( ! this.__profiles.includes(profile) ) {
-				profile.on('changed', this._onChanged, this);
+				profile.on('changed', this._onChanged as any, this);
 				changed_ids.add(profile.id);
 			}
 
 		this.__profiles = new_profiles;
 		this.emit('profiles_changed');
-		this.rebuildCache(changed_ids);
+		this.rebuildCache(/*changed_ids*/);
 		return true;
 	}
 
@@ -203,7 +241,7 @@ export default class SettingsContext extends EventEmitter {
 			const definition = this.manager.definitions.get(key);
 			let changed = false;
 
-			if ( definition && definition.equals ) {
+			if ( ! Array.isArray(definition) && definition?.equals ) {
 				if ( definition.equals === 'requirements' )
 					changed = compare_requirements(definition, this.__cache, old_cache);
 				else if ( typeof definition.equals === 'function' )
@@ -224,7 +262,7 @@ export default class SettingsContext extends EventEmitter {
 
 			if ( changed ) {
 				this.emit('changed', key, new_value, old_value);
-				this.emit(`changed:${key}`, new_value, old_value);
+				this.emit(`changed:${key}`, new_value, old_value as any);
 			}
 
 			if ( ! array_equals(new_uses, old_uses) ) {
@@ -239,12 +277,12 @@ export default class SettingsContext extends EventEmitter {
 	// Context Control
 	// ========================================================================
 
-	context(context) {
+	context(context: ContextData) {
 		return new SettingsContext(this, context);
 	}
 
 
-	updateContext(context) {
+	updateContext(context: ContextData) {
 		let changed = false;
 
 		for(const key in context)
@@ -258,7 +296,7 @@ export default class SettingsContext extends EventEmitter {
 					// This can catch a recursive structure error.
 				}
 
-				this._context[key] = val;
+				this._context[key] = val as any;
 				changed = true;
 			}
 
@@ -325,8 +363,8 @@ export default class SettingsContext extends EventEmitter {
 	}*/
 
 
-	setContext(context) {
-		this._context_objects = new Set;
+	setContext(context: ContextData) {
+		//this._context_objects = new Set;
 		this._context = {};
 		this.updateContext(context);
 	}
@@ -336,11 +374,14 @@ export default class SettingsContext extends EventEmitter {
 	// Data Access
 	// ========================================================================
 
-	_onChanged(key) {
+	_onChanged(key: SettingsKeys) {
 		this._update(key, key, []);
 	}
 
-	_update(key, initial, visited) {
+	_update<
+		K extends SettingsKeys,
+		TValue = SettingType<K>
+	>(key: K, initial: SettingsKeys, visited: SettingsKeys[]) {
 		if ( ! this.__cache.has(key) )
 			return;
 
@@ -349,7 +390,7 @@ export default class SettingsContext extends EventEmitter {
 
 		visited.push(key);
 
-		const old_value = this.__cache.get(key),
+		const old_value = this.__cache.get(key) as TValue | undefined,
 			old_meta = this.__meta.get(key),
 			new_value = this._get(key, key, []),
 			new_meta = this.__meta.get(key),
@@ -359,38 +400,41 @@ export default class SettingsContext extends EventEmitter {
 
 		if ( ! array_equals(new_uses, old_uses) ) {
 			this.emit('uses_changed', key, new_uses, old_uses);
-			this.emit(`uses_changed:${key}`, new_uses, old_uses);
+			this.emit(`uses_changed:${key}` as any, new_uses, old_uses);
 		}
 
 		if ( old_value === new_value )
 			return;
 
 		this.emit('changed', key, new_value, old_value);
-		this.emit(`changed:${key}`, new_value, old_value);
+		this.emit(`changed:${key}` as any, new_value, old_value);
 
 		const definition = this.manager.definitions.get(key);
-		if ( definition && definition.required_by )
+		if ( ! Array.isArray(definition) && definition?.required_by )
 			for(const req_key of definition.required_by)
 				if ( ! req_key.startsWith('context.') && ! req_key.startsWith('ls.') )
-					this._update(req_key, initial, Array.from(visited));
+					this._update(req_key as SettingsKeys, initial, Array.from(visited));
 	}
 
 
-	_get(key, initial, visited) {
+	_get<
+		K extends SettingsKeys,
+		TValue = SettingType<K>
+	>(key: K, initial: SettingsKeys, visited: SettingsKeys[]): TValue {
 		if ( visited.includes(key) )
 			throw new Error(`cyclic dependency when resolving setting "${initial}"`);
 
 		visited.push(key);
 
-		const definition = this.manager.definitions.get(key),
-			raw_type = definition && definition.type,
+		const definition = this.manager.definitions.get(key);
+		const raw_type = ! Array.isArray(definition) && definition?.type,
 			type = raw_type ? DEFINITIONS[raw_type] : DEFINITIONS.basic;
 
 		if ( ! type )
 			throw new Error(`non-existent setting type "${raw_type}"`);
 
 		const raw_value = this._getRaw(key, type),
-			meta = {
+			meta: SettingMetadata = {
 				uses: raw_value ? raw_value[1] : null
 			};
 
@@ -421,8 +465,8 @@ export default class SettingsContext extends EventEmitter {
 
 						keys.add(key);
 
-					} else if ( ! req_key.startsWith('context.') && ! this.__cache.has(req_key) )
-						this._get(req_key, initial, Array.from(visited));
+					} else if ( ! req_key.startsWith('context.') && ! this.__cache.has(req_key as SettingsKeys) )
+						this._get(req_key as SettingsKeys, initial, Array.from(visited));
 
 			if ( definition.process )
 				value = definition.process(this, value, meta);
@@ -440,70 +484,84 @@ export default class SettingsContext extends EventEmitter {
 	}
 
 
-	hasProfile(profile) {
-		if ( typeof profile === 'number' )
+	hasProfile(profile: number | SettingsProfile) {
+		if ( typeof profile === 'number' ) {
 			for(const prof of this.__profiles)
 				if ( prof.id === profile )
 					return true;
+
+			return false;
+		}
 
 		return this.__profiles.includes(profile);
 	}
 
 
-	_getRaw(key, type) {
+	_getRaw(key: SettingsKeys, type) {
 		if ( ! type )
 			throw new Error(`non-existent type for ${key}`)
 
-		return type.get(key, this.profiles(), this.manager.definitions.get(key), this.manager.log, this);
+		return type.get(
+			key,
+			this.profiles(),
+			this.manager.definitions.get(key),
+			this.manager.log,
+			this
+		);
 	}
-	/*	for(const profile of this.__profiles)
-			if ( profile.has(key) )
-				return [profile.get(key), profile]
-	}*/
 
 
 	// ========================================================================
 	// Data Access
 	// ========================================================================
 
-	update(key) {
+	update(key: SettingsKeys) {
 		this._update(key, key, []);
 	}
 
-	get(key) {
+	get<
+		K extends AllSettingsKeys,
+		TValue = SettingType<K>
+	>(key: K): TValue {
 		if ( key.startsWith('ls.') )
-			return this.manager.getLS(key.slice(3));
+			return this.manager.getLS(key.slice(3)) as TValue;
 
 		if ( key.startsWith('context.') )
 			//return this.__context[key.slice(8)];
 			return getter(key.slice(8), this.__context);
 
-		if ( this.__cache.has(key) )
-			return this.__cache.get(key);
+		if ( this.__cache.has(key as SettingsKeys) )
+			return this.__cache.get(key as SettingsKeys) as TValue;
 
-		return this._get(key, key, []);
+		return this._get(key as SettingsKeys, key as SettingsKeys, []);
 	}
 
-	getChanges(key, fn, ctx) {
+	getChanges<
+		K extends SettingsKeys,
+		TValue = SettingsTypeMap[K]
+	>(key: K, fn: (value: TValue, old_value: TValue | undefined) => void, ctx?: any) {
 		this.onChange(key, fn, ctx);
-		fn.call(ctx, this.get(key));
+		fn.call(ctx, this.get(key), undefined as TValue);
 	}
 
-	onChange(key, fn, ctx) {
-		this.on(`changed:${key}`, fn, ctx);
+	onChange<
+		K extends SettingsKeys,
+		TValue = SettingsTypeMap[K]
+	>(key: K, fn: (value: TValue, old_value: TValue) => void, ctx?: any) {
+		this.on(`changed:${key}`, fn as any, ctx);
 	}
 
 
-	uses(key) {
+	uses(key: AllSettingsKeys) {
 		if ( key.startsWith('ls.') )
 			return null;
 
 		if ( key.startsWith('context.') )
 			return null;
 
-		if ( ! this.__meta.has(key) )
-			this._get(key, key, []);
+		if ( ! this.__meta.has(key as SettingsKeys) )
+			this._get(key as SettingsKeys, key as SettingsKeys, []);
 
-		return this.__meta.get(key).uses;
+		return this.__meta.get(key as SettingsKeys)?.uses ?? null;
 	}
 }

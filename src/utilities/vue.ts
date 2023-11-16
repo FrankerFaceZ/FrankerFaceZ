@@ -5,14 +5,46 @@
 // Loads Vue + Translation Shim
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import {has} from 'utilities/object';
-import {DEBUG} from 'utilities/constants';
+import type TranslationManager from '../i18n';
+import type { VueConstructor } from 'vue';
+import type Vue from 'vue';
+import type { CombinedVueInstance } from 'vue/types/vue';
+import type { MessageNode } from '@ffz/icu-msgparser';
+
+declare global {
+	interface Window {
+		ffzVue: VueConstructor<Vue>;
+	}
+}
+
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+
+	}
+	interface ModuleMap {
+		vue: VueModule
+	}
+}
 
 
-export class Vue extends Module {
-	constructor(...args) {
-		super(...args);
+export class VueModule extends Module<'vue'> {
+
+	private _components: Record<string, any> | null;
+
+	Vue: VueConstructor<Vue> | null = null;
+
+	i18n: TranslationManager = null as any;
+
+	_vue_i18n?: CombinedVueInstance<any, any, any, any, any> | null;
+
+	key: string;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
+		this.key = 'ffz-stuff';
+
 		this._components = {};
 		this.inject('i18n');
 	}
@@ -36,7 +68,7 @@ export class Vue extends Module {
 
 		this.component(Components.default);
 
-		Vue.use(ObserveVisibility);
+		Vue.use(ObserveVisibility as any);
 		Vue.mixin(Clickaway.mixin);
 
 		/*if ( ! DEBUG && this.root.raven )
@@ -50,30 +82,30 @@ export class Vue extends Module {
 		Vue.use(this);
 	}
 
-	component(name, component) {
-		if ( typeof name === 'function' ) {
-			for(const key of name.keys())
-				this.component(key.slice(2, key.length - 4), name(key).default);
+	component(id: string | any, constructor?: any) {
+		if ( typeof id === 'function' ) {
+			for(const key of id.keys())
+				this.component(key.slice(2, key.length - 4), id(key).default);
 
-		} else if ( typeof name === 'object' ) {
-			for(const key in name)
-				if ( has(name, key) )
-					this.component(key, name[key]);
+		} else if ( typeof id === 'object' ) {
+			for(const key in id)
+				if ( has(id, key) )
+					this.component(key, id[key]);
 
 		} else if ( this.Vue )
-			this.Vue.component(name, component);
+			this.Vue.component(id, constructor);
 
-		else
-			this._components[name] = component;
+		else if ( this._components )
+			this._components[id] = constructor;
 	}
 
-	install(vue) {
+	install(vue: typeof Vue) {
 		// This is a mess. I'm sure there's an easier way to tie the systems
 		// together. However, for now, this works.
 
 		const t = this;
 		if ( ! this._vue_i18n ) {
-			this._vue_i18n = new this.Vue({
+			this._vue_i18n = new vue({
 				data() {
 					return {
 						locale: t.i18n.locale,
@@ -82,47 +114,51 @@ export class Vue extends Module {
 				},
 
 				methods: {
-					tNumber_(val, format) {
+					tNumber_(val: number, format?: string) {
 						this.locale;
 						return t.i18n.formatNumber(val, format);
 					},
 
-					tDate_(val, format) {
+					tDate_(val: string | Date, format?: string) {
 						this.locale;
 						return t.i18n.formatDate(val, format);
 					},
 
-					tTime_(val, format) {
+					tTime_(val: string | Date, format?: string) {
 						this.locale;
 						return t.i18n.formatTime(val, format);
 					},
 
-					tDateTime_(val, format) {
+					tDateTime_(val: string | Date, format?: string) {
 						this.locale;
 						return t.i18n.formatDateTime(val, format);
 					},
 
-					t_(key, phrase, options) {
-						this.locale && this.phrases[key];
+					t_(key: string, phrase: string, options: any) {
+						// Access properties to trigger reactivity.
+						this.locale && (this as any).phrases[key];
 						return t.i18n.t(key, phrase, options);
 					},
 
-					tList_(key, phrase, options) {
-						this.locale && this.phrases[key];
+					tList_(key: string, phrase: string, options: any) {
+						// Access properties to trigger reactivity.
+						this.locale && (this as any).phrases[key];
 						return t.i18n.tList(key, phrase, options);
 					},
 
-					tNode_(node, data) {
+					tNode_(node: MessageNode, data: any) {
+						// Access properties to trigger reactivity.
 						this.locale;
 						return t.i18n.formatNode(node, data);
 					},
 
-					setLocale(locale) {
+					setLocale(locale: string) {
 						t.i18n.locale = locale;
 					}
 				}
 			});
 
+			// On i18n events, update values for reactivity.
 			this.on('i18n:transform', () => {
 				this._vue_i18n.locale = this.i18n.locale;
 				this._vue_i18n.phrases = {};
@@ -165,11 +201,11 @@ export class Vue extends Module {
 			render(createElement) {
 				return createElement(
 					this.tag || 'span',
-					this.$i18n.tList_(
+					(this as any).$i18n.tList_(
 						this.phrase,
 						this.default,
 						Object.assign({}, this.data, this.$scopedSlots)
-					).map(out => {
+					).map((out: any) => {
 						if ( typeof out === 'function' )
 							return out();
 						return out;
@@ -198,29 +234,29 @@ export class Vue extends Module {
 					return t.i18n;
 				},
 				t(key, phrase, options) {
-					return this.$i18n.t_(key, phrase, options);
+					return (this as any).$i18n.t_(key, phrase, options);
 				},
 				tList(key, phrase, options) {
-					return this.$i18n.tList_(key, phrase, options);
+					return (this as any).$i18n.tList_(key, phrase, options);
 				},
 				tNode(node, data) {
-					return this.$i18n.tNode_(node, data);
+					return (this as any).$i18n.tNode_(node, data);
 				},
 				tNumber(val, format) {
-					return this.$i18n.tNumber_(val, format);
+					return (this as any).$i18n.tNumber_(val, format);
 				},
 				tDate(val, format) {
-					return this.$i18n.tDate_(val, format);
+					return (this as any).$i18n.tDate_(val, format);
 				},
 				tTime(val, format) {
-					return this.$i18n.tTime_(val, format);
+					return (this as any).$i18n.tTime_(val, format);
 				},
 				tDateTime(val, format) {
-					return this.$i18n.tDateTime_(val, format);
+					return (this as any).$i18n.tDateTime_(val, format);
 				}
 			}
 		});
 	}
 }
 
-export default Vue;
+export default VueModule;

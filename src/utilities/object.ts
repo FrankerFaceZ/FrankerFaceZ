@@ -1,5 +1,6 @@
 
 import {BAD_HOTKEYS, TWITCH_EMOTE_V2, WORD_SEPARATORS} from 'utilities/constants';
+import type { ExtractSegments, ExtractType } from 'utilities/types';
 
 const HOP = Object.prototype.hasOwnProperty;
 
@@ -78,8 +79,8 @@ export class TranslatableError extends Error {
 	}
 
 	toString() {
-		const ffz = window.FrankerFaceZ?.get?.(),
-			i18n = ffz?.resolve?.('i18n');
+		const ffz = window.FrankerFaceZ?.get(),
+			i18n = ffz?.resolve('i18n');
 
 		if ( i18n && this.i18n_key )
 			return i18n.t(this.i18n_key, this.message, this.data);
@@ -460,7 +461,7 @@ export function once<TFunc extends AnyFunction, TReturn = Awaited<ReturnType<TFu
  * @param b The second array
  * @returns Whether or not they match
  */
-export function array_equals(a: any[], b: any[]) {
+export function array_equals(a?: any[] | null, b?: any[] | null) {
 	if ( ! Array.isArray(a) || ! Array.isArray(b) || a.length !== b.length )
 		return false;
 
@@ -654,40 +655,6 @@ export function substr_count(str: string, needle: string) {
 
 
 // These types are all used by get()
-
-export type ExtractSegments<Input extends string> =
-    Input extends `${infer Match}.${infer Rest}`
-        ? [ Match, ...ExtractSegments<Rest> ]
-        : [ Input ];
-
-export type ArrayShift<T extends any[]> = T extends [any, ...infer Rest]
-    // This is needed to avoid it returning an empty array. There's probably
-    // a more elegant solution, but I don't know it.
-    ? Rest extends [any, ...any[]]
-        ? Rest
-        : undefined
-    : undefined;
-
-export type ExtractType<T, Path extends string[], Key = Path[0], Rest = ArrayShift<Path>> =
-    Key extends "@each"
-        ? ExtractEach<T, Rest>
-        :
-    Key extends "@last"
-        ? T extends any[]
-            ? ExtractEach<T, Rest>
-            : never
-        :
-    Key extends keyof T
-        ? Rest extends string[]
-            ? ExtractType<T[Key], Rest>
-            : T[Key]
-        :
-    null;
-
-export type ExtractEach<T, Rest> =
-    Rest extends string[]
-        ? { [K in keyof T]: ExtractType<T[K], Rest> }
-        : T;
 
 /**
  * Get a value from an object at a path.

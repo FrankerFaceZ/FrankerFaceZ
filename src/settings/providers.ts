@@ -10,7 +10,7 @@ import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLi
 import {EventEmitter} from 'utilities/events';
 import {has, once} from 'utilities/object';
 import type SettingsManager from '.';
-import type { OptionalArray, OptionalPromise } from '../utilities/types';
+import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
 
 const DB_VERSION = 1,
 	NOT_WWW_TWITCH = window.location.host !== 'www.twitch.tv',
@@ -96,10 +96,23 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 
 	abstract flush(): OptionalPromise<void>;
 
-	abstract get<T>(key: string, default_value: T): T;
-	abstract get<T>(key: string): T | null;
+	abstract get<K extends keyof ProviderTypeMap>(
+		key: K,
+		default_value: ProviderTypeMap[K]
+	): ProviderTypeMap[K];
+	abstract get<K extends keyof ProviderTypeMap>(
+		key: K
+	): ProviderTypeMap[K] | null;
+	abstract get<T>(
+		key: Exclude<string, keyof ProviderTypeMap>,
+		default_value: T
+	): T;
+	abstract get<T>(
+		key: Exclude<string, keyof ProviderTypeMap>
+	): T | null;
 
-	abstract set(key: string, value: any): void;
+	abstract set<K extends keyof ProviderTypeMap>(key: K, value: ProviderTypeMap[K]): void;
+	abstract set<K extends string>(key: Exclude<K, keyof ProviderTypeMap>, value: unknown): void;
 	abstract delete(key: string): void;
 	abstract clear(): void;
 
@@ -301,8 +314,10 @@ export class LocalStorageProvider extends SettingsProvider {
 		}
 	}
 
-
-	get<T>(key: string, default_value?: T): T {
+	get<T>(
+		key: string,
+		default_value?: T
+	): T {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;

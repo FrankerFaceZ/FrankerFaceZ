@@ -335,8 +335,10 @@ export class TranslationCore {
 	}
 
 	toLocaleString(thing: any) {
-		if ( thing && thing.toLocaleString )
-			return thing.toLocaleString(this._locale);
+		if ( thing?.toLocaleString )
+			return thing.toLocaleString(this._locale) as string;
+		else if ( typeof thing !== 'string' )
+			return `${thing}`;
 		return thing;
 	}
 
@@ -638,171 +640,6 @@ function listToString(list: any[]): string {
 // Plural Handling
 // ============================================================================
 
-/*
-const CARDINAL_TO_LANG = {
-	arabic: ['ar'],
-	czech: ['cs'],
-	danish: ['da'],
-	german: ['de', 'el', 'en', 'es', 'fi', 'hu', 'it', 'nl', 'no', 'nb', 'tr', 'sv'],
-	hebrew: ['he'],
-	persian: ['fa'],
-	polish: ['pl'],
-	serbian: ['sr'],
-	french: ['fr', 'pt'],
-	russian: ['ru','uk'],
-	slov: ['sl']
-}
-
-const CARDINAL_TYPES = {
-	other: () => 5,
-
-	arabic(n) {
-		if ( n === 0 ) return 0;
-		if ( n === 1 ) return 1;
-		if ( n === 2 ) return 2;
-		const n1 = n % 1000;
-		if ( n1 >= 3 && n1 <= 10 ) return 3;
-		return n1 >= 11 ? 4 : 5;
-	},
-
-	czech: (n,i,v) => {
-		if ( v !== 0 ) return 4;
-		if ( i === 1 ) return 1;
-		if ( i >= 2 && i <= 4 ) return 3;
-		return 5;
-	},
-
-	danish: (n,i,v,t) => (n === 1 || (t !== 0 && (i === 0 || i === 1))) ? 1 : 5,
-	french: (n, i) => (i === 0 || i === 1) ? 1 : 5,
-	german: n => n === 1 ? 1 : 5,
-
-	hebrew(n) {
-		if ( n === 1 ) return 1;
-		if ( n === 2 ) return 2;
-		return (n > 10 && n % 10 === 0) ? 4 : 5;
-	},
-
-	persian: (n, i) => (i === 0 || n === 1) ? 1 : 5,
-
-	slov(n, i, v) {
-		if ( v !== 0 ) return 3;
-		const n1 = n % 100;
-		if ( n1 === 1 ) return 1;
-		if ( n1 === 2 ) return 2;
-		if ( n1 === 3 || n1 === 4 ) return 3;
-		return 5;
-	},
-
-	serbian(n, i, v, t) {
-		if ( v !== 0 ) return 5;
-		const i1 = i % 10, i2 = i % 100;
-		const t1 = t % 10, t2 = t % 100;
-		if ( i1 === 1 && i2 !== 11 ) return 1;
-		if ( t1 === 1 && t2 !== 11 ) return 1;
-		if ( i1 >= 2 && i1 <= 4 && !(i2 >= 12 && i2 <= 14) ) return 3;
-		if ( t1 >= 2 && t1 <= 4 && !(t2 >= 12 && t2 <= 14) ) return 3;
-		return 5;
-	},
-
-	polish(n, i, v) {
-		if ( v !== 0 ) return 5;
-		if ( n === 1 ) return 1;
-		const n1 = n % 10, n2 = n % 100;
-		if ( n1 >= 2 && n1 <= 4 && !(n2 >= 12 && n2 <= 14) ) return 3;
-		if ( i !== 1 && (n1 === 0 || n1 === 1) ) return 4;
-		if ( n1 >= 5 && n1 <= 9 ) return 4;
-		if ( n2 >= 12 && n2 <= 14 ) return 4;
-		return 5;
-	},
-
-	russian(n,i,v) {
-		const n1 = n % 10, n2 = n % 100;
-		if ( n1 === 1 && n2 !== 11 ) return 1;
-		if ( v === 0 && (n1 >= 2 && n1 <= 4) && (n2 < 12 || n2 > 14) ) return 3;
-		return ( v === 0 && (n1 === 0 || (n1 >= 5 && n1 <= 9) || (n2 >= 11 || n2 <= 14)) ) ? 4 : 5
-	}
-}
-
-
-const ORDINAL_TO_LANG = {
-	english: ['en'],
-	hungarian: ['hu'],
-	italian: ['it'],
-	one: ['fr', 'lo', 'ms'],
-	swedish: ['sv'],
-	ukranian: ['uk']
-};
-
-const ORDINAL_TYPES = {
-	other: () => 5,
-	one: n => n === 1 ? 1 : 5,
-
-	english(n) {
-		const n1 = n % 10, n2 = n % 100;
-		if ( n1 === 1 && n2 !== 11 ) return 1;
-		if ( n1 === 2 && n2 !== 12 ) return 2;
-		if ( n1 === 3 && n2 !== 13 ) return 3;
-		return 5;
-	},
-
-	ukranian(n) {
-		const n1 = n % 10, n2 = n % 100;
-		if ( n1 === 3 && n2 !== 13 ) return 3;
-		return 5;
-	},
-
-	hungarian: n => (n === 1 || n === 5) ? 1 : 5,
-	italian: n => (n === 11 || n === 8 || n === 80 || n === 800) ? 4 : 5,
-
-	swedish(n) {
-		const n1 = n % 10, n2 = n % 100;
-		return ((n1 === 1 || n1 === 2) && (n2 !== 11 && n2 !== 12)) ? 1 : 5;
-	}
-}
-
-const PLURAL_TO_NAME = [
-	'zero', // 0
-	'one',  // 1
-	'two',  // 2
-	'few',  // 3
-	'many', // 4
-	'other' // 5
-];
-
-const CARDINAL_LANG_TO_TYPE = {},
-	ORDINAL_LANG_TO_TYPE = {};
-
-for(const type of Object.keys(CARDINAL_TO_LANG))
-	for(const lang of CARDINAL_TO_LANG[type])
-		CARDINAL_LANG_TO_TYPE[lang] = type;
-
-for(const type of Object.keys(ORDINAL_TO_LANG))
-	for(const lang of ORDINAL_TO_LANG[type])
-		ORDINAL_LANG_TO_TYPE[lang] = type;
-
-function executePlural(fn, input) {
-	input = Math.abs(Number(input));
-	const i = Math.floor(input);
-	let v, t;
-
-	if ( i === input ) {
-		v = 0;
-		t = 0;
-	} else {
-		t = `${input}`.split('.')[1]
-		v = t ? t.length : 0;
-		t = t ? Number(t) : 0;
-	}
-
-	return PLURAL_TO_NAME[fn(
-		input,
-		i,
-		v,
-		t
-	)]
-}
-*/
-
 let cardinal_i18n: Intl.PluralRules | null = null,
 	cardinal_locale: string | null = null;
 
@@ -830,27 +667,3 @@ export function getOrdinalName(locale: string, input: number) {
 
 	return ordinal_i18n.select(input);
 }
-
-
-/*
-export function getCardinalName(locale: string, input: number) {
-	let type = CARDINAL_LANG_TO_TYPE[locale];
-	if ( ! type ) {
-		const idx = locale.indexOf('-');
-		type = (idx !== -1 && CARDINAL_LANG_TO_TYPE[locale.slice(0, idx)]) || 'other';
-		CARDINAL_LANG_TO_TYPE[locale] = type;
-	}
-
-	return executePlural(CARDINAL_TYPES[type], input);
-}
-
-export function getOrdinalName(locale, input) {
-	let type = ORDINAL_LANG_TO_TYPE[locale];
-	if ( ! type ) {
-		const idx = locale.indexOf('-');
-		type = (idx !== -1 && ORDINAL_LANG_TO_TYPE[locale.slice(0, idx)]) || 'other';
-		ORDINAL_LANG_TO_TYPE[locale] = type;
-	}
-
-	return executePlural(ORDINAL_TYPES[type], input);
-}*/

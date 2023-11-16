@@ -5,7 +5,7 @@
 // It controls Twitch PubSub.
 // ============================================================================
 
-import Module, { GenericModule, ModuleEvents } from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import { FFZEvent } from 'utilities/events';
 
 declare global {
@@ -14,6 +14,16 @@ declare global {
 		//__Twitch__pubsubInstances: any;
 	}
 }
+
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+		'site.subpump': SubpumpEvents;
+	}
+	interface ModuleMap {
+		'site.subpump': Subpump;
+	}
+}
+
 
 
 /**
@@ -236,51 +246,7 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 		}
 	}
 
-	/*
-	hookOldClient(client) {
-		const t = this,
-			orig_message = client._onMessage;
-
-		this.is_old = true;
-
-		client._unbindPrimary(client._primarySocket);
-
-		client._onMessage = function(e) {
-			if ( t.handleMessage(e) )
-				return;
-
-			return orig_message.call(this, e);
-		};
-
-		client._bindPrimary(client._primarySocket);
-
-		const listener = client._listens,
-			orig_on = listener.on,
-			orig_off = listener.off;
-
-		listener.on = function(topic, fn, ctx) {
-			const has_topic = !! listener._events?.[topic],
-				out = orig_on.call(this, topic, fn, ctx);
-
-			if ( ! has_topic )
-				t.emit(':add-topic', topic)
-
-			return out;
-		}
-
-		listener.off = function(topic, fn) {
-			const has_topic = !! listener._events?.[topic],
-				out = orig_off.call(this, topic, fn);
-
-			if ( has_topic && ! listener._events?.[topic] )
-				t.emit(':remove-topic', topic);
-
-			return out;
-		}
-	}
-	*/
-
-	inject(topic: string, message: any) {
+	simulateMessage(topic: string, message: any) {
 		if ( ! this.instance )
 			throw new Error('No PubSub instance available');
 

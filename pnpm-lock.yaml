@@ -18,8 +18,8 @@ dependencies:
     specifier: ^2.11.8
     version: 2.11.8
   crypto-js:
-    specifier: ^3.3.0
-    version: 3.3.0
+    specifier: ^4.2.0
+    version: 4.2.0
   dayjs:
     specifier: ^1.10.7
     version: 1.10.7
@@ -42,8 +42,8 @@ dependencies:
     specifier: ^2.12.6
     version: 2.12.6(graphql@16.0.1)
   js-cookie:
-    specifier: ^2.2.1
-    version: 2.2.1
+    specifier: ^3.0.5
+    version: 3.0.5
   jszip:
     specifier: ^3.7.1
     version: 3.7.1
@@ -97,9 +97,18 @@ devDependencies:
   '@ffz/fontello-cli':
     specifier: ^1.0.4
     version: 1.0.4
+  '@types/crypto-js':
+    specifier: ^4.2.1
+    version: 4.2.1
+  '@types/js-cookie':
+    specifier: ^3.0.6
+    version: 3.0.6
   '@types/safe-regex':
     specifier: ^1.1.6
     version: 1.1.6
+  '@types/vue-clickaway':
+    specifier: ^2.2.4
+    version: 2.2.4
   '@types/webpack-env':
     specifier: ^1.18.4
     version: 1.18.4
@@ -592,6 +601,10 @@ packages:
       '@types/node': 20.5.7
     dev: true
 
+  /@types/crypto-js@4.2.1:
+    resolution: {integrity: sha512-FSPGd9+OcSok3RsM0UZ/9fcvMOXJ1ENE/ZbLfOPlBWj7BgXtEAM8VYfTtT760GiLbQIMoVozwVuisjvsVwqYWw==}
+    dev: true
+
   /@types/eslint-scope@3.7.4:
     resolution: {integrity: sha512-9K4zoImiZc3HlIp6AVUDE4CWYx22a+lhSZMYNpbjW04+YF0KWj4pJXnEMjdnFTiQibFFmElcsasJXDbdI/EPhA==}
     dependencies:
@@ -636,6 +649,10 @@ packages:
     resolution: {integrity: sha512-HC8G7c1WmaF2ekqpnFq626xd3Zz0uvaqFmBJNRZCGEZCXkvSdJoNFn/8Ygbd9fKNQj8UzLdCETaI0UWPAjK7IA==}
     dependencies:
       '@types/node': 20.5.7
+    dev: true
+
+  /@types/js-cookie@3.0.6:
+    resolution: {integrity: sha512-wkw9yd1kEXOPnvEeEV1Go1MmxtBJL0RR79aOTAApecWFVu7w0NNXNqhcWgvw2YgZDYadliXkl14pa3WXw5jlCQ==}
     dev: true
 
   /@types/json-schema@7.0.9:
@@ -699,6 +716,12 @@ packages:
     resolution: {integrity: sha512-f0KEEe05NvUnat+boPTZ0dgaLZ4SfSouXUgv5noUiefG2ajgKjmETo9ZJyuqsl7dfl2aHlLJUiki6B4ZYldiiw==}
     dependencies:
       '@types/node': 20.5.7
+    dev: true
+
+  /@types/vue-clickaway@2.2.4:
+    resolution: {integrity: sha512-Jy0dGNUrm/Fya1hY8bHM5lXJvZvlyU/rvgLEFVcjQkwNp2Z2IGNnRKS6ZH9orMDkUI7Qj0oyWp0b89VTErAS9Q==}
+    dependencies:
+      vue: 2.6.14
     dev: true
 
   /@types/webpack-env@1.18.4:
@@ -2173,8 +2196,8 @@ packages:
       which: 2.0.2
     dev: true
 
-  /crypto-js@3.3.0:
-    resolution: {integrity: sha512-DIT51nX0dCfKltpRiXV+/TVZq+Qq2NgF4644+K7Ttnla7zEzqc+kjJyiB96BHNyUTBxyjzRcZYpUdZa+QAqi6Q==}
+  /crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
     dev: false
 
   /css-loader@6.8.1(webpack@5.88.2):
@@ -3701,8 +3724,9 @@ packages:
       supports-color: 8.1.1
     dev: true
 
-  /js-cookie@2.2.1:
-    resolution: {integrity: sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==}
+  /js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
     dev: false
 
   /js-tokens@3.0.2:
@@ -5652,7 +5676,6 @@ packages:
 
   /vue@2.6.14:
     resolution: {integrity: sha512-x2284lgYvjOMj3Za7kqzRcUSxBboHqtgRE2zlos1qWaOye5yUmHn42LB1250NJBLRwEcdrB0JRwyPTEPhfQjiQ==}
-    dev: false
 
   /vuedraggable@2.24.3:
     resolution: {integrity: sha512-6/HDXi92GzB+Hcs9fC6PAAozK1RLt1ewPTLjK0anTYguXLAeySDmcnqE8IC0xa7shvSzRjQXq3/+dsZ7ETGF3g==}

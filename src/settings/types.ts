@@ -1,6 +1,7 @@
 import type SettingsManager from ".";
 import type { FilterData } from "../utilities/filtering";
-import type { OptionalPromise, OptionallyCallable, RecursivePartial } from "../utilities/types";
+import type { PathNode } from "../utilities/path-parser";
+import type { ExtractSegments, ExtractType, JoinKeyPaths, ObjectKeyPaths, OptionalPromise, OptionallyCallable, RecursivePartial, SettingsTypeMap } from "../utilities/types";
 import type SettingsContext from "./context";
 import type { SettingsProvider } from "./providers";
 
@@ -24,7 +25,7 @@ export type SettingsClearable = {
 
 // Context
 
-export type ContextData = RecursivePartial<{
+export interface ConcreteContextData {
 	addonDev: boolean;
 
 	category: string;
@@ -62,17 +63,52 @@ export type ContextData = RecursivePartial<{
 		theme: number;
 	};
 
-}>;
+};
 
+export type ContextData = RecursivePartial<ConcreteContextData>;
+
+export interface ConcreteLocalStorageData {
+	test: number;
+}
+
+export type LocalStorageData = Partial<ConcreteLocalStorageData>;
+
+export type SettingsContextKeys = JoinKeyPaths<'context', ObjectKeyPaths<ConcreteContextData>>;
+export type SettingsLocalStorageKeys = JoinKeyPaths<'ls', ObjectKeyPaths<ConcreteLocalStorageData>> | JoinKeyPaths<'ls.raw', ObjectKeyPaths<ConcreteLocalStorageData>>;
+export type SettingsKeys = keyof SettingsTypeMap;
+export type AllSettingsKeys = SettingsKeys | SettingsContextKeys | SettingsLocalStorageKeys;
+
+export type SettingType<K extends AllSettingsKeys> =
+	K extends `context.${infer Rest}`
+		? ExtractType<ConcreteContextData, ExtractSegments<Rest>> | undefined
+		:
+	K extends `ls.raw.${infer _}`
+		? string | undefined
+		:
+	K extends `ls.${infer Rest}`
+		? Rest extends keyof LocalStorageData
+			? LocalStorageData[Rest]
+			: unknown
+		:
+	K extends keyof SettingsTypeMap
+		? SettingsTypeMap[K]
+		:
+	unknown;
+
+export type SettingMetadata = {
+	uses: number[];
+};
 
 // Definitions
 
-export type SettingsDefinition<T> = {
+export type SettingDefinition<T> = {
 
 	default: T,
 	type?: string;
 
-	process?(this: SettingsManager, ctx: SettingsContext, val: T): T;
+	equals?: 'requirements' | ((new_value: T, old_value: T | undefined, cache: Map<SettingsKeys, unknown>, old_cache: Map<SettingsKeys, unknown>) => boolean);
+
+	process?(ctx: SettingsContext, val: T, meta: SettingMetadata): T;
 
 	// Dependencies
 	required_by?: string[];
@@ -82,16 +118,25 @@ export type SettingsDefinition<T> = {
 	__source?: string | null;
 
 	// UI Stuff
-	ui?: SettingsUiDefinition<T>;
+	ui?: SettingUiDefinition<T>;
 
 	// Reactivity
 	changed?: () => void;
 
 };
 
-export type SettingsUiDefinition<T> = {
+export type SettingUiDefinition<T> = {
+	i18n_key?: string;
+	key: string;
 	path: string;
+	path_tokens?: PathNode[];
+
 	component: string;
+
+	no_i18n?: boolean;
+
+	// TODO: Handle this better.
+	data: any;
 
 	process?: string;
 
@@ -128,6 +173,15 @@ export type ExportedFullDump = {
 };
 
 
+export type ExportedBlobMetadata = {
+	key: string;
+	type?: string;
+	name?: string;
+	modified?: number;
+	mime?: string;
+};
+
+
 
 // Profiles
 
@@ -153,16 +207,16 @@ export type SettingsProfileMetadata = {
 
 // Processors
 
-export type SettingsProcessor<T> = (
+export type SettingProcessor<T> = (
 	input: unknown,
 	default_value: T,
-	definition: SettingsUiDefinition<T>
+	definition: SettingUiDefinition<T>
 ) => T;
 
 
 // Validators
 
-export type SettingsValidator<T> = (
+export type SettingValidator<T> = (
 	value: T,
-	definition: SettingsUiDefinition<T>
+	definition: SettingUiDefinition<T>
 ) => boolean;

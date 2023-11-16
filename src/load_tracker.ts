@@ -7,6 +7,20 @@
 import Module, { GenericModule } from 'utilities/module';
 import type SettingsManager from './settings';
 
+
+declare module 'utilities/types' {
+	interface ModuleEventMap {
+		load_tracker: LoadEvents;
+	}
+	interface ModuleMap {
+		load_tracker: LoadTracker;
+	}
+	interface SettingsTypeMap {
+		'chat.update-when-loaded': boolean;
+	}
+}
+
+
 type PendingLoadData = {
 	pending: Set<string>;
 	timers: Record<string, ReturnType<typeof setTimeout> | null>;
