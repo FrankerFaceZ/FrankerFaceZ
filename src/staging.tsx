@@ -4,12 +4,38 @@
 // Staging Selector
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import { API_SERVER, SERVER, STAGING_API, STAGING_CDN } from './utilities/constants';
+import type SettingsManager from './settings';
 
-export default class StagingSelector extends Module {
-	constructor(...args) {
-		super(...args);
+declare module 'utilities/types' {
+	interface ModuleMap {
+		staging: StagingSelector;
+	}
+	interface ModuleEventMap {
+		staging: StagingEvents;
+	}
+	interface SettingsTypeMap {
+		'data.use-staging': boolean;
+	}
+}
+
+type StagingEvents = {
+	':updated': [api: string, cdn: string];
+}
+
+export default class StagingSelector extends Module<'staging', StagingEvents> {
+
+	// Dependencies
+	settings: SettingsManager = null as any;
+
+	// State
+	api: string = API_SERVER;
+	cdn: string = SERVER;
+	active: boolean = false;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 
 		this.inject('settings');
 
@@ -26,11 +52,12 @@ export default class StagingSelector extends Module {
 		this.updateStaging(false);
 	}
 
+	/** @internal */
 	onEnable() {
 		this.settings.getChanges('data.use-staging', this.updateStaging, this);
 	}
 
-	updateStaging(val) {
+	private updateStaging(val: boolean) {
 		this.active = val;
 
 		this.api = val

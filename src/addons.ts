@@ -4,21 +4,71 @@
 // Add-On System
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import { EXTENSION, SERVER_OR_EXT } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
-import { timeout, has, deep_copy } from 'utilities/object';
+import { timeout, has, deep_copy, fetchJSON } from 'utilities/object';
 import { getBuster } from 'utilities/time';
+import type SettingsManager from './settings';
+import type TranslationManager from './i18n';
+import type LoadTracker from './load_tracker';
+import type FrankerFaceZ from './main';
+import type { AddonInfo } from 'utilities/types';
 
-const fetchJSON = (url, options) => fetch(url, options).then(r => r.ok ? r.json() : null).catch(() => null);
+declare global {
+	interface Window {
+		ffzAddonsWebpackJsonp: unknown;
+	}
+}
+
+declare module 'utilities/types' {
+	interface ModuleMap {
+		addons: AddonManager;
+	}
+	interface ModuleEventMap {
+		addons: AddonManagerEvents;
+	}
+	interface SettingsTypeMap {
+		'addons.dev.server': boolean;
+	}
+};
+
+type AddonManagerEvents = {
+	':ready': [];
+	':data-loaded': [];
+	':reload-required': [];
+
+	':added': [id: string, info: AddonInfo];
+	':addon-loaded': [id: string];
+	':addon-enabled': [id: string];
+	':addon-disabled': [id: string];
+	':fully-unload': [id: string];
+};
+
 
 // ============================================================================
 // AddonManager
 // ============================================================================
 
-export default class AddonManager extends Module {
-	constructor(...args) {
-		super(...args);
+export default class AddonManager extends Module<'addons'> {
+
+	// Dependencies
+	i18n: TranslationManager = null as any;
+	load_tracker: LoadTracker = null as any;
+	settings: SettingsManager = null as any;
+
+	// State
+	has_dev: boolean;
+	reload_required: boolean;
+	target: string;
+
+	addons: Record<string, AddonInfo | string[]>;
+	enabled_addons: string[];
+
+	private _loader?: Promise<void>;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 
 		this.should_enable = true;
 
@@ -28,7 +78,7 @@ export default class AddonManager extends Module {
 
 		this.load_requires = ['settings'];
 
-		this.target = this.parent.flavor || 'unknown';
+		this.target = (this.parent as unknown as FrankerFaceZ).flavor || 'unknown';
 
 		this.has_dev = false;
 		this.reload_required = false;
@@ -39,6 +89,7 @@ export default class AddonManager extends Module {
 	}
 
 	onLoad() {
+		// We don't actually *wait* for this, we just start it.
 		this._loader = this.loadAddonData();
 	}
 
@@ -54,20 +105,20 @@ export default class AddonManager extends Module {
 			getFFZ: () => this,
 			isReady: () => this.enabled,
 			getAddons: () => Object.values(this.addons),
-			hasAddon: id => this.hasAddon(id),
-			getVersion: id => this.getVersion(id),
-			doesAddonTarget: id => this.doesAddonTarget(id),
-			isAddonEnabled: id => this.isAddonEnabled(id),
-			isAddonExternal: id => this.isAddonExternal(id),
-			enableAddon: id => this.enableAddon(id),
-			disableAddon: id => this.disableAddon(id),
-			reloadAddon: id => this.reloadAddon(id),
-			canReloadAddon: id => this.canReloadAddon(id),
+			hasAddon: (id: string) => this.hasAddon(id),
+			getVersion: (id: string) => this.getVersion(id),
+			doesAddonTarget: (id: string) => this.doesAddonTarget(id),
+			isAddonEnabled: (id: string) => this.isAddonEnabled(id),
+			isAddonExternal: (id: string) => this.isAddonExternal(id),
+			enableAddon: (id: string) => this.enableAddon(id),
+			disableAddon: (id: string) => this.disableAddon(id),
+			reloadAddon: (id: string) => this.reloadAddon(id),
+			canReloadAddon: (id: string) => this.canReloadAddon(id),
 			isReloadRequired: () => this.reload_required,
 			refresh: () => window.location.reload(),
 
-			on: (...args) => this.on(...args),
-			off: (...args) => this.off(...args)
+			on: (...args: Parameters<typeof this.on>) => this.on(...args),
+			off: (...args: Parameters<typeof this.off>) => this.off(...args)
 		});
 
 		if ( ! EXTENSION )
@@ -85,7 +136,7 @@ export default class AddonManager extends Module {
 
 		this.settings.provider.on('changed', this.onProviderChange, this);
 
-		this._loader.then(() => {
+		this._loader?.then(() => {
 			this.enabled_addons = this.settings.provider.get('addons.enabled', []);
 
 			// We do not await enabling add-ons because that would delay the
@@ -103,8 +154,8 @@ export default class AddonManager extends Module {
 	}
 
 
-	doesAddonTarget(id) {
-		const data = this.addons[id];
+	doesAddonTarget(id: string) {
+		const data = this.getAddon(id);
 		if ( ! data )
 			return false;
 
@@ -118,12 +169,15 @@ export default class AddonManager extends Module {
 
 	generateLog() {
 		const out = ['Known'];
-		for(const [id, addon] of Object.entries(this.addons))
+		for(const [id, addon] of Object.entries(this.addons)) {
+			if ( Array.isArray(addon) )
+				continue;
 			out.push(`${id} | ${this.isAddonEnabled(id) ? 'enabled' : 'disabled'} | ${addon.dev ? 'dev | ' : ''}${this.isAddonExternal(id) ? 'external | ' : ''}${addon.short_name} v${addon.version}`);
+		}
 
 		out.push('');
 		out.push('Modules');
-		for(const [key, module] of Object.entries(this.__modules)) {
+		for(const [key, module] of Object.entries((this as any).__modules as Record<string, GenericModule>)) {
 			if ( module )
 				out.push(`${module.loaded ? 'loaded  ' : module.loading ? 'loading ' : 'unloaded'} | ${module.enabled ? 'enabled ' : module.enabling ? 'enabling' : 'disabled'} | ${key}`)
 		}
@@ -131,22 +185,20 @@ export default class AddonManager extends Module {
 		return out.join('\n');
 	}
 
-	onProviderChange(key, value) {
+	onProviderChange(key: string, value: unknown) {
 		if ( key != 'addons.enabled' )
 			return;
 
-		if ( ! value )
-			value = [];
-
-		const old_enabled = [...this.enabled_addons];
+		const val: string[] = Array.isArray(value) ? value : [],
+			old_enabled = [...this.enabled_addons];
 
 		// Add-ons to disable
 		for(const id of old_enabled)
-			if ( ! value.includes(id) )
+			if ( ! val.includes(id) )
 				this.disableAddon(id, false);
 
 		// Add-ons to enable
-		for(const id of value)
+		for(const id of val)
 			if ( ! old_enabled.includes(id) )
 				this.enableAddon(id, false);
 	}
@@ -187,7 +239,7 @@ export default class AddonManager extends Module {
 		this.emit(':data-loaded');
 	}
 
-	addAddon(addon, is_dev = false) {
+	addAddon(addon: AddonInfo, is_dev: boolean = false) {
 		const old = this.addons[addon.id];
 		this.addons[addon.id] = addon;
 
@@ -227,7 +279,7 @@ export default class AddonManager extends Module {
 				getFFZ: () => this
 			});
 
-		this.emit(':added');
+		this.emit(':added', addon.id, addon);
 	}
 
 	rebuildAddonSearch() {
@@ -258,39 +310,39 @@ export default class AddonManager extends Module {
 		}
 	}
 
-	isAddonEnabled(id) {
+	isAddonEnabled(id: string) {
 		if ( this.isAddonExternal(id) )
 			return true;
 
 		return this.enabled_addons.includes(id);
 	}
 
-	getAddon(id) {
+	getAddon(id: string) {
 		const addon = this.addons[id];
 		return Array.isArray(addon) ? null : addon;
 	}
 
-	hasAddon(id) {
+	hasAddon(id: string) {
 		return this.getAddon(id) != null;
 	}
 
-	getVersion(id) {
+	getVersion(id: string) {
 		const addon = this.getAddon(id);
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
 
 		const module = this.resolve(`addon.${id}`);
 		if ( module ) {
-			if ( has(module, 'version') )
+			if ( 'version' in module ) // has(module, 'version') )
 				return module.version;
-			else if ( module.constructor && has(module.constructor, 'version') )
+			else if ( module.constructor && 'version' in module.constructor ) // has(module.constructor, 'version') )
 				return module.constructor.version;
 		}
 
 		return addon.version;
 	}
 
-	isAddonExternal(id) {
+	isAddonExternal(id: string) {
 		if ( ! this.hasAddon(id) )
 			throw new Error(`Unknown add-on id: ${id}`);
 
@@ -306,10 +358,10 @@ export default class AddonManager extends Module {
 			return true;
 
 		// Finally, let the module flag itself as external.
-		return module.external || (module.constructor && module.constructor.external);
+		return (module as any).external || (module.constructor as any)?.external;
 	}
 
-	canReloadAddon(id) {
+	canReloadAddon(id: string) {
 		// Obviously we can't reload it if we don't have it.
 		if ( ! this.hasAddon(id) )
 			throw new Error(`Unknown add-on id: ${id}`);
@@ -334,8 +386,8 @@ export default class AddonManager extends Module {
 		return true;
 	}
 
-	async fullyUnloadModule(module) {
-		if ( ! module )
+	async fullyUnloadModule(module: GenericModule) {
+		if ( ! module || ! module.addon_id )
 			return;
 
 		if ( module.children )
@@ -346,47 +398,47 @@ export default class AddonManager extends Module {
 		await module.unload();
 
 		// Clean up parent references.
-		if ( module.parent && module.parent.children[module.name] === module )
+		if ( module.parent instanceof Module && module.parent.children[module.name] === module )
 			delete module.parent.children[module.name];
 
 		// Clean up all individual references.
 		for(const entry of module.references) {
 			const other = this.resolve(entry[0]),
 				name = entry[1];
-			if ( other && other[name] === module )
-				other[name] = null;
+			if ( (other as any)[name] === module )
+				(other as any)[name] = null;
 		}
 
 		// Send off a signal for other modules to unload related data.
-		this.emit('addon:fully-unload', module.addon_id);
+		this.emit(':fully-unload', module.addon_id);
 
 		// Clean up the global reference.
-		if ( this.__modules[module.__path] === module )
-			delete this.__modules[module.__path]; /* = [
+		if ( (this as any).__modules[(module as any).__path] === module )
+			delete (this as any).__modules[(module as any).__path]; /* = [
 				module.dependents,
 				module.load_dependents,
 				module.references
 			];*/
 
 		// Remove any events we didn't unregister.
-		this.offContext(null, module);
+		this.off(undefined, undefined, module);
 
 		// Do the same for settings.
 		for(const ctx of this.settings.__contexts)
-			ctx.offContext(null, module);
+			ctx.off(undefined, undefined, module);
 
 		// Clean up all settings.
 		for(const [key, def] of Array.from(this.settings.definitions.entries())) {
-			if ( def && def.__source === module.addon_id ) {
+			if ( ! Array.isArray(def) && def?.__source === module.addon_id ) {
 				this.settings.remove(key);
 			}
 		}
 
 		// Clean up the logger too.
-		module.__log = null;
+		(module as any).__log = null;
 	}
 
-	async reloadAddon(id) {
+	async reloadAddon(id: string) {
 		const addon = this.getAddon(id),
 			button = this.resolve('site.menu_button');
 		if ( ! addon )
@@ -456,7 +508,7 @@ export default class AddonManager extends Module {
 			});
 	}
 
-	async _enableAddon(id) {
+	private async _enableAddon(id: string) {
 		const addon = this.getAddon(id);
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
@@ -476,7 +528,7 @@ export default class AddonManager extends Module {
 			this.load_tracker.notify(event, `addon.${id}`, false);
 	}
 
-	async loadAddon(id) {
+	async loadAddon(id: string) {
 		const addon = this.getAddon(id);
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
@@ -500,7 +552,7 @@ export default class AddonManager extends Module {
 		}));
 
 		// Error if this takes more than 5 seconds.
-		await timeout(this.waitFor(`addon.${id}:registered`), 60000);
+		await timeout(this.waitFor(`addon.${id}:registered` as any), 60000);
 
 		module = this.resolve(`addon.${id}`);
 		if ( module && ! module.loaded )
@@ -509,13 +561,13 @@ export default class AddonManager extends Module {
 		this.emit(':addon-loaded', id);
 	}
 
-	unloadAddon(id) {
+	unloadAddon(id: string) {
 		const module = this.resolve(`addon.${id}`);
 		if ( module )
 			return module.unload();
 	}
 
-	enableAddon(id, save = true) {
+	enableAddon(id: string, save: boolean = true) {
 		const addon = this.getAddon(id);
 		if( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);
@@ -546,7 +598,7 @@ export default class AddonManager extends Module {
 			});
 	}
 
-	async disableAddon(id, save = true) {
+	async disableAddon(id: string, save: boolean = true) {
 		const addon = this.getAddon(id);
 		if ( ! addon )
 			throw new Error(`Unknown add-on id: ${id}`);

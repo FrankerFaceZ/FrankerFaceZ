@@ -18,6 +18,9 @@ declare module 'utilities/types' {
 	interface ModuleMap {
 		experiments: ExperimentManager;
 	}
+	interface ModuleEventMap {
+		experiments: ExperimentEvents;
+	}
 	interface ProviderTypeMap {
 		'experiment-overrides': Record<string, unknown>
 	}

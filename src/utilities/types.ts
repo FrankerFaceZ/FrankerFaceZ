@@ -225,6 +225,10 @@ export interface ProviderTypeMap {
 
 };
 
+export interface PubSubCommands {
+
+};
+
 
 
 // TODO: Move this event into addons.
@@ -247,15 +251,10 @@ export interface ModuleMap {
 	'i18n': TranslationManager;
 	'link_card': LinkCard;
 	'main_menu': MainMenu;
-	'pubsub': PubSub;
 	'site.apollo': Apollo;
 	'site.css_tweaks': CSSTweaks;
-	'site.elemental': Elemental;
-	'site.fine': Fine;
-	'site.twitch_data': TwitchData;
 	'site.web_munch': WebMunch;
 	'socket': SocketClient;
-	'staging': StagingSelector;
 	'translation_ui': TranslationUI;
 };
 

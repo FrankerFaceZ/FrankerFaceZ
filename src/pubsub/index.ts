@@ -4,13 +4,57 @@
 // PubSub Client
 // ============================================================================
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 import { PUBSUB_CLUSTERS } from 'utilities/constants';
+import type ExperimentManager from '../experiments';
+import type SettingsManager from '../settings';
+import type PubSubClient from 'utilities/pubsub';
+import type { PubSubCommands } from 'utilities/types';
+
+declare module 'utilities/types' {
+	interface ModuleMap {
+		pubsub: PubSub;
+	}
+	interface ModuleEventMap {
+		pubsub: PubSubEvents;
+	}
+	interface SettingsTypeMap {
+		'pubsub.use-cluster': keyof typeof PUBSUB_CLUSTERS | null;
+	}
+}
 
 
-export default class PubSub extends Module {
-	constructor(...args) {
-		super(...args);
+type PubSubCommandData<K extends keyof PubSubCommands> = {
+	topic: string;
+	cmd: K;
+	data: PubSubCommands[K];
+};
+
+type PubSubCommandKey = `:command:${keyof PubSubCommands}`;
+
+type PubSubEvents = {
+	':sub-change': [];
+	':message': [topic: string, data: unknown];
+} & {
+	[K in keyof PubSubCommands as `:command:${K}`]: [data: PubSubCommands[K], meta: PubSubCommandData<K>];
+}
+
+
+export default class PubSub extends Module<'pubsub', PubSubEvents> {
+
+	// Dependencies
+	experiments: ExperimentManager = null as any;
+	settings: SettingsManager = null as any;
+
+	// State
+	_topics: Map<string, Set<unknown>>;
+	_client: PubSubClient | null;
+
+	_mqtt?: typeof PubSubClient | null;
+	_mqtt_loader?: Promise<typeof PubSubClient> | null;
+
+	constructor(name?: string, parent?: GenericModule) {
+		super(name, parent);
 
 		this.inject('settings');
 		this.inject('experiments');
@@ -161,18 +205,18 @@ export default class PubSub extends Module {
 
 		client.on('message', event => {
 			const topic = event.topic,
-				data = event.data;
+				data = event.data as PubSubCommandData<any>;
 
 			if ( ! data?.cmd ) {
 				this.log.debug(`Received message on topic "${topic}":`, data);
-				this.emit(`pubsub:message`, topic, data);
+				this.emit(`:message`, topic, data);
 				return;
 			}
 
 			data.topic = topic;
 
 			this.log.debug(`Received command on topic "${topic}" for command "${data.cmd}":`, data.data);
-			this.emit(`pubsub:command:${data.cmd}`, data.data, data);
+			this.emit(`:command:${data.cmd}` as PubSubCommandKey, data.data, data);
 		});
 
 		// Subscribe to topics.
@@ -196,20 +240,23 @@ export default class PubSub extends Module {
 	// Topics
 	// ========================================================================
 
-	subscribe(referrer, ...topics) {
-		const t = this._topics;
+	subscribe(referrer: unknown, ...topics: string[]) {
+		const topic_map = this._topics;
 		let changed = false;
 		for(const topic of topics) {
-			if ( ! t.has(topic) ) {
+			let refs = topic_map.get(topic);
+			if ( refs )
+				refs.add(referrer);
+			else {
 				if ( this._client )
 					this._client.subscribe(topic);
 
-				t.set(topic, new Set);
+				refs = new Set;
+				refs.add(referrer);
+
+				topic_map.set(topic, refs);
 				changed = true;
 			}
-
-			const tp = t.get(topic);
-			tp.add(referrer);
 		}
 
 		if ( changed )
@@ -217,19 +264,19 @@ export default class PubSub extends Module {
 	}
 
 
-	unsubscribe(referrer, ...topics) {
-		const t = this._topics;
+	unsubscribe(referrer: unknown, ...topics: string[]) {
+		const topic_map = this._topics;
 		let changed = false;
 		for(const topic of topics) {
-			if ( ! t.has(topic) )
+			const refs = topic_map.get(topic);
+			if ( ! refs )
 				continue;
 
-			const tp = t.get(topic);
-			tp.delete(referrer);
+			refs.delete(referrer);
 
-			if ( ! tp.size ) {
+			if ( ! refs.size ) {
 				changed = true;
-				t.delete(topic);
+				topic_map.delete(topic);
 				if ( this._client )
 					this._client.unsubscribe(topic);
 			}
