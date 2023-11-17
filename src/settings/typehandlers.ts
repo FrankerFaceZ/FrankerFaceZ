@@ -1,32 +1,38 @@
 'use strict';
 
+import type Logger from "utilities/logging";
+import type SettingsProfile from "./profile";
+import type { SettingDefinition, SettingsTypeHandler } from "./types";
+import type SettingsContext from "./context";
+
 // ============================================================================
 // Settings Types
 // ============================================================================
 
 const DEFAULT = Symbol('default');
 
-export const basic = {
-	get(key, profiles) {
+
+export const basic: SettingsTypeHandler = {
+	get<T>(key: string, profiles: SettingsProfile[]) {
 		for(const profile of profiles)
 			if ( profile.has(key) )
 				return [
-					profile.get(key),
+					profile.get(key) as T,
 					[profile.id]
 				]
 	}
 }
 
 
-export const object_merge = {
-	get(key, profiles, log) {
-		const values = [],
-			sources = [];
+export const object_merge: SettingsTypeHandler = {
+	get<T>(key: string, profiles: SettingsProfile[], definition: SettingDefinition<any>, log: Logger) {
+		const values: T[] = [],
+			sources: number[] = [];
 
 		for(const profile of profiles)
 			if ( profile.has(key) ) {
-				const val = profile.get(key);
-				if ( typeof val !== 'object' ) {
+				const val = profile.get<T>(key);
+				if ( ! val || typeof val !== 'object' ) {
 					log.warn(`Profile #${profile.id} has an invalid value for "${key}" of type ${typeof val}. Skipping.`);
 					continue;
 				}
@@ -44,14 +50,16 @@ export const object_merge = {
 }
 
 
-export const basic_array_merge = {
-	get(key, profiles, log) {
-		const values = [],
-			sources = [];
+type UnwrapArray<T> = T extends Array<infer U> ? U : T;
+
+export const basic_array_merge: SettingsTypeHandler = {
+	get<T>(key: string, profiles: SettingsProfile[], definition: SettingDefinition<any>, log: Logger) {
+		const values: UnwrapArray<T>[] = [],
+			sources: number[] = [];
 
 		for(const profile of profiles)
 			if ( profile.has(key) ) {
-				const val = profile.get(key);
+				const val = profile.get<UnwrapArray<T>>(key);
 				if ( ! Array.isArray(val) ) {
 					log.warn(`Profile #${profile.id} has an invalid value for "${key}"`);
 					continue;
@@ -71,7 +79,7 @@ export const basic_array_merge = {
 }
 
 
-export const array_merge = {
+export const array_merge: SettingsTypeHandler = {
 	default(val) {
 		const values = [];
 		for(const v of val)
@@ -81,13 +89,20 @@ export const array_merge = {
 		return values;
 	},
 
-	get(key, profiles, definition, log, ctx) {
-		const values = [],
-			sources = [];
-		let trailing = [];
+	get<T>(
+		key: string,
+		profiles: SettingsProfile[],
+		definition: SettingDefinition<any>,
+		log: Logger,
+		ctx: SettingsContext
+	) {
+
+		const values: UnwrapArray<T>[] = [],
+			sources: number[] = [];
+		let trailing: UnwrapArray<T>[] = [];
 		let had_value = false;
 
-		let profs = profiles;
+		let profs: (SettingsProfile | typeof DEFAULT)[] = profiles;
 		if ( definition.inherit_default )
 			profs = [...profiles, DEFAULT];
 
@@ -109,7 +124,7 @@ export const array_merge = {
 				continue;
 			}
 
-			const trail = [];
+			const trail: UnwrapArray<T>[] = [];
 
 			if ( profile !== DEFAULT )
 				sources.push(profile.id);
@@ -141,3 +156,12 @@ export const array_merge = {
 			]
 	}
 }
+
+
+
+export default {
+	basic,
+	object_merge,
+	basic_array_merge,
+	array_merge
+} as Record<string, SettingsTypeHandler>;

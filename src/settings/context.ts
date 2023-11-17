@@ -7,7 +7,7 @@
 import {EventEmitter} from 'utilities/events';
 import {has, get as getter, array_equals, set_equals, map_equals, deep_equals} from 'utilities/object';
 
-import * as DEFINITIONS from './typehandlers';
+import DEFINITIONS from './typehandlers';
 import type { AllSettingsKeys, ContextData, SettingMetadata, SettingType, SettingDefinition, SettingsKeys } from './types';
 import type SettingsManager from '.';
 import type SettingsProfile from './profile';

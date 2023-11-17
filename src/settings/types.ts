@@ -1,8 +1,10 @@
 import type SettingsManager from ".";
 import type { FilterData } from "../utilities/filtering";
+import type Logger from "../utilities/logging";
 import type { PathNode } from "../utilities/path-parser";
 import type { ExtractSegments, ExtractType, JoinKeyPaths, ObjectKeyPaths, OptionalPromise, OptionallyCallable, RecursivePartial, SettingsTypeMap } from "../utilities/types";
 import type SettingsContext from "./context";
+import type SettingsProfile from "./profile";
 import type { SettingsProvider } from "./providers";
 
 
@@ -103,7 +105,7 @@ export type SettingMetadata = {
 
 export type SettingDefinition<T> = {
 
-	default: T,
+	default: ((ctx: SettingsContext) => T) | T,
 	type?: string;
 
 	equals?: 'requirements' | ((new_value: T, old_value: T | undefined, cache: Map<SettingsKeys, unknown>, old_cache: Map<SettingsKeys, unknown>) => boolean);
@@ -113,6 +115,9 @@ export type SettingDefinition<T> = {
 	// Dependencies
 	required_by?: string[];
 	requires?: string[];
+
+	always_inherit?: boolean;
+	inherit_default?: boolean;
 
 	// Tracking
 	__source?: string | null;
@@ -203,6 +208,24 @@ export type SettingsProfileMetadata = {
 
 	context?: FilterData[] | null;
 };
+
+
+// Type Handlers
+
+export type SettingsTypeHandler = {
+
+	default?(input: any, definition: SettingDefinition<any>, log: Logger): any;
+
+	get(
+		key: string,
+		profiles: SettingsProfile[],
+		definition: SettingDefinition<any>,
+		log: Logger,
+		ctx: SettingsContext
+	): [unknown, number[]] | null | undefined;
+
+}
+
 
 
 // Processors

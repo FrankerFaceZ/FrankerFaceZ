@@ -762,9 +762,12 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 				old_provider.disableEvents();
 
 				// When transfering, we clear all existing settings.
-				await new_provider.clear();
+				new_provider.clear();
 				if ( new_provider instanceof AdvancedSettingsProvider && new_provider.supportsBlobs )
 					await new_provider.clearBlobs();
+
+				// Wait for it to do that.
+				await new_provider.flush();
 
 				for(const [key,val] of old_provider.entries())
 					new_provider.set(key, val);
@@ -1128,14 +1131,16 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	// Context Helpers
 	// ========================================================================
 
-	context(env: ContextData) { return this.main_context.context(env) }
+	context(env: ContextData) {
+		return this.main_context.context(env);
+	}
 
 	get<
 		K extends AllSettingsKeys,
 		TValue = SettingType<K>
-	>(
-		key: K
-	): TValue { return this.main_context.get(key); }
+	>(key: K): TValue {
+		return this.main_context.get(key);
+	}
 
 	getChanges<
 		K extends SettingsKeys,
