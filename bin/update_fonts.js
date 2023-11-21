@@ -8,7 +8,7 @@ const dir = 'styles/fontello';
 for(const file of fs.readdirSync(dir)) {
 	if ( file.endsWith('.css') ) {
 		const old_path = path.join(dir, file),
-			new_path = `${old_path.substr(0, old_path.length - 4)}.scss`;
+			new_path = `${old_path.slice(0, -4)}.scss`;
 
 		fs.renameSync(old_path, new_path);
 	}

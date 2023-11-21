@@ -553,7 +553,7 @@ export default {
 				if ( values )
 					for(const [key, value] of Object.entries(values)) {
 						if ( key.startsWith(prefix) ) {
-							prof.set(key.substr(prefix.length), value);
+							prof.set(key.slice(prefix.length), value);
 							i++;
 						}
 					}

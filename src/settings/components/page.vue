@@ -104,7 +104,7 @@ export default {
 					out.push({
 						key: part.name,
 						i18n: `settings.filter.page.route.${this.route.name}.${part.name}`,
-						title: name[0].toLocaleUpperCase() + name.substr(1),
+						title: name[0].toLocaleUpperCase() + name.slice(1),
 						optional: part.optional
 					});
 				}

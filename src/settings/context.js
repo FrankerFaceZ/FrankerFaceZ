@@ -277,7 +277,7 @@ export default class SettingsContext extends EventEmitter {
 		if ( prefix && this._context_objects.has(prefix) ) {
 			for(const key of Object.keys(this._context) )
 				if ( key.startsWith(prefix) ) {
-					const partial_key = key.substr(prefix.length);
+					const partial_key = key.slice(prefix.length);
 					if ( ! keys.includes(partial_key) )
 						keys.push(partial_key);
 				}

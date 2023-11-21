@@ -690,7 +690,7 @@ export default class SettingsManager extends Module {
 		// If we're still here, it means an individual setting was changed.
 		// Look up the profile it belongs to and emit a changed event from
 		// that profile, thus notifying any contexts or UI instances.
-		key = key.substr(2);
+		key = key.slice(2);
 
 		// Is it a value?
 		const idx = key.indexOf(':');

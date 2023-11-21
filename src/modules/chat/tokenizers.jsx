@@ -376,7 +376,7 @@ function mention_processAll(tokens, msg, user, color_mentions) {
 						this.applyHighlight(msg, priority, null, 'mention', true);
 
 					// Push the remaining text from the token.
-					text.push(segment.substr(match[0].length));
+					text.push(segment.slice(match[0].length));
 				}
 
 			} else
@@ -493,7 +493,7 @@ export const Mentions = {
 						this.applyHighlight(msg, priority, null, 'mention', true);
 
 					// Push the remaining text from the token.
-					text.push(segment.substr(match[0].length));
+					text.push(segment.slice(match[0].length));
 
 				} else
 					text.push(segment);
