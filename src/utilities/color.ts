@@ -88,7 +88,7 @@ class RGBAColor implements BaseColor {
 		if ( data?.data?.length !== 4 )
 			return null;
 
-		return new RGBAColor(data.data[0], data.data[1], data.data[2], data.data[3]);
+		return new RGBAColor(data.data[0], data.data[1], data.data[2], data.data[3] / 255);
 	}
 
 	static fromCSS(input: string) {
