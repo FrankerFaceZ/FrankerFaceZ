@@ -43,7 +43,7 @@ export default class Twilight extends BaseSite {
 	}
 
 	async populateModules() {
-		const ctx = await require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.jsx?$/);
+		const ctx = await require.context('site/modules', true, /(?:^(?:\.\/)?[^/]+|index)\.[jt]sx?$/);
 		const modules = await this.loadFromContext(ctx, this.log);
 		this.log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
 	}

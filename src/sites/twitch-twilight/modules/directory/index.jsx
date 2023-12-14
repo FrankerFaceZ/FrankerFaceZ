@@ -326,6 +326,17 @@ export default class Directory extends Module {
 			changed: () => this.updateCards()
 		});
 
+		this.settings.add('directory.wait-flags', {
+			default: true,
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Hide Thumbnails for all channels until Content Flags have been loaded.',
+				description: 'We need to load content flags with a separate query, so they aren\'t immediately available to determine if a given stream should be hidden, or have its thumbnail blurred. This setting will blur ALL thumbnails until after we\'ve finished loading the necessary content flag information, ensuring you don\'t see a flash of anything you would rather not.',
+				component: 'setting-check-box'
+			},
+			changed: () => this.updateCards()
+		});
+
 		this.settings.add('directory.block-flags', {
 			default: [],
 			type: 'array_merge',
@@ -576,13 +587,15 @@ export default class Directory extends Module {
 		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,
 			tags = props.tagListProps?.freeformTags;
 
-		const blur_flags = this.settings.get('directory.blur-flags', []),
-			block_flags = this.settings.get('directory.block-flags', []);
+		const need_flags = this.settings.get('directory.wait-flags'),
+			blur_flags = this.settings.get('directory.blur-flags', []),
+			block_flags = this.settings.get('directory.block-flags', []),
+			has_flags = blur_flags.size > 0 || block_flags.size > 0;
 
-		if ( el._ffz_flags === undefined && (blur_flags.size || block_flags.size) ) {
+		if ( el._ffz_flags === undefined && has_flags ) {
 			el._ffz_flags = null;
 			this.twitch_data.getStreamFlags(null, props.channelLogin).then(data => {
-				el._ffz_flags = data;
+				el._ffz_flags = data ?? [];
 				this.updateCard(el);
 			});
 		}
@@ -610,6 +623,8 @@ export default class Directory extends Module {
 		}
 
 		let should_blur = blur_tag;
+		if ( need_flags && has_flags && el._ffz_flags == null )
+			should_blur = true;
 		if ( ! should_blur )
 			should_blur = this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game);
 		if ( ! should_blur && blur_flags.size && el._ffz_flags ) {
