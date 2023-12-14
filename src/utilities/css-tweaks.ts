@@ -9,6 +9,12 @@ import Module, { GenericModule } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has, once} from 'utilities/object';
 
+declare module "utilities/types" {
+	interface ModuleMap {
+		'site.css_tweaks': CSSTweaks;
+	}
+}
+
 /**
  * CSS Tweaks is a somewhat generic module for handling FrankerFaceZ's CSS
  * injection. It can load and unload specific blocks of CSS, as well as

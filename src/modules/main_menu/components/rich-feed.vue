@@ -1,7 +1,8 @@
 <template>
 	<div v-if="feed">
 		<chat-rich
-			v-for="entry in feed"
+			v-for="(entry, idx) in feed"
+			:key="idx"
 			:data="entry"
 			class="tw-mg-b-1"
 		/>

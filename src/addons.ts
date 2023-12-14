@@ -46,6 +46,12 @@ type AddonManagerEvents = {
 };
 
 
+type FullAddonInfo = AddonInfo & {
+	_search?: string | null;
+	src: string;
+};
+
+
 // ============================================================================
 // AddonManager
 // ============================================================================
@@ -62,7 +68,7 @@ export default class AddonManager extends Module<'addons'> {
 	reload_required: boolean;
 	target: string;
 
-	addons: Record<string, AddonInfo | string[]>;
+	addons: Record<string, FullAddonInfo | string[]>;
 	enabled_addons: string[];
 
 	private _loader?: Promise<void>;
@@ -239,7 +245,9 @@ export default class AddonManager extends Module<'addons'> {
 		this.emit(':data-loaded');
 	}
 
-	addAddon(addon: AddonInfo, is_dev: boolean = false) {
+	addAddon(input: AddonInfo, is_dev: boolean = false) {
+		let addon = input as FullAddonInfo;
+
 		const old = this.addons[addon.id];
 		this.addons[addon.id] = addon;
 
@@ -269,7 +277,7 @@ export default class AddonManager extends Module<'addons'> {
 				this.addons[id] = [addon.id];
 		}
 
-		if ( ! old )
+		if ( ! old || Array.isArray(old) )
 			this.settings.addUI(`addon-changelog.${addon.id}`, {
 				path: `Add-Ons > Changelog > ${addon.name}`,
 				component: 'changelog',
@@ -284,6 +292,9 @@ export default class AddonManager extends Module<'addons'> {
 
 	rebuildAddonSearch() {
 		for(const addon of Object.values(this.addons)) {
+			if ( Array.isArray(addon) )
+				continue;
+
 			const terms = new Set([
 				addon._search,
 				addon.name,
@@ -302,11 +313,15 @@ export default class AddonManager extends Module<'addons'> {
 				if ( addon.author_i18n )
 					terms.add(this.i18n.t(addon.author_i18n, addon.author));
 
+				if ( addon.maintainer_i18n )
+					terms.add(this.i18n.t(addon.maintainer_i18n, addon.maintainer));
+
 				if ( addon.description_i18n )
 					terms.add(this.i18n.t(addon.description_i18n, addon.description));
 			}
 
-			addon.search_terms = [...terms].map(term => term ? term.toLocaleLowerCase() : '').join('\n');
+			addon.search_terms = [...terms]
+				.map(term => term ? term.toLocaleLowerCase() : '').join('\n');
 		}
 	}
 

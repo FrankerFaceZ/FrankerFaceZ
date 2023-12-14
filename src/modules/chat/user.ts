@@ -5,20 +5,39 @@
 // ============================================================================
 
 import {SourcedSet} from 'utilities/object';
+import type Chat from '.';
+import type Room from './room';
+import type { BadgeAssignment } from './types';
 
 export default class User {
-	constructor(manager, room, id, login) {
+
+	// Parent
+	manager: Chat;
+	room: Room | null;
+
+	// State
+	destroyed: boolean = false;
+
+	_id: string | null;
+	_login: string | null = null;
+
+	// Storage
+	emote_sets: SourcedSet<string> | null;
+	badges: SourcedSet<BadgeAssignment> | null;
+
+
+	constructor(manager: Chat, room: Room | null, id: string | null, login: string | null) {
 		this.manager = manager;
 		this.room = room;
 
-		this.emote_sets = null; //new SourcedSet;
-		this.badges = null; // new SourcedSet;
+		this.emote_sets = null;
+		this.badges = null;
 
 		this._id = id;
 		this.login = login;
 
 		if ( id )
-			(room || manager).user_ids[id] = this;
+			(room ?? manager).user_ids[id] = this;
 	}
 
 	destroy() {
@@ -31,6 +50,7 @@ export default class User {
 			this.emote_sets = null;
 		}
 
+		// Badges are not referenced, so we can just dump them all.
 		if ( this.badges )
 			this.badges = null;
 
@@ -45,26 +65,24 @@ export default class User {
 		}
 	}
 
-	merge(other) {
+	merge(other: User) {
 		if ( ! this.login && other.login )
 			this.login = other.login;
 
-		if ( other.emote_sets && other.emote_sets._sources ) {
-			for(const [provider, sets] of other.emote_sets._sources.entries()) {
+		if ( other.emote_sets )
+			for(const [provider, sets] of other.emote_sets.iterateSources()) {
 				for(const set_id of sets)
 					this.addSet(provider, set_id);
 			}
-		}
 
-		if ( other.badges && other.badges._sources ) {
-			for(const [provider, badges] of other.badges._sources.entries()) {
+		if ( other.badges )
+			for(const [provider, badges] of other.badges.iterateSources()) {
 				for(const badge of badges)
 					this.addBadge(provider, badge.id, badge);
 			}
-		}
 	}
 
-	_unloadAddon(addon_id) {
+	_unloadAddon(addon_id: string) {
 		// TODO: This
 		return 0;
 	}
@@ -107,9 +125,9 @@ export default class User {
 	// Add Badges
 	// ========================================================================
 
-	addBadge(provider, badge_id, data) {
+	addBadge(provider: string, badge_id: string, data?: BadgeAssignment) {
 		if ( this.destroyed )
-			return;
+			return false;
 
 		if ( typeof badge_id === 'number' )
 			badge_id = `${badge_id}`;
@@ -122,8 +140,9 @@ export default class User {
 		if ( ! this.badges )
 			this.badges = new SourcedSet;
 
-		if ( this.badges.has(provider) )
-			for(const old_b of this.badges.get(provider))
+		const existing = this.badges.get(provider);
+		if ( existing )
+			for(const old_b of existing)
 				if ( old_b.id == badge_id ) {
 					Object.assign(old_b, data);
 					return false;
@@ -135,31 +154,35 @@ export default class User {
 	}
 
 
-	getBadge(badge_id) {
-		if ( ! this.badges )
-			return null;
+	getBadge(badge_id: string) {
+		if ( this.badges )
+			for(const badge of this.badges._cache)
+				if ( badge.id == badge_id )
+					return badge;
 
-		for(const badge of this.badges._cache)
-			if ( badge.id == badge_id )
-				return badge;
+		return null;
 	}
 
 
-	removeBadge(provider, badge_id) {
-		if ( ! this.badges || ! this.badges.has(provider) )
+	removeBadge(provider: string, badge_id: string) {
+		if ( ! this.badges )
 			return false;
 
-		for(const old_b of this.badges.get(provider))
-			if ( old_b.id == badge_id ) {
-				this.badges.remove(provider, old_b);
-				//this.manager.badges.unrefBadge(badge_id);
-				return true;
-			}
+		const existing = this.badges.get(provider);
+		if ( existing )
+			for(const old_b of existing)
+				if ( old_b.id == badge_id ) {
+					this.badges.remove(provider, old_b);
+					//this.manager.badges.unrefBadge(badge_id);
+					return true;
+				}
+
+		return false;
 	}
 
 
-	removeAllBadges(provider) {
-		if ( this.destroyed || ! this.badges )
+	removeAllBadges(provider: string) {
+		if ( ! this.badges )
 			return false;
 
 		if ( ! this.badges.has(provider) )
@@ -175,7 +198,7 @@ export default class User {
 	// Emote Sets
 	// ========================================================================
 
-	addSet(provider, set_id, data) {
+	addSet(provider: string, set_id: string, data?: unknown) {
 		if ( this.destroyed )
 			return;
 
@@ -203,8 +226,8 @@ export default class User {
 		return added;
 	}
 
-	removeAllSets(provider) {
-		if ( this.destroyed || ! this.emote_sets )
+	removeAllSets(provider: string) {
+		if ( ! this.emote_sets )
 			return false;
 
 		const sets = this.emote_sets.get(provider);
@@ -217,8 +240,8 @@ export default class User {
 		return true;
 	}
 
-	removeSet(provider, set_id) {
-		if ( this.destroyed || ! this.emote_sets )
+	removeSet(provider: string, set_id: string) {
+		if ( ! this.emote_sets )
 			return;
 
 		if ( typeof set_id === 'number' )

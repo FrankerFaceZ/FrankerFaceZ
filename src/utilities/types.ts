@@ -10,16 +10,10 @@ import type EmoteCard from "../modules/emote_card";
 import type LinkCard from "../modules/link_card";
 import type MainMenu from "../modules/main_menu";
 import type TranslationUI from "../modules/translation_ui";
-import type PubSub from "../pubsub";
 import type SocketClient from "../socket";
-import type StagingSelector from "../staging";
 import type Apollo from "./compat/apollo";
-import type Elemental from "./compat/elemental";
-import type Fine from "./compat/fine";
 import type WebMunch from "./compat/webmunch";
-import type CSSTweaks from "./css-tweaks";
 import type { NamespacedEvents } from "./events";
-import type TwitchData from "./twitch-data";
 
 /**
  * AddonInfo represents the data contained in an add-on's manifest.
@@ -42,24 +36,32 @@ export type AddonInfo = {
 
 	/** The human-readable name of the add-on, in English. */
 	name: string;
+	name_i18n?: string;
 
 	/** Optional. A human-readable shortened name for the add-on, in English. */
 	short_name?: string;
+	short_name_i18n?: string;
 
 	/** The name of the add-on's author. */
 	author: string;
+	author_i18n?: string;
 
 	/** The name of the person or persons maintaining the add-on, if different than the author. */
 	maintainer?: string;
+	maintainer_i18n?: string;
 
 	/** A description of the add-on. This can be multiple lines and supports Markdown. */
 	description: string;
+	description_i18n?: string;
 
 	/** Optional. A settings UI key. If set, a Settings button will be displayed for this add-on that takes the user to this add-on's settings. */
 	settings?: string;
 
 	/** Optional. This add-on's website. If set, a Website button will be displayed that functions as a link. */
 	website?: string;
+
+	/** Optional. List of additional terms that can be searched for to find the add-on. */
+	search_terms?: string | null;
 
 	/** The date when the add-on was first created. */
 	created: Date;
@@ -85,6 +87,9 @@ export type AddonInfo = {
 
 	/** List of FrankerFaceZ flavors ("main", "clips", "player") that this add-on supports. */
 	targets: string[];
+
+	/** Optional. List of load tracker events that this add-on should hold while it's being loaded. */
+	load_events?: string[];
 
 };
 
@@ -124,6 +129,15 @@ export type ExtractEach<T, Rest> =
 		? { [K in keyof T]: ExtractType<T[K], Rest> }
 		: T;
 
+
+export type ExtractKey<T,K> = K extends keyof T ? T[K] : never;
+
+
+export type PartialPartial<T, OptionalKeys extends keyof T> = {
+	[K in keyof T as K extends OptionalKeys ? never : K]: T[K];
+} & {
+	[K in OptionalKeys]?: T[K];
+};
 
 
 export type AnyFunction = (...args: any[]) => any;
@@ -229,15 +243,13 @@ export interface PubSubCommands {
 
 };
 
-
-
-// TODO: Move this event into addons.
-type AddonEvent = {
-	'addon:fully-unload': [addon_id: string]
+export interface ExperimentTypeMap {
+	never: unknown;
 };
 
+export interface ModuleEventMap {
 
-export interface ModuleEventMap { };
+};
 
 export interface ModuleMap {
 	'chat': Chat;
@@ -252,14 +264,13 @@ export interface ModuleMap {
 	'link_card': LinkCard;
 	'main_menu': MainMenu;
 	'site.apollo': Apollo;
-	'site.css_tweaks': CSSTweaks;
 	'site.web_munch': WebMunch;
 	'socket': SocketClient;
 	'translation_ui': TranslationUI;
 };
 
 
-export type KnownEvents = AddonEvent & UnionToIntersection<{
+export type KnownEvents = UnionToIntersection<{
 	[K in keyof ModuleEventMap]: NamespacedEvents<K, ModuleEventMap[K]>
 }[keyof ModuleEventMap]>;
 

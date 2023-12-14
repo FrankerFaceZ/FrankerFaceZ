@@ -386,10 +386,14 @@ export default class Channel extends Module {
 		this.fine.searchNode(react, node => {
 			let state = node?.memoizedState, i = 0;
 			while(state != null && channel == null && i < 50 ) {
-				state = state?.next;
-				channel = state?.memoizedState?.current?.previous?.result?.data?.user;
-				if (!channel?.lastBroadcast?.game)
+				channel = state?.memoizedState?.current?.result?.data?.user ??
+					state?.memoizedState?.current?.previousData?.user;
+
+				if ( !channel?.lastBroadcast?.game )
 					channel = null;
+
+				if ( ! channel )
+					state = state?.next;
 				i++;
 			}
 			return channel != null;
@@ -538,10 +542,11 @@ export default class Channel extends Module {
 			let state = node?.memoizedState;
 			i=0;
 			while(state != null && channel == null && i < 50) {
-				state = state?.next;
-				channel = state?.memoizedState?.current?.currentObservable?.lastResult?.data?.userOrError;
+				channel = state?.memoizedState?.current?.result?.data?.userOrError ??
+					state?.memoizedState?.current?.previousData?.userOrError;
+
 				if ( ! channel )
-					channel = state?.memoizedState?.current?.previous?.result?.previousData?.userOrError;
+					state = state?.next;
 				i++;
 			}
 			node = node?.return;

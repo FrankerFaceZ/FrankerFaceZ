@@ -614,7 +614,7 @@ export default class Actions extends Module {
 				},
 
 				onMove: (target, tip, event) => {
-					this.emit('tooltips:mousemove', target, tip, event)
+					this.emit('tooltips:hover', target, tip, event)
 				},
 
 				onLeave: (target, tip, event) => {

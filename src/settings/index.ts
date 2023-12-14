@@ -1238,6 +1238,30 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 					parse_path(ui.path) :
 					undefined;
 
+			if ( source && ui.path_tokens && ui.path_tokens.length >= 2 && ui.path_tokens[0].key === 'add_ons' ) {
+				const addons = this.resolve('addons'),
+					addon = addons?.getAddon(source);
+
+				if ( addon ) {
+					const test = ui.path_tokens[1] as any,
+						links: string[] = [];
+
+					links.push(`add_ons.changelog.${source}`);
+					if ( addon.short_name )
+						links.push(`add_ons.changelog.${addon.short_name.toSnakeCase()}`);
+					if ( addon.name )
+						links.push(`add_ons.changelog.${addon.name.toSnakeCase()}`);
+
+					test.header_links = [
+						{
+							navigate: links,
+							i18n_key: 'home.changelog',
+							title: 'Changelog'
+						}
+					]
+				}
+			}
+
 			if ( ! ui.key && key )
 				ui.key = key;
 

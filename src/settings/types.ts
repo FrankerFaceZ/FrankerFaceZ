@@ -2,7 +2,7 @@ import type SettingsManager from ".";
 import type { FilterData } from "../utilities/filtering";
 import type Logger from "../utilities/logging";
 import type { PathNode } from "../utilities/path-parser";
-import type { ExtractSegments, ExtractType, JoinKeyPaths, ObjectKeyPaths, OptionalPromise, OptionallyCallable, RecursivePartial, SettingsTypeMap } from "../utilities/types";
+import type { ExtractKey, ExtractSegments, ExtractType, JoinKeyPaths, ObjectKeyPaths, OptionalPromise, OptionallyCallable, PartialPartial, RecursivePartial, SettingsTypeMap } from "../utilities/types";
 import type SettingsContext from "./context";
 import type SettingsProfile from "./profile";
 import type { SettingsProvider } from "./providers";
@@ -101,9 +101,28 @@ export type SettingMetadata = {
 	uses: number[];
 };
 
+
+// Usable Definitions
+
+export type OptionalSettingDefinitionKeys = 'type';
+export type ForbiddenSettingDefinitionKeys = '__source' | 'ui';
+
+export type SettingDefinition<T> = Omit<
+	PartialPartial<FullSettingDefinition<T>, OptionalSettingDefinitionKeys>,
+	ForbiddenSettingDefinitionKeys
+> & {
+	ui: SettingUiDefinition<T>;
+};
+
+export type OptionalSettingUiDefinitionKeys = 'key' | 'path_tokens' | 'i18n_key';
+export type ForbiddenSettingUiDefinitionKeys = never;
+
+export type SettingUiDefinition<T> = PartialPartial<FullSettingUiDefinition<T>, OptionalSettingUiDefinitionKeys>;
+
+
 // Definitions
 
-export type SettingDefinition<T> = {
+export type FullSettingDefinition<T> = {
 
 	default: ((ctx: SettingsContext) => T) | T,
 	type?: string;
@@ -126,24 +145,55 @@ export type SettingDefinition<T> = {
 	ui?: SettingUiDefinition<T>;
 
 	// Reactivity
-	changed?: () => void;
+	changed?: (value: T) => void;
 
 };
 
-export type SettingUiDefinition<T> = {
-	i18n_key?: string;
+
+// UI Definitions
+
+export type SettingUi_Basic = {
 	key: string;
 	path: string;
-	path_tokens?: PathNode[];
+	path_tokens: PathNode[];
 
-	component: string;
+	no_filter?: boolean;
+	force_seen?: boolean;
 
-	no_i18n?: boolean;
+	title: string;
+	i18n_key: string;
 
-	// TODO: Handle this better.
-	data: any;
+	description?: string;
+	desc_i18n_key?: string;
 
-	process?: string;
+	/**
+	 * Optional. If present, this method will be used to retrieve an array of
+	 * additional search terms that can be used to search for this setting.
+	 */
+	getExtraTerms?: () => string[];
+
+};
+
+// ============================================================================
+// Each built-in settings component has a type with extra data definitions.
+// ============================================================================
+
+// Text Box
+// ============================================================================
+
+export type SettingUi_TextBox = SettingUi_Basic & {
+	component: 'setting-text-box';
+} & (SettingUi_TextBox_Process_Number | SettingUi_TextBox_Process_Other);
+
+
+// Processing
+
+export type SettingUi_TextBox_Process_Other = {
+	process?: Exclude<string, 'to_int' | 'to_float'>;
+}
+
+export type SettingUi_TextBox_Process_Number = {
+	process: 'to_int' | 'to_float';
 
 	/**
 	 * Bounds represents a minimum and maximum numeric value. These values
@@ -156,10 +206,48 @@ export type SettingUiDefinition<T> = {
 		[low: number, low_inclusive: boolean] |
 		[low: number, high: number] |
 		[low: number];
-
-	title: string;
-	description?: string;
 }
+
+
+// Check Box
+// ============================================================================
+
+export type SettingUi_CheckBox = SettingUi_Basic & {
+	component: 'setting-check-box';
+};
+
+
+// Select Box
+// ============================================================================
+
+export type SettingUi_Select<T> = SettingUi_Basic & {
+	component: 'setting-select-box';
+
+	data: OptionallyCallable<[profile: SettingsProfile, current: T], SettingUi_Select_Entry<T>[]>;
+
+}
+
+export type SettingUi_Select_Entry<T> = {
+	value: T;
+	title: string;
+};
+
+
+// ============================================================================
+// Combined Definitions
+// ============================================================================
+
+export type SettingTypeUiDefinition<T> = SettingUi_TextBox | SettingUi_CheckBox | SettingUi_Select<T>;
+
+
+// We also support other components, if the component doesn't match.
+export type SettingOtherUiDefinition = SettingUi_Basic & {
+	component: Exclude<string, ExtractKey<SettingTypeUiDefinition<any>, 'component'>>;
+}
+
+// The final combined definition.
+export type FullSettingUiDefinition<T> = SettingTypeUiDefinition<T> | SettingOtherUiDefinition;
+
 
 // Exports
 

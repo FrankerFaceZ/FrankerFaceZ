@@ -1136,6 +1136,12 @@ export class SourcedSet<T> {
 	/** Check to see if a specific source has any values. */
 	has(source: string) { return this._sources ? this._sources.has(source) : false }
 
+	*iterateSources() {
+		if ( this._sources )
+			for(const entry of this._sources)
+				yield entry;
+	}
+
 	/** Check to see if a specific source has a specific value. */
 	sourceIncludes(source: string, value: T) {
 		const src = this._sources && this._sources.get(source);

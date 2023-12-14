@@ -443,13 +443,13 @@ export class ManagedStyle {
 }
 
 
-export class ClickOutside<TFunc extends (event: MouseEvent) => void> {
+export class ClickOutside {
 
 	el: HTMLElement | null;
-	cb: TFunc | null;
+	cb: ((event: MouseEvent) => void) | null;
 	_fn: ((event: MouseEvent) => void) | null;
 
-	constructor(element: HTMLElement, callback: TFunc) {
+	constructor(element: HTMLElement, callback: ((event: MouseEvent) => void)) {
 		this.el = element;
 		this.cb = callback;
 

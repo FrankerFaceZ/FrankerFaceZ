@@ -183,6 +183,20 @@ textarea.ffz-input {
 			font-weight: bold;
 			color: inherit !important;
 		}
+
+		.ffz--menu-page__header-links {
+			color: var(--color-text-alt-2);
+
+			a {
+				font-weight: normal;
+				color: var(--color-text-alt) !important;
+
+				&:focus,&:hover {
+					color: var(--color-text-link) !important;
+				}
+			}
+		}
+
 	}
 }
 

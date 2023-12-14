@@ -190,7 +190,7 @@
 			</div>
 
 			<rich-feed
-				url="https://bsky-feed.special.frankerfacez.com/user::stendec.dev"
+				url="https://bsky-feed.special.frankerfacez.com/user::frankerfacez.com"
 				:context="context"
 			/>
 

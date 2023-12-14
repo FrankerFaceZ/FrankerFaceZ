@@ -13,6 +13,7 @@ import Cookie from 'js-cookie';
 import SHA1 from 'crypto-js/sha1';
 
 import type SettingsManager from './settings';
+import type { ExperimentTypeMap } from 'utilities/types';
 
 declare module 'utilities/types' {
 	interface ModuleMap {
@@ -22,7 +23,16 @@ declare module 'utilities/types' {
 		experiments: ExperimentEvents;
 	}
 	interface ProviderTypeMap {
-		'experiment-overrides': Record<string, unknown>
+		'experiment-overrides': {
+			[K in keyof ExperimentTypeMap]?: ExperimentTypeMap[K];
+		}
+	}
+	interface PubSubCommands {
+		reload_experiments: [];
+		update_experiment: {
+			key: keyof ExperimentTypeMap,
+			data: FFZExperimentData | ExperimentGroup[]
+		};
 	}
 }
 
@@ -90,8 +100,19 @@ export type OverrideCookie = {
 type ExperimentEvents = {
 	':changed': [key: string, new_value: any, old_value: any];
 	':twitch-changed': [key: string, new_value: string | null, old_value: string | null];
-	[key: `:changed:${string}`]: [new_value: any, old_value: any];
 	[key: `:twitch-changed:${string}`]: [new_value: string | null, old_value: string | null];
+} & {
+	[K in keyof ExperimentTypeMap as `:changed:${K}`]: [new_value: ExperimentTypeMap[K], old_value: ExperimentTypeMap[K] | null];
+};
+
+
+type ExperimentLogEntry = {
+	key: string;
+	name: string;
+	value: any;
+	override: boolean;
+	rarity: number;
+	type?: string;
 }
 
 
@@ -107,7 +128,7 @@ export function isFFZExperiment(exp: ExperimentData): exp is FFZExperimentData {
 	return 'description' in exp;
 }
 
-function sortExperimentLog(a,b) {
+function sortExperimentLog(a: ExperimentLogEntry, b: ExperimentLogEntry) {
 	if ( a.rarity < b.rarity )
 		return -1;
 	else if ( a.rarity > b.rarity )
@@ -133,9 +154,11 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 	// State
 	unique_id?: string;
-	experiments: Record<string, FFZExperimentData>;
+	experiments: Partial<{
+		[K in keyof ExperimentTypeMap]: FFZExperimentData;
+	}>;
 
-	private cache: Map<string, unknown>;
+	private cache: Map<keyof ExperimentTypeMap, unknown>;
 
 
 	// Helpers
@@ -155,19 +178,20 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 			no_filter: true,
 
 			getExtraTerms: () => {
-				const values = [];
+				const values: string[] = [];
 
-				for(const exps of [this.experiments, this.getTwitchExperiments()]) {
-					if ( ! exps )
-						continue;
+				for(const [key, val] of Object.entries(this.experiments)) {
+					values.push(key);
+					if ( val.name )
+						values.push(val.name);
+					if ( val.description )
+						values.push(val.description);
+				}
 
-					for(const [key, val] of Object.entries(exps)) {
-						values.push(key);
-						if ( val.name )
-							values.push(val.name);
-						if ( val.description )
-							values.push(val.description);
-					}
+				for(const [key, val] of Object.entries(this.getTwitchExperiments())) {
+					values.push(key);
+					if ( val.name )
+						values.push(val.name);
 				}
 
 				return values;
@@ -178,7 +202,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 			unique_id: () => this.unique_id,
 
-			ffz_data: () => deep_copy(this.experiments) ?? {},
+			ffz_data: () => deep_copy(this.experiments),
 			twitch_data: () => deep_copy(this.getTwitchExperiments()),
 
 			usingTwitchExperiment: (key: string) => this.usingTwitchExperiment(key),
@@ -188,10 +212,10 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 			setTwitchOverride: (key: string, val: string) => this.setTwitchOverride(key, val),
 			deleteTwitchOverride: (key: string) => this.deleteTwitchOverride(key),
 
-			getAssignment: (key: string) => this.getAssignment(key),
-			hasOverride: (key: string) => this.hasOverride(key),
-			setOverride: (key: string, val: any) => this.setOverride(key, val),
-			deleteOverride: (key: string) => this.deleteOverride(key),
+			getAssignment: <K extends keyof ExperimentTypeMap>(key: K) => this.getAssignment(key),
+			hasOverride: (key: keyof ExperimentTypeMap) => this.hasOverride(key),
+			setOverride: <K extends keyof ExperimentTypeMap>(key: K, val: ExperimentTypeMap[K]) => this.setOverride(key, val),
+			deleteOverride: (key: keyof ExperimentTypeMap) => this.deleteOverride(key),
 
 			on: (...args: Parameters<typeof this.on>) => this.on(...args),
 			off: (...args: Parameters<typeof this.off>) => this.off(...args)
@@ -226,7 +250,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 
 	async loadExperiments() {
-		let data: Record<string, FFZExperimentData> | null;
+		let data: Record<keyof ExperimentTypeMap, FFZExperimentData> | null;
 
 		try {
 			data = await fetchJSON(DEBUG
@@ -254,7 +278,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 			if ( old_val !== new_val ) {
 				changed++;
 				this.emit(':changed', key, new_val, old_val);
-				this.emit(`:changed:${key}`, new_val, old_val);
+				this.emit(`:changed:${key as keyof ExperimentTypeMap}`, new_val as any, old_val as any);
 			}
 		}
 
@@ -265,18 +289,21 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 	/** @internal */
 	onEnable() {
 		this.on('pubsub:command:reload_experiments', this.loadExperiments, this);
-		this.on('pubsub:command:update_experiment', this.updateExperiment, this);
+		this.on('pubsub:command:update_experiment', data => {
+			this.updateExperiment(data.key, data.data);
+		}, this);
 	}
 
 
-	updateExperiment(key: string, data: FFZExperimentData | ExperimentGroup[]) {
+	updateExperiment(key: keyof ExperimentTypeMap, data: FFZExperimentData | ExperimentGroup[]) {
 		this.log.info(`Received updated data for experiment "${key}" via PubSub.`, data);
 
 		if ( Array.isArray(data) ) {
-			if ( ! this.experiments[key] )
+			const existing = this.experiments[key];
+			if ( ! existing )
 				return;
 
-			this.experiments[key].groups = data;
+			existing.groups = data;
 
 		} else if ( data?.groups )
 			this.experiments[key] = data;
@@ -291,8 +318,8 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 			''
 		];
 
-		const ffz_assignments = [];
-		for(const [key, value] of Object.entries(this.experiments)) {
+		const ffz_assignments: ExperimentLogEntry[] = [];
+		for(const [key, value] of Object.entries(this.experiments) as [keyof ExperimentTypeMap, FFZExperimentData][]) {
 			const assignment = this.getAssignment(key),
 				override = this.hasOverride(key);
 
@@ -322,7 +349,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		for(const entry of ffz_assignments)
 			out.push(`FFZ | ${entry.name}: ${entry.value}${entry.override ? ' (Override)' : ''} (r:${entry.rarity})`);
 
-		const twitch_assignments = [],
+		const twitch_assignments: ExperimentLogEntry[] = [],
 			channel = this.settings.get('context.channel');
 
 		for(const [key, value] of Object.entries(this.getTwitchExperiments())) {
@@ -556,7 +583,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		return this.getTwitchAssignment(key, channel);
 	}
 
-	_rebuildTwitchKey(
+	private _rebuildTwitchKey(
 		key: string,
 		is_set: boolean,
 		new_val: string | null
@@ -578,7 +605,9 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 	// FFZ Experiments
 
-	setOverride(key: string, value: unknown = null) {
+	setOverride<
+		K extends keyof ExperimentTypeMap
+	>(key: K, value: ExperimentTypeMap[K]) {
 		const overrides = this.settings.provider.get('experiment-overrides', {});
 		overrides[key] = value;
 
@@ -587,7 +616,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		this._rebuildKey(key);
 	}
 
-	deleteOverride(key: string) {
+	deleteOverride(key: keyof ExperimentTypeMap) {
 		const overrides = this.settings.provider.get('experiment-overrides');
 		if ( ! overrides || ! has(overrides, key) )
 			return;
@@ -601,33 +630,37 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		this._rebuildKey(key);
 	}
 
-	hasOverride(key: string) {
+	hasOverride(key: keyof ExperimentTypeMap) {
 		const overrides = this.settings.provider.get('experiment-overrides');
 		return overrides ? has(overrides, key): false;
 	}
 
-	get: <T>(key: string) => T | null;
+	get: <K extends keyof ExperimentTypeMap>(
+		key: K
+	) => ExperimentTypeMap[K];
 
-	getAssignment<T>(key: string): T | null {
+	getAssignment<K extends keyof ExperimentTypeMap>(
+		key: K
+	): ExperimentTypeMap[K] {
 		if ( this.cache.has(key) )
-			return this.cache.get(key) as T;
+			return this.cache.get(key) as ExperimentTypeMap[K];
 
 		const experiment = this.experiments[key];
 		if ( ! experiment ) {
 			this.log.warn(`Tried to get assignment for experiment "${key}" which is not known.`);
-			return null;
+			return null as ExperimentTypeMap[K];
 		}
 
 		const overrides = this.settings.provider.get('experiment-overrides'),
 			out = overrides && has(overrides, key) ?
-				overrides[key] as T :
-				ExperimentManager.selectGroup<T>(key, experiment, this.unique_id ?? '');
+				overrides[key] :
+				ExperimentManager.selectGroup<ExperimentTypeMap[K]>(key, experiment, this.unique_id ?? '');
 
 		this.cache.set(key, out);
-		return out;
+		return out as ExperimentTypeMap[K];
 	}
 
-	_rebuildKey(key: string) {
+	private _rebuildKey(key: keyof ExperimentTypeMap) {
 		if ( ! this.cache.has(key) )
 			return;
 

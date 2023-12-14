@@ -10,6 +10,7 @@ import type ExperimentManager from '../experiments';
 import type SettingsManager from '../settings';
 import type PubSubClient from 'utilities/pubsub';
 import type { PubSubCommands } from 'utilities/types';
+import type { SettingUi_Select_Entry } from '../settings/types';
 
 declare module 'utilities/types' {
 	interface ModuleMap {
@@ -20,6 +21,9 @@ declare module 'utilities/types' {
 	}
 	interface SettingsTypeMap {
 		'pubsub.use-cluster': keyof typeof PUBSUB_CLUSTERS | null;
+	}
+	interface ExperimentTypeMap {
+		cf_pubsub: boolean;
 	}
 }
 
@@ -60,7 +64,7 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 		this.inject('experiments');
 
 		this.settings.add('pubsub.use-cluster', {
-			default: ctx => {
+			default: () => {
 				if ( this.experiments.getAssignment('cf_pubsub') )
 					return 'Staging';
 				return null;
@@ -77,7 +81,7 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 				data: [{
 					value: null,
 					title: 'Disabled'
-				}].concat(Object.keys(PUBSUB_CLUSTERS).map(x => ({
+				} as SettingUi_Select_Entry<string | null>].concat(Object.keys(PUBSUB_CLUSTERS).map(x => ({
 					value: x,
 					title: x
 				})))

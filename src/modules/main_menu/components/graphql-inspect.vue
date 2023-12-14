@@ -119,8 +119,8 @@ export default {
 						result: null
 					});
 
-				this.queryMap[name].variables = deep_copy(query.observableQuery?.variables);
-				this.queryMap[name].result = deep_copy(query.observableQuery?.lastResult?.data ?? null);
+				this.queryMap[name].variables = deep_copy(query.observableQuery?.last?.variables ?? query.observableQuery?.variables);
+				this.queryMap[name].result = deep_copy(query.observableQuery?.lastResult?.data ?? query.observableQuery?.last?.result?.data ?? null);
 			}
 
 			if ( ! this.current )

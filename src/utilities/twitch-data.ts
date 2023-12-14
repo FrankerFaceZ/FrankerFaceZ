@@ -43,6 +43,11 @@ export default class TwitchData extends Module {
 	private _waiting_user_logins: Map<string, unknown>;
 	private _waiting_stream_ids: Map<string, unknown>;
 	private _waiting_stream_logins: Map<string, unknown>;
+	private _waiting_flag_ids: Map<string, unknown>;
+	private _waiting_flag_logins: Map<string, unknown>;
+
+	private _loading_streams?: boolean;
+	private _loading_flags?: boolean;
 
 	private tag_cache: Map<string, unknown>;
 	private _waiting_tags: Map<string, unknown>;
@@ -59,6 +64,9 @@ export default class TwitchData extends Module {
 
 		this._waiting_stream_ids = new Map;
 		this._waiting_stream_logins = new Map;
+
+		this._waiting_flag_ids = new Map;
+		this._waiting_flag_logins = new Map;
 
 		this.tag_cache = new Map;
 		this._waiting_tags = new Map;
@@ -868,6 +876,146 @@ export default class TwitchData extends Module {
 
 		if ( this._waiting_stream_ids.size || this._waiting_stream_logins.size )
 			this._loadStreams();
+	}
+
+
+	// ========================================================================
+	// Stream Content Flags (for Directory Purposes)
+	// ========================================================================
+
+	/**
+	 * Queries Apollo for stream content flags. One of (id, login) MUST be specified
+	 *
+	 * @param id - the channel id number (can be an integer string)
+	 * @param login - the channel name
+	 */
+	getStreamFlags(id: string | number): Promise<any>;
+	getStreamFlags(id: null, login: string): Promise<any>;
+	getStreamFlags(id: string | number | null, login?: string | null) {
+		return new Promise((s, f) => {
+			if ( typeof id === 'number' )
+				id = `${id}`;
+
+			if ( id ) {
+				const existing = this._waiting_flag_ids.get(id);
+				if ( existing )
+					existing.push([s,f]);
+				else
+					this._waiting_flag_ids.set(id, [[s,f]]);
+
+			} else if ( login ) {
+				const existing = this._waiting_flag_logins.get(login);
+				if ( existing )
+					existing.push([s,f]);
+				else
+					this._waiting_flag_logins.set(login, [[s,f]]);
+
+			} else
+				f('id and login cannot both be null');
+
+			if ( ! this._loading_flags )
+				this._loadFlags();
+		})
+	}
+
+	async _loadFlags() {
+		if ( this._loading_flags )
+			return;
+
+		this._loading_flags = true;
+
+		// Get the first 50... things.
+		const ids = [...this._waiting_flag_ids.keys()].slice(0, 50),
+			remaining = 50 - ids.length,
+			logins = remaining > 0 ? [...this._waiting_flag_logins.keys()].slice(0, remaining) : [];
+
+		let nodes;
+
+		try {
+			const data = await this.queryApollo({
+				query: await import(/* webpackChunkName: 'queries' */ './data/stream-flags.gql'),
+				variables: {
+					ids: ids.length ? ids : null,
+					logins: logins.length ? logins : null
+				}
+			});
+
+			nodes = get('data.users', data);
+
+		} catch(err) {
+			for(const id of ids) {
+				const promises = this._waiting_flag_ids.get(id);
+
+				if ( promises ) {
+					this._waiting_flag_ids.delete(id);
+
+					for(const pair of promises)
+						pair[1](err);
+				}
+			}
+
+			for(const login of logins) {
+				const promises = this._waiting_flag_logins.get(login);
+
+				if ( promises ) {
+					this._waiting_flag_logins.delete(login);
+
+					for(const pair of promises)
+						pair[1](err);
+				}
+			}
+
+			return;
+		}
+
+		const id_set = new Set(ids),
+			login_set = new Set(logins);
+
+		if ( Array.isArray(nodes) )
+			for(const node of nodes) {
+				if ( ! node || ! node.id )
+					continue;
+
+				id_set.delete(node.id);
+				login_set.delete(node.login);
+
+				let promises = this._waiting_flag_ids.get(node.id);
+				if ( promises ) {
+					this._waiting_flag_ids.delete(node.id);
+					for(const pair of promises)
+						pair[0](node.stream?.contentClassificationLabels);
+				}
+
+				promises = this._waiting_flag_logins.get(node.login);
+				if ( promises ) {
+					this._waiting_flag_logins.delete(node.login);
+					for(const pair of promises)
+						pair[0](node.stream?.contentClassificationLabels);
+				}
+			}
+
+		for(const id of id_set) {
+			const promises = this._waiting_flag_ids.get(id);
+			if ( promises ) {
+				this._waiting_flag_ids.delete(id);
+				for(const pair of promises)
+					pair[0](null);
+			}
+		}
+
+		for(const login of login_set) {
+			const promises = this._waiting_flag_logins.get(login);
+			if ( promises ) {
+				this._waiting_flag_logins.delete(login);
+				for(const pair of promises)
+					pair[0](null);
+			}
+		}
+
+		this._loading_flags = false;
+
+		if ( this._waiting_flag_ids.size || this._waiting_flag_logins.size )
+			this._loadFlags();
 	}
 
 
