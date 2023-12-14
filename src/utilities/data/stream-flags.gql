@@ -1,0 +1,13 @@
+query FFZ_StreamFlags($ids: [ID!], $logins: [String!]) {
+	users(ids: $ids, logins: $logins) {
+		id
+		login
+		stream {
+			id
+			contentClassificationLabels {
+				id
+				localizedName
+			}
+		}
+	}
+}

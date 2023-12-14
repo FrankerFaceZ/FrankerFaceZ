@@ -1,0 +1,25 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"plugin": [
+		"typedoc-plugin-no-inherit",
+		"typedoc-plugin-mdn-links",
+		"typedoc-plugin-rename-defaults",
+		"typedoc-plugin-markdown"
+	],
+	//"out": "./distdocs",
+	"out": "../ffz-docs/docs/dev/client",
+	"hideBreadcrumbs": true,
+	"hideInPageTOC": true,
+	// Vite has a bug surrounding "." characters in names.
+	"filenameSeparator": "_",
+	"excludePrivate": true,
+	"excludeInternal": true,
+	"excludeNotDocumented": true,
+	"excludeNotDocumentedKinds": ["Property", "Interface", "TypeAlias"],
+	"disableGit": true,
+	"sourceLinkTemplate": "https://github.com/FrankerFaceZ/FrankerFaceZ/blob/master/{path}#L{line}",
+	"entryPoints": [
+		"./src/**/*.ts",
+		"./src/**/*.tsx"
+	],
+}

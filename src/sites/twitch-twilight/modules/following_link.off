@@ -4,19 +4,20 @@
 // Following Button Modification
 // ============================================================================
 
-import {SiteModule} from 'utilities/module';
+import Module from 'utilities/module';
 import {createElement as e} from 'utilities/dom';
 import {duration_to_string} from 'utilities/time';
 
 import Tooltip from 'utilities/tooltip';
 
-export default class FollowingText extends SiteModule {
+export default class FollowingText extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.should_enable = true;
 
 		this.inject('settings');
+		this.inject('site');
 		this.inject('site.router');
 		this.inject('site.apollo');
 		this.inject('i18n');

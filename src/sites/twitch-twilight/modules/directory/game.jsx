@@ -4,15 +4,16 @@
 // Directory (Following, for now)
 // ============================================================================
 
-import {SiteModule} from 'utilities/module';
+import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import { get } from 'utilities/object';
 
 
-export default class Game extends SiteModule {
+export default class Game extends Module {
 	constructor(...args) {
 		super(...args);
 
+		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.apollo');
 

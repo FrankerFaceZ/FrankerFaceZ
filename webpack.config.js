@@ -48,7 +48,7 @@ const ENTRY_POINTS = {
 	bridge: './src/bridge.js',
 	esbridge: './src/esbridge.js',
 	player: './src/player.js',
-	avalon: './src/main.js',
+	avalon: './src/main.ts',
 	clips: './src/clips.js'
 };
 
@@ -66,7 +66,7 @@ const config = {
 	target: ['web', TARGET],
 
 	resolve: {
-		extensions: ['.js', '.jsx'],
+		extensions: ['.js', '.jsx', '.ts', '.tsx'],
 		alias: {
 			res: path.resolve(__dirname, 'res/'),
 			styles: path.resolve(__dirname, 'styles/'),
@@ -159,6 +159,16 @@ const config = {
 				loader: 'esbuild-loader',
 				options: {
 					loader: 'jsx',
+					jsxFactory: 'createElement',
+					target: TARGET
+				}
+			},
+			{
+				test: /\.tsx?$/,
+				exclude: /node_modules/,
+				loader: 'esbuild-loader',
+				options: {
+					loader: 'tsx',
 					jsxFactory: 'createElement',
 					target: TARGET
 				}

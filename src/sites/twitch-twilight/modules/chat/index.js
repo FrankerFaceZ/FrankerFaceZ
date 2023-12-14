@@ -7,7 +7,7 @@
 import {Color, ColorAdjuster} from 'utilities/color';
 import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals, glob_to_regex, escape_regex} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
-import {FFZEvent} from 'utilities/events';
+
 import {useFont} from 'utilities/fonts';
 
 import Module from 'utilities/module';
@@ -1910,7 +1910,7 @@ export default class ChatHook extends Module {
 								return;
 
 							if ( t.hasListeners('chat:receive-message') ) {
-								const event = new FFZEvent({
+								const event = t.makeEvent({
 									message: m,
 									inst,
 									channel: room,
@@ -2277,12 +2277,16 @@ export default class ChatHook extends Module {
 
 						if ( want_event ) {
 							if ( ! event ) {
-								event = new FFZEvent();
+								event = t.makeEvent({
+									inst: this,
+									channel: undefined,
+									channelID: undefined,
+									message: undefined
+								});
 
 								const cont = this._ffz_connector ?? this.ffzGetConnector(),
 									room_id = cont && cont.props.channelID;
 
-								event.inst = this;
 								event.channelID = room_id;
 
 								if ( room_id ) {
@@ -2447,7 +2451,7 @@ export default class ChatHook extends Module {
 						msg = msg.slice(idx + 1).trimStart();
 					}
 
-					const event = new FFZEvent({
+					const event = t.makeEvent({
 						command: subcmd,
 						message: msg,
 						extra,
@@ -2472,7 +2476,7 @@ export default class ChatHook extends Module {
 					return false;
 				}
 
-				const event = new FFZEvent({
+				const event = t.makeEvent({
 					message: msg,
 					extra,
 					context: t.chat.context,

@@ -109,11 +109,10 @@ export default class ModView extends Module {
 			let state = node.memoizedState;
 			i = 0;
 			while(state != null && channel == null && i < 50) {
+				channel = state?.memoizedState?.current?.result?.data?.user ??
+					state?.memoizedState?.current?.previousData?.user;
+
 				state = state?.next;
-				//channel = state?.memoizedState?.current?.previousData?.result?.data?.user;
-				channel = state?.memoizedState?.current?.currentObservable?.lastResult?.data?.user;
-				if ( ! channel )
-					channel = state?.memoizedState?.current?.previous?.result?.previousData?.user;
 				i++;
 			}
 			node = node?.child;
@@ -226,8 +225,9 @@ export default class ModView extends Module {
 
 		let channel = null, state = root?.return?.memoizedState, i = 0;
 		while(state != null && channel == null && i < 50 ) {
+			channel = state?.memoizedState?.current?.result?.data?.channel ??
+				state?.memoizedState?.current?.previousData?.channel;
 			state = state?.next;
-			channel = state?.memoizedState?.current?.previous?.result?.data?.channel;
 			i++;
 		}
 

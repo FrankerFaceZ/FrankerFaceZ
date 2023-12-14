@@ -257,51 +257,6 @@ export default class Channel extends Module {
 		}
 	}
 
-	/*setHost(channel_id, channel_login, target_id, target_login) {
-		const topic = `stream-chat-room-v1.${channel_id}`;
-
-		this.subpump.inject(topic, {
-			type: 'host_target_change',
-			data: {
-				channel_id,
-				channel_login,
-				target_channel_id: target_id || null,
-				target_channel_login: target_login || null,
-				previous_target_channel_id: null,
-				num_viewers: 0
-			}
-		});
-
-		this.subpump.inject(topic, {
-			type: 'host_target_change_v2',
-			data: {
-				channel_id,
-				channel_login,
-				target_channel_id: target_id || null,
-				target_channel_login: target_login || null,
-				previous_target_channel_id: null,
-				num_viewers: 0
-			}
-		});
-	}
-
-
-	onPubSub(event) {
-		if ( event.prefix !== 'stream-chat-room-v1' || this.settings.get('channel.hosting.enable') )
-			return;
-
-		const type = event.message.type;
-		if ( type === 'host_target_change' || type === 'host_target_change_v2' ) {
-			this.log.info('Nulling Host Target Change', type);
-			event.message.data.target_channel_id = null;
-			event.message.data.target_channel_login = null;
-			event.message.data.previous_target_channel_id = null;
-			event.message.data.num_viewers = 0;
-			event.markChanged();
-		}
-	}*/
-
-
 	updateSubscription(id, login) {
 		if ( this._subbed_login === login && this._subbed_id === id )
 			return;
@@ -431,10 +386,14 @@ export default class Channel extends Module {
 		this.fine.searchNode(react, node => {
 			let state = node?.memoizedState, i = 0;
 			while(state != null && channel == null && i < 50 ) {
-				state = state?.next;
-				channel = state?.memoizedState?.current?.previous?.result?.data?.user;
-				if (!channel?.lastBroadcast?.game)
+				channel = state?.memoizedState?.current?.result?.data?.user ??
+					state?.memoizedState?.current?.previousData?.user;
+
+				if ( !channel?.lastBroadcast?.game )
 					channel = null;
+
+				if ( ! channel )
+					state = state?.next;
 				i++;
 			}
 			return channel != null;
@@ -583,10 +542,11 @@ export default class Channel extends Module {
 			let state = node?.memoizedState;
 			i=0;
 			while(state != null && channel == null && i < 50) {
-				state = state?.next;
-				channel = state?.memoizedState?.current?.currentObservable?.lastResult?.data?.userOrError;
+				channel = state?.memoizedState?.current?.result?.data?.userOrError ??
+					state?.memoizedState?.current?.previousData?.userOrError;
+
 				if ( ! channel )
-					channel = state?.memoizedState?.current?.previous?.result?.previousData?.userOrError;
+					state = state?.next;
 				i++;
 			}
 			node = node?.return;

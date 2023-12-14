@@ -12,13 +12,13 @@ import {timeout} from 'utilities/object';
 import SettingsManager from './settings/index';
 import AddonManager from './addons';
 import ExperimentManager from './experiments';
-import {TranslationManager} from './i18n';
+import TranslationManager from './i18n';
 import PubSubClient from './pubsub';
 import StagingSelector from './staging';
 import LoadTracker from './load_tracker';
 
 import Site from './sites/clips';
-import Vue from 'utilities/vue';
+import VueModule from 'utilities/vue';
 
 import Tooltips from 'src/modules/tooltips';
 import Chat from 'src/modules/chat';
@@ -64,7 +64,7 @@ class FrankerFaceZ extends Module {
 		this.inject('site', Site);
 		this.inject('addons', AddonManager);
 
-		this.register('vue', Vue);
+		this.register('vue', VueModule);
 
 		// ========================================================================
 		// Startup

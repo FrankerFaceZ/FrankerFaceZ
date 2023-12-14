@@ -1,0 +1,38 @@
+{
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "ES2020",
+		"lib": [
+			"ES2020",
+			"DOM"
+		],
+		"allowJs": true,
+		"jsx": "preserve",
+		"jsxFactory": "createElement",
+		"alwaysStrict": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitThis": true,
+		"noImplicitReturns": false,
+		"moduleResolution": "Bundler",
+		"importsNotUsedAsValues": "error",
+		"allowSyntheticDefaultImports": true,
+		"noImplicitAny": true,
+		"paths": {
+			"res/*": ["./res/*"],
+			"styles/*": ["./styles/*"],
+			"root/*": ["./*"],
+			"src/*": ["./src/*"],
+			"utilities/*": ["./src/utilities/*"],
+			"site": ["./src/sites/twitch-twilight/index.js"],
+			"site/*": ["./src/sites/twitch-twilight/*"]
+		}
+	},
+	"include": [
+		"types/*",
+		"src/**/*"
+	]
+}

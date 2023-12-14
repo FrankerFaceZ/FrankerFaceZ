@@ -492,7 +492,7 @@ export default class MainMenu extends Module {
 				current = tree.keys[state.ffzcc];
 			if ( ! current ) {
 				const params = new URL(window.location).searchParams,
-					key = params?.get?.('ffz-settings');
+					key = params?.get('ffz-settings');
 				current = key && tree.keys[key];
 			}
 			if ( ! current )
@@ -1161,7 +1161,7 @@ export default class MainMenu extends Module {
 				restored = false;
 		} if ( ! current ) {
 			const params = new URL(window.location).searchParams,
-				key = params?.get?.('ffz-settings');
+				key = params?.get('ffz-settings');
 			current = key && settings.keys[key];
 			if ( ! current )
 				restored = false;

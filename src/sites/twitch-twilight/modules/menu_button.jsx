@@ -5,19 +5,20 @@
 // ============================================================================
 
 import {DEBUG} from 'utilities/constants';
-import {SiteModule} from 'utilities/module';
+import Module from 'utilities/module';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 
 import Twilight from 'site';
 import awaitMD, {getMD} from 'utilities/markdown';
 
 
-export default class MenuButton extends SiteModule {
+export default class MenuButton extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.inject('i18n');
 		this.inject('settings');
+		this.inject('site');
 		this.inject('site.fine');
 		this.inject('site.elemental');
 		//this.inject('addons');

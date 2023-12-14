@@ -4,7 +4,7 @@
 // Directory
 // ============================================================================
 
-import {SiteModule} from 'utilities/module';
+import Module from 'utilities/module';
 import {duration_to_string} from 'utilities/time';
 import {createElement} from 'utilities/dom';
 import {get, glob_to_regex, escape_regex, addWordSeparators} from 'utilities/object';
@@ -17,6 +17,15 @@ export const CARD_CONTEXTS = ((e ={}) => {
 	e[e.MixedGameAndChannelList = 3] = 'MixedGameAndChannelList';
 	return e;
 })();
+
+export const CONTENT_FLAGS = [
+	'DrugsIntoxication',
+	'Gambling',
+	'MatureGame',
+	'ProfanityVulgarity',
+	'SexualThemes',
+	'ViolentGrpahic'
+];
 
 function formatTerms(data, flags) {
 	if ( data[0].length )
@@ -33,12 +42,13 @@ function formatTerms(data, flags) {
 const DIR_ROUTES = ['front-page', 'dir', 'dir-community', 'dir-community-index', 'dir-creative', 'dir-following', 'dir-game-index', 'dir-game-clips', 'dir-game-videos', 'dir-all', 'dir-category', 'user-videos', 'user-clips'];
 
 
-export default class Directory extends SiteModule {
+export default class Directory extends Module {
 	constructor(...args) {
 		super(...args);
 
 		this.should_enable = true;
 
+		this.inject('site');
 		this.inject('site.elemental');
 		this.inject('site.fine');
 		this.inject('site.router');
@@ -252,6 +262,115 @@ export default class Directory extends SiteModule {
 			changed: () => this.updateCards()
 		});
 
+
+		this.settings.add('directory.blur-titles', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Hide Thumbnails by Title',
+				component: 'basic-terms'
+			}
+		});
+
+		this.settings.add('__filter:directory.blur-titles', {
+			requires: ['directory.blur-titles'],
+			equals: 'requirements',
+			process(ctx) {
+				const val = ctx.get('directory.blur-titles');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [
+					[ // sensitive
+						[], [] // word
+					],
+					[
+						[], []
+					]
+				];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out[item.s ? 0 : 1][item.w ? 0 : 1].push(v);
+				}
+
+				return [
+					formatTerms(out[0], 'g'),
+					formatTerms(out[1], 'gi')
+				];
+			},
+
+			changed: () => this.updateCards()
+		});
+
+		this.settings.add('directory.blur-tags', {
+			default: [],
+			type: 'basic_array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Hide Thumbnails by Tag',
+				component: 'tag-list-editor'
+			},
+			changed: () => this.updateCards()
+		});
+
+		this.settings.add('directory.block-flags', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			process(ctx, val) {
+				const out = new Set;
+				for(const v of val)
+					if ( v?.v )
+						out.add(v.v);
+
+				return out;
+			},
+
+			ui: {
+				path: 'Directory > Channels >> Block by Flag',
+				component: 'blocked-types',
+				data: () => [...CONTENT_FLAGS]
+					.sort()
+			},
+
+			changed: () => this.updateCards()
+		});
+
+		this.settings.add('directory.blur-flags', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			process(ctx, val) {
+				const out = new Set;
+				for(const v of val)
+					if ( v?.v )
+						out.add(v.v);
+
+				return out;
+			},
+
+			ui: {
+				path: 'Directory > Channels >> Hide Thumbnails by Flag',
+				component: 'blocked-types',
+				data: () => [...CONTENT_FLAGS]
+					.sort()
+			},
+			changed: () => this.updateCards()
+		});
+
 		/*this.settings.add('directory.hide-viewing-history', {
 			default: false,
 			ui: {
@@ -457,22 +576,60 @@ export default class Directory extends SiteModule {
 		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,
 			tags = props.tagListProps?.freeformTags;
 
-		let bad_tag = false;
+		const blur_flags = this.settings.get('directory.blur-flags', []),
+			block_flags = this.settings.get('directory.block-flags', []);
 
-		el.classList.toggle('ffz-hide-thumbnail', this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game));
-		el.dataset.ffzType = props.streamType;
+		if ( el._ffz_flags === undefined && (blur_flags.size || block_flags.size) ) {
+			el._ffz_flags = null;
+			this.twitch_data.getStreamFlags(null, props.channelLogin).then(data => {
+				el._ffz_flags = data;
+				this.updateCard(el);
+			});
+		}
+
+		let bad_tag = false,
+			blur_tag = false;
 
 		if ( Array.isArray(tags) ) {
-			const bad_tags = this.settings.get('directory.blocked-tags', []);
-			if ( bad_tags.length ) {
+			const bad_tags = this.settings.get('directory.blocked-tags', []),
+				blur_tags = this.settings.get('directory.blur-tags', []);
+
+			if ( bad_tags.length || blur_tags.length ) {
 				for(const tag of tags) {
-					if ( tag?.name && bad_tags.includes(tag.name.toLowerCase()) ) {
-						bad_tag = true;
-						break;
+					if ( tag?.name ) {
+						const lname = tag.name.toLowerCase();
+						if ( bad_tags.includes(lname) )
+							bad_tag = true;
+						if ( blur_tags.includes(lname) )
+							blur_tag = true;
 					}
+					if ( (bad_tag || ! bad_tags.length) && (blur_tag || ! blur_tags.length) )
+						break;
 				}
 			}
 		}
+
+		let should_blur = blur_tag;
+		if ( ! should_blur )
+			should_blur = this.settings.provider.get('directory.game.hidden-thumbnails', []).includes(game);
+		if ( ! should_blur && blur_flags.size && el._ffz_flags ) {
+			for(const flag of el._ffz_flags)
+				if ( flag?.id && blur_flags.has(flag.id) ) {
+					should_blur = true;
+					break;
+				}
+		}
+		if ( ! should_blur ) {
+			const regexes = this.settings.get('__filter:directory.blur-titles');
+			if ( regexes &&
+				(( regexes[0] && regexes[0].test(props.title) ) ||
+				( regexes[1] && regexes[1].test(props.title) ))
+			)
+				should_blur = true;
+		}
+
+		el.classList.toggle('ffz-hide-thumbnail', should_blur);
+		el.dataset.ffzType = props.streamType;
 
 		let should_hide = false;
 		if ( bad_tag )
@@ -484,12 +641,22 @@ export default class Directory extends SiteModule {
 		else if ( (props.isPromotion || props.sourceType === 'COMMUNITY_BOOST' || props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted') )
 			should_hide = true;
 		else {
-			const regexes = this.settings.get('__filter:directory.block-titles');
-			if ( regexes &&
-				(( regexes[0] && regexes[0].test(props.title) ) ||
-				( regexes[1] && regexes[1].test(props.title) ))
-			)
-				should_hide = true;
+			if ( block_flags.size && el._ffz_flags ) {
+				for(const flag of el._ffz_flags)
+					if ( flag?.id && block_flags.has(flag.id) ) {
+						should_hide = true;
+						break;
+					}
+			}
+
+			if ( ! should_hide ) {
+				const regexes = this.settings.get('__filter:directory.block-titles');
+				if ( regexes &&
+					(( regexes[0] && regexes[0].test(props.title) ) ||
+					( regexes[1] && regexes[1].test(props.title) ))
+				)
+					should_hide = true;
+			}
 		}
 
 		let hide_container = el.closest('.tw-tower > div');

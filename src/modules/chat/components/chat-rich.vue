@@ -80,7 +80,7 @@ export default {
 			if ( ! ds )
 				return;
 
-			const evt = new FFZEvent({
+			const evt = FFZEvent.makeEvent({
 				url: ds.url ?? target.href,
 				source: event
 			});

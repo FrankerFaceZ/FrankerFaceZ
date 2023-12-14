@@ -10,7 +10,6 @@ import { DEBUG, LINK_DATA_HOSTS } from 'utilities/constants';
 import Module, { buildAddonProxy } from 'utilities/module';
 import {Color} from 'utilities/color';
 import {createElement, ManagedStyle} from 'utilities/dom';
-import {FFZEvent} from 'utilities/events';
 import {getFontsList} from 'utilities/fonts';
 import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker} from 'utilities/object';
 
@@ -1800,7 +1799,7 @@ export default class Chat extends Module {
 		if ( ! ds )
 			return;
 
-		const evt = new FFZEvent({
+		const evt = this.makeEvent({
 			url: ds.url ?? target.href,
 			source: event
 		});
@@ -1811,7 +1810,6 @@ export default class Chat extends Module {
 			event.stopPropagation();
 			return true;
 		}
-
 	}
 
 

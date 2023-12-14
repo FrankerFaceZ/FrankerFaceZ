@@ -216,7 +216,7 @@ export default class RavenLogger extends Module {
 					return false;
 
 				if ( this.settings && this.settings.get('reports.error.include-user') ) {
-					const user = this.resolve('site')?.getUser();
+					const user = this.resolve('site')?.getUser?.();
 					if ( user )
 						data.user = {id: user.id, username: user.login}
 				}

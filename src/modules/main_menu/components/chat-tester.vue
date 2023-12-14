@@ -633,7 +633,7 @@ export default {
 					// TODO: Update timestamps for pinned chat?
 				}
 
-				this.chat.resolve('site.subpump').inject(item.topic, item.data);
+				this.chat.resolve('site.subpump').simulateMessage(item.topic, item.data);
 			}
 
 			if ( item.chat ) {

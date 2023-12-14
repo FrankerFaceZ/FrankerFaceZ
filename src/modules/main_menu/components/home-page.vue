@@ -165,7 +165,7 @@
 						<figure class="ffz-i-discord tw-font-size-3" />
 					</span>
 				</a>
-				<a
+				<!--a
 					:data-title="t('home.twitter', 'Twitter')"
 					class="tw-flex-grow-1 tw-button ffz-tooltip ffz--twitter-button tw-mg-r-1"
 					href="https://twitter.com/frankerfacez"
@@ -175,7 +175,7 @@
 					<span class="tw-button__icon tw-pd-05">
 						<figure class="ffz-i-twitter tw-font-size-3" />
 					</span>
-				</a>
+				</a-->
 				<a
 					:data-title="t('home.github', 'GitHub')"
 					class="tw-flex-grow-1 tw-button ffz-tooltip ffz--github-button"
@@ -189,7 +189,12 @@
 				</a>
 			</div>
 
-			<template v-if="not_extension">
+			<rich-feed
+				url="https://bsky-feed.special.frankerfacez.com/user::frankerfacez.com"
+				:context="context"
+			/>
+
+			<!--template v-if="not_extension">
 				<a
 					:data-theme="theme"
 					class="twitter-timeline"
@@ -198,7 +203,7 @@
 				>
 					{{ t('home.tweets', 'Tweets by FrankerFaceZ') }}
 				</a>
-			</template>
+			</template-->
 		</div>
 	</div>
 </template>
@@ -221,7 +226,7 @@ export default {
 			addons: null,
 			new_addons: null,
 			unseen: this.item.getUnseen(),
-			not_extension: ! EXTENSION
+			//not_extension: ! EXTENSION
 		}
 	},
 
@@ -243,7 +248,7 @@ export default {
 		ffz.off('addons:data-loaded', this.updateAddons, this);
 	},
 
-	mounted() {
+	/*mounted() {
 		let el;
 		if ( this.not_extension )
 			document.head.appendChild(el = e('script', {
@@ -253,7 +258,7 @@ export default {
 				src: 'https://platform.twitter.com/widgets.js',
 				onLoad: () => el.remove()
 			}));
-	},
+	},*/
 
 	methods: {
 		updateUnseen() {

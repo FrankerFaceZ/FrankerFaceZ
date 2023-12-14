@@ -6,8 +6,8 @@
 
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
-import { FFZEvent } from 'utilities/events';
-import { getTwitchEmoteSrcSet, has, getTwitchEmoteURL } from 'utilities/object';
+
+import { getTwitchEmoteSrcSet } from 'utilities/object';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
@@ -523,7 +523,7 @@ export default class Input extends Module {
 	}
 
 	previewClick(id, set, name, evt) {
-		const fe = new FFZEvent({
+		const fe = this.makeEvent({
 			provider: 'ffz',
 			id,
 			set,
@@ -779,7 +779,7 @@ export default class Input extends Module {
 				isEditor: inst.props.isCurrentUserEditor
 			});
 
-			const event = new FFZEvent({
+			const event = t.makeEvent({
 				input,
 				permissionLevel: inst.props.permissionLevel,
 				isEditor: inst.props.isCurrentUserEditor,

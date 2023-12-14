@@ -2,9 +2,46 @@
 	<div class="ffz--menu-page">
 		<header class="tw-mg-b-1">
 			<span v-for="i in breadcrumbs" :key="i.full_key">
-				<a v-if="i !== item" href="#" @click="$emit('change-item', i, false)">{{ t(i.i18n_key, i.title) }}</a>
+				<a v-if="i !== item" href="#" @click.prevent="$emit('change-item', i, false)">{{ t(i.i18n_key, i.title) }}</a>
 				<strong v-if="i === item">{{ t(i.i18n_key, i.title) }}</strong>
 				<template v-if="i !== item">&raquo; </template>
+			</span>
+			<span v-if="item.header_links" class="ffz--menu-page__header-links">
+				<span class="tw-mg-x-05">•</span>
+				<template v-for="i in item.header_links">
+					<a
+						v-if="i.href && i.href.startsWith('~')"
+						class="tw-mg-r-05"
+						href="#"
+						@click.prevent="$emit('navigate', i.href.slice(1))"
+					>{{
+						t(i.i18n_key, i.title)
+					}}</a>
+					<react-link
+						v-else-if="i.href"
+						class="tw-mg-r-05"
+						:href="i.href"
+						:state="i.state"
+					>{{
+						t(i.i18n_key, i.title)
+					}}</react-link>
+					<a
+						v-else-if="i.navigate"
+						class="tw-mg-r-05"
+						href="#"
+						@click.prevent="navigate(...i.navigate)"
+					>{{
+						t(i.i18n_key, i.title)
+					}}</a>
+					<a
+						v-else-if="i.target"
+						class="tw-mg-r-05"
+						href="#"
+						@click.prevent="$emit('change-item', i.target, false)"
+					>{{
+						t(i.i18n_key, i.title)
+					}}</a>
+				</template>
 			</span>
 		</header>
 		<section v-if="context.currentProfile.ephemeral && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">

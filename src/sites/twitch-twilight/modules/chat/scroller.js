@@ -247,7 +247,7 @@ export default class Scroller extends Module {
 				inst.ffz_outside = true;
 				inst._ffz_accessor = `_ffz_contains_${last_id++}`;
 
-				t.on('tooltips:mousemove', this.ffzTooltipHover, this);
+				t.on('tooltips:hover', this.ffzTooltipHover, this);
 				t.on('tooltips:leave', this.ffzTooltipLeave, this);
 
 				inst.scrollToBottom = function() {
@@ -682,7 +682,7 @@ export default class Scroller extends Module {
 	}
 
 	onUnmount(inst) { // eslint-disable-line class-methods-use-this
-		this.off('tooltips:mousemove', inst.ffzTooltipHover, inst);
+		this.off('tooltips:hover', inst.ffzTooltipHover, inst);
 		this.off('tooltips:leave', inst.ffzTooltipLeave, inst);
 
 		if ( inst._ffz_hover_timer ) {

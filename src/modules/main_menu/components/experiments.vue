@@ -173,7 +173,7 @@
 								@change="onTwitchChange($event)"
 							>
 								<option
-									v-if="exp.in_use === false"
+									v-if="exp.value === null"
 									:selected="exp.default"
 								>
 									{{ t('setting.experiments.unset', 'unset') }}
