@@ -24,7 +24,7 @@ export const CONTENT_FLAGS = [
 	'MatureGame',
 	'ProfanityVulgarity',
 	'SexualThemes',
-	'ViolentGrpahic'
+	'ViolentGraphic'
 ];
 
 function formatTerms(data, flags) {
