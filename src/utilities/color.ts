@@ -244,7 +244,7 @@ class RGBAColor implements BaseColor {
 	}
 
 	toHex() {
-		const value = (this.r << 16) + (this.g << 8) + this.b;
+		const value = (Math.round(this.r) << 16) + (Math.round(this.g) << 8) + Math.round(this.b);
 		return `#${value.toString(16).padStart(6, '0')}`;
 	}
 
@@ -823,11 +823,11 @@ export class ColorAdjuster {
 		if ( this._mode === -1 )
 			return '';
 
-		else if ( this._mode === 0 )
-			return color;
-
 		if ( typeof color !== 'string' )
 			color = color.toCSS();
+
+		if ( this._mode === 0 )
+			return color;
 
 		if ( ! color )
 			return null;
@@ -835,7 +835,7 @@ export class ColorAdjuster {
 		if ( this._cache.has(color) )
 			return this._cache.get(color);
 
-		let rgb;
+		let rgb: RGBAColor;
 
 		try {
 			rgb = RGBAColor.fromCSS(color);

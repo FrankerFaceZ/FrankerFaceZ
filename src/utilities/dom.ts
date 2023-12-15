@@ -454,7 +454,7 @@ export class ClickOutside {
 		this.cb = callback;
 
 		this._fn = this.handleClick.bind(this);
-		document.documentElement.addEventListener('click', this.handleClick);
+		document.documentElement.addEventListener('click', this._fn);
 	}
 
 	destroy() {

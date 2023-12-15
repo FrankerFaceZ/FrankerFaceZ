@@ -79,12 +79,12 @@ export class PubSubEvent<TMessage = any> extends FFZEvent<RawPubSubEventData> {
 	_changed: boolean;
 
 	// This is assigned in super()
-	prefix: string = null as any;
-	trail: string = null as any;
+	prefix: string;
+	trail: string;
 	event: {
 		topic: string;
 		message: string;
-	} = null as any;
+	};
 
 	constructor(data: RawPubSubEventData) {
 		super(data);
