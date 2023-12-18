@@ -4,7 +4,7 @@
 // Experiments
 // ============================================================================
 
-import {DEBUG, SERVER} from 'utilities/constants';
+import {DEBUG, SERVER, SERVER_OR_EXT} from 'utilities/constants';
 import Module, { GenericModule } from 'utilities/module';
 import {has, deep_copy, fetchJSON} from 'utilities/object';
 import { getBuster } from 'utilities/time';
@@ -465,10 +465,42 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 	}
 
 
+	private _checkExternalAccess() {
+		let stack;
+		try {
+			stack = new Error().stack;
+		} catch(err) {
+			/* :thinking: */
+			try {
+				stack = err.stack;
+			} catch(err_again) { /* aww */ }
+		}
+
+		if ( ! stack )
+			return;
+
+		stack = stack.split(/\s*\n+\s*/g).filter(x => x.startsWith('at '));
+
+		let external = false;
+
+		for(const line of stack) {
+			if ( ! line.includes(SERVER_OR_EXT) ) {
+				external = true;
+				break;
+			}
+		}
+
+		if ( external )
+			this.log.warn('Detected access by external script.');
+	}
+
+
 	setTwitchOverride(key: string, value: string) {
 		const overrides = this._getOverrideCookie(),
 			experiments = overrides.experiments,
 			disabled = overrides.disabled;
+
+		this._checkExternalAccess();
 
 		experiments[key] = value;
 
@@ -488,6 +520,8 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 	deleteTwitchOverride(key: string) {
 		const overrides = this._getOverrideCookie(),
 			experiments = overrides.experiments;
+
+		this._checkExternalAccess();
 
 		if ( ! has(experiments, key) )
 			return;

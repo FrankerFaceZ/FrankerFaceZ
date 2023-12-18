@@ -914,11 +914,11 @@ export default class TwitchData extends Module {
 				f('id and login cannot both be null');
 
 			if ( ! this._loading_flags )
-				this._loadFlags();
+				this._loadStreamFlags();
 		})
 	}
 
-	async _loadFlags() {
+	async _loadStreamFlags() {
 		if ( this._loading_flags )
 			return;
 
@@ -1015,7 +1015,7 @@ export default class TwitchData extends Module {
 		this._loading_flags = false;
 
 		if ( this._waiting_flag_ids.size || this._waiting_flag_logins.size )
-			this._loadFlags();
+			this._loadStreamFlags();
 	}
 
 

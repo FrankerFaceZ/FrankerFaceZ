@@ -5,6 +5,7 @@
 }
 
 .ffz-channel-avatar,
+.ffz-flags-element,
 .ffz-uptime-element {
 	pointer-events: all;
 }
@@ -35,6 +36,9 @@
 		}
 	}
 }
+
+.ffz-uptime-element { order: 0; }
+.ffz-flags-element { order: 1; }
 
 
 .ffz-host-menu {

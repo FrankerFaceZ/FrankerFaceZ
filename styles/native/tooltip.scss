@@ -46,6 +46,10 @@
 	}
 
 	&--wrap { white-space: normal; }
+	&--pre { white-space: pre; }
+	&--prewrap { white-space: pre-wrap; }
+	&--20 { width: 20rem; }
+	&--30 { width: 30rem; }
 
 	&--left {
 		left: auto;

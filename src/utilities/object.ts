@@ -779,6 +779,12 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
 	if ( typeof object === 'function' )
 		return function(this: ThisParameterType<T>, ...args: any[]) { return object.apply(this, args); } as T // eslint-disable-line no-invalid-this
 
+	if ( object instanceof RegExp )
+		return new RegExp(object.source, object.flags) as T;
+
+	if ( object instanceof Date )
+		return new Date(object) as T;
+
 	if ( typeof object !== 'object' )
 		return object as T;
 
@@ -792,6 +798,30 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
 
 	if ( Array.isArray(object) )
 		return object.map(x => deep_copy(x, new Set(seen))) as T;
+
+	if ( object instanceof Set ) {
+		const out = new Set<any>();
+		for(const item of object) {
+			if ( typeof item === 'object' )
+				out.add(deep_copy(item));
+			else
+				out.add(item);
+		}
+
+		return out as T;
+	}
+
+	if ( object instanceof Map ) {
+		const out = new Map<any, any>();
+		for(const [key, val] of object.entries()) {
+			let k = typeof key === 'object' ? deep_copy(key) : key,
+				v = typeof val === 'object' ? deep_copy(val) : val;
+
+			out.set(k, v);
+		}
+
+		return out as T;
+	}
 
 	const out: any = {};
 	for(const [key, val] of Object.entries(object)) {

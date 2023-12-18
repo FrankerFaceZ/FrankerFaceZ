@@ -125,6 +125,11 @@ export default class ClipsSite extends BaseSite {
 			route_data: this.router.match
 		});
 
+		// We need the default to be defined to get the correct value.
+		this.settings.add('clips.layout.big', {
+			default: false,
+		});
+
 		this.settings.getChanges('channel.hide-unfollow', val =>
 			this.css_tweaks.toggleHide('unfollow-button', val));
 

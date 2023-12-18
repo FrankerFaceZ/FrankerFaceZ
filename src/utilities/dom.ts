@@ -177,18 +177,23 @@ export function createElement(tag: string, props?: any, ...children: DomFragment
 				if ( lk === 'style' ) {
 					if ( typeof prop === 'string' )
 						el.style.cssText = prop;
-					else
+					else if ( prop && typeof prop === 'object' )
 						for(const [key, val] of Object.entries(prop)) {
 							if ( has(el.style, key) || has(Object.getPrototypeOf(el.style), key) )
 								(el.style as any)[key] = val;
 							else
 								el.style.setProperty(key, prop[key]);
 						}
+					else
+						console.warn('unsupported style value', prop);
 
 				} else if ( lk === 'dataset' ) {
-					for(const k in prop)
-						if ( has(prop, k) )
-							el.dataset[camelCase(k)] = prop[k];
+					if ( prop && typeof prop === 'object' ) {
+						for(const k in prop)
+							if ( has(prop, k) )
+								el.dataset[camelCase(k)] = prop[k];
+					} else
+						console.warn('unsupported dataset value', prop);
 
 				} else if ( key === 'dangerouslySetInnerHTML' ) {
 					// React compatibility is cool. SeemsGood

@@ -582,8 +582,10 @@ export default class Scroller extends Module {
 			// Pause Stuff
 
 			cls.prototype.ffzShouldBePaused = function(since) {
+				// We may not have moved the mouse. If that's the case,
+				// since should be zero.
 				if ( since == null )
-					since = Date.now() - this.ffz_last_move;
+					since = Date.now() - (this.ffz_last_move ?? Date.now());
 
 				if ( this.state.ffz_scrolled_up )
 					return true;

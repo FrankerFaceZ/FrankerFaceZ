@@ -725,7 +725,7 @@ export default class Input extends Module {
 					if ( inst.props.isShowingEmotePicker )
 						inst.props.closeEmotePicker();
 					else if ( inst.props.tray && (! inst.state.value || ! inst.state.value.length) )
-						inst.closeTray();
+						inst.props.clearTray();
 				}
 
 			} catch(err) {

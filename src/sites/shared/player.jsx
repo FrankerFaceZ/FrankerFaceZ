@@ -526,7 +526,7 @@ export default class PlayerBase extends Module {
 			ui: {
 				path: 'Player > General >> Extensions',
 				title: 'Show Overlay Extensions',
-				description: 'Note: This feature does not prevent extensions from loading. Hidden extensions are merely invisible. Hiding extensions with this feature will not improve your security.',
+				description: '**Note**: This feature does not prevent extensions from loading. Hidden extensions are merely invisible. Hiding extensions with this feature will not improve your security. To prevent extensions from loading entirely, we recommend using the [Disable Twitch Extensions browser extension](https://twitch-tools.rootonline.de/disable_twitch_extensions.php) by CommanderRoot.',
 				component: 'setting-select-box',
 				data: [
 					{value: 2, title: 'Never'},

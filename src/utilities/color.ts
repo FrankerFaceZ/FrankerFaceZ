@@ -820,6 +820,9 @@ export class ColorAdjuster {
 	}
 
 	process(color: BaseColor | string, throw_errors = false) {
+		if ( ! color )
+			return null;
+
 		if ( this._mode === -1 )
 			return '';
 
@@ -828,9 +831,6 @@ export class ColorAdjuster {
 
 		if ( this._mode === 0 )
 			return color;
-
-		if ( ! color )
-			return null;
 
 		if ( this._cache.has(color) )
 			return this._cache.get(color);
