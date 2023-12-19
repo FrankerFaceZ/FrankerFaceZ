@@ -8,13 +8,15 @@ export default {
 			value: undefined,
 			has_value: false,
 
+			provider_key: this.item.override_setting ?? this.item.setting,
+
 			_unseen: false
 		}
 	},
 
 	created() {
 		const provider = this.context.provider,
-			setting = this.item.setting;
+			setting = this.provider_key;
 
 		provider.on('changed', this._providerChange, this);
 
@@ -70,7 +72,7 @@ export default {
 
 	methods: {
 		_providerChange(key, val, deleted) {
-			if ( key !== this.item.setting )
+			if ( key !== this.provider_key )
 				return;
 
 			if ( deleted ) {
@@ -92,7 +94,7 @@ export default {
 				if ( typeof validate === 'function' )
 					return validate(value, this.item, this);
 				else
-					throw new Error(`Invalid Validator for ${this.item.setting}`);
+					throw new Error(`Invalid Validator for ${this.provider_key}`);
 			}
 
 			return true;
@@ -100,7 +102,7 @@ export default {
 
 		set(value) {
 			const provider = this.context.provider,
-				setting = this.item.setting;
+				setting = this.provider_key;
 
 			// TODO: Run validation.
 
@@ -124,7 +126,7 @@ export default {
 
 		clear() {
 			const provider = this.context.provider,
-				setting = this.item.setting;
+				setting = this.provider_key;
 
 			provider.delete(setting);
 			this.value = this.default_value;

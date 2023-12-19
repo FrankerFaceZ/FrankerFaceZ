@@ -7,6 +7,7 @@
 import Twilight from 'site';
 import Module from 'utilities/module';
 import {createElement} from 'utilities/dom';
+import { FFZEvent } from 'src/utilities/events';
 
 export default class SettingsMenu extends Module {
 	constructor(...args) {
@@ -391,6 +392,26 @@ export default class SettingsMenu extends Module {
 	}
 
 	click(inst, event) {
+		const target = event.currentTarget,
+			page = target && target.dataset && target.dataset.page;
+
+		const evt = new FFZEvent({
+			item: page,
+			event,
+			errored: false
+		});
+
+		this.emit('main_menu:open', evt);
+		if ( evt.errored ) {
+			this.cant_window = true;
+			this.SettingsMenu.forceUpdate();
+			return;
+		}
+
+		this.closeMenu(inst);
+	}
+
+	/*old_click(inst, event) {
 		// If we're on a page with minimal root, we want to open settings
 		// in a popout as we're almost certainly within Popout Chat.
 		const layout = this.resolve('site.layout');
@@ -425,5 +446,5 @@ export default class SettingsMenu extends Module {
 		}
 
 		this.closeMenu(inst);
-	}
+	}*/
 }

@@ -7,6 +7,7 @@
 import {has} from 'utilities/object';
 import Markdown from 'markdown-it';
 import MILA from 'markdown-it-link-attributes';
+import { FFZEvent } from './events';
 
 export const VERSION = 9;
 
@@ -16,7 +17,8 @@ const validate = (input, valid) => valid.includes(input) ? input : null;
 
 const VALID_WEIGHTS = ['regular', 'bold', 'semibold'],
 	VALID_COLORS = ['base', 'alt', 'alt-2', 'link'],
-	VALID_SIZES = ['1', '2,' ,'3','4','5','6','7','8'],
+	VALID_COLORS_TWO = ['youtube'],
+	VALID_SIZES = ['1', '2', '3', '4', '5', '6', '7', '8'],
 	VALID_WRAPS = ['nowrap', 'pre-wrap'],
 
 	VALID_PADDING = {
@@ -330,6 +332,49 @@ TOKEN_TYPES.box = function(token, createElement, ctx) {
 }
 
 
+// ============================================================================
+// Token Type: open_settings
+// ============================================================================
+
+TOKEN_TYPES.open_settings = function(token, createElement, ctx) {
+
+	if ( ctx.tooltip )
+		return null;
+
+	const handler = event => {
+		const evt = new FFZEvent({
+			item: token.item,
+			event,
+			errored: false
+		});
+
+		window.FrankerFaceZ.get().emit('main_menu:open', evt);
+	}
+
+	const label = ctx.i18n.t('embed.show-settings', 'Open Settings');
+
+	if ( ctx.vue )
+		return createElement('button', {
+			class: 'tw-button',
+			on: {
+				click: handler
+			}
+		}, [
+			createElement('span', {
+				class: 'tw-button__text'
+			}, [
+				label
+			])
+		]);
+
+	return createElement('button', {
+		className: 'tw-button',
+		onClick: handler
+	}, createElement('span', {
+		className: 'tw-button__text'
+	}, label));
+}
+
 
 // ============================================================================
 // Token Type: Conditional
@@ -606,13 +651,6 @@ function header_vue(token, h, ctx) {
 		}, out.content));
 	}
 
-	content = h('div', {
-		class: [
-			'tw-flex tw-full-width tw-overflow-hidden',
-			token.compact ? 'ffz--rich-header ffz--compact-header tw-align-items-center' : 'tw-justify-content-center tw-flex-column tw-flex-grow-1'
-		]
-	}, content);
-
 	let bgtoken = resolveToken(token.sfw_background, ctx);
 	const nsfw_bg_token = resolveToken(token.background, ctx);
 	if ( nsfw_bg_token && canShowImage(nsfw_bg_token, ctx) )
@@ -631,6 +669,54 @@ function header_vue(token, h, ctx) {
 		else
 			background = renderWithCapture(token.background, h, ctx, token.markdown).content;
 	}
+
+	let subtok = resolveToken(token.sub_logo, ctx);
+	if ( ! token.compact && subtok && canShowImage(subtok, ctx) ) {
+		const aspect = subtok.aspect;
+
+		let image;
+
+		if ( subtok.type === 'image' )
+			image = render_image({
+				...subtok,
+				aspect: undefined
+			}, h, ctx);
+
+		if ( subtok.type === 'icon' )
+			image = h('figure', {
+				class: `ffz-i-${subtok.name}`
+			});
+
+		if ( image ) {
+			image = h('div', {
+				class: `ffz--header-sublogo tw-flex-shrink-0 ${subtok.youtube_dumb ? 'tw-mg-l-05 tw-mg-r-1' : 'tw-mg-r-05'}${aspect ? ' ffz--header-aspect' : ''}`,
+				style: {
+					width: aspect ? `${aspect * 2}rem` : null
+				}
+			}, [image]);
+
+			const title = content.shift();
+
+			content = [
+				title,
+				h('div', {
+					class: 'tw-flex tw-full-width tw-align-items-center'
+				}, [
+					image,
+					h('div', {
+						class: `tw-flex tw-full-width tw-overflow-hidden tw-justify-content-center tw-flex-column tw-flex-grow-1`
+					}, content)
+				])
+			];
+		}
+	}
+
+	content = h('div', {
+		class: [
+			'tw-flex tw-full-width tw-overflow-hidden',
+			token.compact ? 'ffz--rich-header ffz--compact-header tw-align-items-center' : 'tw-justify-content-center tw-flex-column tw-flex-grow-1'
+		]
+	}, content);
 
 	let imtok = resolveToken(token.sfw_image, ctx);
 	const nsfw_token = resolveToken(token.image, ctx);
@@ -757,6 +843,47 @@ function header_normal(token, createElement, ctx) {
 			});
 		else
 			background = renderWithCapture(token.background, createElement, ctx, token.markdown).content;
+	}
+
+	let subtok = resolveToken(token.sub_logo, ctx);
+	if ( ! token.compact && subtok && canShowImage(subtok, ctx) ) {
+		const aspect = subtok.aspect;
+
+		let image;
+
+		if ( subtok.type === 'image' )
+			image = render_image({
+				...subtok,
+				aspect: undefined
+			}, createElement, ctx);
+
+		if ( subtok.type === 'icon' )
+			image = createElement('figure', {
+				className: `ffz-i-${subtok.name}`
+			});
+
+		if ( image ) {
+			image = createElement('div', {
+				className: `ffz--header-sublogo tw-flex-shrink-0 ${subtok.youtube_dumb ? 'tw-mg-l-05 tw-mg-r-1' : 'tw-mg-r-05'}${aspect ? ' ffz--header-aspect' : ''}`,
+				style: {
+					width: aspect ? `${aspect * 2}rem` : null
+				}
+			}, image);
+
+			const title = content.shift();
+
+			content = [
+				title,
+				createElement('div', {
+					className: 'tw-flex tw-full-width tw-align-items-center'
+				}, [
+					image,
+					createElement('div', {
+						className: `tw-flex tw-full-width tw-overflow-hidden tw-justify-content-center tw-flex-column tw-flex-grow-1`
+					}, content)
+				])
+			];
+		}
 	}
 
 	content = createElement('div', {
@@ -1317,6 +1444,8 @@ TOKEN_TYPES.style = function(token, createElement, ctx) {
 	if ( token.color ) {
 		if ( VALID_COLORS.includes(token.color) )
 			classes.push(`tw-c-text-${token.color}`);
+		else if ( VALID_COLORS_TWO.includes(token.color) )
+			classes.push(`ffz-c-text-${token.color}`);
 		else
 			style.color = token.color;
 	}

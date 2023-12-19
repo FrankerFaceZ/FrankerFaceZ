@@ -13,6 +13,7 @@ import Twilight from 'site';
 import Module from 'utilities/module';
 
 import SUB_STATUS from './sub_status.gql';
+import { FFZEvent } from 'src/utilities/events';
 //import Tooltip from 'src/utilities/tooltip';
 
 const TIERS = {
@@ -1419,7 +1420,15 @@ export default class EmoteMenu extends Module {
 			}
 
 			clickSettings(event) { // eslint-disable-line class-methods-use-this
-				const layout = t.resolve('site.layout');
+				const evt = new FFZEvent({
+					item: 'chat.emote_menu',
+					event,
+					errored: false
+				});
+
+				t.emit('main_menu:open', evt);
+
+				/*const layout = t.resolve('site.layout');
 				if ( (layout && layout.is_minimal) || (event && (event.ctrlKey || event.shiftKey)) ) {
 					const win = window.open(
 						'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
@@ -1440,7 +1449,7 @@ export default class EmoteMenu extends Module {
 					}
 
 					t.emit('site.menu_button:clicked');
-				}
+				}*/
 			}
 
 			/*clickRefresh(event) {

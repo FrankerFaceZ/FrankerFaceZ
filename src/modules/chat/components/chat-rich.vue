@@ -71,7 +71,7 @@ export default {
 
 	methods: {
 		handleClick(event) {
-			if ( ! this.events.emit || event.ctrlKey || event.shiftKey )
+			if ( ! this.events?.emit || event.ctrlKey || event.shiftKey )
 				return;
 
 			const target = event.currentTarget,

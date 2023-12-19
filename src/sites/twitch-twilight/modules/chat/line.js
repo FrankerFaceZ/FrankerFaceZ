@@ -927,6 +927,52 @@ other {# messages were deleted by a moderator.}
 					}
 				}
 
+				// Are we listing highlight reasons?
+				let highlight_tags = null;
+				const hl_position = t.chat.context.get('chat.filtering.show-reasons');
+
+				if ( msg.highlights?.size && hl_position ) {
+					highlight_tags = [];
+
+					for(const tag of msg.highlights) {
+						const reason = t.chat._hl_reasons[tag];
+						let label,
+							tooltip;
+
+						if ( reason ) {
+							tooltip = reason.i18n_key
+								? t.i18n.t(reason.i18n_key, reason.title)
+								: reason.title;
+
+							label = reason.i18n_label
+								? t.i18n.t(reason.i18n_label, reason.label)
+								: reason.label;
+
+							if ( label === tooltip )
+								tooltip = null;
+						}
+
+						if ( ! label )
+							label = tag;
+
+						highlight_tags.push(e('span', {
+							className: `ffz-pill ffz-highlight-tag${reason ? ' ffz-tooltip' : ''}`,
+							'data-title': tooltip
+						}, label));
+					}
+
+					if ( highlight_tags.length > 0 )
+						highlight_tags = e('span', {
+							className: `ffz-highlight-tags ${
+								hl_position === 1
+									? 'ffz-highlight-tags__above'
+									: 'tw-mg-r-05'
+								}`
+						}, highlight_tags);
+					else
+						highlight_tags = null;
+				}
+
 				// Check to see if we have message content to render.
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, current_user),
 					has_message = tokens.length > 0 || ! notice;
@@ -1014,6 +1060,7 @@ other {# messages were deleted by a moderator.}
 						timestamp,
 						t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this),
 						this.renderInlineHighlight ? this.renderInlineHighlight() : null,
+						hl_position === 2 ? highlight_tags : null,
 
 						// Badges
 						e('span', {
@@ -1076,22 +1123,32 @@ other {# messages were deleted by a moderator.}
 
 						const actions = t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this);
 
-						if ( is_raw )
-							notice.ffz_target.unshift(notice.ffz_icon ?? null, timestamp, actions);
+						if ( is_raw ) {
+							notice.ffz_target.unshift(
+								notice.ffz_icon ?? null,
+								timestamp,
+								actions,
+								hl_position === 2 ? highlight_tags : null
+							);
 
-						else
+						} else
 							notice = [
 								notice.ffz_icon ?? null,
 								timestamp,
 								actions,
+								hl_position === 2 ? highlight_tags : null,
 								notice
 							];
 
 					} else {
-						if ( notice.ffz_icon )
+						if ( is_raw ) {
+							if ( notice.ffz_icon )
+								notice.ffz_target.unshift(notice.ffz_icon);
+
+						} else if ( notice.ffz_icon )
 							notice = [
 								notice.ffz_icon,
-								notice
+								notice,
 							];
 
 						message = e(
@@ -1114,14 +1171,19 @@ other {# messages were deleted by a moderator.}
 							className: 'tw-c-text-alt-2'
 						}, notice);
 
-					if ( message )
+					if ( highlight_tags && hl_position === 1 ) {
+						out = [highlight_tags, notice, message ?? null];
+					} else if ( message )
 						out = [notice, message];
 					else
 						out = notice;
 
 				} else {
 					klass = `${klass} chat-line__message`;
-					out = message;
+					if ( highlight_tags && hl_position === 1 )
+						out = [highlight_tags, message];
+					else
+						out = message;
 				}
 
 				// Check for hover actions, as those require we wrap the output in a few extra elements.

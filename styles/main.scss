@@ -39,6 +39,15 @@
 	display: inline;
 }
 
+.ffz__tooltip .ffz-c-text-youtube,
+.tw-root--theme-dark .ffz-c-text-youtube {
+	color: #fff !important;
+}
+.tw-root--theme-dark .ffz__tooltip .ffz-c-text-youtube,
+.ffz-c-text-youtube {
+	color: #212121 !important;
+}
+
 .ffz--player-meta-tray {
 	position: absolute;
 	bottom: 100%;

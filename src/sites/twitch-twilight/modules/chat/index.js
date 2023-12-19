@@ -284,6 +284,21 @@ export default class ChatHook extends Module {
 
 		// Settings
 
+		this.settings.add('chat.filtering.show-reasons', {
+			default: false,
+			ui: {
+				path: 'Chat > Filtering > General >> Appearance',
+				title: 'Display Reasons',
+				description: 'If this is enabled, the reasons a given message was highlighted will be displayed alongside the message. This is a simple display. Enable the debugging option below in Behavior for more details, but be aware that the debugging option has a slight performance impact compared to this.',
+				component: 'setting-select-box',
+				data: [
+					{value: false, title: 'Disabled'},
+					{value: 1, title: 'Above Message'},
+					{value: 2, title: 'Inline'}
+				]
+			}
+		});
+
 		this.settings.add('chat.disable-handling', {
 			default: null,
 			requires: ['context.disable-chat-processing'],

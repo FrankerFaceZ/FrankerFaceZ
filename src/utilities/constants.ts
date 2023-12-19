@@ -134,7 +134,8 @@ export const RERENDER_SETTINGS = [
 	'chat.replies.style',
 	'chat.bits.cheer-notice',
 	'chat.filtering.hidden-tokens',
-	'chat.hype.message-style'
+	'chat.hype.message-style',
+	'chat.filtering.show-reasons'
 ] as const;
 
 /**
@@ -362,3 +363,16 @@ export enum EmoteTypes {
 	/** Emote unlocked via following a channel. */
 	Follower
 };
+
+
+export const RESOLVERS_REQUIRE_TOS = {
+	'YouTube': {
+		label: 'You must agree to the YouTube Terms of Service to view this embed.',
+		i18n_key: 'embed.warn.youtube',
+
+		i18n_links: 'embed.warn.youtube.links',
+		links: `To view YouTube embeds, you must agree to YouTube's Terms of Service:
+* [Terms of Service](https://www.youtube.com/t/terms)
+* [Privacy Policy](https://policies.google.com/privacy)`
+	}
+} as Record<string, any>;

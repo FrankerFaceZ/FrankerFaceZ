@@ -250,7 +250,29 @@ export default class MainMenu extends Module {
 		});
 
 		this.scheduleUpdate();
+
+		this.on(':open', evt => {
+			// If we're on a page with minimal root, we want to open settings
+			// in a popout as we're almost certainly within Popout Chat.
+			const layout = this.resolve('site.layout'),
+				item = evt.item,
+				event = evt.event;
+
+			if ( (layout && layout.is_minimal) || (event && (event.ctrlKey || event.shiftKey)) ) {
+				if ( ! this.openPopout(item) )
+					evt.errored = true;
+				return;
+			}
+
+			if ( item )
+				this.requestPage(item);
+			if ( this.showing )
+				return;
+
+			this.emit('site.menu_button:clicked');
+		});
 	}
+
 
 	openPopout(item) {
 		const win = window.open(

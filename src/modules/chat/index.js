@@ -6,12 +6,12 @@
 
 import dayjs from 'dayjs';
 
-import { DEBUG, LINK_DATA_HOSTS } from 'utilities/constants';
+import { DEBUG, LINK_DATA_HOSTS, RESOLVERS_REQUIRE_TOS } from 'utilities/constants';
 import Module, { buildAddonProxy } from 'utilities/module';
 import {Color} from 'utilities/color';
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {getFontsList} from 'utilities/fonts';
-import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker} from 'utilities/object';
+import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker, deep_copy} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -109,10 +109,10 @@ export default class Chat extends Module {
 		this.__link_providers = [];
 
 		this._hl_reasons = {};
-		this.addHighlightReason('mention', 'Mentioned');
-		this.addHighlightReason('user', 'Highlight User');
-		this.addHighlightReason('badge', 'Highlight Badge');
-		this.addHighlightReason('term', 'Highlight Term');
+		this.addHighlightReason('mention', 'Mentioned', 'Mention');
+		this.addHighlightReason('user', 'Highlight User', 'User');
+		this.addHighlightReason('badge', 'Highlight Badge', 'Badge');
+		this.addHighlightReason('term', 'Highlight Term', 'Term');
 
 		// ========================================================================
 		// Settings
@@ -1085,6 +1085,19 @@ export default class Chat extends Module {
 		});
 
 
+		// Terms of Service Stuff
+		for(const [key, info] of Object.entries(RESOLVERS_REQUIRE_TOS)) {
+			this.settings.addUI(`tooltip.tos.${key}`, {
+				path: 'Chat > Tooltips >> Terms of Service @{"description": "The following services require you to agree to their Terms of Service before we can show you information from their platforms."}',
+				component: 'tooltip-tos',
+				item: key,
+				override_setting: 'agreed-tos',
+				data: deep_copy(info),
+				onUIChange: () => this.emit(':update-link-resolver')
+			});
+		}
+
+
 		this.settings.add('chat.adjustment-mode', {
 			default: null,
 			process(ctx, val) {
@@ -1485,6 +1498,8 @@ export default class Chat extends Module {
 	onEnable() {
 		this.socket = this.resolve('socket');
 		this.pubsub = this.resolve('pubsub');
+
+		this.settings.provider.on('changed', this.onProviderChange, this);
 
 		this.on('site.subpump:pubsub-message', this.onPubSub, this);
 
@@ -2256,7 +2271,7 @@ export default class Chat extends Module {
 	}
 
 
-	addHighlightReason(key, data) {
+	addHighlightReason(key, data, label) {
 		if ( typeof key === 'object' && key.key ) {
 			data = key;
 			key = data.key;
@@ -2264,14 +2279,24 @@ export default class Chat extends Module {
 		} else if ( typeof data === 'string' )
 			data = {title: data};
 
+		if ( typeof label === 'string' && label.length > 0 )
+			data.label = label;
+
 		data.value = data.key = key;
 		if ( ! data.i18n_key )
 			data.i18n_key = `hl-reason.${key}`;
+
+		if ( data.label && ! data.i18n_label )
+			data.i18n_label = `${data.i18n_key}.label`;
 
 		if ( this._hl_reasons[key] )
 			throw new Error(`Highlight Reason already exists with key ${key}`);
 
 		this._hl_reasons[key] = data;
+	}
+
+	getHighlightReason(key) {
+		return this._hl_reasons[key] ?? null;
 	}
 
 	getHighlightReasons() {
@@ -2560,8 +2585,10 @@ export default class Chat extends Module {
 		if ( (info && info[0] && refresh) || (expires && Date.now() > expires) )
 			info = this._link_info[url] = null;
 
-		if ( info && info[0] )
-			return no_promises ? info[2] : Promise.resolve(info[2]);
+		if ( info && info[0] ) {
+			const out = this.handleLinkToS(info[2]);
+			return no_promises ? out : Promise.resolve(out);
+		}
 
 		if ( no_promises )
 			return null;
@@ -2579,6 +2606,8 @@ export default class Chat extends Module {
 				info[0] = true;
 				info[1] = Date.now() + 120000;
 				info[2] = success ? data : null;
+
+				data = this.handleLinkToS(data);
 
 				if ( callbacks )
 					for(const cbs of callbacks)
@@ -2611,6 +2640,64 @@ export default class Chat extends Module {
 			}
 		});
 	}
+
+
+	handleLinkToS(data) {
+		// Check for YouTube
+		const agreed = this.settings.provider.get('agreed-tos', []);
+		const resolvers = data.urls ? new Set(data.urls.map(x => x.resolver).filter(x => x)) : null;
+		if ( resolvers ) {
+			for(const [key, info] of Object.entries(RESOLVERS_REQUIRE_TOS)) {
+				if ( resolvers.has(key) && ! agreed.includes(key) ) {
+					return {
+						...data,
+						url: null,
+						short: [
+							{
+								type: 'box',
+								content:
+									info.i18n_key
+										? {type: 'i18n', key: info.i18n_key, phrase: info.label}
+										: info.label
+							},
+							{
+								type: 'flex',
+								'justify-content': 'center',
+								'align-items': 'center',
+								content: {
+									type: 'open_settings',
+									item: 'chat.tooltips'
+								}
+							}
+						],
+						mid: null,
+						full: null
+					}
+				}
+			}
+		}
+
+		return data;
+	}
+
+
+	agreeToTerms(service) {
+		const agreed = this.settings.provider.get('agreed-tos', []);
+		if ( agreed.includes(service) )
+			return;
+
+		this.settings.provider.set('agreed-tos', [...agreed, service]);
+		this.emit(':update-link-resolver');
+	}
+
+
+	onProviderChange(key, value) {
+		if ( key !== 'agreed-tos' )
+			return;
+
+		this.emit(':update-link-resolver');
+	}
+
 
 	fixLinkInfo(data) {
 		if ( ! data )

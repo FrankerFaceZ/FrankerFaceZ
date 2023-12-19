@@ -110,6 +110,8 @@ export const Links = {
 				fragments: data.fragments,
 				i18n_prefix: data.i18n_prefix,
 
+				tooltip: true,
+
 				allow_media: show_images,
 				allow_unsafe: show_unsafe,
 				onload: () => requestAnimationFrame(() => tip.update())

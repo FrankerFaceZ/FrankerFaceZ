@@ -55,6 +55,12 @@
 	}
 }
 
+.ffz--rich-header div span[class="ffz-i-youtube-play"] {
+	font-size: 166%;
+	line-height: 1em;
+	vertical-align: middle;
+}
+
 .ffz__tooltip {
 	--ffz-rich-header-outline: var(--color-background-tooltip);
 	.ffz--rich-header--background {
@@ -117,6 +123,15 @@
 
 	> * {
 		width: 100%;
+	}
+
+	.ffz--overlay .ffz--overlay__bit[data-side=center] {
+		border-radius: 50%;
+		aspect-ratio: 1;
+
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 }
 
@@ -281,6 +296,28 @@
 		--ffz-flag-color: #900;
 		//border-right-color: #900;
 	}
+}
+
+
+.ffz-highlight-tags__above {
+	display: block;
+	margin-top: -0.5rem;
+}
+
+.ffz-highlight-tag:not(:last-child) {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.ffz-highlight-tag + .ffz-highlight-tag {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.ffz-highlight-tag {
+	margin-right: 2px;
+	background: rgba(127,127,127,0.35);
+	color: inherit;
 }
 
 .ffz--fields {

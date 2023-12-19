@@ -27,7 +27,7 @@ export function duration_to_string(
 		days = day_count > 0 ? `${day_count} days, ` : '';
 	}
 
-	const show_hours = (!no_hours || days || hours);
+	const show_hours = (no_hours === false || days?.length > 0 || hours > 0);
 
 	return `${days}${
 		show_hours ? `${days && hours < 10 ? '0' : ''}${hours}:` : ''
