@@ -69,7 +69,6 @@ export default [
 	"eyedropper",
 	"eye",
 	"eye-off",
-	"discord",
 	"views",
 	"conversations",
 	"user-secret",
@@ -121,5 +120,7 @@ export default [
 	"mange-suspicious",
 	"doc-text",
 	"fx",
-	"artist"
+	"artist",
+	"discord",
+	"tiktok"
 ] as const;

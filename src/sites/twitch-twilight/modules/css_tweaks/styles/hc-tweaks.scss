@@ -1,0 +1,103 @@
+.vc-sketch-saturation-wrap,
+.vc-sketch-presets-color,
+.vc-sketch-controls,
+.ffz-badge,
+.ffz-color-preview {
+	forced-color-adjust: none;
+}
+
+@media (forced-colors: active) {
+	.ffz__tooltip,
+	.ffz-viewer-card,
+	.ffz-dialog,
+	.ffz-balloon,
+	.tw-balloon,
+	.ffz-il-tooltip,
+	.vc-sketch,
+	.viewer-card {
+		&, &.tw-border {
+			border: 4px solid !important;
+		}
+	}
+
+	.ffz__tooltip, .ffz-il-tooltip {
+		&:before, &:after {
+			display: none !important;
+		}
+	}
+
+	.ffz--chat-card,
+	.chat-wysiwyg-input__editor,
+	.chat-wysiwyg-input__editor:hover {
+		&, &.tw-border {
+			border: 1px solid !important;
+		}
+	}
+
+	.ffz--profile-row {
+		background-color: ButtonFace !important;
+		color: ButtonText !important;
+
+		&.current {
+			background-color: Highlight !important;
+			color: HighlightText !important;
+		}
+
+		.ffz--profile-row__icon {
+			color: inherit !important;
+		}
+
+		div, h4 {
+			forced-color-adjust: none;
+		}
+	}
+
+	.ffz--menu-tree .active > div,
+	.ffz--menu-tree .active > div:hover,
+	.tw-root--theme-dark .ffz--menu-tree .active > div:hover {
+		& {
+			background-color: Highlight !important;
+			color: HighlightText !important;
+		}
+
+		span {
+			forced-color-adjust: none;
+		}
+	}
+
+	.ffz-checkbox__input:checked + .ffz-checkbox__label:after,
+	.ffz-checkbox__input:indeterminate + .ffz-checkbox__label:after {
+		background-color: ButtonText !important;
+	}
+
+	.ffz-checkbox__input:checked + .ffz-checkbox__label:before,
+	.ffz-checkbox__input:indeterminate + .ffz-checkbox__label:before {
+		border-color: ButtonText !important;
+	}
+
+	.ffz-input,
+	.chat-wysiwyg-input__editor {
+		background-color: Field !important;
+		color: FieldText !important;
+	}
+
+	.tw-button.ffz--ffz-button,
+	.tw-button.ffz--discord-button,
+	.tw-button.ffz--github-button {
+		background-color: Canvas !important;
+		color: LinkText !important;
+	}
+
+	.tw-button, .tw-core-button {
+		background-color: ButtonFace !important;
+		color: ButtonText !important;
+	}
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: dark) {
+	/* High Contrast #1, #2 or Black is active (or custom theme) */
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+	/* High Contrast White is active (or custom theme) */
+}

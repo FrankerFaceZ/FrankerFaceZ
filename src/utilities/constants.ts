@@ -373,6 +373,10 @@ export const RESOLVERS_REQUIRE_TOS = {
 		i18n_links: 'embed.warn.youtube.links',
 		links: `To view YouTube embeds, you must agree to YouTube's Terms of Service:
 * [Terms of Service](https://www.youtube.com/t/terms)
-* [Privacy Policy](https://policies.google.com/privacy)`
-	}
+* [Privacy Policy](https://policies.google.com/privacy)`,
+
+		i18n_accept: 'embed.warn.youtube.agree',
+		accept: 'Yes, I accept the YouTube Terms of Service.'
+	},
+
 } as Record<string, any>;

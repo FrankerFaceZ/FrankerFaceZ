@@ -1092,6 +1092,7 @@ export default class Chat extends Module {
 				component: 'tooltip-tos',
 				item: key,
 				override_setting: 'agreed-tos',
+				getChat: () => this,
 				data: deep_copy(info),
 				onUIChange: () => this.emit(':update-link-resolver')
 			});
@@ -2644,31 +2645,53 @@ export default class Chat extends Module {
 
 	handleLinkToS(data) {
 		// Check for YouTube
-		const agreed = this.settings.provider.get('agreed-tos', []);
+		const agreed = this.settings.provider.get('agreed-tos', []),
+			rejected = this.settings.provider.get('declined-tos', []);
+
 		const resolvers = data.urls ? new Set(data.urls.map(x => x.resolver).filter(x => x)) : null;
 		if ( resolvers ) {
 			for(const [key, info] of Object.entries(RESOLVERS_REQUIRE_TOS)) {
 				if ( resolvers.has(key) && ! agreed.includes(key) ) {
+					const declined = rejected.includes(key);
+
 					return {
 						...data,
 						url: null,
 						short: [
 							{
 								type: 'box',
-								content:
+								content: [
 									info.i18n_key
 										? {type: 'i18n', key: info.i18n_key, phrase: info.label}
-										: info.label
+										: info.label,
+									declined ? null : ' ',
+									declined ? null : {
+										type: 'conditional',
+										tooltip: false,
+										content: {
+											type: 'i18n',
+											key: 'embed.tos-open-settings',
+											phrase: '{link} to open your settings.',
+											content: {
+												link: {
+													type: 'open_settings',
+													item: 'chat.tooltips',
+													content: {
+														type: 'i18n',
+														key: 'embed.tos-open-settings.click',
+														phrase: 'Click here'
+													}
+												}
+											}
+										},
+										alternative: {
+											type: 'i18n',
+											key: 'embed.tos-settings',
+											phrase: 'Open the FFZ Control Center and navigate to Chat > Tooltips to agree.'
+										}
+									}
+								]
 							},
-							{
-								type: 'flex',
-								'justify-content': 'center',
-								'align-items': 'center',
-								content: {
-									type: 'open_settings',
-									item: 'chat.tooltips'
-								}
-							}
 						],
 						mid: null,
 						full: null
@@ -2691,8 +2714,28 @@ export default class Chat extends Module {
 	}
 
 
+	declineTerms(service) {
+		const declined = this.settings.provider.get('declined-tos', []);
+		if ( declined.includes(service) )
+			return;
+
+		this.settings.provider.set('declined-tos', [...declined, service]);
+		this.emit(':update-link-resolver');
+	}
+
+	hasAgreedToTerms(service) {
+		const agreed = this.settings.provider.get('agreed-tos');
+		return agreed ? agreed.includes(service) : false;
+	}
+
+	hasDeclinedTerms(service) {
+		const declined = this.settings.provider.get('declined-tos');
+		return declined ? declined.includes(service) : false;
+	}
+
+
 	onProviderChange(key, value) {
-		if ( key !== 'agreed-tos' )
+		if ( key !== 'agreed-tos' && key !== 'declined-tos' )
 			return;
 
 		this.emit(':update-link-resolver');

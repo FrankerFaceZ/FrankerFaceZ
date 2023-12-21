@@ -128,16 +128,55 @@ export const Clip = {
 				}
 			};
 
+		const header = {
+			type: 'header',
+			image: {type: 'image', url: clip.thumbnailURL, sfw: true, aspect: 16/9},
+			title: clip.title,
+			subtitle,
+			extra
+		};
+
 		return {
 			accent: '#6441a4',
 
-			short: {
-				type: 'header',
-				image: {type: 'image', url: clip.thumbnailURL, sfw: true, aspect: 16/9},
-				title: clip.title,
-				subtitle,
-				extra
-			}
+			fragments: {
+				header
+			},
+
+			short: {type: 'ref', name: 'header'},
+
+			full: [
+				{type: 'ref', name: 'header'},
+				{
+					type: 'conditional',
+					media: true,
+					content: {
+						type: 'gallery',
+						items: [{
+							type: 'player',
+							iframe: `https://clips.twitch.tv/embed?parent=twitch.tv&clip=${match}`,
+							aspect: 16/9,
+							content: {
+								type: 'overlay',
+								content: {
+									type: 'image',
+									url: clip.thumbnailURL,
+									sfw: true,
+									aspect: 16/9
+								},
+								'center': {
+									type: 'style',
+									size: '2',
+									content: {
+										type: 'icon',
+										name: 'play'
+									}
+								}
+							}
+						}]
+					}
+				}
+			]
 		};
 	}
 }

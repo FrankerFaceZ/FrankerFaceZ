@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'ffz-fontello';
-  src: url('../font/ffz-fontello.eot?56551965');
-  src: url('../font/ffz-fontello.eot?56551965#iefix') format('embedded-opentype'),
-       url('../font/ffz-fontello.woff2?56551965') format('woff2'),
-       url('../font/ffz-fontello.woff?56551965') format('woff'),
-       url('../font/ffz-fontello.ttf?56551965') format('truetype'),
-       url('../font/ffz-fontello.svg?56551965#ffz-fontello') format('svg');
+  src: url('../font/ffz-fontello.eot?21539525');
+  src: url('../font/ffz-fontello.eot?21539525#iefix') format('embedded-opentype'),
+       url('../font/ffz-fontello.woff2?21539525') format('woff2'),
+       url('../font/ffz-fontello.woff?21539525') format('woff'),
+       url('../font/ffz-fontello.ttf?21539525') format('truetype'),
+       url('../font/ffz-fontello.svg?21539525#ffz-fontello') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'ffz-fontello';
-    src: url('../font/ffz-fontello.svg?56551965#ffz-fontello') format('svg');
+    src: url('../font/ffz-fontello.svg?21539525#ffz-fontello') format('svg');
   }
 }
 */
@@ -94,7 +94,7 @@
 .ffz-i-pin:before { content: '\e825'; } /* '' */
 .ffz-i-pin-outline:before { content: '\e826'; } /* '' */
 .ffz-i-gift:before { content: '\e827'; } /* '' */
-.ffz-i-discord:before { content: '\e828'; } /* '' */
+.ffz-i-tiktok:before { content: '\e828'; } /* '' */
 .ffz-i-eye:before { content: '\e829'; } /* '' */
 .ffz-i-eye-off:before { content: '\e82a'; } /* '' */
 .ffz-i-views:before { content: '\e82b'; } /* '' */
@@ -133,6 +133,7 @@
 .ffz-i-mange-suspicious:before { content: '\e84c'; } /* '' */
 .ffz-i-fx:before { content: '\e84d'; } /* '' */
 .ffz-i-artist:before { content: '\e84e'; } /* '' */
+.ffz-i-discord:before { content: '\e84f'; } /* '' */
 .ffz-i-move:before { content: '\f047'; } /* '' */
 .ffz-i-link-ext:before { content: '\f08e'; } /* '' */
 .ffz-i-twitter:before { content: '\f099'; } /* '' */

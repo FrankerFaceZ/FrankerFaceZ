@@ -123,6 +123,11 @@ export const Links = {
 				tip.element.classList.add('tw-align-left');
 			}
 
+			if ( tip.outer && data.accent ) {
+				tip.outer.classList.add('ffz-accent-tip');
+				tip.outer.style.setProperty('--ffz-color-accent', data.accent);
+			}
+
 			if ( data.full ) {
 				content = rich_tokens.renderTokens(data.full, createElement, ctx);
 

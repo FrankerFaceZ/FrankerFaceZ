@@ -234,6 +234,12 @@ body {
 }
 
 
+.ffz-accent-tip {
+	border-right: .5rem solid var(--ffz-color-accent);
+	border-radius: 2px;
+}
+
+
 .ffz-rich-tip {
 	max-width: 340px;
 	width: 340px;

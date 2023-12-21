@@ -338,10 +338,9 @@ TOKEN_TYPES.box = function(token, createElement, ctx) {
 
 TOKEN_TYPES.open_settings = function(token, createElement, ctx) {
 
-	if ( ctx.tooltip )
-		return null;
-
 	const handler = event => {
+		event.preventDefault();
+
 		const evt = new FFZEvent({
 			item: token.item,
 			event,
@@ -351,28 +350,24 @@ TOKEN_TYPES.open_settings = function(token, createElement, ctx) {
 		window.FrankerFaceZ.get().emit('main_menu:open', evt);
 	}
 
-	const label = ctx.i18n.t('embed.show-settings', 'Open Settings');
+	const markdown = token.markdown,
+		content = renderTokens(token.content, createElement, ctx, markdown);
 
 	if ( ctx.vue )
-		return createElement('button', {
-			class: 'tw-button',
+		return createElement('a', {
+			class: 'tw-link',
+			href: '#',
 			on: {
 				click: handler
 			}
-		}, [
-			createElement('span', {
-				class: 'tw-button__text'
-			}, [
-				label
-			])
-		]);
+		}, content);
 
-	return createElement('button', {
-		className: 'tw-button',
+	return createElement('a', {
+		class: 'tw-link',
+		href: '#',
 		onClick: handler
-	}, createElement('span', {
-		className: 'tw-button__text'
-	}, label));
+	}, content);
+
 }
 
 
@@ -387,6 +382,14 @@ TOKEN_TYPES.conditional = function(token, createElement, ctx) {
 		passed = false;
 
 	if ( token.nsfw && ! ctx.allow_unsafe )
+		passed = false;
+
+	if ( token.skip_nsfw && ctx.allow_unsafe )
+		passed = false;
+
+	if ( token.tooltip && ! ctx.tooltip )
+		passed = false;
+	else if ( token.tooltip === false && ctx.tooltip )
 		passed = false;
 
 	if ( passed )
@@ -689,7 +692,7 @@ function header_vue(token, h, ctx) {
 
 		if ( image ) {
 			image = h('div', {
-				class: `ffz--header-sublogo tw-flex-shrink-0 ${subtok.youtube_dumb ? 'tw-mg-l-05 tw-mg-r-1' : 'tw-mg-r-05'}${aspect ? ' ffz--header-aspect' : ''}`,
+				class: `ffz--header-sublogo tw-flex-shrink-0 ${subtok.extra_pad ? 'tw-mg-l-05 tw-mg-r-1' : 'tw-mg-r-05'}${aspect ? ' ffz--header-aspect' : ''}`,
 				style: {
 					width: aspect ? `${aspect * 2}rem` : null
 				}

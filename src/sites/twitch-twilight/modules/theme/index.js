@@ -19,7 +19,8 @@ const COLORS = [
 	0.08, 0.151, 0.212, 0.271, 0.31, 0.351 // 10-15
 ];
 
-const NO_AUTO_DARK = `:root{color-scheme: only light}`;
+const NO_AUTO_DARK = `:root{color-scheme: only light}`,
+	NO_FORCED_COLOR = `:root{forced-color-adjust: none}`;
 
 
 const ACCENT_COLORS = {
@@ -48,6 +49,36 @@ export default class ThemeEngine extends Module {
 
 
 		// Tweaks
+
+		this.settings.add('theme.high-contrast-tweaks', {
+			default: null,
+			requires: ['context.is-forced-colors', 'theme.disable-high-contrast'],
+			process(ctx, val) {
+				if ( val === null ) {
+					if ( ctx.get('theme.disable-high-contrast') )
+						return false;
+					return ctx.get('context.is-forced-colors') ?? false;
+				}
+				return val;
+			},
+			ui: {
+				path: 'Appearance > Theme >> Tweaks',
+				title: 'Enable the use of High Contrast tweaks.',
+				description: 'This loads an additional set of styles when Forced Color / OS High Contrast mode is enabled to ensure page elements are displayed more appropriately.',
+				component: 'setting-check-box'
+			},
+		});
+
+		this.settings.add('theme.disable-high-contrast', {
+			default: false,
+			ui: {
+				path: 'Appearance > Theme >> Tweaks',
+				title: 'Disable Forced Color / OS High Contrast',
+				component: 'setting-check-box',
+				description: 'Enabling this will instruct your browser to not respect your operating system\'s High Contrast settings when displaying Twitch. You may need to refresh for this to take full effect.'
+			},
+			changed: () => this.updateCSS()
+		});
 
 		this.settings.add('theme.disable-auto-dark', {
 			default: false,
@@ -348,6 +379,11 @@ export default class ThemeEngine extends Module {
 	updateCSS() {
 		//this.updateOldCSS();
 
+		if ( this.settings.get('theme.disable-high-contrast'))
+			this.css_tweaks.set('nofc', NO_FORCED_COLOR);
+		else
+			this.css_tweaks.delete('nofc');
+
 		if ( this.settings.get('theme.disable-auto-dark') )
 			this.css_tweaks.set('nodark', NO_AUTO_DARK);
 		else
@@ -541,6 +577,20 @@ export default class ThemeEngine extends Module {
 	}
 
 	onEnable() {
+		// TODO: Detect if this changes?
+		let has_forced;
+		try {
+			has_forced = window.matchMedia('(forced-colors: active)')?.matches;
+		} catch(err) { /* no-op */ }
+
+		this.settings.updateContext({
+			'is-forced-colors': has_forced ?? false
+		});
+
+		this.settings.getChanges('theme.high-contrast-tweaks', val => {
+			this.css_tweaks.toggle('hc-tweaks', val);
+		});
+
 		this.updateCSS();
 		this.updateFont();
 	}
