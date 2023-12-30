@@ -8,7 +8,7 @@ import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLi
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import {has, once} from 'utilities/object';
+import {TicketLock, has, once} from 'utilities/object';
 import type SettingsManager from '.';
 import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
 
@@ -460,6 +460,9 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 
 	private db?: IDBDatabase | null;
 
+	private _last_tx: number = 0;
+	private _lock: TicketLock;
+
 	// Event Handling
 	private _broadcaster?: BroadcastChannel | null;
 	private _boundHandleMessage?: ((event: MessageEvent) => void) | null;
@@ -473,6 +476,8 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 
 		this._pending = new Set<unknown>;
 		this._flush_wait = null;
+
+		this._lock = new TicketLock();
 
 		this._cached = new Map;
 		this.ready = false;
@@ -798,25 +803,36 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 	async loadSettings() {
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readonly'),
-			store = trx.objectStore('settings');
+			store = trx.objectStore('settings'),
+			id = this._last_tx++;
+
+		this._onStart(id);
 
 		return new Promise<void>((resolve, fail) => {
+
+			trx.onabort = err => {
+				if ( this.manager )
+					this.manager.log.error('Transaction aborted reading settings from database.', err);
+				this._onFinish(id);
+				fail();
+			};
+
 			const request = store.getAll();
-			this._onStart(request);
 
 			request.onsuccess = () => {
 				for(const entry of request.result)
 					this._cached.set(entry.k, entry.v);
 
+				this._onFinish(id);
 				resolve();
-				this._onFinish(request);
 			}
 
 			request.onerror = err => {
 				if ( this.manager )
 					this.manager.log.error('Error reading settings from database.', err);
+
+				this._onFinish(id);
 				fail();
-				this._onFinish(request);
 			}
 		});
 	}
@@ -825,23 +841,33 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 	async _getKeys() {
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readonly'),
-			store = trx.objectStore('settings');
+			store = trx.objectStore('settings'),
+			id = this._last_tx++;
+
+		this._onStart(id);
 
 		return new Promise<IDBValidKey[]>((resolve,fail) => {
+
+			trx.onabort = err => {
+				if ( this.manager )
+					this.manager.log.error('Transaction aborted reading keys from database.', err);
+				this._onFinish(id);
+				fail();
+			};
+
 			const request = store.getAllKeys();
-			this._onStart(request);
 
 			request.onsuccess = () => {
+				this._onFinish(id);
 				resolve(request.result);
-				this._onFinish(request);
-			}
+			};
 
 			request.onerror = err => {
 				if ( this.manager )
 					this.manager.log.error('Error reading keys from database.', err);
+				this._onFinish(id);
 				fail();
-				this._onFinish(request);
-			}
+			};
 		});
 	}
 
@@ -849,21 +875,32 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 	async _get(key: string) {
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readonly'),
-			store = trx.objectStore('settings');
+			store = trx.objectStore('settings'),
+			id = this._last_tx++;
+
+		this._onStart(id);
 
 		return new Promise<any>((resolve, fail) => {
-			//store.onerror = fail;
+
+			trx.onabort = err => {
+				if ( this.manager )
+					this.manager.log.error('Transaction aborted reading value from database.', err);
+				this._onFinish(id);
+				fail();
+			};
+
 			const req = store.get(key);
-			this._onStart(req);
 
 			req.onerror = err => {
+				if ( this.manager )
+					this.manager.log.error('Error reading value from database.', err);
+				this._onFinish(id);
 				fail();
-				this._onFinish(req);
 			}
 
 			req.onsuccess = () => {
+				this._onFinish(id);
 				resolve(req.result.v);
-				this._onFinish(req);
 			}
 		});
 	}
@@ -873,22 +910,40 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 		if ( this.disabled )
 			return;
 
+		// Limit concurrent access to this table.
+		const id = this._last_tx++;
+		this._onStart(id);
+		const release = await this._lock.wait();
+
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readwrite'),
 			store = trx.objectStore('settings');
 
 		return new Promise<void>((resolve, fail) => {
 			//store.onerror = f;
-			const req = store.put({k: key, v: value});
-			this._onStart(req);
 
-			req.onerror = () => {
+			trx.onabort = err => {
+				if ( this.manager )
+					this.manager.log.error('Transaction aborted setting value to database.', err);
+				release();
+				this._onFinish(id);
 				fail();
-				this._onFinish(req);
+			};
+
+			const req = store.put({k: key, v: value});
+
+			req.onerror = err => {
+				if ( this.manager )
+					this.manager.log.error('Error setting value to database.', err);
+				release();
+				this._onFinish(id);
+				fail();
 			}
+
 			req.onsuccess = () => {
+				release();
+				this._onFinish(id);
 				resolve();
-				this._onFinish(req);
 			}
 		});
 	}
@@ -898,23 +953,40 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 		if ( this.disabled )
 			return;
 
+		// Limit concurrent access to this table.
+		const id = this._last_tx++;
+		this._onStart(id);
+		const release = await this._lock.wait();
+
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readwrite'),
 			store = trx.objectStore('settings');
 
 		return new Promise<void>((resolve, fail) => {
-			//store.onerror = f;
-			const req = store.delete(key);
-			this._onStart(req);
 
-			req.onerror = () => {
+			trx.onabort = err => {
+				if ( this.manager )
+					this.manager.log.error('Transaction aborted deleting value from database.', err);
+				release();
+				this._onFinish(id);
 				fail();
-				this._onFinish(req);
-			}
+			};
+
+			const req = store.delete(key);
+
+			req.onerror = err => {
+				if ( this.manager )
+					this.manager.log.error('Error deleting value from database.', err);
+				release();
+				this._onFinish(id);
+				fail();
+			};
+
 			req.onsuccess = () => {
+				release();
+				this._onFinish(id);
 				resolve();
-				this._onFinish(req);
-			}
+			};
 		});
 	}
 
@@ -923,23 +995,40 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 		if ( this.disabled )
 			return;
 
+		// Limit concurrent access to this table.
+		const id = this._last_tx++;
+		this._onStart(id);
+		const release = await this._lock.wait();
+
 		const db = await this.getDB(),
 			trx = db.transaction(['settings'], 'readwrite'),
 			store = trx.objectStore('settings');
 
 		return new Promise<void>((resolve, fail) => {
-			//store.onerror = f;
-			const req = store.clear();
-			this._onStart(req);
 
-			req.onerror = () => {
+			trx.onabort = err => {
+				if ( this.manager )
+					this.manager.log.error('Transaction aborted clearing database.', err);
+				release();
+				this._onFinish(id);
 				fail();
-				this._onFinish(req);
-			}
+			};
+
+			const req = store.clear();
+
+			req.onerror = err => {
+				if ( this.manager )
+					this.manager.log.error('Error clearing database.', err);
+				release();
+				this._onFinish(id);
+				fail();
+			};
+
 			req.onsuccess = () => {
+				release();
+				this._onFinish(id);
 				resolve();
-				this._onFinish(req);
-			}
+			};
 		});
 	}
 

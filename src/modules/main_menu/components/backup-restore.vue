@@ -234,6 +234,7 @@ export default {
 
 			// Settings second.
 			provider.clear();
+			await provider.flush();
 			let i = 0;
 			for(const key of Object.keys(data.values)) {
 				const val = data.values[key];
@@ -241,6 +242,8 @@ export default {
 				provider.emit('changed', key, val, false);
 				i++;
 			}
+
+			await provider.flush();
 
 			this.message = this.t('setting.backup-restore.zip-restored', '{count,number} items and {blobs,number} binary blobs have been restored. Please refresh this page.', {
 				count: i,
