@@ -322,6 +322,16 @@ export default class EmoteMenu extends Module {
 			}
 		});
 
+		this.settings.add('chat.emote-menu.tooltips', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Menu >> Appearance',
+				title: 'Display emote preview tool-tips in the FFZ Emote Menu.',
+				component: 'setting-check-box',
+				description: 'You may wish to disable this for performance reasons.'
+			}
+		});
+
 		this.settings.add('chat.emote-menu.show-emoji', {
 			default: true,
 			ui: {
@@ -418,6 +428,7 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emotes.enabled', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.modifiers', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.show-emoji', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.tooltips', rebuild);
 		this.chat.context.on('changed:chat.fix-bad-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.effect-tab', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
@@ -909,7 +920,9 @@ export default class EmoteMenu extends Module {
 					has_modifiers = Array.isArray(modifiers) && modifiers.length > 0,
 					//has_menu = has_modifiers && this.state.open_menu == emote.id,
 					animated = this.props.animated,
-					hidden = visibility && emote.hidden;
+					hidden = visibility && emote.hidden,
+
+					tt = t.chat.context.get('chat.emote-menu.tooltips');
 
 				let src, srcSet;
 				if ( animated && emote.animSrc ) {
@@ -922,7 +935,7 @@ export default class EmoteMenu extends Module {
 
 				return (<button
 					key={emote.id}
-					class={`ffz-tooltip emote-picker__emote-link${!visibility && locked ? ' locked' : ''}${hidden ? ' emote-hidden' : ''}`}
+					class={`${tt ? 'ffz-tooltip ' : ''}emote-picker__emote-link${!visibility && locked ? ' locked' : ''}${hidden ? ' emote-hidden' : ''}`}
 					data-tooltip-type="emote"
 					data-provider={emote.provider}
 					data-id={emote.id}
@@ -1014,11 +1027,13 @@ export default class EmoteMenu extends Module {
 					emoji_y = (emote.y * (t.emoji_size + 2)) + 1,
 
 					x_pct = 100 * emoji_x / t.emoji_sheet_remain,
-					y_pct = 100 * emoji_y / t.emoji_sheet_remain;
+					y_pct = 100 * emoji_y / t.emoji_sheet_remain,
+
+					tt = t.chat.context.get('chat.emote-menu.tooltips');
 
 				return (<button
 					key={emote.id}
-					class={`ffz-tooltip emote-picker__emote-link${locked ? ' locked' : ''}${emote.emoji ? ' emote-picker__emoji' : ''}`}
+					class={`${tt ? 'ffz-tooltip ' : ''}emote-picker__emote-link${locked ? ' locked' : ''}${emote.emoji ? ' emote-picker__emoji' : ''}`}
 					data-tooltip-type="emote"
 					data-provider={emote.provider}
 					data-id={emote.id}

@@ -294,7 +294,7 @@ Twilight.KNOWN_MODULES['algolia-search'].use_result = true;
 Twilight.KNOWN_MODULES['algolia-search'].chunks = 'core';
 
 Twilight.KNOWN_MODULES['user-report'].use_result = true;
-Twilight.KNOWN_MODULES['user-report'].chunks = 'core';
+Twilight.KNOWN_MODULES['user-report'].chunks = n => ! n || n.includes('core') || n.includes('common');
 
 Twilight.KNOWN_MODULES['sub-form'].use_result = true;
 Twilight.KNOWN_MODULES['sub-form'].chunks = 'core';

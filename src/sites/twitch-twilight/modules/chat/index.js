@@ -2968,6 +2968,9 @@ export default class ChatHook extends Module {
 				message.roomLogin = chan;
 			}
 
+			message.ffz_first_msg = message.isFirstMsg || original.message?.isFirstMsg || false;
+			message.ffz_returning = original.message?.isReturningChatter || false;
+
 			if ( original.message ) {
 				const user = original.message.user,
 					flags = original.message.flags;

@@ -1,6 +1,7 @@
 
 import {has} from 'utilities/object';
 import type { DomFragment, OptionalArray } from './types';
+import { DEBUG } from './constants';
 
 const ATTRS = [
 	'accept', 'accept-charset', 'accesskey', 'action', 'align', 'alt', 'async',
@@ -184,7 +185,7 @@ export function createElement(tag: string, props?: any, ...children: DomFragment
 							else
 								el.style.setProperty(key, prop[key]);
 						}
-					else
+					else if ( DEBUG && prop != null )
 						console.warn('unsupported style value', prop);
 
 				} else if ( lk === 'dataset' ) {
@@ -192,7 +193,7 @@ export function createElement(tag: string, props?: any, ...children: DomFragment
 						for(const k in prop)
 							if ( has(prop, k) )
 								el.dataset[camelCase(k)] = prop[k];
-					} else
+					} else if ( DEBUG && prop != null )
 						console.warn('unsupported dataset value', prop);
 
 				} else if ( key === 'dangerouslySetInnerHTML' ) {

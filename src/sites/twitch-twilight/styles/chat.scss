@@ -136,6 +136,9 @@
 
 .ffz--chat-card {
 	.vod-message & {
+
+		width: calc(100% - 1.5rem) !important;
+
 		.ffz--card-text {
 			max-width: 18rem;
 		}
