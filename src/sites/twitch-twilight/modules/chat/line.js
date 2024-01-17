@@ -13,6 +13,7 @@ import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS }
 import { print_duration } from 'utilities/time';
 
 import { getRewardTitle, getRewardCost } from './points';
+import awaitMD, {getMD} from 'utilities/markdown';
 
 const SUB_TIERS = {
 	1000: 1,
@@ -42,6 +43,65 @@ export default class ChatLine extends Module {
 		this.line_types.unknown = {
 			renderNotice: (msg, current_user, room, inst, e) => {
 				return `Unknown message type: ${msg.ffz_type}`
+			}
+		};
+
+		this.line_types.notice = {
+			renderNotice: (msg, current_user, room, inst, e) => {
+				const data = msg.ffz_data;
+				let content = this.line_types.notice.renderContent(msg, current_user, room, inst, e);
+
+				if ( ! data.icon )
+					return content;
+
+				if ( typeof content === 'string' )
+					content = e('span', {}, content);
+
+				content.ffz_icon = e('span', {
+					className: `${data.icon} tw-mg-r-05`
+				});
+
+				return content;
+			},
+
+			renderContent: (msg, current_user, room, inst, e) => {
+				const data = msg.ffz_data;
+				if ( data.renderer )
+					try {
+						return data.renderer(data, inst, e);
+					} catch(err) {
+						this.log.capture(err);
+						this.log.error('Error using custom renderer for notice:', err);
+						return `Error rendering notice.`
+					}
+
+				const text = data.i18n ? this.i18n.t(data.i18n, data.messgae, data) : data.message;
+
+				if ( data.markdown ) {
+					const md = getMD();
+					if ( ! md ) {
+						awaitMD().then(() => inst.forceUpdate());
+						return 'Loading...';
+					}
+
+					return e('span', {
+						dangerouslySetInnerHTML: {
+							__html: getMD().renderInline(text)
+						}
+					});
+				}
+
+				if ( data.tokenize ) {
+					const tokens = data.ffz_tokens = data.ffz_tokens || this.chat.tokenizeMessage({
+						message: text,
+						id: msg.id,
+						user: msg.user
+					}, current_user);
+
+					return this.chat.renderTokens(tokens, e);
+				}
+
+				return text;
 			}
 		};
 
@@ -1058,7 +1118,7 @@ other {# messages were deleted by a moderator.}
 
 						// The preamble
 						timestamp,
-						t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this),
+						msg.ffz_no_actions ? null : t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this),
 						this.renderInlineHighlight ? this.renderInlineHighlight() : null,
 						hl_position === 2 ? highlight_tags : null,
 
@@ -1121,7 +1181,7 @@ other {# messages were deleted by a moderator.}
 								? e('span', { className: 'chat-line__timestamp' }, t.chat.formatTime(msg.timestamp))
 								: null;
 
-						const actions = t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this);
+						const actions = msg.ffz_no_actions ? null : t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this);
 
 						if ( is_raw ) {
 							notice.ffz_target.unshift(
@@ -1187,7 +1247,7 @@ other {# messages were deleted by a moderator.}
 				}
 
 				// Check for hover actions, as those require we wrap the output in a few extra elements.
-				const hover_actions = (user && msg.id)
+				const hover_actions = (user && msg.id && ! msg.ffz_no_actions)
 					? t.actions.renderHover(msg, this.props.showModerationIcons, current_user, current_room, e, this)
 					: null;
 

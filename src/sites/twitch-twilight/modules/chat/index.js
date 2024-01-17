@@ -5,11 +5,11 @@
 // ============================================================================
 
 import {Color, ColorAdjuster} from 'utilities/color';
-import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals, glob_to_regex, escape_regex} from 'utilities/object';
+import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals, glob_to_regex, escape_regex, generateUUID} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {useFont} from 'utilities/fonts';
-
+import awaitMD, { getMD } from 'utilities/markdown';
 import Module from 'utilities/module';
 
 import Twilight from 'site';
@@ -2389,10 +2389,40 @@ export default class ChatHook extends Module {
 
 		for(const inst of this.ChatService.instances) {
 			if ( room === '*' || inst.props.channelLogin.toLowerCase() === room ) {
-				inst.addMessage({
-					type: this.chat_types.Notice,
-					message
-				});
+				if ( typeof message === 'string' )
+					inst.addMessage({
+						type: this.chat_types.Notice,
+						message
+					});
+				else {
+					const props = inst.props,
+						login = props.channelLogin,
+						id = props.channelID;
+
+					if ( message.markdown ) {
+						const md = getMD();
+						if ( ! md )
+							awaitMD();
+					}
+
+					inst.addMessage({
+						type: this.chat_types.Message,
+						channel: `#${login}`,
+						roomID: id,
+						roomLogin: login,
+						id: `ffz_notice_${generateUUID()}`,
+						ffz_type: 'notice',
+						ffz_no_actions: true,
+						ffz_data: message,
+						message: null,
+						messageParts: [],
+						timestamp: Date.now(),
+						user: {
+							userID: id,
+							userLogin: login
+						}
+					})
+				}
 
 				return true;
 			}

@@ -2644,58 +2644,59 @@ export default class Chat extends Module {
 
 
 	handleLinkToS(data) {
+		if ( ! Array.isArray(data?.urls) )
+			return data;
+
 		// Check for YouTube
 		const agreed = this.settings.provider.get('agreed-tos', []),
 			rejected = this.settings.provider.get('declined-tos', []);
 
-		const resolvers = data.urls ? new Set(data.urls.map(x => x.resolver).filter(x => x)) : null;
-		if ( resolvers ) {
-			for(const [key, info] of Object.entries(RESOLVERS_REQUIRE_TOS)) {
-				if ( resolvers.has(key) && ! agreed.includes(key) ) {
-					const declined = rejected.includes(key);
+		const resolvers = new Set(data.urls.map(x => x.resolver).filter(x => x));
+		for(const [key, info] of Object.entries(RESOLVERS_REQUIRE_TOS)) {
+			if ( resolvers.has(key) && ! agreed.includes(key) ) {
+				const declined = rejected.includes(key);
 
-					return {
-						...data,
-						url: null,
-						short: [
-							{
-								type: 'box',
-								content: [
-									info.i18n_key
-										? {type: 'i18n', key: info.i18n_key, phrase: info.label}
-										: info.label,
-									declined ? null : ' ',
-									declined ? null : {
-										type: 'conditional',
-										tooltip: false,
+				return {
+					...data,
+					url: null,
+					short: [
+						{
+							type: 'box',
+							content: [
+								info.i18n_key
+									? {type: 'i18n', key: info.i18n_key, phrase: info.label}
+									: info.label,
+								declined ? null : ' ',
+								declined ? null : {
+									type: 'conditional',
+									tooltip: false,
+									content: {
+										type: 'i18n',
+										key: 'embed.tos-open-settings',
+										phrase: '{link} to open your settings.',
 										content: {
-											type: 'i18n',
-											key: 'embed.tos-open-settings',
-											phrase: '{link} to open your settings.',
-											content: {
-												link: {
-													type: 'open_settings',
-													item: 'chat.tooltips',
-													content: {
-														type: 'i18n',
-														key: 'embed.tos-open-settings.click',
-														phrase: 'Click here'
-													}
+											link: {
+												type: 'open_settings',
+												item: 'chat.tooltips',
+												content: {
+													type: 'i18n',
+													key: 'embed.tos-open-settings.click',
+													phrase: 'Click here'
 												}
 											}
-										},
-										alternative: {
-											type: 'i18n',
-											key: 'embed.tos-settings',
-											phrase: 'Open the FFZ Control Center and navigate to Chat > Tooltips to agree.'
 										}
+									},
+									alternative: {
+										type: 'i18n',
+										key: 'embed.tos-settings',
+										phrase: 'Open the FFZ Control Center and navigate to Chat > Tooltips to agree.'
 									}
-								]
-							},
-						],
-						mid: null,
-						full: null
-					}
+								}
+							]
+						},
+					],
+					mid: null,
+					full: null
 				}
 			}
 		}
