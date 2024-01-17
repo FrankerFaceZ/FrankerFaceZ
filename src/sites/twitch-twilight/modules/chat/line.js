@@ -57,9 +57,24 @@ export default class ChatLine extends Module {
 				if ( typeof content === 'string' )
 					content = e('span', {}, content);
 
-				content.ffz_icon = e('span', {
-					className: `${data.icon} tw-mg-r-05`
-				});
+				if ( typeof data.icon === 'function' ) {
+					try {
+						content.ffz_icon = data.icon(data, inst, e);
+					} catch(err) {
+						this.log.capture(err);
+						this.log.error('Error using custom renderer for notice:', err);
+					}
+
+				} else if ( data.icon instanceof URL )
+					content.ffz_icon = e('img', {
+						className: 'ffz-notice-icon tw-mg-r-05',
+						src: data.icon.toString()
+					});
+
+				else
+					content.ffz_icon = e('span', {
+						className: `${data.icon} tw-mg-r-05`
+					});
 
 				return content;
 			},
@@ -95,8 +110,10 @@ export default class ChatLine extends Module {
 					const tokens = data.ffz_tokens = data.ffz_tokens || this.chat.tokenizeMessage({
 						message: text,
 						id: msg.id,
-						user: msg.user
-					}, current_user);
+						user: msg.user,
+						room: msg.room,
+						roomID: msg.roomID
+					});
 
 					return this.chat.renderTokens(tokens, e);
 				}
