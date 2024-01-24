@@ -434,6 +434,9 @@ export default class Emotes extends Module {
 		this.EmoteTypes = EmoteTypes;
 		this.ModifierFlags = MODIFIER_FLAGS;
 
+		this.filters = {};
+		this.__filters = [];
+
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('experiments');
@@ -611,6 +614,13 @@ export default class Emotes extends Module {
 		const overrides = {},
 			warnings = {};
 
+		overrides.addFilter = (filter) => {
+			if ( filter )
+				filter.__source = addon_id;
+
+			return this.addFilter(filter);
+		}
+
 		overrides.addDefaultSet = (provider, set_id, data) => {
 			if ( is_dev && ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet did not include addon ID in provider:', provider);
@@ -650,6 +660,18 @@ export default class Emotes extends Module {
 		}
 
 		if ( is_dev ) {
+			overrides.removeFilter = (filter) => {
+				let type;
+				if ( typeof filter === 'string' ) type = filter;
+				else type = filter.type;
+
+				const existing = this.filters[type];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned emote filter with emotes.removeFilter:', type, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeFilter(filter);
+			}
+
 			overrides.removeDefaultSet = (provider, ...args) => {
 				if ( ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to emotes.removeDefaultSet did not include addon ID in provider:', provider);
@@ -724,7 +746,7 @@ export default class Emotes extends Module {
 			if ( ! emote_set )
 				return;
 
-			const has_old = !! emote_set.emotes?.[emote.id];
+			const has_old = !! emote_set.emotes?.[emote.id] || !! emote_set.disabled_emotes?.[emote.id];
 			const processed = this.addEmoteToSet(set_id, emote);
 
 			this.maybeNotifyChange(
@@ -768,6 +790,13 @@ export default class Emotes extends Module {
 				}
 			}
 
+			for(const [key, def] of Object.entries(this.filters)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					this.removeFilter(key);
+				}
+			}
+
 			if ( removed ) {
 				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
 				// TODO: Debounced retokenize all chat messages.
@@ -775,6 +804,128 @@ export default class Emotes extends Module {
 		})
 
 		this.loadGlobalSets();
+	}
+
+
+	// ========================================================================
+	// Emote Filtering
+	// ========================================================================
+
+	addFilter(filter, should_update = true) {
+		const type = filter.type;
+		if ( has(this.filters, type) ) {
+			this.log.warn(`Tried adding emote filter of type '${type}' when one was already present.`);
+			return;
+		}
+
+		this.filters[type] = filter;
+		if ( filter.priority == null )
+			filter.priotiy = 0;
+
+		this.__filters.push(filter);
+		this.__filters.sort((a, b) => {
+			if ( a.priority > b.priority ) return -1;
+			if ( a.priority < b.priority ) return 1;
+			return a.type < b.type;
+		});
+
+		if ( should_update )
+			this.updateFiltered();
+	}
+
+	removeFilter(filter, should_update = true) {
+		let type;
+		if ( typeof filter === 'string' ) type = filter;
+		else type = filter.type;
+
+		filter = this.filters[type];
+		if ( ! filter )
+			return null;
+
+		delete this.filters[type];
+
+		const idx = this.__filters.indexOf(filter);
+		if ( idx !== -1 ) {
+			this.__filters.splice(idx, 1);
+			if ( should_update )
+				this.updateFiltered();
+		}
+
+		return filter;
+	}
+
+	shouldFilterEmote(emote, set, set_id) {
+		for(const filter of this.__filters)
+			if ( filter.test(emote, set, set_id) )
+				return true;
+
+		return false;
+	}
+
+	updateFiltered() {
+		// Iterate over every emote set, updating filtered emotes.
+		for(const set of Object.values(this.emote_sets)) {
+
+			const emotes = {},
+				filtered = {};
+
+			let count = 0,
+				fcount = 0,
+				changed = false;
+
+			for(const em of Object.values(set.emotes)) {
+				if ( ! this.shouldFilterEmote(em, set, set.id) ) {
+					emotes[em.id] = em;
+					count++;
+
+				} else {
+					filtered[em.id] = em;
+					fcount++;
+					changed = true;
+				}
+			}
+
+			for(const em of Object.values(set.disabled_emotes)) {
+				if ( this.shouldFilterEmote(em, set, set.id)) {
+					filtered[em.id] = em;
+					fcount++;
+
+				} else {
+					emotes[em.id] = em;
+					count++;
+					changed = true;
+				}
+			}
+
+			if ( ! changed )
+				continue;
+
+			// Save the changes.
+			this.log.info(`Filtered emote set #${set.id}: ${set.title} (total: ${count+fcount}, old: ${set.disabled_count}, new: ${fcount})`);
+
+			set.emotes = emotes;
+			set.count = count;
+			set.disabled_emotes = filtered;
+			set.disabled_count = fcount;
+
+			// Update the CSS for the set.
+			const css = [];
+			for(const em of Object.values(emotes)) {
+				const emote_css = this.generateEmoteCSS(em);
+				if ( emote_css?.length )
+					css.push(emote_css);
+			}
+
+			if ( this.style && (css.length || set.css) )
+				this.style.set(`es--${set.id}`, css.join('') + (set.css || ''));
+			else if ( css.length )
+				set.pending_css = css.join('');
+
+			// And emit an event because this emote set changed.
+			this.emit(':loaded', set.id, set);
+		}
+
+		// TODO: Summary, maybe? Or update chat? Who knows?
 	}
 
 
@@ -1247,7 +1398,7 @@ export default class Emotes extends Module {
 
 			} else if ( provider === 'ffz' ) {
 				const emote_set = this.emote_sets[ds.set],
-					emote = emote_set && emote_set.emotes[ds.id];
+					emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
 
 				if ( ! emote )
 					return;
@@ -1283,7 +1434,7 @@ export default class Emotes extends Module {
 
 			} else if ( provider === 'ffz' ) {
 				const emote_set = this.emote_sets[ds.set],
-					emote = emote_set && emote_set.emotes[ds.id];
+					emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
 
 				if ( ! emote )
 					return;
@@ -1964,19 +2115,68 @@ export default class Emotes extends Module {
 		if ( ! processed )
 			throw new Error("Invalid emote data object.");
 
+		const is_disabled = this.shouldFilterEmote(processed, set, set_id);
+
+		// Possible logic paths:
+		// 1. No old emote. New emote accepted.
+		// 2. No old emote. New emote disabled.
+		// 3. Old emote. New emote accepted.
+		// 4. Old emote. New emote disabled.
+		// 5. Old emote disabled. New emote accepted.
+		// 6. Old emote disabled. New emote disabled.
+
+		// Are we removing a disabled emote?
+		let removed = set.disabled_emotes[processed.id];
+		if ( removed ) {
+			delete set.disabled_emotes[processed.id];
+			set.disabled_count--;
+		}
+
 		// Are we removing an existing emote?
 		const old_emote = set.emotes[processed.id],
 			old_css = old_emote && this.generateEmoteCSS(old_emote);
 
 		// Store the emote.
-		set.emotes[processed.id] = processed;
-		if ( ! old_emote )
-			set.count++;
+		if ( is_disabled ) {
+			set.disabled_emotes[processed.id] = processed;
+			set.disabled_count++;
+
+			// If there was an old emote, we need to decrement
+			// the use count and remove it from the emote list.
+			if ( old_emote ) {
+				const new_emotes = {};
+				let count = 0;
+
+				for(const em of Object.values(set.emotes)) {
+					if ( em.id == processed.id )
+						continue;
+
+					new_emotes[em.id] = em;
+					count++;
+				}
+
+				set.emotes = new_emotes;
+				set.count = count;
+
+			} else {
+				// If there was no old emote, then we can stop now.
+				return processed;
+			}
+
+		} else {
+			// Not disabled. This is a live emote.
+			set.emotes[processed.id] = processed;
+
+			// If there was no old emote, update the set count.
+			if ( ! old_emote )
+				set.count++;
+		}
 
 		// Now we need to update the CSS. If we had old emote CSS, then we
 		// will need to totally rebuild the CSS.
 		const style_key = `es--${set_id}`;
 
+		// Rebuild the full CSS if we have an old emote.
 		if ( old_css && old_css.length ) {
 			const css = [];
 			for(const em of Object.values(set.emotes)) {
@@ -1990,7 +2190,9 @@ export default class Emotes extends Module {
 			else if ( css.length )
 				set.pending_css = css.join('');
 
-		} else {
+		} else if ( ! is_disabled ) {
+			// If there wasn't an old emote, only add our CSS if the emote
+			// isn't disabled.
 			const emote_css = this.generateEmoteCSS(processed);
 			if ( emote_css && emote_css.length ) {
 				if ( this.style )
@@ -2015,6 +2217,15 @@ export default class Emotes extends Module {
 
 		if ( emote_id && emote_id.id )
 			emote_id = emote_id.id;
+
+		// If the emote was present but disabled, just return it
+		// without having to do most of our logic.
+		const removed = set.disabled_emotes?.[emote_id];
+		if ( removed ) {
+			set.disabled_count--;
+			delete set.disabled_emotes[emote_id];
+			return removed;
+		}
 
 		const emote = set.emotes[emote_id];
 		if ( ! emote )
@@ -2074,9 +2285,11 @@ export default class Emotes extends Module {
 
 		this.emote_sets[set_id] = data;
 
-		let count = 0;
+		let count = 0,
+			fcount = 0;
 		const ems = data.emotes || data.emoticons,
 			new_ems = data.emotes = {},
+			filtered = data.disabled_emotes = {},
 			css = [];
 
 		data.id = set_id;
@@ -2088,6 +2301,12 @@ export default class Emotes extends Module {
 			let processed = this.processEmote(emote, set_id);
 			if ( ! processed ) {
 				bad_emotes.push(emote);
+				continue;
+			}
+
+			if ( this.shouldFilterEmote(processed, data, set_id) ) {
+				filtered[processed.id] = processed;
+				fcount++;
 				continue;
 			}
 
@@ -2103,6 +2322,7 @@ export default class Emotes extends Module {
 			this.log.warn(`Bad Emote Data for Set #${set_id}`, bad_emotes);
 
 		data.count = count;
+		data.disabled_count = fcount;
 
 		if ( this.style && (css.length || data.css) )
 			this.style.set(`es--${set_id}`, css.join('') + (data.css || ''));
@@ -2110,7 +2330,7 @@ export default class Emotes extends Module {
 			data.pending_css = css.join('');
 
 		if ( ! suppress_log )
-			this.log.info(`Loaded emote set #${set_id}: ${data.title} (${count} emotes)`);
+			this.log.info(`Loaded emote set #${set_id}: ${data.title} (${count} emotes, ${fcount} filtered)`);
 
 		this.emit(':loaded', set_id, data);
 

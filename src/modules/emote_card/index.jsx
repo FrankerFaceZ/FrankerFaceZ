@@ -396,7 +396,7 @@ export default class EmoteCard extends Module {
 
 		// Try to get the emote set.
 		const emote_set = this.emotes.emote_sets[emote.set],
-			data = emote_set?.emotes?.[emote.id];
+			data = emote_set ? emote_set.emotes?.[emote.id] || emote_set.disabled_emotes?.[emote.id] : null;
 
 		if ( ! data )
 			throw new Error('Unable to load emote data');

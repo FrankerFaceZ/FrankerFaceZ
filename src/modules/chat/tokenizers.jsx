@@ -1509,7 +1509,7 @@ export const AddonEmotes = {
 					</span>);
 
 				const emote_set = this.emotes.emote_sets[set_id],
-					emote = emote_set && emote_set.emotes[emote_id];
+					emote = emote_set && (emote_set.emotes[emote_id] || emote_set.disabled_emotes?.[emote_id]);
 
 				if ( emote )
 					return (<span class="tw-mg-05">
@@ -1574,7 +1574,7 @@ export const AddonEmotes = {
 
 		} else if ( provider === 'ffz' ) {
 			const emote_set = this.emotes.emote_sets[ds.set],
-				emote = emote_set && emote_set.emotes[ds.id];
+				emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
 
 			if ( emote_set ) {
 				source = emote_set.source_line || (`${emote_set.source || 'FFZ'} ${emote_set.title || 'Global'}`);
