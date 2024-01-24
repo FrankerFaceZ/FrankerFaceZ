@@ -56,7 +56,7 @@ export enum State {
 };
 
 export type ModuleEvents = {
-	':registered': [],
+	':registered': [module: GenericModule],
 	':loaded': [module: GenericModule],
 	':unloaded': [module: GenericModule],
 	':enabled': [module: GenericModule],
@@ -197,7 +197,7 @@ export class Module<
 			State.Disabled : State.Enabled;
 
 		this._time('instance');
-		(this as any).emit(':registered');
+		(this as any).emit(':registered', this);
 	}
 
 

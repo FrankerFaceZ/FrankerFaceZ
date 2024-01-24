@@ -1,13 +1,14 @@
 'use strict';
 
-import Module from 'utilities/module';
+import Module, { GenericModule } from 'utilities/module';
 
 let last_site = 0;
 let last_call = 0;
 
 export default class BaseSite extends Module {
-	constructor(...args) {
-		super(...args);
+
+	constructor(name, parent) {
+		super(name, parent);
 		this._id = `_ffz$${last_site++}`;
 
 		//this.inject('settings');
@@ -32,7 +33,7 @@ export default class BaseSite extends Module {
 		if ( react?.Component && react.createElement )
 			return this._react = react;
 
-		react = this.resolve('web_munch')?.getModule?.('react');
+		react = this.resolve('site.web_munch')?.getModule?.('react');
 		if ( react?.Component && react.createElement )
 			return this._react = react;
 	}
@@ -42,7 +43,12 @@ export default class BaseSite extends Module {
 		if ( react )
 			return Promise.resolve(react);
 
-		return this.resolve('web_munch').findModule('react');
+		const munch = this.resolve('site.web_munch');
+		if ( munch )
+			return munch.findModule('react');
+
+		return this.waitFor('site.web_munch:registered')
+			.then(() => this.findReact());
 	}
 
 	awaitElement(selector, parent, timeout = 60000) {

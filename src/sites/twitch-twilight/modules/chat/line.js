@@ -111,7 +111,7 @@ export default class ChatLine extends Module {
 						message: text,
 						id: msg.id,
 						user: msg.user,
-						room: msg.room,
+						roomLogin: msg.roomLogin,
 						roomID: msg.roomID
 					});
 

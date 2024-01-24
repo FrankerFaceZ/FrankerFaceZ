@@ -869,7 +869,10 @@ export default class Emotes extends Module {
 					});
 
 				if ( msg )
-					chat.addNotice('*', `[FFZ] ${msg}`);
+					chat.addNotice('*', {
+						icon: 'ffz-i-zreknarf',
+						message: msg
+					}); // `[FFZ] ${msg}`);
 			}
 		}
 	}
