@@ -166,6 +166,9 @@ export type SettingUi_Basic = {
 	description?: string;
 	desc_i18n_key?: string;
 
+	// Whether to show up in Simple view
+	simple?: boolean;
+
 	/**
 	 * Optional. If present, this method will be used to retrieve an array of
 	 * additional search terms that can be used to search for this setting.
