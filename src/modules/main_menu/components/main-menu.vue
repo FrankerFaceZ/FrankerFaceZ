@@ -147,8 +147,6 @@ export default {
 			let query = this.query.toLowerCase();
 
 			let flags = new Set;
-			if ( this.context.simple_view )
-				flags.add('simple_view');
 			query = query.replace(/(?<=^|\s)@(\S+)(?:\s+|$)/g, (match, flag, index) => {
 				if ( VALID_FLAGS.includes(flag) ) {
 					flags.add(flag);
