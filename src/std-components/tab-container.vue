@@ -214,6 +214,16 @@ export default {
 				return true;
 
 			if ( this.filter.flags ) {
+				if ( this.filter.flags.has('simple_view') ) {
+					for(const key of ['tabs', 'contents', 'items'])
+						if ( item[key] )
+							for(const thing of item[key])
+								if ( this.shouldShow(thing) )
+									return true;
+					if ( ! item.setting || ! item.simple )
+						return false;
+				}
+
 				if ( this.filter.flags.has('modified') ) {
 					// We need to tree walk for this one.
 					if ( ! is_walking ) {
