@@ -625,6 +625,8 @@ export default class MainMenu extends Module {
 	_addDefinitionToTree(key, def, simple) {
 		if ( ! def.ui || ! this._settings_tree )
 			return;
+		if ( simple && ! def.ui.simple )
+			return;
 
 		if ( simple && def.ui.simple_path )
 			def.ui.path_tokens = parse_path(def.ui.simple_path);

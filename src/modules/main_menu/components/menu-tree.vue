@@ -115,19 +115,6 @@ export default {
 			if ( item.no_filter )
 				return true;
 
-			if ( this.context.simple_view ) {
-				// Don't hide any add-on settings in simple view
-				if ( item.path && item.path.startsWith('Add-Ons') )
-					return true;
-				for(const key of ['tabs', 'contents', 'items'])
-					if ( item[key] )
-						for(const thing of item[key])
-							if ( this.shouldShow(thing) )
-								return true;
-				if ( ! item.setting || ! item.simple )
-					return false;
-			}
-
 			if ( ! this.filter )
 				return true;
 
