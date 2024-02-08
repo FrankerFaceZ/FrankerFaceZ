@@ -65,7 +65,8 @@ export default class Layout extends Module {
 				path: 'Appearance > Layout >> Channel',
 				title: 'Enable Portrait Mode',
 				description: 'In Portrait Mode, chat will be displayed beneath the player when the window is taller than it is wide.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 
@@ -109,7 +110,8 @@ export default class Layout extends Module {
 				path: 'Appearance > Layout >> Channel',
 				title: 'Use compact chat in Portrait Mode.',
 				description: 'When enabled, this minimizes the chat header and places the chat input box in line with the chat buttons in order to present a more compact chat able to display more lines with limited vertical space.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			},
 			//changed: val => this.css_tweaks.toggle('portrait-chat', val)
 		})

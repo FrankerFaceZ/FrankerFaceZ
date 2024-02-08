@@ -78,7 +78,8 @@ export default class Input extends Module {
 			ui: {
 				path: 'Chat > Hype Chat >> Input',
 				title: 'Allow the Hype Chat button to appear in the chat input element.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 
@@ -97,7 +98,8 @@ export default class Input extends Module {
 			ui: {
 				path: 'Chat > Input >> Recent Messages',
 				title: 'Allow pressing up and down to recall previously sent chat messages.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 

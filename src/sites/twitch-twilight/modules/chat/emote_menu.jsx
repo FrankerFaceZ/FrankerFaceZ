@@ -303,6 +303,7 @@ export default class EmoteMenu extends Module {
 				path: 'Chat > Emote Menu >> General',
 				title: 'Default Tab',
 				component: 'setting-select-box',
+				simple: true,
 				data: [
 					{value: 'fav', title: 'Favorites'},
 					{value: 'channel', title: 'Channel'},
@@ -337,7 +338,8 @@ export default class EmoteMenu extends Module {
 			ui: {
 				path: 'Chat > Emote Menu >> General',
 				title: 'Display emoji in the emote menu.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 
@@ -347,7 +349,8 @@ export default class EmoteMenu extends Module {
 			ui: {
 				path: 'Chat > Emote Menu >> General',
 				title: 'Display all emotes on one tab.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 

@@ -60,7 +60,8 @@ export default class Channel extends Module {
 			ui: {
 				path: 'Channel > Behavior >> General',
 				title: 'Automatically skip channel trailers.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			},
 
 			changed: val => {
@@ -74,7 +75,8 @@ export default class Channel extends Module {
 			ui: {
 				path: 'Channel > Behavior >> General',
 				title: 'Automatically open chat when opening an offline channel page.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 

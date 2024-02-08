@@ -205,7 +205,8 @@ export default class Directory extends Module {
 			ui: {
 				path: 'Directory > Following >> Categories',
 				title: 'Do not show `Recommended Live Channels` in the Following Directory.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			},
 
 			changed: () => this.DirectoryShelf.forceUpdate()

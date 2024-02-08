@@ -979,7 +979,8 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Highlight messages that mention you.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 
@@ -1045,6 +1046,7 @@ export default class Chat extends Module {
 				path: 'Chat > Tooltips >> Links',
 				title: 'Display rich tooltips for links.',
 				component: 'setting-check-box',
+				simple: true,
 				extra: {
 					component: 'chat-tooltip-example'
 				}
@@ -1092,6 +1094,7 @@ export default class Chat extends Module {
 				component: 'tooltip-tos',
 				item: key,
 				override_setting: 'agreed-tos',
+				simple: true,
 				getChat: () => this,
 				data: deep_copy(info),
 				onUIChange: () => this.emit(':update-link-resolver')
@@ -1166,7 +1169,7 @@ export default class Chat extends Module {
 				title: 'Cheer Stacking',
 				description: 'Collect all the cheers in a message into a single cheer at the start of the message.',
 				component: 'setting-select-box',
-
+				simple: true,
 				data: [
 					{value: 0, title: 'Disabled'},
 					{value: 1, title: 'Grouped by Type'},
@@ -1196,6 +1199,7 @@ export default class Chat extends Module {
 
 				description: 'This controls whether or not animated emotes are allowed to play in chat. When this is `Disabled`, emotes will appear as static images. Setting this to `Enable on Hover` may cause performance issues.',
 				component: 'setting-select-box',
+				simple: true,
 				data: [
 					{value: 0, title: 'Disabled'},
 					{value: 1, title: 'Enabled'},
@@ -1226,7 +1230,8 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Bits and Cheering >> Appearance',
 				title: 'Display animated cheers.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 

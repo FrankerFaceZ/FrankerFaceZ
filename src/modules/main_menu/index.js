@@ -63,6 +63,7 @@ export default class MainMenu extends Module {
 		this.settings.addUI('backup', {
 			path: 'Data Management > Backup and Restore @{"profile_warning": false}',
 			component: 'backup-restore',
+			simple: true,
 			getExtraTerms: () => ['restore'],
 			getFFZ: () => this.resolve('core')
 		});
@@ -220,7 +221,8 @@ export default class MainMenu extends Module {
 			ui: {
 				path: 'Appearance > Control Center >> Simple View',
 				title: 'Show simple view.',
-				component: 'setting-check-box'
+				component: 'setting-check-box',
+				simple: true
 			}
 		});
 

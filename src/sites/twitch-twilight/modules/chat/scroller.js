@@ -41,6 +41,7 @@ export default class Scroller extends Module {
 				title: 'Pause Chat Scrolling',
 				description: 'Automatically stop chat from scrolling when moving the mouse over it or holding a key.\n\n**Note:** Scrolling up in chat will always prevent automatic scrolling, regardless of this setting.',
 				component: 'setting-select-box',
+				simple: true,
 				data: [
 					{value: 0, title: 'Use Twitch Setting'},
 					{value: 1, title: 'On Hover'},
@@ -90,6 +91,7 @@ export default class Scroller extends Module {
 				title: 'Smooth Scrolling',
 				description: '**Note:** This may not behave well depending on your browser. Disable this if you encounter issues.\n\nSmoothly slide new chat messages into view. Speed will increase as necessary to keep up with chat.',
 				component: 'setting-select-box',
+				simple: true,
 				data: [
 					{value: 0, title: 'Disabled'},
 					{value: 1, title: 'Slow'},
