@@ -759,7 +759,7 @@ export default class MainMenu extends Module {
 
 						tok.search_terms = terms.map(format_term).join('\n');
 
-						if ( settings_seen ) {
+						if ( ! this.settings.get('ffz.simple-view') && settings_seen ) {
 							if ( ! settings_seen.includes(setting_key) && ! tok.force_seen ) {
 								unseen.add(setting_key);
 								let i = tok;
