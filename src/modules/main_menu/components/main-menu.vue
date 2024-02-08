@@ -11,7 +11,7 @@
 				FrankerFaceZ
 			</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
-				<div class="tw-search-input">
+				<div class="tw-search-input" v-if="!this.context.simple_view">
 					<label for="ffz-main-menu.search" class="tw-hide-accessible">{{ t('main-menu.search', 'Search Settings') }}</label>
 					<div class="tw-relative">
 						<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height ffz-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
@@ -144,6 +144,9 @@ export default {
 
 	computed: {
 		filter() {
+			if ( this.context.simple_view )
+				return null;
+
 			let query = this.query.toLowerCase();
 
 			let flags = new Set;
