@@ -31,12 +31,12 @@
 					</div>
 				</div>
 			</div>
-			<button v-if="!maximized && !exclusive" class="tw-button-icon tw-mg-x-05" @click="faded = ! faded">
+			<button v-if="!maximized && !exclusive && !this.context.simple_view" class="tw-button-icon tw-mg-x-05" @click="faded = ! faded">
 				<span class="tw-button-icon__icon">
 					<figure :class="faded ? 'ffz-i-eye-off' : 'ffz-i-eye'" />
 				</span>
 			</button>
-			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="popout">
+			<button v-if="!exclusive && !this.context.simple_view" class="tw-button-icon tw-mg-x-05 tw-relative ffz-il-tooltip__container" @click="popout">
 				<span class="tw-button-icon__icon">
 					<figure class="ffz-i-link-ext" />
 				</span>
@@ -44,7 +44,7 @@
 					{{ t('main-menu.popout', 'Open Settings in a New Window') }}
 				</div>
 			</button>
-			<button v-if="!exclusive" class="tw-button-icon tw-mg-x-05" @click="resize">
+			<button v-if="!exclusive && !this.context.simple_view" class="tw-button-icon tw-mg-x-05" @click="resize">
 				<span class="tw-button-icon__icon">
 					<figure :class="{'ffz-i-window-maximize': !maximized, 'ffz-i-window-restore': maximized}" />
 				</span>
