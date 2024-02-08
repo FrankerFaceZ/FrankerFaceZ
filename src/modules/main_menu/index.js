@@ -229,6 +229,10 @@ export default class MainMenu extends Module {
 				title: 'Show simple view.',
 				component: 'setting-check-box',
 				simple: true
+			},
+			changed: val => {
+				this.rebuildSettingsTree();
+				this.scheduleUpdate();
 			}
 		});
 
@@ -242,7 +246,7 @@ export default class MainMenu extends Module {
 		});
 
 		this.on('settings:added-definition', (key, definition) => {
-			this._addDefinitionToTree(key, definition);
+			this._addDefinitionToTree(key, definition, false);
 			this.scheduleUpdate();
 		});
 
@@ -556,12 +560,13 @@ export default class MainMenu extends Module {
 	rebuildSettingsTree() {
 		this._settings_tree = {};
 		this._settings_count = 0;
+		const simple = this.settings.get('ffz.simple-view');
 
 		for(const [key, def] of this.settings.definitions)
-			this._addDefinitionToTree(key, def);
+			this._addDefinitionToTree(key, def, simple);
 
 		for(const [key, def] of this.settings.ui_structures)
-			this._addDefinitionToTree(key, def);
+			this._addDefinitionToTree(key, def, simple);
 	}
 
 
@@ -617,16 +622,16 @@ export default class MainMenu extends Module {
 		}
 	}
 
-	_addDefinitionToTree(key, def) {
+	_addDefinitionToTree(key, def, simple) {
 		if ( ! def.ui || ! this._settings_tree )
 			return;
 
-		if ( ! def.ui.path_tokens ) {
-			if ( def.ui.path )
-				def.ui.path_tokens = parse_path(def.ui.path);
-			else
-				return;
-		}
+		if ( simple && def.ui.simple_path )
+			def.ui.path_tokens = parse_path(def.ui.simple_path);
+		else if ( def.ui.path )
+			def.ui.path_tokens = parse_path(def.ui.path);
+		else
+			return;
 
 		if ( ! def.ui || ! def.ui.path_tokens || ! this._settings_tree )
 			return;

@@ -166,8 +166,10 @@ export type SettingUi_Basic = {
 	description?: string;
 	desc_i18n_key?: string;
 
-	// Whether to show up in Simple view
+	// Whether to show up in simple view
 	simple?: boolean;
+	// Optional alternate setting placement for simple view
+	simple_path?: string;
 
 	/**
 	 * Optional. If present, this method will be used to retrieve an array of
