@@ -85,6 +85,7 @@ export default class MainMenu extends Module {
 		this.settings.addUI('home', {
 			path: 'Home @{"sort": -1000, "profile_warning": false}',
 			component: 'home-page',
+			simple: true,
 			requestPage: page => this.requestPage(page),
 			getUnseen: () => {
 				if ( ! this.unseen?.size )
@@ -162,6 +163,7 @@ export default class MainMenu extends Module {
 		this.settings.addUI('faq', {
 			path: 'Home > FAQ @{"profile_warning": false}',
 			component: 'md-page',
+			simple: true,
 			key: 'faq'
 		});
 
@@ -182,12 +184,14 @@ export default class MainMenu extends Module {
 		this.settings.addUI('feedback', {
 			path: 'Home > Feedback @{"profile_warning": false}',
 			component: 'md-page',
+			simple: true,
 			key: 'feedback'
 		});
 
 		this.settings.addUI('feedback.log', {
 			path: 'Home > Feedback >> Log @{"sort": 1000}',
 			component: 'async-text',
+			simple: true,
 			watch: [
 				'reports.error.include-user',
 				'reports.error.include-settings'
@@ -198,6 +202,7 @@ export default class MainMenu extends Module {
 		this.settings.addUI('changelog', {
 			path: 'Home > Changelog @{"profile_warning": false}',
 			component: 'changelog',
+			simple: true,
 			getFFZ: () => this
 		});
 
@@ -213,6 +218,7 @@ export default class MainMenu extends Module {
 			path: 'Home > Legal @{"sort": 1000}',
 			component: 'md-page',
 			key: 'legal',
+			simple: true,
 			force_seen: true
 		});
 
