@@ -191,6 +191,9 @@ export default {
 				return true;
 
 			if ( this.context.simple_view ) {
+				// Don't hide any add-on settings in simple view
+				if ( item.path && item.path.startsWith('Add-Ons') )
+					return true;
 				for(const key of ['tabs', 'contents', 'items'])
 					if ( item[key] )
 						for(const thing of item[key])
