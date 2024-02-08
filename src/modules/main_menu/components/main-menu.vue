@@ -57,7 +57,7 @@
 		</header>
 		<section class="tw-border-t tw-full-height tw-full-width tw-flex tw-flex-nowrap tw-overflow-hidden">
 			<nav class="ffz-vertical-nav tw-c-background-alt-2 tw-border-r tw-full-height tw-flex tw-flex-column tw-flex-shrink-0 tw-flex-nowrap">
-				<header class="tw-border-b tw-pd-1">
+				<header class="tw-border-b tw-pd-1" v-if="!this.context.simple_view">
 					<profile-selector
 						:context="context"
 						@navigate="navigate"
