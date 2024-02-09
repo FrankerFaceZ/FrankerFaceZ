@@ -394,7 +394,7 @@ export default class CSSTweaks extends Module {
 				title: 'Display Whispers',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Whispers'
 			},
 			changed: val => {
 				this.toggleHide('whispers', !val);
@@ -409,7 +409,7 @@ export default class CSSTweaks extends Module {
 				title: 'Allow Hype Chat messages to appear pinned at the top of chat.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Banners'
 			},
 			changed: val => this.toggleHide('pinned-hype-chat', ! val)
 		});
@@ -423,7 +423,7 @@ export default class CSSTweaks extends Module {
 				description: 'Display UI associated with bits. Note: This will not hide cheering in chat messages.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Buttons'
 			},
 			changed: val => this.toggle('hide-bits', !val)
 		});

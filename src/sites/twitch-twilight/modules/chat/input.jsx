@@ -80,7 +80,7 @@ export default class Input extends Module {
 				title: 'Allow the Hype Chat button to appear in the chat input element.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Buttons'
 			}
 		});
 

@@ -423,7 +423,7 @@ export default class ChatHook extends Module {
 				component: 'setting-check-box',
 				description: 'Community Highlights are polls, community gift subs, etc. that float over the top of chat temporarily with no way to close them.',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Banners'
 			}
 		});
 
@@ -434,7 +434,7 @@ export default class ChatHook extends Module {
 				title: 'Display a banner at the top of chat when a mass gift sub happens.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Banners'
 			}
 		});
 
@@ -463,7 +463,7 @@ export default class ChatHook extends Module {
 				title: 'Allow the Hype Train to be displayed in chat.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Banners'
 			}
 		});
 
@@ -493,7 +493,7 @@ export default class ChatHook extends Module {
 				title: 'Allow Polls to be displayed in chat.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Interactive'
 			}
 		});
 
@@ -504,7 +504,7 @@ export default class ChatHook extends Module {
 				title: 'Allow Predictions to be displayed in chat.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Interactive'
 			}
 		});
 
@@ -515,7 +515,7 @@ export default class ChatHook extends Module {
 				title: 'Display the Community Gift Chest banner.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Banners'
 			}
 		});
 
@@ -551,7 +551,7 @@ export default class ChatHook extends Module {
 				title: 'Display Channel Points button beneath chat.',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Buttons'
 			}
 		});
 
@@ -654,7 +654,7 @@ export default class ChatHook extends Module {
 				description: 'The leaderboard shows the top cheerers and sub gifters in a channel.\n\nBy default due to a previous implementation, this inherits its value from [Chat > Bits and Cheering > Display Bits](~chat.bits_and_cheering).',
 				component: 'setting-check-box',
 				simple: true,
-				simple_path: 'Chat > Hide Features'
+				simple_path: 'Chat > Hide Features >> Banners'
 			}
 		});
 
