@@ -91,7 +91,8 @@ export default class Player extends PlayerBase {
 				path: 'Player > General >> Playback',
 				title: 'Auto-play featured broadcasters on the front page.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Playback',
 			},
 		});
 
@@ -125,7 +126,8 @@ export default class Player extends PlayerBase {
 				path: 'Player > General >> Theatre Mode',
 				title: 'Show metadata when mousing over the player.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Theatre Mode',
 			},
 
 			changed: val => this.css_tweaks.toggle('theatre-metadata', val)
@@ -137,7 +139,8 @@ export default class Player extends PlayerBase {
 				path: 'Player > General >> Theatre Mode',
 				title: 'Automatically open Theatre Mode when visiting a channel.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Theatre Mode',
 			}
 		});
 
@@ -147,7 +150,8 @@ export default class Player extends PlayerBase {
 				path: 'Player > General >> Fullscreen',
 				title: 'Automatically expand chat when entering fullscreen mode.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Fullscreen',
 			}
 		});
 

@@ -64,6 +64,7 @@ export default class MainMenu extends Module {
 			path: 'Data Management > Backup and Restore @{"profile_warning": false}',
 			component: 'backup-restore',
 			simple: true,
+			simple_path: 'FFZ > Backup and Restore @{"profile_warning": false}',
 			getExtraTerms: () => ['restore'],
 			getFFZ: () => this.resolve('core')
 		});
@@ -164,6 +165,7 @@ export default class MainMenu extends Module {
 			path: 'Home > FAQ @{"profile_warning": false}',
 			component: 'md-page',
 			simple: true,
+			simple_path: 'FFZ > FAQ @{"profile_warning": false}',
 			key: 'faq'
 		});
 
@@ -185,6 +187,7 @@ export default class MainMenu extends Module {
 			path: 'Home > Feedback @{"profile_warning": false}',
 			component: 'md-page',
 			simple: true,
+			simple_path: 'FFZ > Feedback @{"profile_warning": false}',
 			key: 'feedback'
 		});
 
@@ -192,6 +195,7 @@ export default class MainMenu extends Module {
 			path: 'Home > Feedback >> Log @{"sort": 1000}',
 			component: 'async-text',
 			simple: true,
+			simple_path: 'FFZ > Feedback >> Log @{"sort": 1000}',
 			watch: [
 				'reports.error.include-user',
 				'reports.error.include-settings'
@@ -203,6 +207,7 @@ export default class MainMenu extends Module {
 			path: 'Home > Changelog @{"profile_warning": false}',
 			component: 'changelog',
 			simple: true,
+			simple_path: 'FFZ > Changelog @{"profile_warning": false}',
 			getFFZ: () => this
 		});
 
@@ -211,6 +216,7 @@ export default class MainMenu extends Module {
 			component: 'changelog',
 			force_seen: true,
 			addons: true,
+			simple: true,
 			getFFZ: () => this
 		});
 
@@ -219,6 +225,7 @@ export default class MainMenu extends Module {
 			component: 'md-page',
 			key: 'legal',
 			simple: true,
+			simple_path: 'FFZ > Legal @{"sort": 1000}',
 			force_seen: true
 		});
 
@@ -228,11 +235,12 @@ export default class MainMenu extends Module {
 				path: 'Appearance > Control Center >> Simple View',
 				title: 'Show simple view.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Twitch Appearance >> Control Center'
 			},
 			changed: val => {
 				this.rebuildSettingsTree();
-				this.scheduleUpdate();
+				this.updateLiveMenu();
 			}
 		});
 
@@ -623,23 +631,32 @@ export default class MainMenu extends Module {
 	}
 
 	_addDefinitionToTree(key, def, simple) {
-		if ( ! def.ui || ! this._settings_tree )
+		if ( ! def.ui || ! def.ui.path || ! this._settings_tree )
 			return;
+
+		// Parse path tokens if they don't exist yet
+		if ( ! def.ui.path_tokens )
+			def.ui.path_tokens = parse_path(def.ui.path);
+
+		if ( ! def.ui.path_tokens )
+			return;
+
+		if ( def.ui.simple && ! def.ui.simple_path_tokens )
+			def.ui.simple_path_tokens = def.ui.simple_path
+				? parse_path(def.ui.simple_path)
+				: def.ui.path_tokens;
+
+		// Force add-on settings to appear in simple view
+		if ( ! def.ui.simple && def.ui.path_tokens[0].key === 'add_ons' ) {
+			def.ui.simple = true;
+			def.ui.simple_path_tokens = def.ui.path_tokens;
+		}
+
 		if ( simple && ! def.ui.simple )
 			return;
 
-		if ( simple && def.ui.simple_path )
-			def.ui.path_tokens = parse_path(def.ui.simple_path);
-		else if ( def.ui.path )
-			def.ui.path_tokens = parse_path(def.ui.path);
-		else
-			return;
-
-		if ( ! def.ui || ! def.ui.path_tokens || ! this._settings_tree )
-			return;
-
 		const tree = this._settings_tree,
-			tokens = def.ui.path_tokens,
+			tokens = simple ? def.ui.simple_path_tokens : def.ui.path_tokens,
 			len = tokens.length;
 
 		let prefix = null,
@@ -697,6 +714,16 @@ export default class MainMenu extends Module {
 
 		if ( new_seen )
 			this.new_seen = true;
+
+		// Force sorting root categories in this specific order
+		// if simple view is enabled
+		if ( this.settings.get('ffz.simple-view') ) {
+			tree['twitch_appearance'].sort = 2;
+			tree['channel'].sort = 3;
+			tree['player'].sort = 4;
+			tree['chat'].sort = 5;
+			tree['ffz'].sort = 6;
+		}
 
 		for(const key in tree) {
 			if ( ! has(tree, key) )

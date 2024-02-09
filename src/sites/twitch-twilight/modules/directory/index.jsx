@@ -206,7 +206,8 @@ export default class Directory extends Module {
 				path: 'Directory > Following >> Categories',
 				title: 'Do not show `Recommended Live Channels` in the Following Directory.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Twitch Appearance >> Directory'
 			},
 
 			changed: () => this.DirectoryShelf.forceUpdate()

@@ -980,7 +980,8 @@ export default class Chat extends Module {
 				path: 'Chat > Filtering > General >> Appearance',
 				title: 'Highlight messages that mention you.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Appearance >> Highlighting'
 			}
 		});
 
@@ -1047,6 +1048,7 @@ export default class Chat extends Module {
 				title: 'Display rich tooltips for links.',
 				component: 'setting-check-box',
 				simple: true,
+				simple_path: 'Chat > Links >> Tooltips',
 				extra: {
 					component: 'chat-tooltip-example'
 				}
@@ -1095,6 +1097,7 @@ export default class Chat extends Module {
 				item: key,
 				override_setting: 'agreed-tos',
 				simple: true,
+				simple_path: 'Chat > Links >> Tooltips Terms of Service',
 				getChat: () => this,
 				data: deep_copy(info),
 				onUIChange: () => this.emit(':update-link-resolver')
@@ -1170,6 +1173,7 @@ export default class Chat extends Module {
 				description: 'Collect all the cheers in a message into a single cheer at the start of the message.',
 				component: 'setting-select-box',
 				simple: true,
+				simple_path: 'Chat > Appearance >> Bits and Cheering',
 				data: [
 					{value: 0, title: 'Disabled'},
 					{value: 1, title: 'Grouped by Type'},
@@ -1231,7 +1235,8 @@ export default class Chat extends Module {
 				path: 'Chat > Bits and Cheering >> Appearance',
 				title: 'Display animated cheers.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Appearance >> Bits and Cheering'
 			}
 		});
 

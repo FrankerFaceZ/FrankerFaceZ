@@ -196,6 +196,7 @@ export default class CSSTweaks extends Module {
 				title: 'Display Recommended / Popular Channels',
 				component: 'setting-select-box',
 				simple: true,
+				simple_path: 'Twitch Appearance >> Side Navigation',
 				data: [
 					{value: 0, title: 'Never'},
 					{value: 1, title: 'Always'},
@@ -215,6 +216,7 @@ export default class CSSTweaks extends Module {
 				title: 'Display Online Friends',
 				component: 'setting-select-box',
 				simple: true,
+				simple_path: 'Twitch Appearance >> Side Navigation',
 				data: [
 					{value: 0, title: 'Never'},
 					{value: 1, title: 'Always'},
@@ -243,7 +245,8 @@ export default class CSSTweaks extends Module {
 				path: 'Appearance > Layout >> Side Navigation',
 				title: 'Hide Offline Channels',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Twitch Appearance >> Side Navigation',
 			},
 			changed: val => this.toggleHide('side-offline-channels', val)
 		});
@@ -255,6 +258,7 @@ export default class CSSTweaks extends Module {
 				title: 'Display Reruns',
 				component: 'setting-select-box',
 				simple: true,
+				simple_path: 'Twitch Appearance >> Side Navigation',
 				data: [
 					{value: 0, title: 'Do Not Display'},
 					{value: 1, title: 'Normally'},
@@ -354,7 +358,8 @@ export default class CSSTweaks extends Module {
 				path: 'Appearance > Layout >> Top Navigation',
 				title: 'Allow the Twitch Turbo button to appear.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Twitch Appearance >> Top Navigation',
 			}
 		});
 
@@ -364,7 +369,8 @@ export default class CSSTweaks extends Module {
 				path: 'Appearance > Layout >> Top Navigation',
 				title: 'Show Prime Gaming Loot.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Twitch Appearance >> Top Navigation',
 			},
 			changed: val => this.toggleHide('prime-offers', !val)
 		});
@@ -387,7 +393,8 @@ export default class CSSTweaks extends Module {
 				path: 'Chat > Whispers >> General',
 				title: 'Display Whispers',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			},
 			changed: val => {
 				this.toggleHide('whispers', !val);
@@ -401,7 +408,8 @@ export default class CSSTweaks extends Module {
 				path: 'Chat > Hype Chat >> Appearance',
 				title: 'Allow Hype Chat messages to appear pinned at the top of chat.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			},
 			changed: val => this.toggleHide('pinned-hype-chat', ! val)
 		});
@@ -414,7 +422,8 @@ export default class CSSTweaks extends Module {
 				title: 'Display Bits',
 				description: 'Display UI associated with bits. Note: This will not hide cheering in chat messages.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			},
 			changed: val => this.toggle('hide-bits', !val)
 		});

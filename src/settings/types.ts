@@ -114,7 +114,7 @@ export type SettingDefinition<T> = Omit<
 	ui: SettingUiDefinition<T>;
 };
 
-export type OptionalSettingUiDefinitionKeys = 'key' | 'path_tokens' | 'i18n_key';
+export type OptionalSettingUiDefinitionKeys = 'key' | 'path_tokens' | 'simple_path_tokens' | 'i18n_key';
 export type ForbiddenSettingUiDefinitionKeys = never;
 
 export type SettingUiDefinition<T> = PartialPartial<FullSettingUiDefinition<T>, OptionalSettingUiDefinitionKeys>;
@@ -170,6 +170,7 @@ export type SettingUi_Basic = {
 	simple?: boolean;
 	// Optional alternate setting placement for simple view
 	simple_path?: string;
+	simple_path_tokens?: PathNode[];
 
 	/**
 	 * Optional. If present, this method will be used to retrieve an array of

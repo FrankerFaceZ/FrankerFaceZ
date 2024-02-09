@@ -23,7 +23,8 @@ export default class ViewerCards extends Module {
 				path: 'Chat > Viewer Cards >> Appearance',
 				title: 'Highlight messages from users with open viewer cards.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Appearance >> Highlighting'
 			}
 		});
 

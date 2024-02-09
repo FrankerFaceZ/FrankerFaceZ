@@ -422,7 +422,8 @@ export default class ChatHook extends Module {
 				title: 'Hide all Community Highlights from the top of chat.',
 				component: 'setting-check-box',
 				description: 'Community Highlights are polls, community gift subs, etc. that float over the top of chat temporarily with no way to close them.',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -432,7 +433,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Display a banner at the top of chat when a mass gift sub happens.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -460,7 +462,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Allow the Hype Train to be displayed in chat.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -489,7 +492,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Allow Polls to be displayed in chat.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -499,7 +503,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Allow Predictions to be displayed in chat.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -509,7 +514,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Display the Community Gift Chest banner.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -520,6 +526,7 @@ export default class ChatHook extends Module {
 				title: 'Highlight the message in chat when someone redeems Highlight My Message.',
 				component: 'setting-select-box',
 				simple: true,
+				simple_path: 'Chat > Appearance >> Highlighting',
 				data: [
 					{value: 0, title: 'Disabled'},
 					{value: 1, title: 'Twitch Style'},
@@ -533,8 +540,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Channel Points >> General',
 				title: 'Display messages in chat about Channel Points rewards.',
-				component: 'setting-check-box',
-				simple: true
+				component: 'setting-check-box'
 			}
 		});
 
@@ -544,7 +550,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Channel Points >> General',
 				title: 'Display Channel Points button beneath chat.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 
@@ -571,7 +578,8 @@ export default class ChatHook extends Module {
 				title: 'Automatically claim bonus rewards.',
 				component: 'setting-check-box',
 				force_seen: true,
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Behavior >> Channel Points'
 			}
 		});
 
@@ -581,7 +589,8 @@ export default class ChatHook extends Module {
 				path: 'Chat > Drops >> Behavior',
 				title: 'Automatically claim drops.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Behavior >> Drops'
 			}
 		});
 
@@ -644,7 +653,8 @@ export default class ChatHook extends Module {
 				title: 'Display Leaderboard',
 				description: 'The leaderboard shows the top cheerers and sub gifters in a channel.\n\nBy default due to a previous implementation, this inherits its value from [Chat > Bits and Cheering > Display Bits](~chat.bits_and_cheering).',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Hide Features'
 			}
 		});
 

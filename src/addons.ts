@@ -105,6 +105,7 @@ export default class AddonManager extends Module<'addons'> {
 			component: 'addon-list',
 			title: 'Add-Ons',
 			no_filter: true,
+			simple: true,
 
 			getExtraTerms: () => Object.values(this.addons).map(addon => addon.search_terms),
 

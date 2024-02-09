@@ -91,7 +91,8 @@ export default class PlayerBase extends Module {
 				path: 'Player > General >> Embed and Popout',
 				title: 'Show metadata when mousing over the player.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Embed and Popout',
 			}
 		});
 
@@ -113,7 +114,8 @@ export default class PlayerBase extends Module {
 				title: 'Do not display content warnings.',
 				description: 'When this is enabled, FFZ will automatically skip content warnings. This feature is intended for use by adults only.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Content Warnings',
 			},
 
 			changed: () => {
@@ -531,6 +533,7 @@ export default class PlayerBase extends Module {
 				description: '**Note**: This feature does not prevent extensions from loading. Hidden extensions are merely invisible. Hiding extensions with this feature will not improve your security. To prevent extensions from loading entirely, we recommend using the [Disable Twitch Extensions browser extension](https://twitch-tools.rootonline.de/disable_twitch_extensions.php) by CommanderRoot.',
 				component: 'setting-select-box',
 				simple: true,
+				simple_path: 'Player >> Extensions',
 				data: [
 					{value: 2, title: 'Never'},
 					{value: 1, title: 'With Controls'},
@@ -566,7 +569,8 @@ export default class PlayerBase extends Module {
 				path: 'Player > General >> Playback',
 				title: 'Auto-play the next recommended video after a video finishes.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Player >> Playback',
 			}
 		});
 

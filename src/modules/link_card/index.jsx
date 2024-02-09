@@ -32,7 +32,8 @@ export default class LinkCard extends Module {
 				title: 'Enable Link Cards.',
 				description: 'When this is enabled and you click a link in chat or whispers, a popup will open with information about the link. This provides the same data as rich link tooltips, but in a form that allows more interaction.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Links >> Link Cards'
 			}
 		});
 
@@ -43,7 +44,8 @@ export default class LinkCard extends Module {
 				title: 'Bypass Known Shorteners',
 				description: 'When clicking "Open Link" from a Link Card with this enabled, you will bypass known shorteners and tracking services and go directly to the destination URL.',
 				component: 'setting-check-box',
-				simple: true
+				simple: true,
+				simple_path: 'Chat > Links >> Link Cards'
 			}
 		});
 
