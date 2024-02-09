@@ -718,11 +718,11 @@ export default class MainMenu extends Module {
 		// Force sorting root categories in this specific order
 		// if simple view is enabled
 		if ( this.settings.get('ffz.simple-view') ) {
-			tree['twitch_appearance'].sort = 2;
-			tree['channel'].sort = 3;
-			tree['player'].sort = 4;
-			tree['chat'].sort = 5;
-			tree['ffz'].sort = 6;
+			if ( tree['twitch_appearance'] ) tree['twitch_appearance'].sort = 2;
+			if ( tree['channel'] ) tree['channel'].sort = 3;
+			if ( tree['player'] ) tree['player'].sort = 4;
+			if ( tree['chat'] ) tree['chat'].sort = 5;
+			if ( tree['ffz'] ) tree['ffz'].sort = 6;
 		}
 
 		for(const key in tree) {
