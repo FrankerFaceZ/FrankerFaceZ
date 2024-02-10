@@ -90,16 +90,12 @@
 				<footer>
 					<div class="tw-border-t">
 						<toggle-switch
-							groupname="ffzSimpleView"
-							:options="{
-								config: {
-									preSelected: context.simple_view ? 'Simple' : 'Advanced',
-									items: [
-										{ name: t('main-menu.simple', 'Simple'), value: 'Simple' },
-										{ name: t('main-menu.advanced', 'Advanced'), value: 'Advanced' }
-									]
-								}
-							}"
+							group-name="ffzSimpleView"
+							:preselected="context.simple_view ? 'simple' : 'advanced'"
+							:items="[
+								{ name: t('main-menu.simple', 'Simple'), value: 'simple' },
+								{ name: t('main-menu.advanced', 'Advanced'), value: 'advanced' }
+							]"
 							@change="updateSimpleView"
 						/>
 					</div>
@@ -370,7 +366,7 @@ export default {
 
 		updateSimpleView(event) {
 			const key = 'ffz.simple-view';
-			const val = event.value === 'Simple';
+			const val = event.value === 'simple';
 			this.context.currentProfile.set(key, val);
 		}
 	}
