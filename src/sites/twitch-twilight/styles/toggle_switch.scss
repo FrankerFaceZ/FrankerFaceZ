@@ -1,14 +1,10 @@
-$darkNavy: #213140;
-$teal1: #66B3FB;
-$teal2: #4B9DEA;
-$charcoal: #555555;
-$gold: #B6985A;
-
-@mixin hideInput {width: 0; height: 0; position: absolute; left: -9999px;}
-
 .toggle-switch {
 	display: flex;
-	input {@include hideInput;}
+	input {
+		position: absolute;
+		width: 0;
+		height: 0;
+	}
 	input + label {
 		color: var(--color-text-button-primary);
 		flex-basis: 50%;
