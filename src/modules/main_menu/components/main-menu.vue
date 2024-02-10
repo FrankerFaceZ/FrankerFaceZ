@@ -87,23 +87,40 @@
 						/>
 					</simplebar>
 				</div>
-				<footer class="tw-c-text-alt tw-border-t tw-pd-1">
-					<div>
-						{{ t('main-menu.version', 'Version {version}', {version: version.toString()}) }}
+				<footer>
+					<div class="tw-border-t">
+						<toggle-switch
+							groupname="ffzSimpleView"
+							:options="{
+								config: {
+									preSelected: context.simple_view ? 'Simple' : 'Advanced',
+									items: [
+										{ name: t('main-menu.simple', 'Simple'), value: 'Simple' },
+										{ name: t('main-menu.advanced', 'Advanced'), value: 'Advanced' }
+									]
+								}
+							}"
+							@change="updateSimpleView"
+						/>
 					</div>
-					<div class="tw-c-text-alt-2">
-						<a
-							v-if="version.commit"
-							:href="`https://www.github.com/FrankerFaceZ/FrankerFaceZ/commit/${version.commit}`"
-							class="ffz-link ffz-link--inherit"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							{{ version.commit.slice(0,7) }}
-						</a>
-						<span v-else>
-							{{ version.hash }}
-						</span>
+					<div class="tw-c-text-alt tw-border-t tw-pd-1">
+						<div>
+							{{ t('main-menu.version', 'Version {version}', {version: version.toString()}) }}
+						</div>
+						<div class="tw-c-text-alt-2">
+							<a
+								v-if="version.commit"
+								:href="`https://www.github.com/FrankerFaceZ/FrankerFaceZ/commit/${version.commit}`"
+								class="ffz-link ffz-link--inherit"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								{{ version.commit.slice(0,7) }}
+							</a>
+							<span v-else>
+								{{ version.hash }}
+							</span>
+						</div>
 					</div>
 				</footer>
 			</nav>
@@ -349,6 +366,12 @@ export default {
 				if ( el )
 					el.scrollIntoView();
 			});
+		},
+
+		updateSimpleView(event) {
+			const key = 'ffz.simple-view';
+			const val = event.value === 'Simple';
+			this.context.currentProfile.set(key, val);
 		}
 	}
 }

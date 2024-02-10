@@ -230,14 +230,7 @@ export default class MainMenu extends Module {
 		});
 
 		this.settings.add('ffz.simple-view', {
-			default: false,
-			ui: {
-				path: 'Appearance > Control Center >> Simple View',
-				title: 'Show simple view.',
-				component: 'setting-check-box',
-				simple: true,
-				simple_path: 'Twitch Appearance >> Control Center'
-			},
+			default: true,
 			changed: val => {
 				this.rebuildSettingsTree();
 				this.updateLiveMenu();
