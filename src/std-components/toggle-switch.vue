@@ -3,10 +3,11 @@
 		class="toggle-switch"
 	>
 		<template
-			v-for="item in items"
+			v-for="(item, index) in items"
 		>
 			<input
 				:id="item.value"
+				:key="index"
 				:value="item.value"
 				:name="groupName"
 				type="radio"
@@ -14,6 +15,7 @@
 				@click="toggle"
 			>
 			<label
+				:key="index"
 				:for="item.value"
 				type="radio"
 			>
