@@ -14,7 +14,7 @@ declare global {
 	}
 }
 
-export type ReactAccessor = `__reactInternalInstance$${string}`;
+export type ReactAccessor = `__reactInternalInstance$${string}` | `__reactFiber$${string}`;
 
 export type ReactRoot = {
 	_internalRoot?: ReactRoot;
@@ -42,6 +42,7 @@ export type ReactStateNode<
 
 	// Access to the internal node.
 	_reactInternalFiber: ReactNode | null;
+	_reactInternals: ReactNode | null;
 
 	// Stuff
 	props: TProps;

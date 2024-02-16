@@ -65,20 +65,39 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		if ( ! this.root_element )
 			this.root_element = await (this.parent as any).awaitElement(this.selector || 'body #root');
 
-		if ( ! this.root_element || ! this.root_element._reactRootContainer ) {
+		let root = this.root_element?._reactRootContainer;
+		if ( root?._internalRoot?.current )
+			root = root?._internalRoot;
+
+		if ( root?.current ) {
+			this.react_root = root;
+			this.react = root?.current?.child;
+			return;
+		}
+
+		if ( this.root_element && ! root ) {
+			let key = Fine.findAccessor(this.root_element, '__reactContainer');
+			if ( key ) {
+				this.react_root = null;
+				this.react = this.root_element[key];
+				return;
+			}
+		}
+
+		//if ( ! this.root_element || ! this.root_element._reactRootContainer ) {
 			if ( tries > 500 )
 				throw new Error('Unable to find React after 25 seconds');
 
 			this.root_element = null;
 			return new Promise<void>(r =>
 				setTimeout(r, 50)).then(() => this.onEnable(tries+1));
-		}
+		//}
 
-		this.react_root = this.root_element._reactRootContainer;
+		/*this.react_root = this.root_element._reactRootContainer;
 		if ( this.react_root._internalRoot && this.react_root._internalRoot.current )
 			this.react_root = this.react_root._internalRoot;
 
-		this.react = this.react_root.current?.child;
+		this.react = this.react_root.current?.child;*/
 	}
 
 	/** @internal */
@@ -87,9 +106,9 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 	}
 
 
-	static findAccessor(node: Node): ReactAccessor | null {
+	static findAccessor(node: Node, prefix?: string): ReactAccessor | null {
 		for(const key in node)
-			if ( key.startsWith('__reactInternalInstance$') )
+			if ( prefix ? key.startsWith(`${prefix}$`) : (key.startsWith('__reactInternalInstance$') || key.startsWith('__reactFiber$')) )
 				return key as ReactAccessor;
 		return null;
 	}
@@ -104,6 +123,8 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 			return this.react;
 		else if ( input instanceof Node )
 			return this.getReactInstance(input);
+		else if ( (input as ReactStateNode)?._reactInternals )
+			return (input as ReactStateNode)._reactInternals;
 		else if ( (input as ReactStateNode)?._reactInternalFiber )
 			return (input as ReactStateNode)._reactInternalFiber;
 		else if ( input )
@@ -631,6 +652,8 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 				node = this.react;
 			else if ( input instanceof Node )
 				node = this.getReactInstance(input);
+			else if ( (input as ReactStateNode)?._reactInternals )
+				node = (input as ReactStateNode)._reactInternals;
 			else if ( (input as ReactStateNode)?._reactInternalFiber )
 				node = (input as ReactStateNode)._reactInternalFiber;
 
