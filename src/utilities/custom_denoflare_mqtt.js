@@ -266,7 +266,7 @@ var _Bytes = class _Bytes {
   var CONNACK = 2;
   function readConnack(reader, controlPacketFlags) {
 	const { DEBUG } = Mqtt;
-	checkEqual("controlPacketFlags", controlPacketFlags, 0);
+	//checkEqual("controlPacketFlags", controlPacketFlags, 0);
 	const connectAcknowledgeFlags = reader.readUint8();
 	const sessionPresent = (connectAcknowledgeFlags & 1) === 1;
 	const connectAcknowledgeFlagsReserved = connectAcknowledgeFlags & 254;
@@ -352,7 +352,7 @@ var _Bytes = class _Bytes {
   var PUBLISH = 3;
   function readPublish(reader, controlPacketFlags) {
 	const { DEBUG } = Mqtt;
-	checkEqual("controlPacketFlags", controlPacketFlags, 0);
+	//checkEqual("controlPacketFlags", controlPacketFlags, 0);
 	const dup = (controlPacketFlags & 8) === 8;
 	const qosLevel = (controlPacketFlags & 6) >> 1;
 	const retain = (controlPacketFlags & 1) === 1;
@@ -704,13 +704,13 @@ var _Bytes = class _Bytes {
 	}
 	static async create(opts) {
 	  const { DEBUG } = Mqtt;
-	  const { hostname, port } = opts;
+	  const { hostname, port, pathname } = opts;
 	  if ("accept" in WebSocket.prototype) {
 		if (DEBUG)
 		  console.log("Found WebSocket.accept, using Cloudflare workaround");
 		if (port !== 443)
 		  throw new Error(`Cloudflare Workers only support outgoing WebSocket requests on port 443 (https)`);
-		const url2 = `https://${hostname}`;
+		const url2 = `https://${hostname}${port ? `:${port}` : ''}${pathname ?? ''}`;
 		if (DEBUG)
 		  console.log(`Fetching ${url2}`);
 		const resp = await fetch(url2, { headers: { upgrade: "websocket" } });
@@ -724,7 +724,7 @@ var _Bytes = class _Bytes {
 		  console.log("Accepted!");
 		return new _WebSocketConnection(webSocket);
 	  }
-	  const url = `wss://${hostname}:${port}`;
+	  const url = `wss://${hostname}${port ? `:${port}` : ''}${pathname ?? ''}`;
 	  const ws = new WebSocket(url, "mqtt");
 	  if (DEBUG)
 		console.log(`new WebSocket('${url}', 'mqtt')`);
@@ -790,9 +790,10 @@ var _Bytes = class _Bytes {
 	  this.receivedDisconnect = false;
 	  /** @internal */
 	  this.nextPacketId = 1;
-	  const { hostname, port, protocol, maxMessagesPerSecond } = opts;
+	  const { hostname, port, pathname, protocol, maxMessagesPerSecond } = opts;
 	  this.hostname = hostname;
 	  this.port = port;
+	  this.pathname = pathname;
 	  this.protocol = protocol;
 	  this.maxMessagesPerSecond = maxMessagesPerSecond;
 	}
@@ -837,9 +838,9 @@ var _Bytes = class _Bytes {
 	async connect(opts) {
 	  const { DEBUG } = Mqtt;
 	  const { clientId = "", username, password, keepAlive = DEFAULT_KEEP_ALIVE_SECONDS, clean = false } = opts;
-	  const { protocol, hostname, port } = this;
+	  const { protocol, hostname, port, pathname } = this;
 	  if (!this.connection) {
-		this.connection = await _MqttClient.protocolHandlers[protocol]({ hostname, port });
+		this.connection = await _MqttClient.protocolHandlers[protocol]({ hostname, port, pathname });
 		this.connection.onRead = (bytes) => {
 		  this.processBytes(bytes);
 		};

@@ -334,6 +334,19 @@ export default class Channel extends Module {
 			}
 		}
 
+		if ( ! el.querySelector('ffz--native-viewers-container') ) {
+			let i = 0,
+				vel = el.querySelector('p[data-a-target="animated-channel-viewers-count"]');
+			while(vel && vel != el && i < 5) {
+				if ( vel.querySelector('svg') ) {
+					vel.classList.add('ffz--native-viewers-container');
+					break;
+				}
+				vel = vel.parentElement;
+				i++;
+			}
+		}
+
 		const react = this.fine.getReactInstance(el);
 		let props = react?.child?.memoizedProps;
 		if ( ! props?.channelLogin )

@@ -1,3 +1,7 @@
 button[data-test-selector="unfollow-button"] {
 	display: none !important;
 }
+
+div[data-target="channel-header-right"] > div {
+	margin-right: unset !important;
+}

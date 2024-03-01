@@ -16,8 +16,16 @@
 			{"value": false, "weight": 0}
 		]
 	},
+	"emqx_pubsub": {
+		"name": "EMQX MQTT-Based PubSub",
+		"description": "An experimental pubsub system running on an EMQX cluster, to see how that performs.",
+		"groups": [
+			{"value": true, "weight": 25},
+			{"value": false, "weight": 75}
+		]
+	},
 	"cf_pubsub": {
-		"name": "MQTT-Based PubSub",
+		"name": "CF MQTT-Based PubSub",
 		"description": "An experimental new pubsub system that should be more reliable than the existing socket cluster.",
 		"groups": [
 			{"value": true, "weight": 0},

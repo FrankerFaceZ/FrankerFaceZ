@@ -104,7 +104,7 @@ export default class EmoteCard extends Module {
 
 	canReportTwitch() {
 		const site = this.resolve('site'),
-			core = site.getCore?.(),
+			//core = site.getCore?.(),
 			user = site.getUser(),
 			web_munch = this.resolve('site.web_munch');
 
@@ -115,13 +115,13 @@ export default class EmoteCard extends Module {
 			return false;
 		}
 
-		return !! report_form && !! user?.id && core?.store?.dispatch;
+		return !! report_form && !! user?.id && site?.store?.dispatch;
 	}
 
 
 	reportTwitchEmote(id, channel) {
 		const site = this.resolve('site'),
-			core = site.getCore(),
+			//core = site.getCore(),
 			user = site.getUser(),
 			web_munch = this.resolve('site.web_munch');
 
@@ -132,10 +132,10 @@ export default class EmoteCard extends Module {
 			return false;
 		}
 
-		if ( ! user?.id || ! core?.store?.dispatch )
+		if ( ! user?.id || ! site?.store?.dispatch )
 			return false;
 
-		core.store.dispatch({
+		site.store.dispatch({
 			type: 'core.modal.MODAL_SHOWN',
 			modalComponent: report_form,
 			modalProps: {

@@ -251,6 +251,7 @@
 .ffz--giftee-name {
 	cursor: pointer;
 	outline: none;
+	word-break: keep-all;
 
 	&:hover {
 		text-decoration: underline;

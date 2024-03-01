@@ -307,8 +307,21 @@ export const LINK_DATA_HOSTS = {
 export const PUBSUB_CLUSTERS = {
 	Production: `https://pubsub.frankerfacez.com`,
 	Staging: `https://pubsub-staging-alt.frankerfacez.com`,
+	EMQXTest: 'emqx-test',
 	Development: `https://stendec.dev/ps/`
 }
+
+export const EMQX_SERVERS = [
+	//'catbag.frankerfacez.com',
+	//'pubsub-staging.frankerfacez.com',
+	'ayaya.frankerfacez.com',
+	'champ.frankerfacez.com',
+	'lilz.frankerfacez.com',
+	'pog.frankerfacez.com',
+	'yoohoo.frankerfacez.com',
+	'andknuckles.frankerfacez.com'
+];
+
 
 /** Whether or not we're running on macOS */
 export const IS_OSX = navigator.platform ? navigator.platform.indexOf('Mac') !== -1 : /OS X/.test(navigator.userAgent);

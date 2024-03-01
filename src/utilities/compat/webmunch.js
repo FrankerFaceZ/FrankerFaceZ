@@ -16,7 +16,7 @@ const regex_cache = {};
 
 function getRequireRegex(name) {
 	if ( ! regex_cache[name] )
-		regex_cache[name] = new RegExp(`\\b${name}\\(([0-9e_+]+)\\)`, 'g');
+		regex_cache[name] = new RegExp(`\\b(?<!\\.)${name}\\(([0-9e_+]+)\\)`, 'g');
 
 	return regex_cache[name];
 }
@@ -286,7 +286,7 @@ export default class WebMunch extends Module {
 				try {
 					const mod = this._require(id);
 					for(const key in mod)
-						if ( mod[key] && predicate(mod[key]) ) {
+						if ( mod[key] && predicate(mod[key], mod, key) ) {
 							this.log.info(`Found in key "${key}" of module "${id}" (${this.chunkNameForModule(id)})`);
 							if ( ! multi )
 								return mod;

@@ -265,6 +265,12 @@ Twilight.KNOWN_MODULES = {
 				stack: n.fQ,
 				dispatch: n.vJ
 			};
+
+		if ( has(n.fQ?._currentValue, 'highlights') && typeof n.vJ?._currentValue === 'function' )
+			return {
+				stack: n.fQ,
+				dispatch: n.vJ
+			};
 	}
 }
 
@@ -272,6 +278,7 @@ Twilight.KNOWN_MODULES = {
 const VEND_CORE = n => ! n || n.includes('vendor') || n.includes('core');
 
 Twilight.KNOWN_MODULES.core.use_result = true;
+Twilight.KNOWN_MODULES.core.skip_cache = true;
 //Twilight.KNOWN_MODULES.core.chunks = 'core';
 
 Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CORE;

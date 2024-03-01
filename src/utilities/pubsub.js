@@ -2,6 +2,7 @@ import { EventEmitter } from "./events";
 
 import { MqttClient, DISCONNECT } from './custom_denoflare_mqtt'; // "denoflare-mqtt";
 import { b64ToArrayBuffer, debounce, importRsaKey, make_enum, sleep } from "./object";
+import { EMQX_SERVERS } from "./constants";
 
 // Only match 1-4 digit numbers, to avoid matching twitch IDs.
 // 9999 gives us millions of clients on a topic, so we're never
@@ -112,30 +113,46 @@ export default class PubSubClient extends EventEmitter {
 
 	async _loadData() {
 		let response, data;
-		try {
-			// TODO: Send removed topics.
-			response = await fetch(this.server, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					id: this.id,
-					user: this.user ?? null,
-					topics: this.topics
-				})
-			});
 
-			if ( response.ok )
-				data = await response.json();
+		if ( this.server === 'emqx-test' ) {
+			// Hard-coded data.
+			const server = EMQX_SERVERS[Math.floor(Math.random() * EMQX_SERVERS.length)];
 
-		} catch(err) {
-			throw new Error(
-				'Unable to load PubSub data from server.',
-				{
-					cause: err
-				}
-			);
+			data = {
+				require_signing: false,
+				endpoint: `wss://${server}:8084/mqtt`,
+
+				username: 'anonymous',
+				password: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbm9ueW1vdXMifQ.5DZP1bScMz4-MV_jGZveUKq4pFy9x_PJF9gSzAvj-wA`,
+				topics: Object.fromEntries(this.topics.map(x => [x, 0]))
+			}
+
+		} else {
+			try {
+				// TODO: Send removed topics.
+				response = await fetch(this.server, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						id: this.id,
+						user: this.user ?? null,
+						topics: this.topics
+					})
+				});
+
+				if ( response.ok )
+					data = await response.json();
+
+			} catch(err) {
+				throw new Error(
+					'Unable to load PubSub data from server.',
+					{
+						cause: err
+					}
+				);
+			}
 		}
 
 		if ( ! data?.endpoint )
@@ -411,6 +428,7 @@ export default class PubSubClient extends EventEmitter {
 		const client = this._client = new MqttClient({
 			hostname: url.hostname,
 			port: url.port ?? undefined,
+			pathname: url.pathname ?? undefined,
 			protocol: 'wss',
 			maxMessagesPerSecond: 10
 		});
@@ -444,9 +462,13 @@ export default class PubSubClient extends EventEmitter {
 				return;
 			}
 
+			let payload = message.payload;
+			if ( payload instanceof Uint8Array )
+				payload = new TextDecoder().decode(payload);
+
 			let msg;
 			try {
-				msg = JSON.parse(message.payload);
+				msg = JSON.parse(payload);
 			} catch(err) {
 				if ( this.logger )
 					this.logger.warn(`Error decoding PubSub message on topic "${topic}":`, err);
@@ -496,10 +518,12 @@ export default class PubSubClient extends EventEmitter {
 
 		return this._client.connect({
 			clientId: data.client_id,
+			username: data.username,
 			password: data.password,
 			keepAlive: 120,
 			clean: true
 		}).then(msg => {
+			this._conn_failures = 0;
 			this._state = State.Connected;
 			this.emit('connect', msg);
 
@@ -523,6 +547,30 @@ export default class PubSubClient extends EventEmitter {
 				});
 
 			return this._sendSubscribes()
+		}).catch(err => {
+			if ( this.logger )
+				this.logger.debug('Error connecting to MQTT.', err);
+
+			disconnected = true;
+			this.emit('disconnect', null);
+
+			this._destroyClient();
+
+			if ( ! this._should_connect )
+				return;
+
+			this._conn_failures = (this._conn_failures || 0) + 1;
+			let delay = (this._conn_failures * Math.floor(Math.random() * 10) + 2) * 1000;
+			if ( delay > 60000 )
+				delay = (Math.floor(Math.random() * 60) + 30) * 1000;
+
+			if ( delay <= 2000 )
+				delay = 2000;
+
+			return sleep(delay).then(() => {
+				if ( this._should_connect && ! this._client )
+					this._createClient(data);
+			})
 		});
 	}
 

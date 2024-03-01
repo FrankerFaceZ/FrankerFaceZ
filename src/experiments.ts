@@ -229,6 +229,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		this.cache = new Map;
 	}
 
+
 	getControlsLocked() {
 		if ( DEBUG )
 			return false;

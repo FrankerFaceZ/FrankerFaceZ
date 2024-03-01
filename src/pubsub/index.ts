@@ -65,6 +65,8 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 
 		this.settings.add('pubsub.use-cluster', {
 			default: () => {
+				if ( this.experiments.getAssignment('emqx_pubsub') )
+					return 'EMQXTest';
 				if ( this.experiments.getAssignment('cf_pubsub') )
 					return 'Staging';
 				return null;
