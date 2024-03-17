@@ -38,6 +38,7 @@ export default class Line extends Module {
 	onEnable() {
 		this.on('chat.overrides:changed', id => this.updateLinesByUser(id, null, false, false), this);
 		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
+		this.on('chat:update-line', this.updateLineById, this);
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('chat:rerender-lines', this.rerenderLines, this);
 		this.on('chat:update-line-tokens', this.updateLineTokens, this);
@@ -174,6 +175,21 @@ export default class Line extends Module {
 		}
 	}
 
+	updateLineById(id, clear_tokens = true, clear_badges = null) {
+		if ( clear_badges == null )
+			clear_badges = clear_tokens;
+
+		for(const inst of this.ChatLine.instances) {
+			const msg = inst.props.node;
+			if ( msg?.id === id ) {
+				if ( clear_tokens || clear_badges )
+					this.messages.delete(msg);
+
+				inst.forceUpdate();
+				return;
+			}
+		}
+	}
 
 	maybeUpdateLines() {
 		if ( this.chat.context.get('chat.rich.all-links') )

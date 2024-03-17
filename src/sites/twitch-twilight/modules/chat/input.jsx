@@ -12,6 +12,11 @@ import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES,
 
 import Twilight from 'site';
 
+const COMMAND_KEYS = [
+	'!',
+	'/'
+];
+
 // Prefer using these statically-allocated collators to String.localeCompare
 const locale = Intl.Collator();
 const localeCaseInsensitive = Intl.Collator(undefined, {sensitivity: 'accent'});
@@ -771,8 +776,21 @@ export default class Input extends Module {
 
 		inst._ffz_override = true;
 		inst.oldCommands = inst.getCommands;
+		inst.oldMatches = inst.getMatches;
+		inst.oldReplacement = inst.determineReplacement;
 
 		const t = this;
+
+		inst.getMatches = function(input, unknown, index) {
+			try {
+				return index === 0 && COMMAND_KEYS.includes(input[0])
+					? inst.getCommands(input) : null;
+
+			} catch(err) {
+				t.log.error('Error getting matches from command handler.', err);
+				return inst.oldCommands(input, unknown, index);
+			}
+		}
 
 		inst.getCommands = function(input) { try {
 			const commands = inst.props.getCommands(inst.props.permissionLevel, {
@@ -792,9 +810,13 @@ export default class Input extends Module {
 				return null;
 
 			// Trim off the starting /
-			const i = input.slice(1);
+			const prefix = input[0],
+				i = input.slice(1);
 
-			const sorted = commands.filter(cmd => inst.doesCommandMatchTerm(cmd, i)).sort(inst.sortCommands);
+			const sorted = commands
+				.filter(cmd => prefix === (cmd.prefix ?? '/') && inst.doesCommandMatchTerm(cmd, i))
+				.sort(inst.sortCommands);
+
 			const out = [];
 			for(const cmd of sorted) {
 				const arg = cmd.commandArgs?.[0];
@@ -813,12 +835,44 @@ export default class Input extends Module {
 				});
 			}
 
+			// If we're working with a non-/ prefix, and have no items,
+			// return null so we don't display ANY UI.
+			if ( prefix !== '/' && ! out.length )
+				return null;
 			return out;
 
 		} catch(err) {
 			console.error(err);
 			return inst.oldCommands(input);
-		}}
+		} }
+
+		inst.determineReplacement = function(cmd) {
+			const out = inst.oldReplacement(cmd);
+			if ( (cmd.prefix ?? '/') !== '/' && out.startsWith('/') )
+				return cmd.prefix + out.slice(1);
+			return out;
+		}
+
+		const React = this.site.getReact(),
+			createElement = React?.createElement;
+
+		if ( createElement )
+			inst.renderCommandSuggestion = function(cmd, input) {
+				const args = Array.isArray(cmd?.commandArgs)
+					? cmd.commandArgs.map(arg => (<div class={`tw-mg-r-05${arg.isRequired ? '' : ' tw-c-text-alt'}`}>[{arg.name}]</div>))
+					: null;
+
+				return (<div class="tw-pd-05">
+					<div class="tw-flex">
+						<div class="tw-mg-r-05">
+							<span>{ cmd.prefix ?? '/' }</span>
+							<span class="tw-semibold">{ cmd.name }</span>
+						</div>
+						{args}
+					</div>
+					<p class="tw-c-text-alt-2 tw-font-size-7">{ cmd.description }</p>
+				</div>);
+			}
 	}
 
 

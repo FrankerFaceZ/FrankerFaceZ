@@ -486,6 +486,7 @@ export default class ChatLine extends Module {
 	async onEnable() {
 		this.on('chat.overrides:changed', id => this.updateLinesByUser(id, null, false, false), this);
 		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
+		this.on('chat:update-line', this.updateLineById, this);
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('chat:rerender-lines', this.rerenderLines, this);
 		this.on('chat:update-line-tokens', this.updateLineTokens, this);
@@ -1440,6 +1441,39 @@ other {# messages were deleted by a moderator.}
 		}
 	}
 
+	updateLineById(id, clear_tokens = true, clear_badges = null) {
+		if ( clear_badges == null )
+			clear_badges = clear_tokens;
+
+		for(const inst of this.ChatLine.instances) {
+			const msg = inst.props.message;
+			if ( msg?.id === id ) {
+				if ( clear_badges )
+					msg.ffz_badges = msg.ffz_badge_cache = null;
+
+				if ( clear_tokens ) {
+					msg.ffz_tokens = null;
+					msg.ffz_reply = null;
+					msg.highlights = msg.mentioned = msg.mention_color = msg.color_priority = null;
+				}
+
+				inst.forceUpdate();
+				return;
+			}
+		}
+
+		for(const inst of this.WhisperLine.instances) {
+			const msg = inst.props.message?._ffz_message;
+			if ( msg?.id === id ) {
+				// TODO: Better support for clear_tokens and clear_badges
+				if ( clear_badges || clear_tokens )
+					msg._ffz_message = null;
+
+				inst.forceUpdate();
+				return;
+			}
+		}
+	}
 
 	updateLinesByUser(id, login, clear_tokens = true, clear_badges = true) {
 		for(const inst of this.ChatLine.instances) {

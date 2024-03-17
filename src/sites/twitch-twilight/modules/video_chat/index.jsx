@@ -99,6 +99,7 @@ export default class VideoChatHook extends Module {
 		this.chat.context.on('changed:chat.video-chat.timestamps', this.rerenderLines, this);
 		this.on('chat.overrides:changed', id => this.updateLinesByUser(id, null, false, false), this);
 		this.on('chat:update-lines-by-user', this.updateLinesByUser, this);
+		this.on('chat:update-line', this.updateLineById, this);
 		this.on('chat:update-lines', this.updateLines, this);
 		this.on('chat:rerender-lines', this.rerenderLines, this);
 		this.on('chat:update-line-tokens', this.updateLineTokens, this);
@@ -488,6 +489,27 @@ export default class VideoChatHook extends Module {
 	}
 
 
+	updateLineById(id, clear_tokens = true, clear_badges = null) {
+		if ( clear_badges == null )
+			clear_badges = clear_tokens;
+
+		for(const inst of this.VideoChatLine.instances) {
+			const context = inst.props.messageContext;
+			if ( ! context.comment )
+				continue;
+
+			if ( context.comment?.id === id ) {
+				// TODO: Better support for clear_tokens and clear_badges
+				if ( clear_tokens || clear_badges )
+					context.comment._ffz_message = null;
+
+				inst.forceUpdate();
+				return;
+			}
+		}
+	}
+
+
 	checkEffects() {
 		for(const inst of this.VideoChatLine.instances) {
 			const context = inst.props.messageContext,
@@ -516,6 +538,7 @@ export default class VideoChatHook extends Module {
 			msg_id = params && params['msg-id'];
 
 		const out = comment._ffz_message = {
+			id: comment.id,
 			user: {
 				color: comment.message.userColor,
 				id: author.id,
