@@ -461,12 +461,21 @@ export default class ChatHook extends Module {
 			}
 		});
 
-		this.settings.add('chat.banners.kappa-train', {
+		/*this.settings.add('chat.banners.kappa-train', {
 			default: false,
 			ui: {
 				path: 'Chat > Appearance >> Community',
 				title: 'Attempt to always display the Golden Kappa Train, even if other Hype Trains are hidden.',
 				description: '**Note**: This setting is currently theoretical and may not work, or may cause non-Kappa hype trains to appear. Due to the infrequent nature of hype trains, and especially the golden kappa hype train, it is very hard to test.',
+				component: 'setting-check-box'
+			}
+		});*/
+
+		this.settings.add('chat.banners.pinned-message', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow Pinned Messages to be displayed in chat.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1042,6 +1051,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.drops', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.pinned-message', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.disable-handling', this.updateDisableHandling, this);
 
@@ -1722,6 +1732,7 @@ export default class ChatHook extends Module {
 			'hype_train': this.chat.context.get('chat.banners.hype-train'),
 			'prediction': this.chat.context.get('chat.banners.prediction'),
 			'poll': this.chat.context.get('chat.banners.polls'),
+			'pinned_chat': this.chat.context.get('chat.banners.pinned-message'),
 			'mw-drop-available': this.chat.context.get('chat.banners.drops')
 		};
 
@@ -1736,8 +1747,8 @@ export default class ChatHook extends Module {
 			const type = entry.event.type;
 			if ( type && has(types, type) && ! types[type] ) {
 				// Attempt to allow Golden Kappa hype trains?
-				if ( type === 'hype_train' && entry.event.typeDetails === '0' && this.chat.context.get('chat.banners.kappa-train') )
-					continue;
+				//if ( type === 'hype_train' && entry.event.typeDetails === '0' && this.chat.context.get('chat.banners.kappa-train') )
+				//	continue;
 
 				this.log.info('Removing community highlight: ', type, '#', entry.id);
 				this.community_dispatch({

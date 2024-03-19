@@ -385,11 +385,14 @@ export default class Layout extends Module {
 			else {
 				const regexes = this.settings.get('__filter:directory.block-titles');
 				const title = stream?.broadcaster?.broadcastSettings?.title;
-				if ( regexes && title &&
-					(( regexes[0] && regexes[0].test(title) ) ||
-					( regexes[1] && regexes[1].test(title) ))
-				)
-					should_hide = true;
+				if ( regexes && title ) {
+					if ( regexes[0] )
+						regexes[0].lastIndex = -1;
+					if ( regexes[1] )
+						regexes[1].lastIndex = -1;
+					if ( (regexes[0] && regexes[0].test(title)) || (regexes[1] && regexes[1].test(title)) )
+						should_hide = true;
+				}
 			}
 
 			card.classList.toggle('ffz--side-nav-card-rerun', rerun);

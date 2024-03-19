@@ -616,17 +616,17 @@ export default class Directory extends Module {
 			// Are we getting a clip, a video, or a stream?
 			if ( props.slug ) {
 				// Clip
-				console.log('need flags for clip', props.slug);
+				//console.log('need flags for clip', props.slug);
 				el._ffz_flags = [];
 
 			} else if ( props.vodID ) {
 				// Video
-				console.log('need flags for vod', props.vodID);
+				//console.log('need flags for vod', props.vodID);
 				el._ffz_flags = [];
 
 			} else {
 				// Stream?
-				console.log('need flags for stream', props.channelLogin);
+				//console.log('need flags for stream', props.channelLogin);
 				this.twitch_data.getStreamFlags(null, props.channelLogin).then(data => {
 					el._ffz_flags = data ?? [];
 					this.updateCard(el);
@@ -670,11 +670,15 @@ export default class Directory extends Module {
 		}
 		if ( ! should_blur ) {
 			const regexes = this.settings.get('__filter:directory.blur-titles');
-			if ( regexes &&
-				(( regexes[0] && regexes[0].test(props.title) ) ||
-				( regexes[1] && regexes[1].test(props.title) ))
-			)
-				should_blur = true;
+			if ( regexes ) {
+				if ( regexes[0] )
+					regexes[0].lastIndex = -1;
+				if ( regexes[1] )
+					regexes[1].lastIndex = -1;
+
+				if (( regexes[0] && regexes[0].test(props.title) ) || ( regexes[1] && regexes[1].test(props.title) ))
+					should_blur = true;
+			}
 		}
 
 		el.classList.toggle('ffz-hide-thumbnail', should_blur);
@@ -700,11 +704,15 @@ export default class Directory extends Module {
 
 			if ( ! should_hide ) {
 				const regexes = this.settings.get('__filter:directory.block-titles');
-				if ( regexes &&
-					(( regexes[0] && regexes[0].test(props.title) ) ||
-					( regexes[1] && regexes[1].test(props.title) ))
-				)
-					should_hide = true;
+				if ( regexes ) {
+					if ( regexes[0] )
+						regexes[0].lastIndex = -1;
+					if ( regexes[1] )
+						regexes[1].lastIndex = -1;
+
+					if (( regexes[0] && regexes[0].test(props.title) ) || ( regexes[1] && regexes[1].test(props.title) ))
+						should_hide = true;
+				}
 			}
 		}
 

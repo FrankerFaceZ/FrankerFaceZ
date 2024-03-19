@@ -11,7 +11,7 @@ import Module, { buildAddonProxy } from 'utilities/module';
 import {Color} from 'utilities/color';
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {getFontsList} from 'utilities/fonts';
-import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker, deep_copy} from 'utilities/object';
+import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker, deep_copy, SourcedSet} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -92,6 +92,9 @@ export default class Chat extends Module {
 		this.style = new ManagedStyle;
 
 		this.context = this.settings.context({});
+
+		this.CommandPrefixes = new SourcedSet(true);
+		this.CommandPrefixes.set('ffz', ['/', '!']);
 
 		this.rooms = {};
 		this.users = {};
@@ -614,7 +617,7 @@ export default class Chat extends Module {
 					if ( ! data.length )
 						return null;
 
-					return new RegExp(`^(?:${data.join('|')})$`, 'gi');
+					return new RegExp(`^(?:${data.join('|')})$`, 'i');
 				});
 			}
 		});
@@ -1414,6 +1417,24 @@ export default class Chat extends Module {
 				);
 		}
 
+		overrides.addTabCommandPrefix = (prefix, provider = null) => {
+			if ( provider == null )
+				provider = addon_id;
+			if ( is_dev && provider !== addon_id )
+				module.log.warn('[DEV-CHECK] Used addTabCommandPrefix with incorrect provider.');
+
+			return this.addTabCommandPrefix(prefix, provider);
+		}
+
+		overrides.removeTabCommandPrefix = (prefix, provider = null) => {
+			if ( provider == null )
+				provider = addon_id;
+			if ( is_dev && provider !== addon_id )
+				module.log.warn('[DEV-CHECK] Used removeTabCommandPrefix with incorrect provider.');
+
+			return this.removeTabCommandPrefix(prefix, provider);
+		}
+
 		overrides.addTokenizer = tokenizer => {
 			if ( tokenizer )
 				tokenizer.__source = addon_id;
@@ -1579,6 +1600,8 @@ export default class Chat extends Module {
 					this.removeTokenizer(key);
 				}
 			}
+
+			this.CommandPrefixes.delete(addon_id);
 
 			for(const item of this.iterateAllRoomsAndUsers())
 				removed += item._unloadAddon(addon_id) ?? 0;
@@ -2303,6 +2326,26 @@ export default class Chat extends Module {
 
 	getHighlightReasons() {
 		return Object.values(this._hl_reasons);
+	}
+
+	addTabCommandPrefix(prefix, source = 'ffz') {
+		if ( ! Array.isArray(prefix) )
+			prefix = [prefix];
+
+		for(const item of prefix) {
+			if ( typeof item !== 'string' || item.length !== 1 )
+				throw new Error('Invalid command prefix. Must be string of length 1.');
+
+			this.CommandPrefixes.push(source, item);
+		}
+	}
+
+	removeTabCommandPrefix(prefix, source = 'ffz') {
+		if ( ! Array.isArray(prefix) )
+			prefix = [prefix];
+
+		for(const item of prefix)
+			this.CommandPrefixes.remove(source, item);
 	}
 
 	addTokenizer(tokenizer) {

@@ -7,15 +7,11 @@
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
 
-import { getTwitchEmoteSrcSet } from 'utilities/object';
+import { SourcedSet, getTwitchEmoteSrcSet } from 'utilities/object';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
 
-const COMMAND_KEYS = [
-	'!',
-	'/'
-];
 
 // Prefer using these statically-allocated collators to String.localeCompare
 const locale = Intl.Collator();
@@ -74,7 +70,6 @@ export default class Input extends Module {
 
 		this.inject('site.fine');
 		this.inject('site');
-
 
 		// Settings
 
@@ -783,7 +778,7 @@ export default class Input extends Module {
 
 		inst.getMatches = function(input, unknown, index) {
 			try {
-				return index === 0 && COMMAND_KEYS.includes(input[0])
+				return index === 0 && t.chat.CommandPrefixes.includes(input[0])
 					? inst.getCommands(input) : null;
 
 			} catch(err) {
@@ -797,11 +792,22 @@ export default class Input extends Module {
 				isEditor: inst.props.isCurrentUserEditor
 			});
 
+			// Get the parent-input so we can do stuff.
+			const parent = t.fine.searchParent(inst,
+				n => n?.props?.channelID && n?.props?.setTray, 50);
+
 			const event = t.makeEvent({
 				input,
 				permissionLevel: inst.props.permissionLevel,
 				isEditor: inst.props.isCurrentUserEditor,
-				commands
+				commands,
+
+				// Extra details, if we managed to find our parent.
+				__input: parent,
+				channel: parent ? {
+					id: parent.props.channelID,
+					login: parent.props.channelLogin
+				} : null
 			});
 
 			t.emit('chat:get-tab-commands', event);
