@@ -64,7 +64,7 @@ export function isValidShortcut(key: string) {
  */
 export const generateUUID = crypto.randomUUID
 	? () => crypto.randomUUID()
-	: function generateUUID(input?: any) {
+	: function generateUUID(input?: any): string {
 		return input           // if the placeholder was passed, return
 			? (              // a random number from 0 to 15
 				input ^            // unless b is 8,

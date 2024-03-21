@@ -833,6 +833,7 @@ export default class Input extends Module {
 				out.push({
 					current: input,
 					replacement: inst.determineReplacement(cmd),
+					description: cmd.description,
 					element: inst.renderCommandSuggestion(cmd, i),
 					group: cmd.ffz_group ?
 						(Array.isArray(cmd.ffz_group) ? t.i18n.t(...cmd.ffz_group) : cmd.ffz_group)

@@ -108,6 +108,7 @@ export default class ChatLine extends Module {
 
 				if ( data.tokenize ) {
 					const tokens = data.ffz_tokens = data.ffz_tokens || this.chat.tokenizeMessage({
+						badges: {},
 						message: text,
 						id: msg.id,
 						user: msg.user,

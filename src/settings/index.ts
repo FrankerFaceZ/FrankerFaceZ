@@ -6,7 +6,7 @@
 
 import { DEBUG } from 'utilities/constants';
 import Module, { GenericModule, buildAddonProxy } from 'utilities/module';
-import {deep_equals, has, debounce, deep_copy} from 'utilities/object';
+import {deep_equals, has, debounce, deep_copy, generateUUID} from 'utilities/object';
 import {PathNode, parse as parse_path} from 'utilities/path-parser';
 
 import SettingsProfile from './profile';
@@ -132,6 +132,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	/** @internal */
 	__profiles: SettingsProfile[];
 	private __profile_ids: Record<number, SettingsProfile | null>;
+	private __profile_uuids: Record<string, SettingsProfile | null>;
 
 	/**
 	 * Whether or not profiles have been disabled for this session
@@ -175,6 +176,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		this.__contexts = [];
 		this.__profiles = [];
 		this.__profile_ids = {};
+		this.__profile_uuids = {};
 
 		this.ui_structures = new Map;
 		this.definitions = new Map;
@@ -858,10 +860,10 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 	/**
 	 * Get an existing {@link SettingsProfile} instance.
-	 * @param {number} id  - The id of the profile.
+	 * @param id  - The id or uuid of the profile.
 	 */
-	profile(id: number): SettingsProfile | null {
-		return this.__profile_ids[id] ?? null;
+	profile(id: number | string): SettingsProfile | null {
+		return this.__profile_uuids[id] ?? this.__profile_ids[id as number] ?? null;
 	}
 
 
@@ -871,10 +873,12 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	 */
 	loadProfiles(suppress_events: boolean = false) {
 		const old_profile_ids = this.__profile_ids,
+			old_profile_uuids = this.__profile_uuids,
 			old_profiles = this.__profiles,
 
 			profile_ids: Record<number, SettingsProfile> = this.__profile_ids = {},
 			profiles: SettingsProfile[] = this.__profiles = [],
+			profile_uuids: Record<string, SettingsProfile> = this.__profile_uuids = {},
 
 			// Create a set of actual IDs with a map from the profiles
 			// list rather than just getting the keys from the ID map
@@ -899,6 +903,25 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			];
 		}
 
+		// Update: Add UUIDs to all profiles.
+		let need_save = false;
+
+		for(const profile of raw_profiles) {
+			if ( ! profile.uuid ) {
+				need_save = true;
+
+				if ( profile.i18n_key === SettingsProfile.Default.i18n_key )
+					profile.uuid = SettingsProfile.Default.uuid as string;
+				else if ( profile.i18n_key === SettingsProfile.Moderation.i18n_key )
+					profile.uuid = SettingsProfile.Moderation.uuid as string;
+				else
+					profile.uuid = generateUUID();
+			}
+		}
+
+		if ( need_save )
+			this.provider?.set('profiles', raw_profiles);
+
 		let reordered = false,
 			changed = false;
 
@@ -918,23 +941,13 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			if ( old_slot_id !== slot_id )
 				reordered = true;
 
-			// Monkey patch to the new profile format...
-			// Update: Probably safe to remove this, at this point.
-			/*
-			if ( profile_data.context && ! Array.isArray(profile_data.context) ) {
-				if ( profile_data.context.moderator )
-					profile_data.context = SettingsProfile.Moderation.context;
-				else
-					profile_data.context = null;
-			}
-			*/
-
 			if ( old_profile && deep_equals(old_profile.data, profile_data, true) ) {
 				// Did the order change?
 				if ( old_slot_id !== slot_id )
 					changed = true;
 
 				profiles.push(profile_ids[id] = old_profile);
+				profile_uuids[old_profile.uuid] = old_profile;
 				continue;
 			}
 
@@ -947,6 +960,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 				new_ids.add(id);
 
 			profiles.push(new_profile);
+			profile_uuids[new_profile.uuid] = new_profile;
 			changed = true;
 		}
 
@@ -994,11 +1008,13 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		}
 
 		options.id = id;
+		options.uuid = generateUUID();
 
 		if ( ! options.name )
 			options.name = `Unnamed Profile ${this.__profiles.length + 1}`;
 
 		const profile = this.__profile_ids[id] = new SettingsProfile(this, options);
+		this.__profile_uuids[options.uuid] = profile;
 		this.__profiles.unshift(profile);
 
 		profile.on('toggled', this._onProfileToggled, this);
@@ -1040,6 +1056,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		profile.off('toggled', this._onProfileToggled, this);
 		profile.clear();
 		this.__profile_ids[id] = null;
+		this.__profile_uuids[profile.uuid] = null;
 
 		const idx = this.__profiles.indexOf(profile);
 		if ( idx !== -1 )

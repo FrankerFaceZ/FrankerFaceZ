@@ -280,6 +280,7 @@ export type ExportedBlobMetadata = {
 
 export type SettingsProfileMetadata = {
 	id: number;
+	uuid: string;
 
 	name: string;
 	i18n_key?: string | null;

@@ -1218,8 +1218,6 @@ export default class Actions extends Module {
 		if ( target._ffz_tooltip )
 			target._ffz_tooltip.hide();
 
-
-
 		return data.definition.click.call(this, event, data);
 	}
 

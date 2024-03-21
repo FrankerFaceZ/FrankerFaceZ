@@ -651,6 +651,104 @@ export const whisper = {
 
 
 // ============================================================================
+// Toggle Profile
+// ============================================================================
+
+export const toggle_profile = {
+	presets: [{
+		appearance: {
+			type: 'dynamic'
+		}
+	}],
+
+	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/edit-profile.vue'),
+
+	required_context: [],
+	supports_dynamic: true,
+	can_self: true,
+
+	title: 'Toggle Settings Profile',
+	description(data) {
+		const ffz = window.FrankerFaceZ.get(),
+			settings = ffz?.resolve('settings'),
+			profile = settings?.profile(data.options?.uuid);
+
+		if ( ! profile )
+			return null;
+
+		return profile.i18n_key ? this.t(profile.i18n_key, profile.name) : profile.name;
+	},
+	description_i18n: null,
+
+	dynamicAppearance(ap, data) {
+		const profile = this.settings.profile(data.options?.uuid);
+		if ( ! profile )
+			return {
+				type: 'icon',
+				icon: 'ffz-i-attention',
+				color: ap.color
+			};
+
+		return {
+			type: 'icon',
+			icon: profile.toggled ? 'ffz-i-ok' : 'ffz-i-cancel',
+			color: ap.color
+		}
+	},
+
+	tooltip(data) {
+		const profile = this.settings.profile(data.options?.uuid);
+		let name;
+		if ( ! profile )
+			name = 'invalid';
+		else
+			name = profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name) : profile.name;
+
+		return this.i18n.t('chat.actions.toggle_profile.tooltip', 'Toggle Profile: {name}', {
+			name
+		});
+	},
+
+	click(event, data) {
+		const profile = this.settings.profile(data.options?.uuid);
+		if ( ! profile )
+			return;
+
+		// TODO: Make dynamic appearance things update automatically so
+		// we don't need this hack.
+
+		// Find any setting using this.
+		const found = new Set;
+		for(const ctx of ['inline', 'hover', 'user-context', 'room']) {
+			const key = `chat.actions.${ctx}`,
+				stuff = this.parent.context.get(key);
+
+			if ( Array.isArray(stuff) )
+				for(const item of stuff) {
+					if ( item.action === 'toggle_profile' ) {
+						if ( item.options?.uuid === profile.uuid ) {
+							found.add(ctx);
+							this.parent.context.once(`changed:${key}`, () => found.delete(ctx));
+							break;
+						}
+					}
+				}
+		}
+
+		// Toggle the profile.
+		profile.toggled = ! profile.toggled;
+
+		// Now wait, and update any setting that didn't update.
+		requestAnimationFrame(() => {
+			for(const ctx of found) {
+				this.parent.context.update(`chat.actions.${ctx}`);
+			}
+		});
+	}
+}
+
+
+// ============================================================================
 // Gift Subscription
 // ============================================================================
 /*

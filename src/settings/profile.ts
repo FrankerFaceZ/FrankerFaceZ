@@ -34,6 +34,7 @@ export default class SettingsProfile extends EventEmitter<ProfileEvents> {
 
 	static Default: Partial<SettingsProfileMetadata> = {
 		id: 0,
+		uuid: 'ffz_profile_default',
 		name: 'Default Profile',
 		i18n_key: 'setting.profiles.default',
 
@@ -43,6 +44,7 @@ export default class SettingsProfile extends EventEmitter<ProfileEvents> {
 
 	static Moderation: Partial<SettingsProfileMetadata> = {
 		id: 1,
+		uuid: 'ffz_profile_moderation',
 		name: 'Moderation',
 		i18n_key: 'setting.profiles.moderation',
 
@@ -77,6 +79,11 @@ export default class SettingsProfile extends EventEmitter<ProfileEvents> {
 	 * are deleted and created.
 	 */
 	id: number = -1;
+
+	/**
+	 * The unique ID for this profile. UUIDs should always be unique.
+	 */
+	uuid: string = null as any;
 
 	// Metadata
 
@@ -172,6 +179,7 @@ export default class SettingsProfile extends EventEmitter<ProfileEvents> {
 		return {
 			id: this.id,
 			//parent: this.parent,
+			uuid: this.uuid,
 
 			name: this.name,
 			i18n_key: this.i18n_key,
@@ -260,6 +268,7 @@ export default class SettingsProfile extends EventEmitter<ProfileEvents> {
 		// We don't want to override general settings.
 		delete data.profile.ephemeral;
 		delete data.profile.id;
+		delete data.profile.uuid;
 		delete data.profile.name;
 		delete data.profile.i18n_key;
 		delete data.profile.hotkey;
