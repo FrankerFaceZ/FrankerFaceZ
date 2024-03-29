@@ -376,6 +376,7 @@
 					:inline="item.inline"
 					:mod_icons="has_icons"
 					:context="item.context"
+					:extra_appearance="item.extra_appearance_editor"
 					:vuectx="context"
 					:modifiers="item.modifiers"
 					:hover_modifier="item.hover_modifier"

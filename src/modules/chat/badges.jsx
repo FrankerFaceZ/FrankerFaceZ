@@ -1223,6 +1223,11 @@ export default class Badges extends Module {
 	}
 
 
+	getBadge(badge_id) {
+		return this.badges[badge_id] ?? null;
+	}
+
+
 	removeBadge(badge_id, generate_css = true) {
 		if ( ! this.badges[badge_id] )
 			return;

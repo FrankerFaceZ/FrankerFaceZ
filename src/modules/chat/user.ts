@@ -154,6 +154,13 @@ export default class User {
 	}
 
 
+	getBadges() {
+		if ( this.badges )
+			return [...this.badges._cache];
+		return [];
+	}
+
+
 	getBadge(badge_id: string) {
 		if ( this.badges )
 			for(const badge of this.badges._cache)

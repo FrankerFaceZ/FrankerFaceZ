@@ -27,6 +27,11 @@ export default class Actions extends Module {
 		this.actions = {};
 		this.renderers = {};
 
+		this.filterAction = (x) => x.appearance &&
+			this.renderers[x.appearance.type] &&
+			(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
+			(! x.action || this.actions[x.action]);
+
 		this.settings.add('chat.actions.size', {
 			default: 16,
 			ui: {
@@ -82,11 +87,7 @@ export default class Actions extends Module {
 
 		this.settings.add('chat.actions.hover', {
 			process: (ctx, val) =>
-				val.filter(x => x.appearance &&
-					this.renderers[x.appearance.type] &&
-					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
-					(! x.action || this.actions[x.action])
-				),
+				val.filter(this.filterAction),
 
 			default: [
 				{v: {action: 'pin', appearance: {type: 'icon', icon: 'ffz-i-pin'}, options: {}, display: {mod_icons: true}}},
@@ -119,11 +120,7 @@ export default class Actions extends Module {
 		this.settings.add('chat.actions.inline', {
 			// Filter out actions
 			process: (ctx, val) =>
-				val.filter(x => x.appearance &&
-					this.renderers[x.appearance.type] &&
-					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
-					(! x.action || this.actions[x.action])
-				),
+				val.filter(this.filterAction),
 
 			default: [
 				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
@@ -157,11 +154,7 @@ export default class Actions extends Module {
 		this.settings.add('chat.actions.user-context', {
 			// Filter out actions
 			process: (ctx, val) =>
-				val.filter(x => x.type || (x.appearance &&
-					this.renderers[x.appearance.type] &&
-					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
-					(! x.action || this.actions[x.action])
-				)),
+				val.filter(x => x.type || this.filterAction(x)),
 
 			default: [],
 			type: 'array_merge',
@@ -187,11 +180,7 @@ export default class Actions extends Module {
 		this.settings.add('chat.actions.room', {
 			// Filter out actions
 			process: (ctx, val) =>
-				val.filter(x => x.type || (x.appearance &&
-					this.renderers[x.appearance.type] &&
-					(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
-					(! x.action || this.actions[x.action])
-				)),
+				val.filter(x => x.type || this.filterAction(x)),
 
 			default: [],
 			type: 'array_merge',
@@ -316,20 +305,24 @@ export default class Actions extends Module {
 		}
 
 		if ( is_dev ) {
-			overrides.removeAction = key => {
-				const existing = this.actions[key];
-				if ( existing && existing.__source !== addon_id )
-					module.log.warn('[DEV-CHECK] Removed un-owned action with actions.removeAction:', key, ' owner:', existing.__source ?? 'ffz');
+			overrides.removeAction = (...key) => {
+				for(const entry of key) {
+					const existing = this.actions[entry];
+					if ( existing && existing.__source !== addon_id )
+						module.log.warn('[DEV-CHECK] Removed un-owned action with actions.removeAction:', entry, ' owner:', existing.__source ?? 'ffz');
+				}
 
-				return this.removeAction(key);
+				return this.removeAction(...key);
 			};
 
-			overrides.removeRenderer = key => {
-				const existing = this.renderers[key];
-				if ( existing && existing.__source !== addon_id )
-					module.log.warn('[DEV-CHECK] Removed un-owned renderer with actions.removeRenderer:', key, ' owner:', existing.__source ?? 'ffz');
+			overrides.removeRenderer = (...key) => {
+				for(const entry of key) {
+					const existing = this.renderers[entry];
+					if ( existing && existing.__source !== addon_id )
+						module.log.warn('[DEV-CHECK] Removed un-owned renderer with actions.removeRenderer:', entry, ' owner:', existing.__source ?? 'ffz');
+				}
 
-				return this.removeRenderer(key);
+				return this.removeRenderer(...key);
 			}
 
 			warnings.actions = 'Please use addAction() or removeAction()';
@@ -367,22 +360,49 @@ export default class Actions extends Module {
 		this._updateContexts();
 	}
 
+	getActions() {
+		return {...this.actions}
+	}
 
-	removeAction(key) {
-		if ( ! has(this.actions, key) )
-			return;
+	getAction(key) {
+		return this.actions[key] ?? null;
+	}
 
-		delete this.actions[key];
-		this._updateContexts();
+	getRenderer(key) {
+		return this.renderers[key] ?? null;
+	}
+
+	getRenderers() {
+		return {...this.renderers}
+	}
+
+	removeAction(...keys) {
+		let changed = false;
+		for(const entry of keys) {
+			if ( ! has(this.actions, entry) )
+				continue;
+
+			delete this.actions[entry];
+			changed = true;
+		}
+
+		if ( changed )
+			this._updateContexts();
 	}
 
 
-	removeRenderer(key) {
-		if ( ! has(this.renderers, key) )
-			return;
+	removeRenderer(...keys) {
+		let changed = false;
+		for(const entry of keys) {
+			if ( ! has(this.renderers, entry) )
+				return;
 
-		delete this.renderers[key];
-		this._updateContexts();
+			delete this.renderers[entry];
+			changed = true;
+		}
+
+		if ( changed )
+			this._updateContexts();
 	}
 
 

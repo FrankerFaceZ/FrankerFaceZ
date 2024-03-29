@@ -270,6 +270,47 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		return null;
 	}
 
+	searchParentNode<TNode extends ReactNode = ReactNode>(
+		input: InputNode,
+		criteria: NodeCriteria,
+		max_depth = 15,
+		depth = 0,
+		traverse_roots = true
+	): TNode | null {
+		if ( depth > max_depth )
+			return null;
+
+		const node = this.resolveNode(input);
+
+		// If we don't have a node, then stop.
+		if ( ! node )
+			return null;
+
+		if ( criteria(node) )
+			return node as TNode;
+
+		if ( node.return ) {
+			const result = this.searchParentNode<TNode>(node.return, criteria, max_depth, depth+1, traverse_roots);
+			if ( result )
+				return result as TNode;
+		}
+
+		// Stupid code for traversing up into another React root.
+		const inst = node.stateNode;
+		if ( traverse_roots && (inst as any)?.containerInfo ) {
+			const parent = (inst as any).containerInfo?.parentElement as Node | undefined,
+				parent_node = parent && this.getReactInstance(parent);
+
+			if ( parent_node ) {
+				const result = this.searchParentNode<TNode>(parent_node, criteria, max_depth, depth+1, traverse_roots);
+				if ( result )
+					return result as TNode;
+			}
+		}
+
+		return null;
+	}
+
 	searchNode<TNode extends ReactNode = ReactNode>(
 		input: InputNode,
 		criteria: NodeCriteria,
@@ -286,7 +327,7 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		if ( ! node )
 			return null;
 
-		if ( node && criteria(node) )
+		if ( criteria(node) )
 			return node as TNode;
 
 		// If the node has disabled scanning, don't scan into its children.

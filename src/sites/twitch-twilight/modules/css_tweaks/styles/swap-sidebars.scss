@@ -10,6 +10,11 @@
 	}
 }
 
+.right-column--theatre {
+	/* 1 higher than default Twitch, to make the expand button appear properly */
+	z-index: 3001;
+}
+
 .channel-root {
 	width: unset !important;
 }

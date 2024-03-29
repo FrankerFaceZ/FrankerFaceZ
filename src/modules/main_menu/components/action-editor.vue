@@ -79,6 +79,12 @@
 						v-if="renderer"
 						v-model="edit_data.appearance"
 					/>
+
+					<component
+						:is="extra_appearance"
+						v-if="extra_appearance"
+						v-model="edit_data.appearance"
+					/>
 				</section>
 
 				<section class="tw-mg-t-1 tw-border-t tw-pd-t-1">
@@ -124,6 +130,28 @@
 							</option>
 							<option :value="false">
 								{{ t('setting.hidden', 'Hidden') }}
+							</option>
+						</select>
+					</div>
+
+					<div v-if="has_following" class="tw-flex tw-align-items-center">
+						<label for="vis_following">
+							{{ t('setting.actions.edit-visible.following', 'Following User') }}
+						</label>
+
+						<select
+							id="vis_following"
+							v-model="edit_data.display.following"
+							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+						>
+							<option :value="undefined" selected>
+								{{ t('setting.unset', 'Unset') }}
+							</option>
+							<option :value="true">
+								{{ t('setting.true', 'True') }}
+							</option>
+							<option :value="false">
+								{{ t('setting.false', 'False') }}
 							</option>
 						</select>
 					</div>
@@ -459,7 +487,7 @@ import {has, maybe_call, deep_copy} from 'utilities/object';
 let id = 0;
 
 export default {
-	props: ['vuectx', 'action', 'data', 'inline', 'mod_icons', 'context', 'modifiers', 'hover_modifier'],
+	props: ['vuectx', 'action', 'data', 'inline', 'mod_icons', 'extra_appearance', 'context', 'modifiers', 'hover_modifier'],
 
 	data() {
 		return {
@@ -485,6 +513,10 @@ export default {
 
 		has_message() {
 			return this.context && this.context.includes('message')
+		},
+
+		has_following() {
+			return this.context && this.context.includes('following')
 		},
 
 		has_mode() {
@@ -641,6 +673,12 @@ export default {
 
 			if ( disp.disable )
 				return this.t('setting.actions.visible.never', 'never');
+
+			if ( disp.following === true )
+				out.push(this.t('setting.actions.visible.following', 'when following user'));
+
+			else if ( disp.following === false )
+				out.push(this.t('setting.actions.visible.unfollowing', 'when not following user'));
 
 			if ( disp.mod === true )
 				out.push(this.t('setting.actions.visible.mod', 'when moderator'));

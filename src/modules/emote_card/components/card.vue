@@ -370,8 +370,8 @@ export default {
 			if ( ! parent )
 				parent = document.body;
 
-			const box = el.getBoundingClientRect(),
-				pbox = parent.getBoundingClientRect();
+			const box = el.getBoundingClientRect();
+			let pbox = parent.getBoundingClientRect();
 
 			if ( box.top < pbox.top ) {
 				el.style.top = `${el.offsetTop + (pbox.top - box.top)}px`;
