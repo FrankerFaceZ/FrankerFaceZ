@@ -73,7 +73,7 @@ export type MetadataState = {
 	getViewerCount: () => number;
 
 	/** Get the broadcast ID of the current live broadcast, assuming the current channel is live. */
-	getBroadcastID: () => string | null;
+	getBroadcastID: () => Promise<string | null> | null;
 
 	/** Get the currently logged in user's relationship with the current channel. */
 	// TODO: Types
@@ -405,7 +405,7 @@ export default class Metadata extends Module {
 					// We need the as any here because TypeScript's devs don't
 					// live with the rest of us in the real world.
 					navigator?.permissions?.query?.({name: 'clipboard-write' as PermissionName}).then(perm => perm?.state).catch(() => null),
-					data.getBroadcastID()
+					data.getBroadcastID()?.catch(err => null)
 				]);
 				if ( ! broadcast_id )
 					return (<div>

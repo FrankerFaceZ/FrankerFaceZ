@@ -12,7 +12,7 @@
 	-moz-appearance: none;
 	-webkit-appearance: none;
 	appearance: none;
-	border: var(--border-width-input) solid var(--color-border-input);
+	border: var(--input-border-width-default) solid var(--color-border-input);
 	color: var(--color-text-input);
 	line-height: 1.5;
 
@@ -71,7 +71,7 @@
 
 	&:focus, &:focus:hover {
 		background-color: var(--color-background-input-focus);
-		border: var(--border-width-input) solid var(--color-border-input-focus);
+		border: var(--input-border-width-default) solid var(--color-border-input-focus);
 		outline: 0;
 	}
 }
@@ -80,7 +80,7 @@
 	box-shadow: var(--shadow-input-error);
 
 	&, &:focus {
-		border: var(--border-width-input) solid var(--color-border-input-error);
+		border: var(--input-border-width-default) solid var(--color-border-input-error);
 	}
 }
 
@@ -94,18 +94,18 @@
 .ffz-textarea--overlay {
 	background-color: var(--color-background-input-overlay);
 	border: none;
-	box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay);
+	box-shadow: inset 0 0 0 var(--input-border-width-default) var(--color-border-input-overlay);
 	color: var(--color-text-overlay);
 
 	&:hover {
 		background-color: var(--color-background-input-overlay);
-		box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay-hover);
+		box-shadow: inset 0 0 0 var(--input-border-width-default) var(--color-border-input-overlay-hover);
 	}
 
 	&:focus, &:focus:hover {
 		background-color: var(--color-background-input-overlay-focus);
 		border: none;
-		box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay-focus);
+		box-shadow: inset 0 0 0 var(--input-border-width-default) var(--color-border-input-overlay-focus);
 	}
 
 	//&::-webkit-input-placeholder,
@@ -117,11 +117,11 @@
 
 	&.ffz-input--error,
 	&.ffz-select--error {
-		border: var(--border-width-input) solid var(--color-border-input-error);
+		border: var(--input-border-width-default) solid var(--color-border-input-error);
 		box-shadow: var(--shadow-input-error);
 
 		&:focus {
-			border: var(--border-width-input) solid var(--color-border-input-error);
+			border: var(--input-border-width-default) solid var(--color-border-input-error);
 			box-shadow: var(--shadow-input-error-focus);
 		}
 	}
@@ -169,7 +169,7 @@
 		background-size: 2rem;
 	}
 
-	border: var(--border-width-input) solid var(--color-border-input);
+	border: var(--input-border-width-default) solid var(--color-border-input);
 	color: var(--color-text-input);
 	cursor: pointer;
 	line-height: 1.5;
@@ -196,7 +196,7 @@
 	&[data-focus-visible-added] {
 		&, & option {
 			background-color: var(--color-background-input-overlay-focus);
-			box-shadow: inset 0 0 0 var(--border-width-input) var(--color-border-input-overlay-focus);
+			box-shadow: inset 0 0 0 var(--input-border-width-default) var(--color-border-input-overlay-focus);
 		}
 	}
 }
@@ -217,7 +217,7 @@
 	-ms-overflow-style: none;
 	-webkit-appearance: none;
 	appearance: none;
-	border: var(--border-width-input) solid var(--color-border-input);
+	border: var(--input-border-width-default) solid var(--color-border-input);
 	color: var(--color-text-input);
 	padding: .5rem 1rem;
 	resize: vertical;
@@ -231,7 +231,7 @@
 		box-shadow: var(--shadow-input-error);
 
 		&,&:focus {
-			border: var(--border-width-input) solid var(--color-border-input-error);
+			border: var(--input-border-width-default) solid var(--color-border-input-error);
 		}
 
 		&:focus {

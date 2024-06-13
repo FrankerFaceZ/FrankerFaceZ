@@ -405,7 +405,7 @@ Twilight.DASH_ROUTES = {
 
 Twilight.ROUTES = {
 	'front-page': '/',
-	'collection': '/collections/:collectionID',
+	'collection': '/directory/collection/:collectionID',
 	'dir': '/directory',
 	//'dir-community': '/communities/:communityName',
 	//'dir-community-index': '/directory/communities',

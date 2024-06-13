@@ -27,7 +27,7 @@
 	&:hover:checked,
 	&:hover:indeterminate {
 		& + .ffz-checkbox__label:before {
-			border: var(--border-width-input) solid var(--color-border-input-checkbox-checked);
+			border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-checked);
 		}
 	}
 
@@ -36,7 +36,7 @@
 		& + .ffz-checkbox__label {
 			&:before {
 				background-color: var(--color-background-input-checkbox-checked-background);
-				border: var(--border-width-input) solid var(--color-border-input-checkbox-checked);
+				border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-checked);
 			}
 
 			&:after {
@@ -71,7 +71,7 @@
 	}
 
 	&[data-focus-visible-added] + .ffz-checkbox__label:before {
-		border: var(--border-width-input) solid var(--color-border-input-checkbox-focus);
+		border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-focus);
 		box-shadow: var(--shadow-input-focus);
 	}
 }
@@ -86,7 +86,7 @@
 		position: relative;
 
 		&:before {
-			border: var(--border-width-input) solid var(--color-border-input-checkbox);
+			border: var(--border-width-checkbox) solid var(--color-border-input-checkbox);
 			border-radius: .2rem;
 			border-radius: var(--border-radius-small);
 			left: 0;
@@ -106,7 +106,7 @@
 }
 
 .ffz-checkbox--error .ffz-checkbox__label:before {
-	border: var(--border-width-input) solid var(--color-border-input-checkbox-error);
+	border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-error);
 }
 
 .ffz-checkbox--overlay {
@@ -114,7 +114,7 @@
 		&:checked + .ffz-checkbox__label {
 			&:before {
 				background-color: var(--color-background-input-checkbox-checked-background-overlay);
-				border: var(--border-width-input) solid var(--color-border-input-checkbox-checked-overlay);
+				border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-checked-overlay);
 			}
 
 			&:after {
@@ -125,14 +125,14 @@
 		&:hover:checked,
 		&:indeterminate {
 			& + .ffz-checkbox__label:before {
-				border: var(--border-width-input) solid var(--color-border-input-checkbox-checked-overlay);
+				border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-checked-overlay);
 			}
 		}
 
 		&:indeterminate + .ffz-checkbox__label {
 			&:before {
 				background-color: var(--color-background-input-checkbox-checked-background-overlay);
-				border: var(--border-width-input) solid var(--color-border-input-checkbox-checked-overlay);
+				border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-checked-overlay);
 			}
 
 			&:after {
@@ -153,7 +153,7 @@
 		}
 
 		&[data-focus-visible-added] + .ffz-checkbox__label:before {
-			border: var(--border-width-input) solid var(--color-border-input-overlay-focus);
+			border: var(--border-width-checkbox) solid var(--color-border-input-overlay-focus);
 			box-shadow: 0 0 6px 0 var(--color-border-input-overlay-focus);
 		}
 	}
@@ -163,7 +163,7 @@
 
 		&:before {
 			background-color: var(--color-background-input-overlay);
-			border: var(--border-width-input) solid var(--color-border-input-checkbox-overlay);
+			border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-overlay);
 		}
 
 		&:hover:before {
@@ -202,7 +202,7 @@
 	}
 
 	&[data-focus-visible-added] + .ffz-radio__label:before {
-		border: var(--border-width-input) solid var(--color-border-input-checkbox-focus);
+		border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-focus);
 		box-shadow: var(--shadow-input-focus);
 	}
 }
@@ -216,7 +216,7 @@
 	position: relative;
 
 	&:before {
-		border: var(--border-width-input) solid var(--color-border-input-checkbox);
+		border: var(--border-width-checkbox) solid var(--color-border-input-checkbox);
 		border-radius: 50%;
 		left: 0;
 		position: absolute;
@@ -236,7 +236,7 @@
 }
 
 .ffz-radio--error .ffz-radio__label:before {
-	border: var(--border-width-input) solid var(--color-border-input-checkbox-error);
+	border: var(--border-width-checkbox) solid var(--color-border-input-checkbox-error);
 }
 
 // TODO: radio overlay
