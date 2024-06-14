@@ -123,5 +123,6 @@ export default [
 	"artist",
 	"discord",
 	"tiktok",
-	"bluesky"
+	"bluesky",
+	"bits"
 ] as const;

@@ -11,7 +11,7 @@ import Module, { buildAddonProxy } from 'utilities/module';
 import {Color} from 'utilities/color';
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {getFontsList} from 'utilities/fonts';
-import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker, deep_copy, SourcedSet} from 'utilities/object';
+import {timeout, has, addWordSeparators, glob_to_regex, escape_regex, split_chars, makeAddonIdChecker, deep_copy, SourcedSet, getTwitchEmoteURL} from 'utilities/object';
 
 import Badges from './badges';
 import Emotes from './emotes';
@@ -2492,6 +2492,29 @@ export default class Chat extends Module {
 	}
 
 
+	pluckLastEmote(tokens) {
+		if ( ! Array.isArray(tokens) )
+			return;
+
+		let i = tokens.length;
+		while(i--) {
+			const token = tokens[i];
+			if (token.type === 'emote' && token.provider !== 'emoji') {
+				if ( this.context.get('chat.emotes.allow-gigantify') ) {
+					token.gigantify = true;
+					token.hidden = true;
+					return token;
+				} else {
+					if (token.gigantify)
+						token.hidden = false;
+					return null;
+				}
+			} else if (token.hidden)
+				continue;
+		}
+	}
+
+
 	pluckRichContent(tokens, msg) { // eslint-disable-line class-methods-use-this
 		if ( ! this.context.get('chat.rich.enabled') || this.context.get('chat.rich.minimum-level') > this.getUserLevel(msg) )
 			return;
@@ -2541,6 +2564,58 @@ export default class Chat extends Module {
 		}
 
 		return tokens || [];
+	}
+
+
+
+	renderGiantEmote(token, e) {
+		if ( ! e )
+			e = createElement;
+
+		const animated = token.anim === 1;
+
+		let src, hoverSrc, height;
+		if (token.provider === 'twitch') {
+			src = getTwitchEmoteURL(token.id, 4, animated, true);
+			height = 112;
+
+		} else if (token.provider === 'ffz') {
+			const emote_set = this.emotes.emote_sets[token.set],
+				emote = emote_set?.emotes?.[token.id];
+
+			if ( emote ) {
+				const urls = emote.urls;
+				if ( urls?.[4] ) {
+					src = urls[4];
+					height = emote.height * 4;
+				} else if ( urls?.[2] ) {
+					src = urls[2];
+					height = emote.height * 2;
+				} else if ( urls?.[1] ) {
+					src = urls[1];
+					height = emote.height;
+				}
+			}
+
+		} else
+			src = null;
+
+		if ( ! src )
+			return null;
+
+		return e('img', {
+			className: `chat-image chat-line__message--emote ffz--pointer-events ffz-tooltip${hoverSrc ? ' ffz-hover-emote' : ''}${token.provider === 'twitch' ? ' twitch-emote' : token.provider === 'ffz' ? ' ffz-emote' : token.provider === 'emoji' ? ' ffz-emoji' : ''}`,
+			src,
+			height: `${height}px`,
+			alt: token.text,
+			'data-tooltip-type': 'emote',
+			'data-provider': token.provider,
+			'data-id': token.id,
+			'data-set': token.set,
+			'data-code': token.code,
+			'data-variant': token.variant,
+			onClick: this.emotes.handleClick
+		});
 	}
 
 

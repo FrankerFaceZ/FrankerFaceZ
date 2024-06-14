@@ -923,6 +923,20 @@
       "search": [
         "bluesky"
       ]
+    },
+    {
+      "uid": "32afa7efa546b2a97abc8247aa37cd95",
+      "css": "bits",
+      "code": 59473,
+      "src": "custom_icons",
+      "selected": true,
+      "svg": {
+        "path": "M500 100L150 600 500 900 850 600 500 100ZM500 274.4L691.1 583.1 500 652.5 308.9 583.1 500 274.4Z",
+        "width": 1000
+      },
+      "search": [
+        "bits"
+      ]
     }
   ]
 }

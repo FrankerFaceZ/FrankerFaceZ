@@ -140,11 +140,10 @@ const CHAT_TYPES = make_enum(
 	'CommunityIntroduction',
 	'Shoutout',
 	'AnnouncementMessage',
-	'MidnightSquid',
 	'CharityDonation',
 	'MessageIdUpdate',
-	'PinnedChat',
-	'ViewerMilestone'
+	'ViewerMilestone',
+	'GigantifiedEmote'
 );
 
 

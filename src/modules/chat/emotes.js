@@ -520,6 +520,16 @@ export default class Emotes extends Module {
 			}
 		});
 
+		this.settings.add('chat.emotes.allow-gigantify', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Emotes',
+				title: 'Allow "Gigantify an Emote" Power-Up',
+				description: 'How big is too big? Giant? Disable this and the emotes will be displayed normally.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.fix-bad-emotes', {
 			default: true,
 			ui: {

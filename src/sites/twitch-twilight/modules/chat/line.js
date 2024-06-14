@@ -12,7 +12,7 @@ import { has } from 'utilities/object';
 import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
 
-import { getRewardTitle, getRewardCost } from './points';
+import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits } from './points';
 import awaitMD, {getMD} from 'utilities/markdown';
 
 const SUB_TIERS = {
@@ -203,13 +203,14 @@ export default class ChatLine extends Module {
 
 				// We need to get the message's tokens to see if it has a message or not.
 				const user = msg.user,
+					is_bits = doesRewardCostBits(msg.ffz_reward),
 					tokens = msg.ffz_tokens = msg.ffz_tokens || this.chat.tokenizeMessage(msg, current_user),
 					has_message = tokens.length > 0;
 
 				// Elements for the reward and cost with nice formatting.
 				const reward = e('span', {className: 'ffz--points-reward'}, getRewardTitle(msg.ffz_reward, this.i18n)),
 					cost = e('span', {className: 'ffz--points-cost'}, [
-						e('span', {className: 'ffz--points-icon'}),
+						e('span', {className: is_bits ? 'ffz-i-bits' : 'ffz--points-icon'}),
 						this.i18n.formatNumber(getRewardCost(msg.ffz_reward))
 					]);
 
@@ -1065,6 +1066,8 @@ other {# messages were deleted by a moderator.}
 						: null;
 
 					const is_action = t.parent.message_types && t.parent.message_types.Action === msg.messageType,
+						is_giant_emote = this.props.isLastEmoteGigantified || isGiantEmoteReward(msg.ffz_reward),
+
 						action_style = is_action ? t.chat.context.get('chat.me-style') : 0,
 						action_italic = action_style >= 2,
 						action_color = action_style === 1 || action_style === 3;
@@ -1072,7 +1075,8 @@ other {# messages were deleted by a moderator.}
 					const raw_color = t.overrides.getColor(user.id) || user.color,
 						color = t.parent.colors.process(raw_color);
 
-					const rich_content = show && FFZRichContent && t.chat.pluckRichContent(tokens, msg);
+					const rich_content = show && FFZRichContent && t.chat.pluckRichContent(tokens, msg),
+						giant_emote = is_giant_emote && t.chat.pluckLastEmote(tokens, msg);
 
 					// First, render the user block.
 					const username = t.chat.formatUser(user, e),
@@ -1184,6 +1188,11 @@ other {# messages were deleted by a moderator.}
 						// Rich Content
 						rich_content
 							? e(FFZRichContent, rich_content)
+							: null,
+
+						// Giant Emote
+						giant_emote
+							? e('div', {className: 'chat-line__message--ffz-giant-emote'}, t.chat.renderGiantEmote(giant_emote, e))
 							: null
 					];
 				}

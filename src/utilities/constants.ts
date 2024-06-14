@@ -135,7 +135,8 @@ export const RERENDER_SETTINGS = [
 	'chat.bits.cheer-notice',
 	'chat.filtering.hidden-tokens',
 	'chat.hype.message-style',
-	'chat.filtering.show-reasons'
+	'chat.filtering.show-reasons',
+	'chat.emotes.allow-gigantify'
 ] as const;
 
 /**

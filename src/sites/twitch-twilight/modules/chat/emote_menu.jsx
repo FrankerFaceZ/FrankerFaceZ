@@ -461,7 +461,11 @@ export default class EmoteMenu extends Module {
 			cls.prototype.render = function() {
 				this._ffz_no_scan = false;
 
-				if ( ! this.props || ! has(this.props, 'channelID') || ! t.chat.context.get('chat.emote-menu.enabled') ) {
+				if ( ! this.props ||
+					 this.props.emotePickerSource === 'bits-rewards' ||
+					 ! has(this.props, 'channelID') ||
+					 ! t.chat.context.get('chat.emote-menu.enabled')
+				) {
 					return old_render.call(this);
 				}
 

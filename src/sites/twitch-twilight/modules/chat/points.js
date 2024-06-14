@@ -1,3 +1,7 @@
+export function doesRewardCostBits(reward) {
+	return reward.pricingType === 'BITS';
+}
+
 export function isAutomaticReward(reward) {
 	return reward?.__typename === 'CommunityPointsAutomaticReward';
 }
@@ -10,11 +14,21 @@ export function isHighlightedReward(reward) {
 	return isAutomaticReward(reward) && reward.type === 'SEND_HIGHLIGHTED_MESSAGE';
 }
 
-export function getRewardCost(reward) {
-	if ( isAutomaticReward(reward) )
-		return reward.cost || reward.defaultCost;
+export function isGiantEmoteReward(reward) {
+	return reward && (reward.title?.includes?.('FFZ:GE') ||
+		reward.prompt?.includes?.('FFZ:GE'));
+}
 
-	return reward.cost;
+export function getRewardCost(reward) {
+	const is_bits = doesRewardCostBits(reward);
+	if ( isAutomaticReward(reward) )
+		return is_bits
+			? (reward.bitsCost || reward.defaultBitsCost)
+			: (reward.cost || reward.defaultCost);
+
+	return is_bits
+		? reward.bitsCost
+		: reward.cost;
 }
 
 export function getRewardColor(reward) {
@@ -29,6 +43,8 @@ export function getRewardTitle(reward, i18n) {
 		return reward.title;
 
 	switch(reward.type) {
+		case 'SEND_ANIMATED_MESSAGE':
+			return i18n.t('chat.points.animated', 'Message Effects');
 		case 'SEND_HIGHLIGHTED_MESSAGE':
 			return i18n.t('chat.points.highlighted', 'Highlight My Message');
 		case 'SINGLE_MESSAGE_BYPASS_SUB_MODE':
