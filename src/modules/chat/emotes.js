@@ -1274,7 +1274,8 @@ export default class Emotes extends Module {
 				const ds = em.dataset;
 				if ( ds.normalSrc && ds.hoverSrc ) {
 					em.src = ds.hoverSrc;
-					em.srcset = ds.hoverSrcSet;
+					if (em.srcset)
+						em.srcset = ds.hoverSrcSet;
 				}
 			}
 		});
@@ -1303,7 +1304,8 @@ export default class Emotes extends Module {
 				const ds = em.dataset;
 				if ( ds.normalSrc ) {
 					em.src = ds.normalSrc;
-					em.srcset = ds.normalSrcSet;
+					if (em.srcset)
+						em.srcset = ds.normalSrcSet;
 				}
 			}
 		});

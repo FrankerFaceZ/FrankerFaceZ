@@ -2567,16 +2567,18 @@ export default class Chat extends Module {
 	}
 
 
-
 	renderGiantEmote(token, e) {
 		if ( ! e )
 			e = createElement;
 
-		const animated = token.anim === 1;
+		const animated = token.anim === 1,
+			hover_animated = token.anim === 2;
 
 		let src, hoverSrc, height;
 		if (token.provider === 'twitch') {
 			src = getTwitchEmoteURL(token.id, 4, animated, true);
+			if (hover_animated)
+				hoverSrc = getTwitchEmoteURL(token.id, 4, true, true);
 			height = 112;
 
 		} else if (token.provider === 'ffz') {
@@ -2584,16 +2586,18 @@ export default class Chat extends Module {
 				emote = emote_set?.emotes?.[token.id];
 
 			if ( emote ) {
-				const urls = emote.urls;
-				if ( urls?.[4] ) {
-					src = urls[4];
-					height = emote.height * 4;
-				} else if ( urls?.[2] ) {
-					src = urls[2];
-					height = emote.height * 2;
-				} else if ( urls?.[1] ) {
-					src = urls[1];
-					height = emote.height;
+				let urls = (animated ? emote.animated : null) ?? emote.urls;
+				let pair = getBiggestImage(urls);
+				if (! pair )
+					return null;
+
+				src = pair[0];
+				height = emote.height * pair[1];
+
+				if (hover_animated && emote.animated) {
+					pair = getBiggestImage(emote.animated);
+					if (pair)
+						hoverSrc = pair[0];
 				}
 			}
 
@@ -2608,6 +2612,8 @@ export default class Chat extends Module {
 			src,
 			height: `${height}px`,
 			alt: token.text,
+			'data-normal-src': src,
+			'data-hover-src': hoverSrc,
 			'data-tooltip-type': 'emote',
 			'data-provider': token.provider,
 			'data-id': token.id,
@@ -2905,4 +2911,17 @@ export default class Chat extends Module {
 
 		return data;
 	}
+}
+
+
+function getBiggestImage(urls) {
+	if (urls?.[4] )
+		return [urls[4], 4];
+	if (urls?.[3] )
+		return [urls[3], 3];
+	if (urls?.[2] )
+		return [urls[2], 2];
+	if (urls?.[1] )
+		return [urls[1], 1];
+	return null;
 }

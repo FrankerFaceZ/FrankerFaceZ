@@ -12,7 +12,7 @@ import { has } from 'utilities/object';
 import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
 
-import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits } from './points';
+import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits, isMessageEffect } from './points';
 import awaitMD, {getMD} from 'utilities/markdown';
 
 const SUB_TIERS = {

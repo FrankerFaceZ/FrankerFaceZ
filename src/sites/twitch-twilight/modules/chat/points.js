@@ -19,6 +19,10 @@ export function isGiantEmoteReward(reward) {
 		reward.prompt?.includes?.('FFZ:GE'));
 }
 
+export function isMessageEffect(reward) {
+	return reward?.type === 'SEND_ANIMATED_MESSAGE';
+}
+
 export function getRewardCost(reward) {
 	const is_bits = doesRewardCostBits(reward);
 	if ( isAutomaticReward(reward) )

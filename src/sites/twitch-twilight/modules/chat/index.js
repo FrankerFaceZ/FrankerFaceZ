@@ -20,7 +20,7 @@ import SettingsMenu from './settings_menu';
 import EmoteMenu from './emote_menu';
 import Input from './input';
 import ViewerCards from './viewer_card';
-import { isHighlightedReward } from './points';
+import { isHighlightedReward, isMessageEffect } from './points';
 
 
 /*const REGEX_EMOTES = {
@@ -367,6 +367,16 @@ export default class ChatHook extends Module {
 				path: 'Channel > Behavior >> Raids',
 				title: 'Do not automatically join raids.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.powerup.effects', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow "Message Effects" messages to appear in chat.',
+				component: 'setting-check-box',
+				description: '*Note*: Only affects messages sent after you change this setting. You can use your own chat for testing.'
 			}
 		});
 
@@ -1899,7 +1909,7 @@ export default class ChatHook extends Module {
 						if ( blocked_types.has(types[msg.type]) )
 							return;
 
-						if ( msg.type === types.ChannelPointsReward )
+						if ( msg.type === types.ChannelPointsReward && ! isMessageEffect(msg.reward) )
 							return;
 
 						if ( msg.type === types.RewardGift && ! t.chat.context.get('chat.bits.show-rewards') )
@@ -2945,11 +2955,25 @@ export default class ChatHook extends Module {
 						if ( reward ) {
 							const out = i.convertMessage(e);
 
-							out.ffz_type = 'points';
-							out.ffz_reward = reward;
-							out.ffz_reward_highlight = isHighlightedReward(reward);
+							if ( t.chat.context.get('chat.powerup.effects') && isMessageEffect(reward) && e.animationID ) {
+								return i.postMessageToCurrentChannel(e, {
+									type: t.chat_types.ChannelPointsReward,
+									id: out.id,
+									displayName: out.user.userDisplayName,
+									login: out.user.userLogin,
+									reward: reward,
+									message: out,
+									userID: out.user.userID,
+									animationID: e.animationID
+								})
+							} else {
+								out.ffz_animation_id = e.animationID;
+								out.ffz_type = 'points';
+								out.ffz_reward = reward;
+								out.ffz_reward_highlight = isHighlightedReward(reward);
 
-							return i.postMessageToCurrentChannel(e, out);
+								return i.postMessageToCurrentChannel(e, out);
+							}
 						}
 
 					} catch(err) {
