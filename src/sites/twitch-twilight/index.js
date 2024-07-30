@@ -254,6 +254,12 @@ Twilight.KNOWN_MODULES = {
 			return n.w9;
 	},
 	highlightstack: n => {
+		if ( has(n['g$']?._currentValue, 'highlights') && typeof n.SP?._currentValue === 'function' )
+			return {
+				stack: n['g$'],
+				dispatch: n.SP
+			};
+
 		if ( has(n.b, CALCULATE_BITS) && has(n.c, CALCULATE_BITS) )
 			return {
 				stack: n.b,
