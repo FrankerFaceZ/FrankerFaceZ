@@ -461,6 +461,16 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.hide-appleplus', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Hide the drop notification for getting AppleTV+ when you buy a subscription.',
+				component: 'setting-check-box',
+				description: '**Note:** Normally, I wouldn\'t add something that directly affects an advertisement like this, but Twitch broke the "Don\'t show again" checkbox, so it\'s up to us to fix it.'
+			}
+		});
+
 		this.settings.add('chat.banners.hype-train', {
 			default: true,
 			ui: {
@@ -1061,6 +1071,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.drops', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.pinned-message', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.hide-appleplus', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.disable-handling', this.updateDisableHandling, this);
 
@@ -1765,6 +1776,18 @@ export default class ChatHook extends Module {
 					id: entry.id
 				});
 			}
+
+			if (type === 'mw-drop-available' &&
+				entry.event.detailsURL === 'https://blog.twitch.tv/2024/07/26/sub-and-get-apple-tv/' &&
+				this.chat.context.get('chat.banners.hide-appleplus')
+			) {
+				this.log.info('Removing community highlight: ', type, '#', entry.id);
+				this.community_dispatch({
+					type: 'remove-highlight',
+					id: entry.id
+				});
+			}
+
 		}
 	}
 
