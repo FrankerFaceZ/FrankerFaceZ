@@ -244,7 +244,7 @@ Twilight.KNOWN_MODULES = {
 		if ( n.S && n.S.toString().includes('.visit') )
 			return n.S;
 	},
-	'user-report': n => n['a3']?.displayName === 'Loadable(ReportUserModal)' && n['a3'],
+	'user-report': n => n['Z']?.displayName === 'Loadable(ReportUserModal)' && n['Z'],
 	'sub-form': n => typeof n.T === 'function' && String(n.T).includes('CheckoutModal') && n.T,
 	mousetrap: n => n.bindGlobal && n.unbind && n.handleKey,
 	'algolia-search': n => {
