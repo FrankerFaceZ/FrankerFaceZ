@@ -542,6 +542,14 @@ export default class Badges extends Module {
 			let promises = false;
 
 			for(const d of ds.data) {
+				let source_channel = null;
+				if ( d.room ) {
+					const source = this.resolve('site.chat')?.shared_room_data?.get(d.room);
+					source_channel = source?.displayName;
+					if (source_channel)
+						source_channel = `\n\n${source_channel}`;
+				}
+
 				const p = d.provider;
 				if ( p === 'twitch' ) {
 					const bd = this.getTwitchBadge(d.badge, d.version, ds.room_id, ds.room_login),
@@ -575,7 +583,7 @@ export default class Badges extends Module {
 
 					out.push(<div class="ffz-badge-tip">
 						{show_previews && <img class="preview-image ffz-badge" src={bd.image4x} />}
-						{title}
+						{title}{source_channel}
 					</div>);
 
 				} else if ( p === 'ffz' ) {
@@ -593,7 +601,7 @@ export default class Badges extends Module {
 									backgroundImage: `url("${d.image}")`
 								}}
 							/>}
-							{d.title}{stuff||''}
+							{d.title}{stuff||''}{source_channel}
 						</div>)));
 
 					} else
@@ -605,7 +613,7 @@ export default class Badges extends Module {
 									backgroundImage: `url("${d.image}")`
 								}}
 							/>}
-							{d.title}{extra||''}
+							{d.title}{extra||''}{source_channel}
 						</div>);
 				}
 			}
@@ -832,8 +840,8 @@ export default class Badges extends Module {
 			//user = msg.user || {},
 			//user_id = user.id,
 			//user_login = user.login,
-			room_id = msg.roomID,
-			room_login = msg.roomLogin,
+			room_id = msg.sourceRoomID ? msg.sourceRoomID : msg.roomID,
+			room_login = msg.sourceRoomID ? null : msg.roomLogin,
 
 			room = this.parent.getRoom(room_id, room_login, true),
 			badges = msg.ffz_badges; // this.getBadges(user_id, user_login, room_id, room_login);
@@ -867,6 +875,7 @@ export default class Badges extends Module {
 						image: mod_urls[4] || mod_urls[2] || mod_urls[1],
 						color: '#34ae0a',
 						title: bd ? bd.title : 'Moderator',
+						room: room_id,
 						data
 					});
 
@@ -877,6 +886,7 @@ export default class Badges extends Module {
 						image: vip_urls[4] || vip_urls[2] || vip_urls[1],
 						color: 'transparent',
 						title: bd ? bd.title : 'VIP',
+						room: room_id,
 						data
 					});
 
@@ -885,6 +895,7 @@ export default class Badges extends Module {
 						provider: 'twitch',
 						badge: badge_id,
 						version,
+						room: room_id,
 						data
 					});
 
@@ -934,6 +945,7 @@ export default class Badges extends Module {
 							provider: 'ffz',
 							id: badge.id,
 							badge,
+							room: badge.room,
 							image: bu[4] || bu[2] || bu[1],
 							color: badge.color || full_badge.color,
 							title: badge.title || full_badge.title,
@@ -1106,7 +1118,7 @@ export default class Badges extends Module {
 		const room_user = room && room.getUser(user_id, user_login, true);
 
 		const out = (global_user?.badges ? global_user.badges._cache : []).concat(
-			room_user?.badges ? room_user.badges._cache : []);
+			room_user?.badges ? room_user.badges._cache.map(x => ({...x, room: room_id})) : []);
 
 		if ( this.bulk.size ) {
 			const str_user = String(user_id);

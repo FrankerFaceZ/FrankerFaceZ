@@ -863,12 +863,13 @@ export default class EmoteMenu extends Module {
 							/>)}
 						</div>
 						<div class="tw-flex-grow-1" />
-						{visibility ?
-							(hidden ?
-								t.i18n.t('emote-menu.visibility.hidden', 'Hidden') :
-								t.i18n.t('emote-menu.visibility.visible', 'Visible') )
-							: source
-						}
+						<span class={!visibility && data.channel_source ? 'ffz-tooltip' : ''} data-title={data.channel_source}>{
+							visibility ?
+								(hidden ?
+									t.i18n.t('emote-menu.visibility.hidden', 'Hidden') :
+									t.i18n.t('emote-menu.visibility.visible', 'Visible') )
+								: source
+						}</span>
 						{(visibility ? false : filtered) ? '' : <figure class={`tw-pd-l-05 ffz-i-${collapsed ? 'left' : 'down'}-dir`} />}
 					</heading>) : null}
 					{collapsed || this.renderBody(show_heading)}
@@ -2362,12 +2363,12 @@ export default class EmoteMenu extends Module {
 
 					let grouped_sets = {};
 
-					for(const [emote_set, provider] of ffz_room) {
+					for(const [emote_set, provider, source_id] of ffz_room) {
 						if ( seen_sets.has(emote_set) )
 							continue;
 						seen_sets.add(emote_set);
 
-						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, false, undefined, source_id);
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
 
@@ -2465,9 +2466,15 @@ export default class EmoteMenu extends Module {
 			}
 
 
-			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state) { // eslint-disable-line class-methods-use-this
+			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state, source_id) { // eslint-disable-line class-methods-use-this
 				if ( ! emote_set || ! emote_set.emotes )
 					return null;
+
+				let source_name;
+				if ( source_id ) {
+					const room = t.parent.shared_room_data?.get(source_id);
+					source_name = room?.displayName ?? room?.login;
+				}
 
 				const fav_key = emote_set.source || 'ffz',
 					known_favs = t.emotes.getFavorites(fav_key),
@@ -2482,13 +2489,21 @@ export default class EmoteMenu extends Module {
 							pdata.name) :
 						emote_set.source || 'FFZ',
 
-					title = provider === 'main' ?
-						t.i18n.t('emote-menu.main-set', 'Channel Emotes') :
-						(emote_set.title || t.i18n.t('emote-menu.unknown-set', `Set #{set_id}`, {set_id: emote_set.id}));
+					title = provider === 'main'
+						? source_name
+								? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
+								: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
+						: (emote_set.title || t.i18n.t('emote-menu.unknown-set', `Set #{set_id}`, {set_id: emote_set.id}));
 
 				let sort_key = pdata && pdata.sort_key || emote_set.sort;
 				if ( sort_key == null )
-					sort_key = emote_set.title.toLowerCase().includes('global') ? 100 : 0;
+					sort_key = emote_set.title.toLowerCase().includes('global')
+						? 100
+						: 0;
+
+				// Shared Chat emote sets always come after.
+				if (source_id)
+					sort_key += 50;
 
 				let section, emotes, locks;
 
@@ -2502,6 +2517,7 @@ export default class EmoteMenu extends Module {
 							image: emote_set.icon,
 							title,
 							source,
+							channel_source: source_name,
 							force_global: emote_set.force_global
 						});
 
@@ -2514,6 +2530,7 @@ export default class EmoteMenu extends Module {
 						icon: 'zreknarf',
 						title,
 						source,
+						channel_source: source_name,
 						emotes,
 						force_global: emote_set.force_global,
 						all_locked: true
@@ -2781,7 +2798,7 @@ export default class EmoteMenu extends Module {
 															key={data.key}
 															class={`${active ? 'emote-picker-tab-item-wrapper__active ' : ''}${padding ? 'tw-mg-y-05' : 'tw-mg-y-1'} tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse`}
 															data-key={data.key}
-															data-title={`${data.i18n ? t.i18n.t(data.i18n, data.title) : data.title}\n${data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source}`}
+															data-title={`${data.i18n ? t.i18n.t(data.i18n, data.title) : data.title}\n${data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source}${data.channel_source ? ` (${data.channel_source})` : ''}`}
 															data-tooltip-side="left"
 															onClick={this.clickSideNav}
 														>

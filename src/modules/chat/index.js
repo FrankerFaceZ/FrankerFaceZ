@@ -2095,7 +2095,9 @@ export default class Chat extends Module {
 			msg.deleted = !!msg.deletedAt;
 
 		// Addon Badges
-		msg.ffz_badges = this.badges.getBadges(user.id, user.login, msg.roomID, msg.roomLogin);
+		msg.ffz_badges = msg.sourceRoomID
+			? this.badges.getBadges(user.id, user.login, msg.sourceRoomID, null)
+			: this.badges.getBadges(user.id, user.login, msg.roomID, msg.roomLogin);
 
 		return msg;
 	}

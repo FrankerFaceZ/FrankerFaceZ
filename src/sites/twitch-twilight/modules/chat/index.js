@@ -166,6 +166,9 @@ export default class ChatHook extends Module {
 
 		this.should_enable = true;
 
+		this.shared_room_data = new Map;
+		this.shared_rooms = {};
+
 		this.colors = new ColorAdjuster;
 		this.inverse_colors = new ColorAdjuster;
 
@@ -210,6 +213,12 @@ export default class ChatHook extends Module {
 		this.ChatController = this.fine.define(
 			'chat-controller',
 			n => n.parseOutgoingMessage && n.onRoomStateUpdated && n.renderNotifications,
+			Twilight.CHAT_ROUTES
+		);
+
+		this.ChatRenderer = this.fine.define(
+			'chat-renderer',
+			n => n.mapMessageToChatLine && n.reportChatRenderSent,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -490,6 +499,15 @@ export default class ChatHook extends Module {
 			}
 		});*/
 
+		this.settings.add('chat.banners.shared-chat', {
+			default: true,
+			ui: {
+				path: 'Chat > Shared Chat >> Behavior',
+				title: 'Allow the Shared Chat notice to be displayed in chat when a Shared Chat is enabled.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.banners.pinned-message', {
 			default: true,
 			ui: {
@@ -608,6 +626,31 @@ export default class ChatHook extends Module {
 				path: 'Chat > Behavior >> General',
 				title: 'Automatically pin re-subscription messages in chat.',
 				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.shared-chat.style', {
+			default: null,
+			ui: {
+				path: 'Chat > Shared Chat >> Appearance',
+				title: 'Pill Style',
+				component: 'setting-select-box',
+				description: 'This controls the appearance of the pill at the left-side of chat messages when a message is part of a Shared Chat. By default, this is Avatar for moderators and broadcasters and Hidden for everyone else.',
+				data: [
+					{value: null, title: 'Automatic'},
+					{value: 0, title: 'Hidden'},
+					{value: 1, title: 'Channel Name'},
+					{value: 2, title: 'Avatar'}
+				]
+			}
+		});
+
+		this.settings.add('chat.shared-chat.username-tooltip', {
+			default: true,
+			ui: {
+				path: 'Chat > Shared Chat >> Appearance',
+				component: 'setting-check-box',
+				title: 'Display the source channel of a chat message when hovering over the poster\'s username.',
 			}
 		});
 
@@ -1064,6 +1107,9 @@ export default class ChatHook extends Module {
 			this.PointsButton.forceUpdate();
 			this.PointsClaimButton.forceUpdate();
 		});
+		this.chat.context.on('changed:chat.bits.show', () => {
+			this.PointsButton.forceUpdate();
+		});
 
 		this.chat.context.on('changed:chat.banners.hype-train', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.subs.gift-banner', this.cleanHighlights, this);
@@ -1072,6 +1118,7 @@ export default class ChatHook extends Module {
 		this.chat.context.on('changed:chat.banners.drops', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.pinned-message', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.hide-appleplus', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.shared-chat', this.cleanHighlights, this);
 
 		this.chat.context.on('changed:chat.disable-handling', this.updateDisableHandling, this);
 
@@ -1368,13 +1415,20 @@ export default class ChatHook extends Module {
 					if ( ! t.chat.context.get('chat.points.show-button') )
 						return null;
 
-					if ( ! t.chat.context.get('chat.points.show-rewards') ) {
-						const aq = this.state.animationQueue;
+					const old_aq = this.state.animationQueue,
+						old_bits = this.props.bitsEnabled;
+
+					if ( ! t.chat.context.get('chat.points.show-rewards') )
 						this.state.animationQueue = [];
-						const out = old_render.call(this);
-						this.state.animationQueue = aq;
-						return out;
-					}
+
+					if ( ! t.chat.context.get('chat.bits.show') )
+						this.props.bitsEnabled = false;
+
+					const out = old_render.call(this);
+
+					this.state.animationQueue = old_aq;
+					this.props.bitsEnabled = old_bits;
+					return out;
 
 				} catch(err) {
 					t.log.capture(err);
@@ -1495,7 +1549,7 @@ export default class ChatHook extends Module {
 		this.ChatBufferConnector.ready((cls, instances) => {
 			for(const inst of instances)
 				this.connectorMounted(inst);
-		})
+		});
 
 		this.ChatController.ready((cls, instances) => {
 			const t = this,
@@ -1536,6 +1590,14 @@ export default class ChatHook extends Module {
 				this.chatMounted(inst);
 		});
 
+		this.ChatRenderer.on('mount', this.rendererMounted, this);
+		this.ChatRenderer.on('unmount', this.rendererUnmounted, this);
+		this.ChatRenderer.on('update', this.rendererUpdated, this);
+
+		this.ChatRenderer.ready((cls, instances) => {
+			for(const inst of instances)
+				this.rendererMounted(inst);
+		})
 
 		this.ChatContainer.on('mount', this.containerMounted, this);
 		this.ChatContainer.on('unmount', this.containerUnmounted, this); //removeRoom, this);
@@ -1753,7 +1815,8 @@ export default class ChatHook extends Module {
 			'prediction': this.chat.context.get('chat.banners.prediction'),
 			'poll': this.chat.context.get('chat.banners.polls'),
 			'pinned_chat': this.chat.context.get('chat.banners.pinned-message'),
-			'mw-drop-available': this.chat.context.get('chat.banners.drops')
+			'mw-drop-available': this.chat.context.get('chat.banners.drops'),
+			'shared_chat': this.chat.context.get('chat.banners.shared-chat')
 		};
 
 		const highlights = this.community_stack?.highlights;
@@ -2434,7 +2497,7 @@ export default class ChatHook extends Module {
 			if ( room === '*' || inst.props.channelLogin.toLowerCase() === room ) {
 				if ( typeof message === 'string' )
 					inst.addMessage({
-						type: this.chat_types.Notice,
+						type: (this.chat_types ?? CHAT_TYPES).Notice,
 						message
 					});
 				else {
@@ -2449,7 +2512,7 @@ export default class ChatHook extends Module {
 					}
 
 					inst.addMessage({
-						type: this.chat_types.Message,
+						type: (this.chat_types ?? CHAT_TYPES).Message,
 						channel: `#${login}`,
 						roomID: id,
 						roomLogin: login,
@@ -2633,6 +2696,7 @@ export default class ChatHook extends Module {
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
 						out.gift_theme = e.giftTheme;
+						out.sharedChat = e.sharedChat;
 						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_plan = e.methods;
 						out.sub_multi = e.multiMonthData?.multiMonthDuration ? {
@@ -2675,6 +2739,7 @@ export default class ChatHook extends Module {
 
 							const out = i.convertMessage(e);
 							out.ffz_type = 'hype';
+							out.sharedChat = e.sharedChat;
 							out.hype_amount = e.amount;
 							out.hype_canonical_amount = e.canonical_amount;
 							out.hype_currency = e.currency;
@@ -2715,6 +2780,7 @@ export default class ChatHook extends Module {
 
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'resub';
+						out.sharedChat = e.sharedChat;
 						out.gift_theme = e.giftTheme;
 						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_cumulative = e.cumulativeMonths || 0;
@@ -2774,6 +2840,7 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'sub_gift';
+						out.sharedChat = e.sharedChat;
 						out.sub_recipient = {
 							id: e.recipientID,
 							login: e.recipientLogin,
@@ -2802,6 +2869,7 @@ export default class ChatHook extends Module {
 
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('CommunityIntroduction') ) {
 							const out = i.convertMessage(e);
+							out.sharedChat = e.sharedChat;
 							return i.postMessageToCurrentChannel(e, out);
 						}
 
@@ -2848,6 +2916,7 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'sub_gift';
+						out.sharedChat = e.sharedChat;
 						out.gift_theme = e.giftTheme;
 						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.sub_anon = true;
@@ -2891,6 +2960,7 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'sub_mystery';
+						out.sharedChat = e.sharedChat;
 						out.gift_theme = e.giftTheme;
 						out.sub_goal = i.getGoalData ? i.getGoalData(e.goalData) : null;
 						out.mystery = mystery;
@@ -2929,6 +2999,7 @@ export default class ChatHook extends Module {
 						e.body = '';
 						const out = i.convertMessage({message: e});
 						out.ffz_type = 'sub_mystery';
+						out.sharedChat = e.sharedChat;
 						out.sub_anon = true;
 						out.mystery = mystery;
 						out.sub_plan = e.plan;
@@ -2954,6 +3025,7 @@ export default class ChatHook extends Module {
 							return old_ritual.call(i, e);
 
 						const out = i.convertMessage(e);
+						out.sharedChat = e.sharedChat;
 						out.ffz_type = 'ritual';
 						out.ritual = e.type;
 
@@ -2987,10 +3059,12 @@ export default class ChatHook extends Module {
 									reward: reward,
 									message: out,
 									userID: out.user.userID,
-									animationID: e.animationID
+									animationID: e.animationID,
+									sharedChat: e.sharedChat
 								})
 							} else {
 								out.ffz_animation_id = e.animationID;
+								out.sharedChat = e.sharedChat;
 								out.ffz_type = 'points';
 								out.ffz_reward = reward;
 								out.ffz_reward_highlight = isHighlightedReward(reward);
@@ -3278,6 +3352,110 @@ export default class ChatHook extends Module {
 		const buffer = inst.props.messageBufferAPI;
 		if ( buffer && buffer._ffz_inst && buffer._ffz_inst._ffz_connector === inst )
 			buffer._ffz_inst._ffz_connector = null;
+	}
+
+
+	// ========================================================================
+	// Chat Renderers
+	// ========================================================================
+
+	rendererMounted(cont, props) {
+		if ( ! props )
+			props = cont.props;
+
+		// We keep our own track of shared rooms, so that we can load/unload
+		// the associated data as relevant.
+		this.updateRendererSharedChats(cont, props?.sharedChatDataByChannelID);
+	}
+
+
+	updateRendererSharedChats(cont, data) {
+		data ??= cont.props.sharedChatDataByChannelID;
+
+		if ( cont._ffz_cached_shared === data )
+			return;
+
+		this.shared_room_data = cont._ffz_cached_shared = data;
+		this.shared_rooms = cont._ffz_shared_rooms = cont._ffz_shared_rooms || {};
+
+		const unexpected = new Set(Object.keys(cont._ffz_shared_rooms));
+		let badges_updated = false;
+
+		if (data != null)
+			for(const [room_id, d2] of data.entries()) {
+				unexpected.delete(room_id);
+
+				let room = cont._ffz_shared_rooms[room_id];
+				if ( ! room ) {
+					// We need to add the room.
+					room = this.chat.getRoom(room_id, d2.login);
+					room.ref(cont);
+					cont._ffz_shared_rooms[room_id] = room;
+				}
+
+				// Check badges.
+				const bd = d2.badges?.channelsBySet;
+
+				// Since we don't have a flat structure, we have to recurse
+				// a little to get the count.
+				let count = 0;
+				if (bd) {
+					for(const entry of bd.values()) {
+						for(const _ of entry.values()) {
+							count++;
+						}
+					}
+				}
+
+				if ( room.badgeCount() !== count ) {
+					badges_updated = true;
+					room.updateBadges(bd);
+				}
+			}
+
+		// Unref rooms that are no longer shared.
+		for(const room_id of unexpected) {
+			const room = cont._ffz_shared_rooms[room_id];
+			if ( room )
+				room.unref(cont);
+
+			room.unshareChat();
+			delete cont._ffz_shared_rooms[room_id];
+		}
+
+		const shared = Object.keys(cont._ffz_shared_rooms);
+
+		for(const room of Object.values(cont._ffz_shared_rooms))
+			room.shareChats(shared);
+
+		//this.log.info('!!!!! updated shared chats', cont._ffz_shared_rooms);
+
+		if ( shared.length > 0 && this.settings.provider.get('shared-chat-notice') !== 1 ) {
+			this.settings.provider.set('shared-chat-notice', 1);
+			this.addNotice('*', {
+				icon: 'ffz-i-zreknarf',
+				message: this.i18n.t('chat.shared-chat.welcome', 'FrankerFaceZ: This is a Shared Chat, a new feature from Twitch to combine multiple stream chats into one. FrankerFaceZ support is early, so some messages might not look correct. Sorry for any trouble!')
+			});
+		}
+
+		if ( badges_updated )
+			this.chat_line.updateLineBadges();
+	}
+
+	rendererUnmounted(cont) {
+		// Unref all shared rooms.
+		if (cont._ffz_shared_rooms)
+			for(const room of Object.values(cont._ffz_shared_rooms))
+				room.unref(cont);
+
+		cont._ffz_shared_rooms = null;
+		cont._ffz_cached_shared = null;
+		this.shared_room_data = new Map;
+		this.shared_rooms = {};
+	}
+
+	rendererUpdated(cont, props) {
+		this.updateRendererSharedChats(cont, props?.sharedChatDataByChannelID);
 	}
 
 

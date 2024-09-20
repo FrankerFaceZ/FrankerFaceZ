@@ -206,6 +206,8 @@ Twilight.KNOWN_MODULES = {
 	simplebar: n => n.globalObserver && n.initDOMLoadedElements,
 	react: n => n.Component && n.createElement,
 	core: n => {
+		if ( n.x2?.experiments && n.x2.intl )
+			return n.x2;
 		if ( n['$6']?.experiments )
 			return n['$6'];
 		if ( n.p?.experiments )

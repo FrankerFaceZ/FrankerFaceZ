@@ -24,6 +24,7 @@ export default class Room {
 		this.badges = null;
 		this.users = {};
 		this.user_ids = {};
+		this.shared_chats = new Set;
 
 		this.manager = manager;
 		this._id = id;
@@ -60,6 +61,7 @@ export default class Room {
 					user.destroy();
 		}
 
+		this.shared_chats = null;
 		this.refs = null;
 		this.users = null;
 		this.user_ids = null;
@@ -91,7 +93,7 @@ export default class Room {
 			this.manager.room_ids[this._id] = null;
 	}
 
-
+0
 	merge(other) {
 		if ( ! this.login && other.login )
 			this.login = other.login;
@@ -101,6 +103,10 @@ export default class Room {
 		if ( other.refs )
 			for(const ref of other.refs)
 				this.ref(ref);
+
+		if ( other.shared_chats )
+			for(const room of other.shared_chats )
+				this.shareChat(room);
 
 		if ( other.emote_sets && other.emote_sets._sources ) {
 			for(const [provider, sets] of other.emote_sets._sources.entries()) {
@@ -148,6 +154,26 @@ export default class Room {
 				}
 			}
 	}
+
+
+
+	// TODO: Logic?
+
+	shareChat(room) {
+		this.shared_chats.add(room);
+	}
+
+	shareChats(rooms) {
+		this.shared_chats = new Set(rooms || []);
+	}
+
+	unshareChat(room) {
+		if (room)
+			this.shared_chats.delete(room);
+		else
+			this.shared_chats.clear();
+	}
+
 
 
 	_unloadAddon(addon_id) {
@@ -473,9 +499,25 @@ export default class Room {
 
 	updateBadges(badges) {
 		this.badge_count = 0;
-		if ( ! Array.isArray(badges) )
+		if ( badges instanceof Map ) {
+			const b = {};
+			for(const [sid, variants] of badges.entries()) {
+				const bs = b[sid] = b[sid] || {
+					__cat: getBadgeCategory(sid)
+				};
+
+				for(const [version, data] of variants.entries()) {
+					bs[version] = fixBadgeData(data);
+					this.badge_count++;
+				}
+			}
+
+			this.badges = b;
+
+		} else if ( ! Array.isArray(badges) ) {
 			this.badges = badges;
-		else {
+
+		} else {
 			// Rooms can have no badges, so we want to allow that.
 			const b = {};
 			for(const data of badges) {

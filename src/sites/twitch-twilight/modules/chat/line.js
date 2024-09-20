@@ -819,6 +819,42 @@ export default class ChatLine extends Module {
 				]);
 			}
 
+			cls.prototype.ffzRenderSharedChatPill = function() {
+				let style = t.chat.context.get('chat.shared-chat.style');
+				if ( style == null )
+					style = this.props.isCurrentUserModerator ? 2 : 0;
+				if ( style === 0 )
+					return null;
+
+				const msg = this.props.message,
+					source_id = msg.sourceRoomID,
+					source = source_id && this.props.sharedChatDataByChannelID?.get(source_id),
+					in_source = ! source || source_id === (msg.roomId ?? this.props.channelID);
+
+				if ( ! source )
+					return null;
+
+				const title = t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login});
+
+				if ( style === 1 )
+					return e('span', {
+						className: `ffz-pill ffz-tooltip tw-mg-r-05 ${in_source ? 'ffz-pill--brand' : ''}`,
+						'data-title': title
+					}, `${source.displayName ?? source.login}`);
+
+				if ( style === 2 )
+					return e('figure', {
+						className: `ffz-tooltip ffz-tooltip--no-mouse ffz-shared-chat-badge ffz-avatar tw-border-radius-rounded ${in_source ? 'ffz-shared-chat-badge--active' : ''} tw-mg-r-05`,
+						'data-title': t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName}),
+					}, e('img', {
+						className: 'tw-block tw-border-radius-rounded tw-image',
+						src: source.profileImageURL,
+						alt: source.displayName
+					}));
+
+				return null;
+			}
+
 			cls.prototype.ffzNewRender = function() { try {
 				this._ffz_no_scan = true;
 
@@ -852,6 +888,10 @@ other {# messages were deleted by a moderator.}
 					);
 				}
 
+				// First, we need to handle Shared Chat.
+				const source_id = msg.sourceRoomID,
+					source = source_id && this.props.sharedChatDataByChannelID?.get(source_id);
+
 				// Get the current room id and login. We might need to look these up.
 				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
 					room_id = msg.roomId ? msg.roomId : this.props.channelID;
@@ -871,6 +911,11 @@ other {# messages were deleted by a moderator.}
 				// Construct the current room and current user objects.
 				const current_user = t.site.getUser(),
 					current_room = {id: room_id, login: room};
+
+				const is_in_source = ! source || source_id === room_id,
+					source_room = is_in_source
+						? current_room
+						: {id: source_id, login: source.login};
 
 				const reply_mode = t.chat.context.get('chat.replies.style'),
 					has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
@@ -909,7 +954,8 @@ other {# messages were deleted by a moderator.}
 								event,
 								message: msg,
 								user: target_user,
-								room: current_room
+								room: current_room,
+								source: source_room
 							});
 
 							t.emit('chat:user-click', fe);
@@ -1088,8 +1134,10 @@ other {# messages were deleted by a moderator.}
 					else if ( Array.isArray(user_class) )
 						user_class = user_class.join(' ');
 
+					const want_source_tip = source && t.chat.context.get('chat.shared-chat.username-tooltip');
+
 					const user_props = {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
+						className: `chat-line__username notranslate${override_name ? ' ffz--name-override' : ''}${(override_name || want_source_tip) ? ' tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
 						role: 'button',
 						style: { color },
 						onClick: this.ffz_user_click_handler,
@@ -1111,10 +1159,25 @@ other {# messages were deleted by a moderator.}
 									className: 'chat-author__display-name'
 								}, override_name),
 								e('div', {
-									className: 'ffz-il-tooltip ffz-il-tooldip--down ffz-il-tooltip--align-center'
-								}, username)
+									className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+								}, [
+									username,
+									want_source_tip
+										? e('div', {
+											className: 'tw-font-size-8 tw-mg-t-05'
+										}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
+										: null
+									]
+								)
 							]
-							: username
+							: want_source_tip
+								? [
+									username,
+									e('span', {
+										className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+									}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
+								]
+								: username
 					);
 
 					// The timestamp.
@@ -1138,6 +1201,8 @@ other {# messages were deleted by a moderator.}
 					// Now assemble the pieces.
 					message = [
 						twitch_reply,
+
+						source ? this.ffzRenderSharedChatPill() : null,
 
 						// The preamble
 						timestamp,
@@ -1213,6 +1278,7 @@ other {# messages were deleted by a moderator.}
 
 						if ( is_raw ) {
 							notice.ffz_target.unshift(
+								source ? this.ffzRenderSharedChatPill() : null,
 								notice.ffz_icon ?? null,
 								timestamp,
 								actions,
@@ -1221,6 +1287,7 @@ other {# messages were deleted by a moderator.}
 
 						} else
 							notice = [
+								source ? this.ffzRenderSharedChatPill() : null,
 								notice.ffz_icon ?? null,
 								timestamp,
 								actions,
@@ -1243,8 +1310,8 @@ other {# messages were deleted by a moderator.}
 							'div',
 							{
 								className: 'chat-line--inline chat-line__message',
-								'data-room-id': msg.roomId ?? current_room.id,
-								'data-room': msg.roomLogin,
+								'data-room-id': source_room?.id ?? msg.roomId ?? current_room.id,
+								'data-room': source_room?.login ?? msg.roomLogin,
 								'data-user-id': user?.userID,
 								'data-user': user?.lowerLogin,
 							},
@@ -1305,8 +1372,8 @@ other {# messages were deleted by a moderator.}
 				return e('div', {
 					className: `${klass}${deleted ? ' ffz--deleted-message' : ''}${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
 					style: {backgroundColor: bg_css},
-					'data-room-id': msg.roomId ?? current_room.id,
-					'data-room': msg.roomLogin,
+					'data-room-id': source_room?.id ?? msg.roomId ?? current_room.id,
+					'data-room': source_room?.login ?? msg.roomLogin,
 					'data-user-id': user?.userID,
 					'data-user': user?.lowerLogin,
 					onMouseOver: anim_hover ? t.chat.emotes.animHover : null,

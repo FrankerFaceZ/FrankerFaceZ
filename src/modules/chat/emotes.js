@@ -1586,7 +1586,7 @@ export default class Emotes extends Module {
 			room_user = room && room.getUser(user_id, user_login, true),
 			user = this.parent.getUser(user_id, user_login, true);
 
-		const out = (user?.emote_sets ? user.emote_sets._cache : []).concat(
+		let out = (user?.emote_sets ? user.emote_sets._cache : []).concat(
 			room_user?.emote_sets ? room_user.emote_sets._cache : [],
 			room?.emote_sets ? room.emote_sets._cache : [],
 			this.default_sets._cache
@@ -1600,6 +1600,19 @@ export default class Emotes extends Module {
 			}
 		}
 
+		// Shared Chats
+		if ( room?.shared_chats?.size > 0 )
+			for(const shared_id of room.shared_chats) {
+				const shared_room = this.parent.getRoom(shared_id, null, true),
+					shared_user = shared_room && shared_room.getUser(user_id, user_login, true);
+
+				if ( shared_user?.emote_sets?._cache )
+					out = out.concat(shared_user.emote_sets._cache);
+
+				if ( shared_room?.emote_sets?._cache )
+					out = out.concat(shared_room.emote_sets._cache);
+			}
+
 		return out;
 	}
 
@@ -1608,14 +1621,14 @@ export default class Emotes extends Module {
 			.map(set_id => this.emote_sets[set_id]);
 	}
 
-	_withSources(out, seen, emote_sets) { // eslint-disable-line class-methods-use-this
+	_withSources(out, seen, emote_sets, room_id = null) { // eslint-disable-line class-methods-use-this
 		if ( ! emote_sets?._sources )
 			return;
 
 		for(const [provider, data] of emote_sets._sources)
 			for(const item of data)
 				if ( ! seen.has(item) ) {
-					out.push([item, provider]);
+					out.push([item, provider, room_id]);
 					seen.add(item);
 				}
 
@@ -1633,30 +1646,61 @@ export default class Emotes extends Module {
 
 		this._withSources(out, seen, room.emote_sets);
 		if ( room_user )
-			this._withSources(out, seen, room_user);
+			this._withSources(out, seen, room_user.emote_sets);
+
+		// Shared Chats
+		if ( room?.shared_chats?.size > 0 )
+			for(const shared_id of room.shared_chats) {
+				const shared_room = this.parent.getRoom(shared_id, null, true),
+					shared_user = shared_room && shared_room.getUser(user_id, user_login, true);
+
+				if ( shared_user )
+					this._withSources(out, seen, shared_user.emote_sets, shared_id);
+
+				if ( shared_room )
+					this._withSources(out, seen, shared_room.emote_sets, shared_id);
+			}
 
 		return out;
 	}
 
 	getRoomSetsWithSources(user_id, user_login, room_id, room_login) {
 		return this.getRoomSetIDsWithSources(user_id, user_login, room_id, room_login)
-			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
+			.map(([set_id, source, r_id]) => [this.emote_sets[set_id], source, r_id]);
 	}
 
 	getRoomSetIDs(user_id, user_login, room_id, room_login) {
 		const room = this.parent.getRoom(room_id, room_login, true),
 			room_user = room && room.getUser(user_id, user_login, true);
 
-		if ( ! room )
-			return [];
+		let out;
 
-		if ( ! room_user?.emote_sets )
-			return room.emote_sets ? room.emote_sets._cache : [];
+		if ( ! room )
+			out = [];
+
+		else if ( ! room_user?.emote_sets )
+			out = room.emote_sets ? room.emote_sets._cache : [];
 
 		else if ( ! room.emote_sets )
-			return room_user.emote_sets._cache;
+			out = room_user.emote_sets._cache;
 
-		return room_user.emote_sets._cache.concat(room.emote_sets._cache);
+		else
+			out = room_user.emote_sets._cache.concat(room.emote_sets._cache);
+
+		// Shared Chats
+		if ( room?.shared_chats?.size > 0 )
+			for(const shared_id of room.shared_chats) {
+				const shared_room = this.parent.getRoom(shared_id, null, true),
+					shared_user = shared_room && shared_room.getUser(user_id, user_login, true);
+
+				if ( shared_user?.emote_sets?._cache )
+					out = out.concat(shared_user.emote_sets._cache);
+
+				if ( shared_room?.emote_sets?._cache )
+					out = out.concat(shared_room.emote_sets._cache);
+			}
+
+		return out;
 	}
 
 	getRoomSets(user_id, user_login, room_id, room_login) {
@@ -1678,7 +1722,7 @@ export default class Emotes extends Module {
 				if ( ! seen.has(set_id) && users?._cache.has(str_user) ) {
 					for(const [provider, data] of users._sources) {
 						if ( data && data.includes(str_user) ) {
-							out.push([set_id, provider]);
+							out.push([set_id, provider, null]);
 							break;
 						}
 					}
@@ -1691,7 +1735,7 @@ export default class Emotes extends Module {
 
 	getGlobalSetsWithSources(user_id, user_login) {
 		return this.getGlobalSetIDsWithSources(user_id, user_login)
-			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
+			.map(([set_id, source]) => [this.emote_sets[set_id], source, null]);
 	}
 
 
@@ -1705,7 +1749,7 @@ export default class Emotes extends Module {
 
 	getSubSetsWithSources() {
 		return this.getSubSetIDsWithSources()
-			.map(([set_id, source]) => [this.emote_sets[set_id], source]);
+			.map(([set_id, source]) => [this.emote_sets[set_id], source, null]);
 	}
 
 

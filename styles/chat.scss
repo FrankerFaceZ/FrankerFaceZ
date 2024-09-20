@@ -450,6 +450,22 @@
 }
 
 
+.ffz-shared-chat-badge {
+	display: inline-block;
+	height: 2.2rem;
+	width: 2.2rem;
+	margin: 0 .3rem .2rem 0;
+	padding: 0.2rem;
+	vertical-align: middle;
+	border: 2px solid transparent;
+
+	&--active {
+		border-color: var(--color-border-brand);
+	}
+
+}
+
+
 .ffz-badge {
 	display: inline-block;
 	min-width: 1.8rem;
