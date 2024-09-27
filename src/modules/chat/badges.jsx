@@ -1395,7 +1395,9 @@ export default class Badges extends Module {
 
 	updateTwitchBadges(badges) {
 		this.twitch_badge_count = 0;
-		if ( ! Array.isArray(badges) )
+		if ( ! badges )
+			this.twitch_badges = {};
+		else if ( ! Array.isArray(badges) )
 			this.twitch_badges = badges;
 		else {
 			let b = null;

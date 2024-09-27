@@ -3477,6 +3477,11 @@ export default class ChatHook extends Module {
 
 		this.updateRoomBitsConfig(cont, props.bitsConfig);
 
+		if ( props.globalBadgeData?.badges )
+			this.chat.badges.updateTwitchBadges(props.globalBadgeData.badges);
+		else if (props.data?.badges )
+			this.chat.badges.updateTwitchBadges(props.data.badges);
+
 		if ( props.data ) {
 			if ( this.shouldUpdateChannel ){
 				const color = props.data.user?.primaryColorHex;
@@ -3489,7 +3494,6 @@ export default class ChatHook extends Module {
 				});
 			}
 
-			this.chat.badges.updateTwitchBadges(props.data.badges);
 			this.updateRoomBadges(cont, props.data.user && props.data.user.broadcastBadges);
 			this.updateRoomRules(cont, props.chatRules);
 		}
@@ -3539,14 +3543,20 @@ export default class ChatHook extends Module {
 		// can't compare the badgeSets property in any reasonable way.
 		// Instead, just check the lengths to see if they've changed
 		// and hope that badge versions will never change separately.
-		const data = props.data || {},
+		const cs = props.data?.user?.broadcastBadges ?? [],
+			ocs = cont.props.data?.user?.broadcastBadges ?? [];
+
+		const bs = props.globalBadgeData?.badges ?? [],
+			obs = cont.props.globalBadgeData?.badges ?? [];
+
+		/*const data = props.data || {},
 			odata = cont.props.data || {},
 
 			bs = data.badges || [],
 			obs = odata.badges || [],
 
 			cs = data.user && data.user.broadcastBadges || [],
-			ocs = odata.user && odata.user.broadcastBadges || [];
+			ocs = odata.user && odata.user.broadcastBadges || [];*/
 
 		if ( this.chat.badges.getTwitchBadgeCount() !== bs.length || bs.length !== obs.length )
 			this.chat.badges.updateTwitchBadges(bs);
