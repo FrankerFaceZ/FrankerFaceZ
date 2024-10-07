@@ -39,7 +39,9 @@ console.log('FILE PATH:', FILE_PATH);
 const VERSION = semver.parse(require('./package.json').version);
 const commit_hash = DEV_SERVER
 	? null
-	: execSync('git rev-parse HEAD').toString().trim();
+	: process.env.CLIENT_COMMIT?.length > 0
+		? process.env.CLIENT_COMMIT
+		: execSync('git rev-parse HEAD').toString().trim();
 
 
 // The Config
