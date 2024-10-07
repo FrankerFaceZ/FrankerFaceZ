@@ -79,6 +79,8 @@ const config = {
 		}
 	},
 
+	node: false,
+
 	entry: ENTRY_POINTS,
 
 	externals: [
