@@ -54,6 +54,8 @@ const CLASSES = {
 
 	'pinned-hype-chat': '.paid-pinned-chat-message-list',
 
+	'side-stories': '.side-nav__title + div[class*=storiesLeftNavSection]',
+
 	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
 	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]',
 	'ci-shield-mode': '.chat-input__buttons-container > div:last-child button[class|="ScCoreButton"]:not([data-highlight-selector]):not([data-a-target])'
@@ -137,6 +139,15 @@ export default class CSSTweaks extends Module {
 				this.toggle('chat-fix', val);
 				this.emit('site.player:fix-player');
 				this.emit('site.layout:resize');
+			}
+		});
+
+		this.settings.add('layout.side-nav.hide-stories', {
+			default: false,
+			ui: {
+				path: 'Appearance > Layout >> Side Navigation',
+				title: 'Hide Stories',
+				component: 'setting-check-box'
 			}
 		});
 
@@ -522,6 +533,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('celebration', ! this.settings.get('channel.show-celebrations'));
 
 		this.settings.getChanges('layout.subtember', val => this.toggleHide('subtember', !val));
+		this.settings.getChanges('layout.side-nav.hide-stories', val => this.toggleHide('side-stories', val));
 
 		this.updateFont();
 		this.updateTopNav();

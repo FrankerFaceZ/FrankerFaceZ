@@ -255,11 +255,11 @@ export default class MainMenu extends Module {
 			// If we're on a page with minimal root, we want to open settings
 			// in a popout as we're almost certainly within Popout Chat.
 			const layout = this.resolve('site.layout'),
-				item = evt.item,
-				event = evt.event;
+				item = evt?.item,
+				event = evt?.event;
 
 			if ( (layout && layout.is_minimal) || (event && (event.ctrlKey || event.shiftKey)) ) {
-				if ( ! this.openPopout(item) )
+				if ( ! this.openPopout(item) && evt )
 					evt.errored = true;
 				return;
 			}

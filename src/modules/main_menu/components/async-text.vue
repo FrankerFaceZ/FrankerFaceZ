@@ -93,7 +93,7 @@ export default {
 				return;
 
 			this.uploading = true;
-			const response = await fetch('https://putco.de', {
+			const response = await fetch('https://logs.frankerfacez.com', {
 				method: 'PUT',
 				body: this.text
 			});

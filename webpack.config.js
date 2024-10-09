@@ -54,6 +54,20 @@ const ENTRY_POINTS = {
 	clips: './src/clips.js'
 };
 
+if ( FOR_EXTENSION )
+	ENTRY_POINTS.worker = './src/worker.ts';
+
+const COPY_PATTERNS = [
+	{
+		from: FOR_EXTENSION
+			? './src/entry_ext.js'
+			: './src/entry.js',
+		to: (DEV_SERVER || DEV_BUILD)
+			? 'script.js'
+			: 'script.min.js'
+	},
+];
+
 const TARGET = 'es2020';
 
 /** @type {import('webpack').Configuration} */
@@ -125,16 +139,7 @@ const config = {
 
 	plugins: [
 		new CopyPlugin({
-			patterns: [
-				{
-					from: FOR_EXTENSION
-						? './src/entry_ext.js'
-						: './src/entry.js',
-					to: (DEV_SERVER || DEV_BUILD)
-						? 'script.js'
-						: 'script.min.js'
-				}
-			]
+			patterns: COPY_PATTERNS
 		}),
 		new VueLoaderPlugin(),
 		new EsbuildPlugin({

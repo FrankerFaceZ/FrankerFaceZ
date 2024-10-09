@@ -11,6 +11,7 @@ import {EventEmitter} from 'utilities/events';
 import {TicketLock, has, once} from 'utilities/object';
 import type SettingsManager from '.';
 import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
+import { EXTENSION } from '../utilities/constants';
 
 const DB_VERSION = 1,
 	NOT_WWW_TWITCH = window.location.host !== 'www.twitch.tv',
@@ -142,6 +143,255 @@ export abstract class AdvancedSettingsProvider extends SettingsProvider {
 	abstract blobKeys(): Promise<Iterable<string>>;
 
 }
+
+
+export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
+
+	// State and Storage
+	private _start_time: number;
+	private _cached: Map<string, any>;
+
+	private _blobs: boolean | null;
+	private _rpc: Map<number, [(input: any) => void, () => void]>;
+	private _last_id: number;
+
+	private resolved_ready: boolean;
+	private _ready_wait_resolve?: (() => void) | null;
+	private _ready_wait_fail?: ((err: any) => void) | null;
+	private _ready_wait?: Promise<void> | null;
+
+	constructor(manager: SettingsManager) {
+		super(manager);
+
+		this._start_time = performance.now();
+
+		this._rpc = new Map;
+
+		this._cached = new Map;
+		this.resolved_ready = false;
+		this.ready = false;
+		this._ready_wait = null;
+
+		this._blobs = null;
+		this._last_id = 0;
+	}
+
+	get supportsBlobs() {
+		return this._blobs ?? false;
+	}
+
+	// Stuff
+
+	broadcastTransfer() {
+		// TODO: Figure out what this would mean for CORS.
+	}
+
+	disableEvents() {
+		// TODO: Figure out what this would mean for CORS.
+	}
+
+
+	// Initialization
+
+	protected resolveReady(success: boolean, data?: any) {
+		if ( this.manager )
+			this.manager.log.info(`${this.constructor.name} ready in ${(performance.now() - this._start_time).toFixed(5)}ms`);
+
+		this.resolved_ready = true;
+		this.ready = success;
+
+		if ( success && this._ready_wait_resolve )
+			this._ready_wait_resolve();
+		else if ( ! success && this._ready_wait_fail )
+			this._ready_wait_fail(data);
+	}
+
+	awaitReady() {
+		if ( this.resolved_ready ) {
+			if ( this.ready )
+				return Promise.resolve();
+			return Promise.reject();
+		}
+
+		if ( this._ready_wait )
+			return this._ready_wait;
+
+		return this._ready_wait = new Promise<void>((resolve, fail) => {
+			this._ready_wait_resolve = resolve;
+			this._ready_wait_fail = fail;
+
+		}).finally(() => {
+			this._ready_wait = null;
+			this._ready_wait_resolve = null;
+			this._ready_wait_fail = null;
+		});
+	}
+
+
+	// Provider Methods
+
+	get<T>(key: string, default_value?: T): T {
+		return this._cached.has(key)
+			? this._cached.get(key)
+			: default_value;
+	}
+
+	set(key: string, value: any) {
+		if ( value === undefined ) {
+			if ( this.has(key) )
+				this.delete(key);
+			return;
+		}
+
+		this._cached.set(key, value);
+		this.rpc({ffz_type: 'set', key, value})
+			.catch(err => this.manager.log.error('Error setting value', err));
+		this.emit('set', key, value, false);
+	}
+
+	delete(key: string) {
+		this._cached.delete(key);
+		this.rpc({ffz_type: 'delete', key})
+			.catch(err => this.manager.log.error('Error deleting value', err));
+		this.emit('set', key, undefined, true);
+	}
+
+	clear() {
+		const old_cache = this._cached;
+		this._cached = new Map;
+		for(const key of old_cache.keys())
+			this.emit('changed', key, undefined, true);
+
+		this.rpc('clear')
+			.catch(err => this.manager.log.error('Error clearing storage', err));
+	}
+
+	has(key: string) { return this._cached.has(key); }
+	keys() { return this._cached.keys(); }
+	entries() { return this._cached.entries(); }
+	get size() { return this._cached.size; }
+
+	async flush() {
+		await this.rpc('flush');
+	}
+
+
+	// Provider Methods: Blobs
+
+	async getBlob(key: string) {
+		const msg = await this.rpc({ffz_type: 'get-blob', key});
+		return msg ? deserializeBlob(msg) : null;
+	}
+
+	async setBlob(key: string, value: BlobLike) {
+		await this.rpc({
+			ffz_type: 'set-blob',
+			key,
+			value: await serializeBlob(value)
+		});
+	}
+
+	async deleteBlob(key: string) {
+		await this.rpc({
+			ffz_type: 'delete-blob',
+			key
+		});
+	}
+
+	async hasBlob(key: string) {
+		return this.rpc({ffz_type: 'has-blob', key});
+	}
+
+	async clearBlobs() {
+		await this.rpc('clear-blobs');
+	}
+
+	async blobKeys() {
+		return this.rpc('blob-keys');
+	}
+
+
+	// Communication
+
+	abstract send(msg: string | CorsMessage, transfer?: OptionalArray<Transferable>): void;
+
+	rpc<K extends keyof CorsRpcTypes>(
+		msg: K | RPCInputMessage<K>,
+		transfer?: OptionalArray<Transferable>
+	) {
+		const id = ++this._last_id;
+
+		return new Promise<CorsOutput<K>>((resolve,fail) => {
+			this._rpc.set(id, [resolve, fail]);
+			let out: CorsMessage;
+			if ( typeof msg === 'string' )
+				out = {ffz_type: msg} as CorsMessage;
+			else
+				out = msg as unknown as CorsMessage;
+
+			out.id = id;
+			this.send(out, transfer);
+		});
+	}
+
+	handleMessage(msg: CorsMessage) {
+		if ( msg.ffz_type === 'ready' )
+			this.rpc('init-load').then(msg => {
+				this._blobs = msg.blobs;
+				for(const [key, value] of Object.entries(msg.values))
+					this._cached.set(key, value);
+
+				this.resolveReady(true);
+
+			}).catch(err => {
+				this.resolveReady(false, err);
+			});
+
+		else if ( msg.ffz_type === 'change' )
+			this.onChange(msg);
+
+		else if ( msg.ffz_type === 'change-blob' )
+			this.emit('changed-blob', msg.key, msg.deleted);
+
+		else if ( msg.ffz_type === 'clear-blobs' )
+			this.emit('clear-blobs');
+
+		else if ( msg.ffz_type === 'reply' || msg.ffz_type === 'reply-error' )
+			this.onReply(msg);
+
+		else
+			this.manager.log.warn('Unknown Message', msg.ffz_type, msg);
+	}
+
+	onChange(msg: RPCInputMessage<'change'>) {
+		const key = msg.key,
+			value = msg.value,
+			deleted = msg.deleted;
+
+		if ( deleted ) {
+			this._cached.delete(key);
+			this.emit('changed', key, undefined, true);
+		} else {
+			this._cached.set(key, value);
+			this.emit('changed', key, value, false);
+		}
+	}
+
+	onReply(msg: CorsReplyMessage | CorsReplyErrorMessage) {
+		const id = msg.id,
+			success = msg.ffz_type === 'reply',
+			cbs = this._rpc.get(id);
+		if ( ! cbs )
+			return this.manager.log.warn('Received reply for unknown ID', id);
+
+		this._rpc.delete(id);
+		if ( success )
+			cbs[0](msg.reply);
+		else
+			cbs[1]();
+	}
+}
+
 
 
 
@@ -1177,7 +1427,7 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 // CrossOriginStorageBridge
 // ============================================================================
 
-export class CrossOriginStorageBridge extends AdvancedSettingsProvider {
+export class CrossOriginStorageBridge extends RemoteSettingsProvider {
 
 	// Static Stuff
 
@@ -1194,35 +1444,10 @@ export class CrossOriginStorageBridge extends AdvancedSettingsProvider {
 	static shouldUpdate = false;
 
 	// State and Storage
-	private _start_time: number;
-	private _cached: Map<string, any>;
-
-	private _blobs: boolean | null;
-	private _rpc: Map<number, [(input: any) => void, () => void]>;
-	private _last_id: number;
-
 	private frame: HTMLIFrameElement | null;
-	private _boundHandleMessage?: ((event: MessageEvent) => void) | null;
-
-	private resolved_ready: boolean;
-	private _ready_wait_resolve?: (() => void) | null;
-	private _ready_wait_fail?: ((err: any) => void) | null;
-	private _ready_wait?: Promise<void> | null;
 
 	constructor(manager: SettingsManager) {
 		super(manager);
-
-		this._start_time = performance.now();
-
-		this._rpc = new Map;
-
-		this._cached = new Map;
-		this.resolved_ready = false;
-		this.ready = false;
-		this._ready_wait = null;
-
-		this._blobs = null;
-		this._last_id = 0;
 
 		const frame = this.frame = document.createElement('iframe');
 		frame.src = (this.manager.root as any).host === 'youtube' ?
@@ -1232,13 +1457,10 @@ export class CrossOriginStorageBridge extends AdvancedSettingsProvider {
 		frame.style.width = '0';
 		frame.style.height = '0';
 
-		this._boundHandleMessage = this.onMessage.bind(this);
-		window.addEventListener('message', this._boundHandleMessage);
-		document.body.appendChild(frame);
-	}
+		this.onMessage = this.onMessage.bind(this);
 
-	get supportsBlobs() {
-		return this._blobs ?? false;
+		window.addEventListener('message', this.onMessage);
+		document.body.appendChild(frame);
 	}
 
 	// Stuff
@@ -1252,127 +1474,15 @@ export class CrossOriginStorageBridge extends AdvancedSettingsProvider {
 	}
 
 
-	// Initialization
-
-	private _resolveReady(success: boolean, data?: any) {
-		if ( this.manager )
-			this.manager.log.info(`COSB ready in ${(performance.now() - this._start_time).toFixed(5)}ms`);
-
-		this.resolved_ready = true;
-		this.ready = success;
-
-		if ( success && this._ready_wait_resolve )
-			this._ready_wait_resolve();
-		else if ( ! success && this._ready_wait_fail )
-			this._ready_wait_fail(data);
-	}
-
-	awaitReady() {
-		if ( this.resolved_ready ) {
-			if ( this.ready )
-				return Promise.resolve();
-			return Promise.reject();
-		}
-
-		if ( this._ready_wait )
-			return this._ready_wait;
-
-		return this._ready_wait = new Promise<void>((resolve, fail) => {
-			this._ready_wait_resolve = resolve;
-			this._ready_wait_fail = fail;
-
-		}).finally(() => {
-			this._ready_wait = null;
-			this._ready_wait_resolve = null;
-			this._ready_wait_fail = null;
-		});
-	}
-
-
-	// Provider Methods
-
-	get<T>(key: string, default_value?: T): T {
-		return this._cached.has(key)
-			? this._cached.get(key)
-			: default_value;
-	}
-
-	set(key: string, value: any) {
-		if ( value === undefined ) {
-			if ( this.has(key) )
-				this.delete(key);
-			return;
-		}
-
-		this._cached.set(key, value);
-		this.rpc({ffz_type: 'set', key, value})
-			.catch(err => this.manager.log.error('Error setting value', err));
-		this.emit('set', key, value, false);
-	}
-
-	delete(key: string) {
-		this._cached.delete(key);
-		this.rpc({ffz_type: 'delete', key})
-			.catch(err => this.manager.log.error('Error deleting value', err));
-		this.emit('set', key, undefined, true);
-	}
-
-	clear() {
-		const old_cache = this._cached;
-		this._cached = new Map;
-		for(const key of old_cache.keys())
-			this.emit('changed', key, undefined, true);
-
-		this.rpc('clear')
-			.catch(err => this.manager.log.error('Error clearing storage', err));
-	}
-
-	has(key: string) { return this._cached.has(key); }
-	keys() { return this._cached.keys(); }
-	entries() { return this._cached.entries(); }
-	get size() { return this._cached.size; }
-
-	async flush() {
-		await this.rpc('flush');
-	}
-
-
-	// Provider Methods: Blobs
-
-	async getBlob(key: string) {
-		const msg = await this.rpc({ffz_type: 'get-blob', key});
-		return msg ? deserializeBlob(msg) : null;
-	}
-
-	async setBlob(key: string, value: BlobLike) {
-		await this.rpc({
-			ffz_type: 'set-blob',
-			key,
-			value: await serializeBlob(value)
-		});
-	}
-
-	async deleteBlob(key: string) {
-		await this.rpc({
-			ffz_type: 'delete-blob',
-			key
-		});
-	}
-
-	async hasBlob(key: string) {
-		return this.rpc({ffz_type: 'has-blob', key});
-	}
-
-	async clearBlobs() {
-		await this.rpc('clear-blobs');
-	}
-
-	async blobKeys() {
-		return this.rpc('blob-keys');
-	}
-
-
 	// CORS Communication
+
+	onMessage(event: MessageEvent) {
+		const msg = event.data;
+		if ( ! msg || ! msg.ffz_type )
+			return;
+
+		this.handleMessage(msg);
+	}
 
 	send(msg: string | CorsMessage, transfer?: OptionalArray<Transferable>) {
 		if ( typeof msg === 'string' )
@@ -1390,89 +1500,137 @@ export class CrossOriginStorageBridge extends AdvancedSettingsProvider {
 		}
 	}
 
-	rpc<K extends keyof CorsRpcTypes>(
-		msg: K | RPCInputMessage<K>,
-		transfer?: OptionalArray<Transferable>
-	) {
-		const id = ++this._last_id;
-
-		return new Promise<CorsOutput<K>>((resolve,fail) => {
-			this._rpc.set(id, [resolve, fail]);
-			let out: CorsMessage;
-			if ( typeof msg === 'string' )
-				out = {ffz_type: msg} as CorsMessage;
-			else
-				out = msg as unknown as CorsMessage;
-
-			out.id = id;
-			this.send(out, transfer);
-		});
-	}
-
-	onMessage(event: MessageEvent) {
-		const msg = event.data;
-		if ( ! msg || ! msg.ffz_type )
-			return;
-
-		if ( msg.ffz_type === 'ready' )
-			this.rpc('init-load').then(msg => {
-				this._blobs = msg.blobs;
-				for(const [key, value] of Object.entries(msg.values))
-					this._cached.set(key, value);
-
-				this._resolveReady(true);
-
-			}).catch(err => {
-				this._resolveReady(false, err);
-			});
-
-		else if ( msg.ffz_type === 'change' )
-			this.onChange(msg);
-
-		else if ( msg.ffz_type === 'change-blob' )
-			this.emit('changed-blob', msg.key, msg.deleted);
-
-		else if ( msg.ffz_type === 'clear-blobs' )
-			this.emit('clear-blobs');
-
-		else if ( msg.ffz_type === 'reply' || msg.ffz_type === 'reply-error' )
-			this.onReply(msg);
-
-		else
-			this.manager.log.warn('Unknown Message', msg.ffz_type, msg);
-	}
-
-	onChange(msg: RPCInputMessage<'change'>) {
-		const key = msg.key,
-			value = msg.value,
-			deleted = msg.deleted;
-
-		if ( deleted ) {
-			this._cached.delete(key);
-			this.emit('changed', key, undefined, true);
-		} else {
-			this._cached.set(key, value);
-			this.emit('changed', key, value, false);
-		}
-	}
-
-	onReply(msg: CorsReplyMessage | CorsReplyErrorMessage) {
-		const id = msg.id,
-			success = msg.ffz_type === 'reply',
-			cbs = this._rpc.get(id);
-		if ( ! cbs )
-			return this.manager.log.warn('Received reply for unknown ID', id);
-
-		this._rpc.delete(id);
-		if ( success )
-			cbs[0](msg.reply);
-		else
-			cbs[1]();
-	}
 }
 
 
+// ============================================================================
+// ExtensionProvider
+// ============================================================================
+
+export class ExtensionProvider extends RemoteSettingsProvider {
+
+	// Static Stuff
+
+	static supported() { return EXTENSION }
+
+	static hasContent() {
+		if ( ! ExtensionProvider.supported() )
+			return false;
+
+		// We need a promise since we need to message the extension and
+		// request to know if it has keys or not.
+		return new Promise<boolean>((resolve) => {
+			let responded = false,
+				timeout: ReturnType<typeof setTimeout> | null = null ;
+
+			const listener = (evt: MessageEvent<any>) => {
+				if (evt.source !== window)
+					return;
+
+				if (evt.data && evt.data.type === 'ffz_from_ext') {
+					const msg = evt.data.data,
+						type = msg?.ffz_type;
+
+					if (type === 'has-keys') {
+						responded = true;
+						resolve(msg.value);
+						cleanup();
+					}
+				}
+			};
+
+			const cleanup = () => {
+				if (!responded) {
+					responded = true;
+					resolve(false);
+				}
+
+				if (timeout) {
+					clearTimeout(timeout);
+					timeout = null;
+				}
+
+				window.removeEventListener('message', listener);
+			}
+
+			window.addEventListener('message', listener);
+
+			window.postMessage({
+				type: 'ffz_to_ext',
+				data: {
+					ffz_type: 'check-has-keys'
+				}
+			}, '*');
+
+			timeout = setTimeout(cleanup, 1000);
+		});
+	}
+
+	static priority = 101;
+	static title = 'Browser Extension Storage';
+	static description = 'This provider uses a browser extension service worker to store settings in a location that should not suffer from issues due to storage partitioning or cache clearing.';
+
+	static allowTransfer = true;
+	static shouldUpdate = true;
+
+	// State and Storage
+
+	constructor(manager: SettingsManager) {
+		super(manager);
+
+		this.onExtMessage = this.onExtMessage.bind(this);
+		window.addEventListener('message', this.onExtMessage);
+	}
+
+	// Stuff
+
+	broadcastTransfer() {
+
+	}
+
+	disableEvents() {
+
+	}
+
+	// Communication
+
+	onExtMessage(evt: MessageEvent<any>) {
+		if (evt.source !== window)
+			return;
+
+		if (evt.data?.type === 'ffz_from_ext' && evt.data.data?.ffz_type)
+			this.handleMessage(evt.data.data);
+	}
+
+	send(msg: string | CorsMessage, transfer?: OptionalArray<Transferable>) {
+		if ( typeof msg === 'string' )
+			msg = {ffz_type: msg} as any;
+
+		try {
+			window.postMessage(
+				{
+					type: 'ffz_to_ext',
+					data: msg
+				},
+				'*',
+				transfer ? (Array.isArray(transfer) ? transfer : [transfer]) : undefined
+			);
+
+		} catch(err) {
+			this.manager.log.error('Error sending message to extension.', err, msg, transfer);
+		}
+	}
+
+}
+
+
+
 type CorsRpcTypes = {
+
+	'ready': {
+		input: void;
+		output: void;
+	};
 
 	'load': {
 		input: void;
@@ -1530,6 +1688,14 @@ type CorsRpcTypes = {
 		};
 		output: void;
 	};
+
+	'change-blob': {
+		input: {
+			key: string;
+			deleted: boolean;
+		};
+		output: void;
+	}
 
 	'delete-blob': {
 		input: {
@@ -1595,6 +1761,7 @@ export const Providers: Record<string, typeof SettingsProvider> = {
 
 	local: LocalStorageProvider,
 	idb: IndexedDBProvider,
-	cosb: CrossOriginStorageBridge
+	cosb: CrossOriginStorageBridge,
+	//ext: ExtensionProvider
 
 };

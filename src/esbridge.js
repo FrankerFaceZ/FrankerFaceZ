@@ -34,7 +34,7 @@ class FFZESBridge {
 
 		document.addEventListener('readystatechange', event => {
 			if ( document.documentElement )
-			document.documentElement.dataset.ffzEsbridge = true;
+				document.documentElement.dataset.ffzEsbridge = true;
 		});
 	}
 

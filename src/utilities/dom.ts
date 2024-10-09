@@ -1,6 +1,6 @@
 
 import {has} from 'utilities/object';
-import type { DomFragment, OptionalArray } from './types';
+import type { DomFragment } from './types';
 import { DEBUG } from './constants';
 
 const ATTRS = [
@@ -242,6 +242,9 @@ export function setChildren(
 	no_sanitize: boolean = false,
 	no_empty: boolean = false
 ) {
+	if (no_sanitize)
+		window.FrankerFaceZ.get().log.warn('call to setChildren with no_sanitize set to true -- this is no longer supported');
+
 	if (children instanceof Node ) {
 		if (! no_empty )
 			element.innerHTML = '';
@@ -260,15 +263,20 @@ export function setChildren(
 			else if (child) {
 				const val = typeof child === 'string' ? child : String(child);
 
-				element.appendChild(no_sanitize ?
-					range.createContextualFragment(val) : document.createTextNode(val));
+				// We no longer support no_sanitize
+				//element.appendChild(no_sanitize ?
+				//	range.createContextualFragment(val) : document.createTextNode(val));
+
+				element.appendChild(document.createTextNode(val));
 			}
 
 	} else if (children) {
 		const val = typeof children === 'string' ? children : String(children);
 
-		element.appendChild(no_sanitize ?
-			range.createContextualFragment(val) : document.createTextNode(val));
+		// We no longer support no_sanitize
+		//element.appendChild(no_sanitize ?
+		//	range.createContextualFragment(val) : document.createTextNode(val));
+		element.appendChild(document.createTextNode(val));
 	}
 }
 

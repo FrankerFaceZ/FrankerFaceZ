@@ -211,6 +211,57 @@ export default class Directory extends Module {
 			changed: () => this.DirectoryShelf.forceUpdate()
 		});
 
+
+		this.settings.add('directory.block-users', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			ui: {
+				path: 'Directory > Channels >> Block by Username',
+				component: 'basic-terms',
+				words: false
+			}
+		});
+
+		this.settings.add('__filter:directory.block-users', {
+			requires: ['directory.block-users'],
+			equals: 'requirements',
+			process(ctx) {
+				const val = ctx.get('directory.block-users');
+				if ( ! val || ! val.length )
+					return null;
+
+				const out = [[], []];
+
+				for(const item of val) {
+					const t = item.t;
+					let v = item.v;
+
+					if ( t === 'glob' )
+						v = glob_to_regex(v);
+
+					else if ( t !== 'raw' )
+						v = escape_regex(v);
+
+					if ( ! v || ! v.length )
+						continue;
+
+					out[item.s ? 0 : 1].push(v);
+				}
+
+				return [
+					out[0].length
+						? new RegExp(`^(?:${out[0].join('|')})$`)
+						: null,
+					out[1].length
+						? new RegExp(`^(?:${out[1].join('|')})$`, 'i')
+						: null
+				];
+			},
+
+			changed: () => this.updateCards()
+		});
+
 		this.settings.add('directory.block-titles', {
 			default: [],
 			type: 'array_merge',
@@ -700,6 +751,19 @@ export default class Directory extends Module {
 						should_hide = true;
 						break;
 					}
+			}
+
+			if ( ! should_hide ) {
+				const regexes = this.settings.get('__filter:directory.block-users');
+				if ( regexes ) {
+					if ( regexes[0] )
+						regexes[0].lastIndex = -1;
+					if ( regexes[1] )
+						regexes[1].lastIndex = -1;
+
+					if (( regexes[0] && regexes[0].test(props.channelLogin) ) || ( regexes[1] && regexes[1].test(props.channelLogin) ))
+						should_hide = true;
+				}
 			}
 
 			if ( ! should_hide ) {

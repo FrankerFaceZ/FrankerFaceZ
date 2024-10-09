@@ -10,16 +10,21 @@
 
 		transition: top ease-in-out 75ms, bottom ease-in-out 75ms;
 
+		.top-nav__search-container,
 		.tw-svg__asset--logotwitch {
-			visibility: hidden;
+			transition: opacity ease-in-out 75ms;
+			opacity: 0;
+			//visibility: hidden;
 		}
 
 		&:focus-within,
 		&:hover {
 			top: 0 !important;
 
+			.top-nav__search-container,
 			.tw-svg__asset--logotwitch {
-				visibility: visible;
+				opacity: 1;
+				//visibility: visible;
 			}
 		}
 	}

@@ -245,7 +245,10 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		window.addEventListener('message', event => {
 			const type = event.data?.ffz_type;
 
-			if ( type === 'request-context' && event.source ) {
+			if ( type === 'open-settings' )
+				this.emit('main_menu:open');
+
+			else if ( type === 'request-context' && event.source ) {
 				this._context_proxies.add(event.source);
 				this._updateContextProxies(event.source);
 			}

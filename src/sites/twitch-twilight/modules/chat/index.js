@@ -292,6 +292,15 @@ export default class ChatHook extends Module {
 
 		// Settings
 
+		this.settings.add('chat.subs.native', {
+			default: false,
+			ui: {
+				path: 'Chat > Appearance >> Subscriptions',
+				title: 'Display subscription notices using Twitch\'s native UI.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.filtering.show-reasons', {
 			default: false,
 			ui: {
@@ -1671,7 +1680,7 @@ export default class ChatHook extends Module {
 				return;
 
 			if ( event.prefix === 'pinned-chat-updates-v1' ) {
-				this.log.info('Pinned Chat', event);
+				this.log.debug('Pinned Chat', event);
 				return;
 			}
 
@@ -2686,7 +2695,7 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('Subscription') )
 							return;
 
-						if ( t.disable_handling )
+						if ( t.disable_handling || t.chat.context.get('chat.subs.native') )
 							return old_sub.call(i, e);
 
 						if ( t.chat.context.get('chat.subs.show') < 3 )
@@ -2772,7 +2781,7 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('Resubscription') )
 							return;
 
-						if ( t.disable_handling )
+						if ( t.disable_handling || t.chat.context.get('chat.subs.native')  )
 							return old_resub.call(i, e);
 
 						if ( t.chat.context.get('chat.subs.show') < 2 && ! e.body )
@@ -2811,7 +2820,7 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('SubGift') )
 							return;
 
-						if ( t.disable_handling )
+						if ( t.disable_handling || t.chat.context.get('chat.subs.native')  )
 							return old_subgift.call(i, e);
 
 						const key = `${e.channel}:${e.user.userID}`,
@@ -2887,7 +2896,7 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('AnonSubGift') )
 							return;
 
-						if ( t.disable_handling )
+						if ( t.disable_handling || t.chat.context.get('chat.subs.native')  )
 							return old_anonsubgift.call(i, e);
 
 						const key = `${e.channel}:ANON`,
@@ -2944,7 +2953,7 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('SubMysteryGift') )
 							return;
 
-						if ( t.disable_handling )
+						if ( t.disable_handling || t.chat.context.get('chat.subs.native')  )
 							return old_submystery.call(i, e);
 
 						let mystery = null;
@@ -2983,7 +2992,7 @@ export default class ChatHook extends Module {
 						if ( t.chat.context.get('chat.filtering.blocked-types').has('AnonSubMysteryGift') )
 							return;
 
-						if ( t.disable_handling )
+						if ( t.disable_handling || t.chat.context.get('chat.subs.native')  )
 							return old_anonsubmystery.call(i, e);
 
 						let mystery = null;

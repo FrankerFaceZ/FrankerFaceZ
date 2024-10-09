@@ -1,7 +1,7 @@
 {
 	"name": "frankerfacez",
 	"author": "Dan Salvato LLC",
-	"version": "4.74.1",
+	"version": "4.75.0",
 	"description": "FrankerFaceZ is a Twitch enhancement suite.",
 	"private": true,
 	"license": "Apache-2.0",
@@ -11,7 +11,9 @@
 		"clean": "rimraf dist",
 		"dev": "cross-env NODE_ENV=development webpack serve",
 		"dev:prod": "cross-env NODE_ENV=production webpack serve",
+		"dev:ext": "cross-env NODE_ENV=development FFZ_EXTENSION=true webpack serve",
 		"build": "pnpm build:prod",
+		"build:ext": "cross-env NODE_ENV=production FFZ_EXTENSION=true webpack build",
 		"build:stats": "cross-env NODE_ENV=production webpack build --json > stats.json",
 		"build:prod": "cross-env NODE_ENV=production webpack build",
 		"build:dev": "cross-env NODE_ENV=development webpack build",
@@ -25,6 +27,7 @@
 	},
 	"devDependencies": {
 		"@ffz/fontello-cli": "^1.0.4",
+		"@types/chrome": "^0.0.277",
 		"@types/crypto-js": "^4.2.1",
 		"@types/js-cookie": "^3.0.6",
 		"@types/safe-regex": "^1.1.6",

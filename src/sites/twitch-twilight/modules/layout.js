@@ -383,15 +383,30 @@ export default class Layout extends Module {
 			if ( props?.isPromoted && this.settings.get('directory.hide-promoted') )
 				should_hide = true;
 			else {
-				const regexes = this.settings.get('__filter:directory.block-titles');
-				const title = stream?.broadcaster?.broadcastSettings?.title;
-				if ( regexes && title ) {
-					if ( regexes[0] )
-						regexes[0].lastIndex = -1;
-					if ( regexes[1] )
-						regexes[1].lastIndex = -1;
-					if ( (regexes[0] && regexes[0].test(title)) || (regexes[1] && regexes[1].test(title)) )
-						should_hide = true;
+				if ( ! should_hide ) {
+					const regexes = this.settings.get('__filter:directory.block-users');
+					const login = props.userLogin;
+					if ( regexes && login ) {
+						if ( regexes[0] )
+							regexes[0].lastIndex = -1;
+						if ( regexes[1] )
+							regexes[1].lastIndex = -1;
+						if ( (regexes[0] && regexes[0].test(login)) || (regexes[1] && regexes[1].test(login)) )
+							should_hide = true;
+					}
+				}
+
+				if ( ! should_hide) {
+					const regexes = this.settings.get('__filter:directory.block-titles');
+					const title = stream?.broadcaster?.broadcastSettings?.title;
+					if ( regexes && title ) {
+						if ( regexes[0] )
+							regexes[0].lastIndex = -1;
+						if ( regexes[1] )
+							regexes[1].lastIndex = -1;
+						if ( (regexes[0] && regexes[0].test(title)) || (regexes[1] && regexes[1].test(title)) )
+							should_hide = true;
+					}
 				}
 			}
 

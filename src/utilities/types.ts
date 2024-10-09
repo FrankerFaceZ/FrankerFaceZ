@@ -248,7 +248,14 @@ export interface ExperimentTypeMap {
 };
 
 export interface ModuleEventMap {
+	'main_menu': MainMenuEvents;
+};
 
+export type MainMenuEvents = {
+	':open': [event?: {
+		item?: string;
+		event?: MouseEvent;
+	}]
 };
 
 export interface ModuleMap {
