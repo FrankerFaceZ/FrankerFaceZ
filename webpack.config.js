@@ -94,7 +94,9 @@ const config = {
 		}
 	},
 
-	node: false,
+	node: {
+		global: false
+	},
 
 	entry: ENTRY_POINTS,
 
