@@ -4,6 +4,7 @@ const path = require('path');
 const semver = require('semver');
 const {exec, execSync} = require('child_process');
 
+const { CycloneDxWebpackPlugin } = require('@cyclonedx/webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const { EsbuildPlugin } = require('esbuild-loader');
@@ -138,6 +139,11 @@ const config = {
 	},
 
 	plugins: [
+		new CycloneDxWebpackPlugin({
+			specVersion: '1.6',
+			outputLocation: './bom',
+			includeWellknown: false
+		}),
 		new CopyPlugin({
 			patterns: COPY_PATTERNS
 		}),
