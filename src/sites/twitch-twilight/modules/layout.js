@@ -385,7 +385,7 @@ export default class Layout extends Module {
 			else {
 				if ( ! should_hide ) {
 					const regexes = this.settings.get('__filter:directory.block-users');
-					const login = props.userLogin;
+					const login = props?.userLogin;
 					if ( regexes && login ) {
 						if ( regexes[0] )
 							regexes[0].lastIndex = -1;

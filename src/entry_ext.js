@@ -29,20 +29,16 @@
 
 		if (evt.data && evt.data.type === 'ffz_to_ext')
 			browser.runtime.sendMessage(evt.data.data, resp => {
-				if (resp)
-					window.postMessage({
-						type: 'ffz_from_ext',
-						data: resp
-					}, '*');
+				if (resp?.type === 'ffz_to_page')
+					window.postMessage(resp.data, '*');
 			});
 	});
 
 	browser.runtime.onMessage.addListener((msg, sender) => {
-		window.postMessage({
-			type: 'ffz_from_ext',
-			data: msg
-		}, '*');
-		return true;
+		if (msg?.type === 'ffz_to_page')
+			window.postMessage(msg.data, '*');
+
+		return false;
 	});
 
 	// Now, inject our script into the page context.

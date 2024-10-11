@@ -27,5 +27,4 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	else if ( type === 'ffz_injecting' )
 		browser.action.enable(sender.tab.id);
 
-	console.log('got message', message, sender);
 });
