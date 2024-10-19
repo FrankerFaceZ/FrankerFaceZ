@@ -317,12 +317,13 @@ export const PUBSUB_CLUSTERS = {
 export const EMQX_SERVERS = [
 	//'catbag.frankerfacez.com',
 	//'pubsub-staging.frankerfacez.com',
-	'ayaya.frankerfacez.com',
+	'biblethump.frankerfacez.com',
+	/*'ayaya.frankerfacez.com',
 	'champ.frankerfacez.com',
 	'lilz.frankerfacez.com',
 	'pog.frankerfacez.com',
 	'yoohoo.frankerfacez.com',
-	'andknuckles.frankerfacez.com'
+	'andknuckles.frankerfacez.com'*/
 ];
 
 

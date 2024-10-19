@@ -120,7 +120,7 @@ export default class PubSubClient extends EventEmitter {
 
 			data = {
 				require_signing: false,
-				endpoint: `wss://${server}:8084/mqtt`,
+				endpoint: `wss://${server}/mqtt`,
 
 				username: 'anonymous',
 				password: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbm9ueW1vdXMifQ.5DZP1bScMz4-MV_jGZveUKq4pFy9x_PJF9gSzAvj-wA`,

@@ -295,6 +295,11 @@ var _Bytes = class _Bytes {
 		  if (DEBUG)
 			console.log({ maximumPacketSize });
 		  rt = { ...rt, maximumPacketSize };
+		} else if (propertyId === 33) {
+			const receiveMaximum = reader.readUint16();
+			if (DEBUG)
+				console.log({ receiveMaximum });
+			rt = { ...rt, receiveMaximum };
 		} else if (propertyId === 34) {
 		  const topicAliasMaximum = reader.readUint16();
 		  if (DEBUG)
