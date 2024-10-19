@@ -26,7 +26,7 @@ const FILE_PATH = DEV_SERVER
 	? 'https://localhost:8000/script/'
 	: FOR_EXTENSION
 		? ''
-		: 'https://cdn.frankerfacez.com/static/';
+		: 'https://cdn2.frankerfacez.com/static/';
 
 
 console.log('NODE_ENV:', process.env.NODE_ENV);
@@ -340,7 +340,7 @@ if ( DEV_SERVER )
 
 		proxy: {
 			'**': {
-				target: 'https://cdn.frankerfacez.com/',
+				target: 'https://cdn2.frankerfacez.com/',
 				changeOrigin: true
 			}
 		},

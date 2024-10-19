@@ -1698,14 +1698,14 @@ export default class PlayerBase extends Module {
 		return true;
 	}
 
-	createCompressor(inst, video, _cmp) {
+	createCompressor(inst, video, ctx) {
 		if ( ! this.canCompress(inst) )
 			return;
 
 		let comp = video._ffz_compressor;
 		if ( ! comp ) {
-			const ctx = _cmp || new AudioContext();
-			if ( ! IS_FIREFOX && ctx.state === 'suspended' ) {
+			ctx = ctx || new AudioContext();
+			if ( ctx.state === 'suspended' ) {
 				let timer;
 				const evt = () => {
 					clearTimeout(timer);
@@ -1715,7 +1715,7 @@ export default class PlayerBase extends Module {
 						return;
 					}
 
-					this.createCompressor(inst, video, comp);
+					this.createCompressor(inst, video, ctx);
 				}
 
 				this.log.debug('Attempting to resume suspended AudioContext.');

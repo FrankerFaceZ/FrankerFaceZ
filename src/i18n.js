@@ -686,7 +686,7 @@ export default class TranslationManager extends Module {
 			if (! hash)
 				continue;
 
-			promises.push(fetchJSON(`https://cdn.frankerfacez.com/static/locale/${id}/${chnk}.${hash}.json`));
+			promises.push(fetchJSON(`https://cdn2.frankerfacez.com/static/locale/${id}/${chnk}.${hash}.json`));
 		}
 
 		const chunks = await Promise.all(promises);
