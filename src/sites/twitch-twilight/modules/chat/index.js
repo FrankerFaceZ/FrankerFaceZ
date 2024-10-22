@@ -182,6 +182,7 @@ export default class ChatHook extends Module {
 		this.inject('site.web_munch');
 		this.inject('site.css_tweaks');
 		this.inject('site.subpump');
+		//this.inject('site.loadable');
 
 		this.inject('chat');
 
@@ -1101,6 +1102,21 @@ export default class ChatHook extends Module {
 	}
 
 
+	/*setChatPortal(node) {
+		if ( ! node )
+			node = null;
+
+		if ( node === this.chat_portal )
+			return;
+
+		if ( node && !(node instanceof HTMLElement) )
+			throw new Error('Tried to set invalid chat portal, must be null or HTMLElement');
+
+		this.chat_portal = node;
+		this.loadable.ErrorBoundaryComponent.forceUpdate();
+	}*/
+
+
 	onEnable() {
 		this.on('site.web_munch:loaded', this.grabTypes);
 		this.on('site.web_munch:loaded', this.defineClasses);
@@ -1292,6 +1308,33 @@ export default class ChatHook extends Module {
 				inst.client.reconnect();
 			}
 		});
+
+		/*this.loadable.ErrorBoundaryComponent.ready(cls => {
+			const t = this,
+				proto = cls.prototype,
+				old_render = proto.render;
+
+			proto.render = function() {
+				try {
+					const type = this.props.name;
+					if ( type === 'ChatLive' && t.chat_portal ) {
+						const ReactDOM = t.site.getReactDom(),
+							createPortal = ReactDOM?.createPortal;
+
+						if ( createPortal ) {
+							const out = old_render.call(this);
+							console.log('creating portal', out);
+							return createPortal(out, t.chat_portal, 'ffz-chat-portal');
+						}
+					}
+
+				} catch(err) {
+					/* no-op * /
+				}
+
+				return old_render.call(this);
+			}
+		});*/
 
 		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);
@@ -1591,8 +1634,9 @@ export default class ChatHook extends Module {
 						className: 'tw-border-l tw-c-background-alt-2 tw-c-text-base tw-full-width tw-full-height tw-align-items-center tw-flex tw-flex-column tw-justify-content-center tw-relative'
 					}, 'There was an error displaying chat.');
 
-				} else
-					return old_render.call(this);
+				}
+
+				return old_render.call(this);
 			}
 
 			for(const inst of instances)

@@ -106,6 +106,17 @@ export default class Directory extends Module {
 			}
 		});
 
+		this.settings.add('directory.hide-costream-border', {
+			default: false,
+
+			ui: {
+				path: 'Directory > Channels >> Appearance',
+				title: 'Hide border on streams with guest stars.',
+				component: 'setting-check-box',
+				getExtraTerms: () => ['costream', 'co-stream']
+			}
+		});
+
 		this.settings.add('directory.hidden.reveal', {
 			default: false,
 
@@ -511,6 +522,7 @@ export default class Directory extends Module {
 		this.css_tweaks.toggleHide('profile-hover', this.settings.get('directory.show-channel-avatars') === 2);
 		this.css_tweaks.toggleHide('dir-live-ind', this.settings.get('directory.hide-live'));
 		this.css_tweaks.toggle('dir-reveal', this.settings.get('directory.hidden.reveal'));
+		this.settings.getChanges('directory.hide-costream-border', val => this.css_tweaks.toggle('hide-costream-border', val));
 
 		const blur = this.settings.get('directory.hidden.style');
 

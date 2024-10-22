@@ -205,6 +205,7 @@ const CALCULATE_BITS = '_calculateChangedBits';
 Twilight.KNOWN_MODULES = {
 	simplebar: n => n.globalObserver && n.initDOMLoadedElements,
 	react: n => n.Component && n.createElement,
+	'react-dom': n => n.createRoot && n.createPortal,
 	core: n => {
 		if ( n.x2?.experiments && n.x2.intl )
 			return n.x2;

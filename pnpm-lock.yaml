@@ -63,8 +63,8 @@ dependencies:
     specifier: ^3.27.2
     version: 3.27.2
   react:
-    specifier: ^17.0.2
-    version: 17.0.2
+    specifier: ^18.3.1
+    version: 18.3.1
   safe-regex:
     specifier: ^2.1.1
     version: 2.1.1
@@ -195,7 +195,7 @@ devDependencies:
     version: 5.2.2
   vue-loader:
     specifier: ^15.10.2
-    version: 15.10.2(css-loader@6.8.1)(react@17.0.2)(vue-template-compiler@2.6.14)(webpack@5.88.2)
+    version: 15.10.2(css-loader@6.8.1)(react@18.3.1)(vue-template-compiler@2.6.14)(webpack@5.88.2)
   vue-template-compiler:
     specifier: ^2.6.14
     version: 2.6.14
@@ -842,10 +842,10 @@ packages:
       '@types/node': 20.5.7
     dev: true
 
-  /@vue/component-compiler-utils@3.3.0(react@17.0.2):
+  /@vue/component-compiler-utils@3.3.0(react@18.3.1):
     resolution: {integrity: sha512-97sfH2mYNU+2PzGrmK2haqffDpVASuib9/w2/noxiFi31Z54hW+q3izKQXXQZSNhtiUpAI36uSuYepeBe4wpHQ==}
     dependencies:
-      consolidate: 0.15.1(react@17.0.2)
+      consolidate: 0.15.1(react@18.3.1)
       hash-sum: 1.0.2
       lru-cache: 4.1.5
       merge-source-map: 1.1.0
@@ -2163,7 +2163,7 @@ packages:
     dev: true
     optional: true
 
-  /consolidate@0.15.1(react@17.0.2):
+  /consolidate@0.15.1(react@18.3.1):
     resolution: {integrity: sha512-DW46nrsMJgy9kqAbPt5rKaCr7uFtpo4mSUvLHIUbJEjm0vo+aY5QLwBUq3FK4tRnJr/X0Psc0C4jf/h+HtXSMw==}
     engines: {node: '>= 0.10.0'}
     deprecated: Please upgrade to consolidate v1.0.0+ as it has been modernized with several long-awaited fixes implemented. Maintenance is supported by Forward Email at https://forwardemail.net ; follow/watch https://github.com/ladjs/consolidate for updates and release changelog
@@ -2330,7 +2330,7 @@ packages:
         optional: true
     dependencies:
       bluebird: 3.7.2
-      react: 17.0.2
+      react: 18.3.1
     dev: true
 
   /content-disposition@0.5.4:
@@ -4583,6 +4583,7 @@ packages:
   /object-assign@4.1.1:
     resolution: {integrity: sha1-IQmtx5ZYh8/AXLvUQsrIv7s2CGM=}
     engines: {node: '>=0.10.0'}
+    dev: true
 
   /object-inspect@1.11.0:
     resolution: {integrity: sha512-jp7ikS6Sd3GxQfZJPyH3cjcbJF6GZPClgdV+EFygjFLQ5FmW/dRUnTd9PQ9k0JhoNDabWFbpF1yCdSWCC6gexg==}
@@ -5035,12 +5036,11 @@ packages:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
     dev: true
 
-  /react@17.0.2:
-    resolution: {integrity: sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==}
+  /react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
     engines: {node: '>=0.10.0'}
     dependencies:
       loose-envify: 1.4.0
-      object-assign: 4.1.1
 
   /readable-stream@2.3.7:
     resolution: {integrity: sha512-Ebho8K4jIbHAxnuxi7o42OrZgF/ZTNcsZj6nRKyUmkhLFq8CHItp/fy6hQZuZmP/n3yZ9VBUbp4zz/mX8hmYPw==}
@@ -6101,7 +6101,7 @@ packages:
     resolution: {integrity: sha512-BXq3jwIagosjgNVae6tkHzzIk6a8MHFtzAdwhnV5VlvPTFxDCvIttgSiHWjdGoTJvXtmRu5HacExfdarRcFhog==}
     dev: true
 
-  /vue-loader@15.10.2(css-loader@6.8.1)(react@17.0.2)(vue-template-compiler@2.6.14)(webpack@5.88.2):
+  /vue-loader@15.10.2(css-loader@6.8.1)(react@18.3.1)(vue-template-compiler@2.6.14)(webpack@5.88.2):
     resolution: {integrity: sha512-ndeSe/8KQc/nlA7TJ+OBhv2qalmj1s+uBs7yHDRFaAXscFTApBzY9F1jES3bautmgWjDlDct0fw8rPuySDLwxw==}
     peerDependencies:
       '@vue/compiler-sfc': ^3.0.8
@@ -6120,7 +6120,7 @@ packages:
       vue-template-compiler:
         optional: true
     dependencies:
-      '@vue/component-compiler-utils': 3.3.0(react@17.0.2)
+      '@vue/component-compiler-utils': 3.3.0(react@18.3.1)
       css-loader: 6.8.1(webpack@5.88.2)
       hash-sum: 1.0.2
       loader-utils: 1.4.0

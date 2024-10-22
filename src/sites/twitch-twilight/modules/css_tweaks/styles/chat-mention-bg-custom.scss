@@ -3,6 +3,7 @@
 .user-notice-line {
 	&.ffz-mentioned:not(.ffz-custom-color) {
 		&,
+		.chat-scrollable-area__message-container > div:nth-child(2n+0) > &,
 		&:nth-child(2n+0) {
 			background-color: var(--ffz-chat-mention-color) !important;
 		}

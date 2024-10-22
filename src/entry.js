@@ -8,6 +8,11 @@
 	if ( /disable_frankerfacez/.test(location.search) )
 		return;
 
+	if ( document.body.dataset.ffzSource )
+		return;
+
+	document.body.dataset.ffzSource = 'script';
+
 	const DEBUG = localStorage.ffzDebugMode == 'true' && document.body.classList.contains('ffz-dev'),
 		HOST = location.hostname,
 		SERVER = DEBUG ? '//localhost:8000' : '//cdn2.frankerfacez.com',

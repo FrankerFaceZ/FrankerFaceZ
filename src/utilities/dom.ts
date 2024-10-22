@@ -517,7 +517,7 @@ export function highlightJson(object: any, pretty = false, depth = 1, max_depth 
 		return `<span class="ffz-ct--literal" depth="${depth}">${object}</span>`;
 
 	if ( typeof object === 'string' )
-		return `<span class=ffz-ct--string depth="${depth}">"${sanitize(object)}"</span>`;
+		return `<span class=ffz-ct--string depth="${depth}">${sanitize(JSON.stringify(object))}</span>`;
 
 	if ( Array.isArray(object) )
 		return `<span class="ffz-ct--obj-open" depth="${depth}">[</span>`
@@ -535,7 +535,7 @@ export function highlightJson(object: any, pretty = false, depth = 1, max_depth 
 
 		if ( pretty )
 			out.push(`\n${indent_inner}`);
-		out.push(`<span class="ffz-ct--obj-key" depth="${depth}">"${sanitize(key)}"</span><span class="ffz-ct--obj-key-sep" depth="${depth}">: </span>`);
+		out.push(`<span class="ffz-ct--obj-key" depth="${depth}">${sanitize(JSON.stringify(key))}</span><span class="ffz-ct--obj-key-sep" depth="${depth}">: </span>`);
 		out.push(highlightJson(val, pretty, depth + 1, max_depth));
 	}
 

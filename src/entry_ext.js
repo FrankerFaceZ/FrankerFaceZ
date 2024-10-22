@@ -9,6 +9,9 @@
 		||
 		// Don't run on pages that have disabled FFZ.
 		/disable_frankerfacez/.test(location.search)
+		||
+		// Don't run on pages we've already run on.
+		document.body.dataset.ffzSource
 	) {
 		// Tell the service worker we aren't injecting.
 		browser.runtime.sendMessage({
@@ -16,6 +19,8 @@
 		});
 		return;
 	}
+
+	document.body.dataset.ffzSource = 'extension';
 
 	// Make sure to wake the service worker up early.
 	browser.runtime.sendMessage({

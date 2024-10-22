@@ -14,4 +14,10 @@
 		transition-delay: 1s;
 		filter: blur(0) !important;
 	}
+
+	.blurred-preview-card-image div[class^=ScPositionOver] {
+		transition: opacity 0.2s;
+		transition-delay: 1s;
+		opacity: 0;
+	}
 }

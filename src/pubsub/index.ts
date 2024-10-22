@@ -101,7 +101,7 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 			return Promise.resolve(this._mqtt);
 
 		if ( ! this._mqtt_loader )
-			this._mqtt_loader = import('utilities/pubsub')
+			this._mqtt_loader = import(/* webpackChunkName: 'pubsub' */ 'utilities/pubsub')
 				.then(thing => {
 					this._mqtt = thing.default;
 					return thing.default;

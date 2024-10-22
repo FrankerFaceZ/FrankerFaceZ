@@ -8,10 +8,12 @@
 .chat-list__lines .chat-line__bits-charity,
 .user-notice-line,
 .ffz-notice-line,
+
 .chat-line__message:not(.chat-line--inline) {
 	&:not(.ffz-custom-color) {
 		background-color: transparent !important;
 
+		.chat-scrollable-area__message-container > div:nth-child(2n+0) > &,
 		&:nth-child(2n+0) {
 			background-color: rgba(0,0,0,0.1) !important;
 

@@ -1,10 +1,13 @@
 .chat-line__message:not(.chat-line--inline),
 .user-notice-line {
-	&.ffz-mentioned:not(.ffz-custom-color):nth-child(2n+0) {
-		background-color: rgba(255,127,127,.4) !important;
+	.chat-scrollable-area__message-container > div:nth-child(2n+0) > &,
+	&:nth-child(2n+0) {
+		&.ffz-mentioned:not(.ffz-custom-color) {
+			background-color: rgba(255,127,127,.4) !important;
 
-		.tw-root--theme-dark & {
-			background-color: rgba(255,0,0,.3) !important;
+			.tw-root--theme-dark & {
+				background-color: rgba(255,0,0,.3) !important;
+			}
 		}
 	}
 }

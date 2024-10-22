@@ -20,8 +20,8 @@
 		"name": "EMQX MQTT-Based PubSub",
 		"description": "An experimental pubsub system running on an EMQX cluster, to see how that performs.",
 		"groups": [
-			{"value": true, "weight": 50},
-			{"value": false, "weight": 50}
+			{"value": true, "weight": 0},
+			{"value": false, "weight": 100}
 		]
 	},
 	"cf_pubsub": {
