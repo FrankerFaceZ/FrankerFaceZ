@@ -1644,9 +1644,9 @@ export default class Emotes extends Module {
 
 		const out = [], seen = new Set;
 
-		this._withSources(out, seen, room.emote_sets);
+		this._withSources(out, seen, room.emote_sets, room.id);
 		if ( room_user )
-			this._withSources(out, seen, room_user.emote_sets);
+			this._withSources(out, seen, room_user.emote_sets, room.id);
 
 		// Shared Chats
 		if ( room?.shared_chats?.size > 0 )

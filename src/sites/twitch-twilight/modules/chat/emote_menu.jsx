@@ -2368,7 +2368,7 @@ export default class EmoteMenu extends Module {
 							continue;
 						seen_sets.add(emote_set);
 
-						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, false, undefined, source_id);
+						const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, false, undefined, source_id, props.channel_id);
 						if ( section ) {
 							section.emotes.sort(sort_emotes);
 
@@ -2466,7 +2466,7 @@ export default class EmoteMenu extends Module {
 			}
 
 
-			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state, source_id) { // eslint-disable-line class-methods-use-this
+			processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state, source_id, host_id = null) { // eslint-disable-line class-methods-use-this
 				if ( ! emote_set || ! emote_set.emotes )
 					return null;
 
@@ -2489,7 +2489,7 @@ export default class EmoteMenu extends Module {
 							pdata.name) :
 						emote_set.source || 'FFZ',
 
-					title = provider === 'main'
+					title = (provider === 'main' || emote_set.title_is_channel)
 						? source_name
 								? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
 								: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
@@ -2502,7 +2502,7 @@ export default class EmoteMenu extends Module {
 						: 0;
 
 				// Shared Chat emote sets always come after.
-				if (source_id)
+				if (source_id && source_id !== host_id)
 					sort_key += 50;
 
 				let section, emotes, locks;

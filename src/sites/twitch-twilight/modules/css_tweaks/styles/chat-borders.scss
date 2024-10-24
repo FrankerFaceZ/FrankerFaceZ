@@ -11,9 +11,9 @@
 	padding-bottom: calc(.5rem - 1px) !important;
 	border-bottom: 1px solid var(--ffz-border-color);
 
-	&:last-child:nth-child(odd) {
+	/*&:last-child:nth-child(odd) {
 		border-bottom-color: transparent !important;
-	}
+	}*/
 }
 
 .vod-message {
