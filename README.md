@@ -1,7 +1,10 @@
 FrankerFaceZ
 ============
 
-Copyright (c) 2018 Dan Salvato LLC
+[![Build Main Client](https://github.com/FrankerFaceZ/FrankerFaceZ/actions/workflows/build.yml/badge.svg)](https://github.com/FrankerFaceZ/FrankerFaceZ/actions/workflows/build.yml)
+[![Build Extension](https://github.com/FrankerFaceZ/Extension/actions/workflows/build-extension.yml/badge.svg)](https://github.com/FrankerFaceZ/Extension/actions/workflows/build-extension.yml)
+
+Copyright (c) 2024 Dan Salvato LLC
 
 Licensed under the Apache License, Version 2.0. See LICENSE.
 
@@ -29,13 +32,17 @@ when a local copy of a file isn't present.
 > which self-signs a certificate for hosting content via HTTPS. You will need
 > to ensure your browser accepts a self-signed certificate for localhost.
 
-To make FrankerFaceZ load from your local development server, you must set
-the local storage variable `ffzDebugMode` to true. Just run the following
-in your console on Twitch: `localStorage.ffzDebugMode = true;`
+The user-script version of FrankerFaceZ is designed to make it easy to load
+from your local development server. Please switch to using the user-script
+version for development purposes.
 
-It should be noted that this project is not a browser extension that you
-would load in your browser's extensions system. You still need the FrankerFaceZ
-extension or user-script for your browser.
+Then, you must set the local storage variable `ffzDebugMode` to true.
+Just run the following in your console on Twitch:
+```javascript
+localStorage.ffzDebugMode = true;
+```
+
+---
 
 You can edit the project's icon font using the `pnpm font` command. This will
 create a new Fontello session, if one doesn't already exist, and open your

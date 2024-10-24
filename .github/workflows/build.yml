@@ -1,0 +1,67 @@
+name: Build Main Client
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Uses PNPM
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+        run_install: false
+
+    - name: Uses Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'pnpm'
+
+    - name: Install Dependencies
+      run: pnpm install
+
+    - name: Build the Client
+      run: pnpm build
+
+    - name: Create Archive
+      id: artifact-upload-setp
+      uses: actions/upload-artifact@v4
+      with:
+        name: client
+        path: |
+          dist
+
+    - name: Deploy (Clean)
+      uses: garygrossgarten/github-action-ssh@release
+      with:
+        command: $HOME/clean-client.sh
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Deploy (Copy)
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        source: dist
+        target: client
+        strip_components: 1
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Deploy (Execute)
+      uses: garygrossgarten/github-action-ssh@release
+      with:
+        command:  $HOME/update-client.sh
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
