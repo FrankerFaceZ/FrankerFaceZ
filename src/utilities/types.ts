@@ -93,6 +93,8 @@ export type AddonInfo = {
 
 };
 
+export type BasicAddonInfo = Pick<AddonInfo, 'id'> & Partial<AddonInfo>;
+
 // These types are used by get()
 
 export type ExtractSegments<Input extends string> =

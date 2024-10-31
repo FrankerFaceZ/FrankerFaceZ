@@ -167,8 +167,8 @@ export default {
 				if ( a.sort < b.sort ) return -1;
 				if ( b.sort < a.sort ) return 1;
 
-				const a_n = a.name.toLowerCase(),
-					b_n = b.name.toLowerCase();
+				const a_n = (a.name ?? a.id).toLowerCase(),
+					b_n = (b.name ?? b.id).toLowerCase();
 
 				if ( a_n < b_n ) return -1;
 				if ( b_n < a_n ) return 1;

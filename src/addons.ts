@@ -13,7 +13,7 @@ import type SettingsManager from './settings';
 import type TranslationManager from './i18n';
 import type LoadTracker from './load_tracker';
 import type FrankerFaceZ from './main';
-import type { AddonInfo } from 'utilities/types';
+import type { AddonInfo, BasicAddonInfo } from 'utilities/types';
 
 declare global {
 	interface Window {
@@ -245,7 +245,7 @@ export default class AddonManager extends Module<'addons'> {
 		this.emit(':data-loaded');
 	}
 
-	addAddon(input: AddonInfo, is_dev: boolean = false) {
+	addAddon(input: BasicAddonInfo, is_dev: boolean = false) {
 		let addon = input as FullAddonInfo;
 
 		const old = this.addons[addon.id];
@@ -254,6 +254,8 @@ export default class AddonManager extends Module<'addons'> {
 		/*addon.name_i18n = addon.name_i18n || `addon.${addon.id}.name`;
 		addon.short_name_i18n = addon.short_name_i18n || `addon.${addon.id}.short_name`;
 		addon.author_i18n = addon.author_i18n || `addon.${addon.id}.author`;*/
+
+		addon.name = addon.name ?? addon.id;
 
 		addon.dev = is_dev;
 		addon.requires = addon.requires || [];
@@ -566,7 +568,7 @@ export default class AddonManager extends Module<'addons'> {
 			crossorigin: 'anonymous'
 		}));
 
-		// Error if this takes more than 5 seconds.
+		// Error if this takes more than 60 seconds.
 		await timeout(this.waitFor(`addon.${id}:registered` as any), 60000);
 
 		module = this.resolve(`addon.${id}`);

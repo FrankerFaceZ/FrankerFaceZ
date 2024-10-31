@@ -31,13 +31,13 @@
 				<h4>
 					{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }}
 					<span
-						v-if="addon.dev || addon.unlisted"
+						v-if="addon.dev || addon.unlisted "
 						class="tw-c-text-alt-2 tw-font-size-6"
 					>
 						({{ addon.id }})
 					</span>
 				</h4>
-				<span class="tw-c-text-alt tw-mg-r-1">
+				<span v-if="addon.author" class="tw-c-text-alt tw-mg-r-1">
 					{{ t('addon.author', 'By: {author}', {
 						author: addon.author_i18n ? t(addon.author_i18n, addon.author) : addon.author
 					}) }}
@@ -203,7 +203,10 @@ export default {
 			if ( this.addon.description_i18n )
 				return this.t(this.addon.description_i18n, this.addon.description);
 
-			return this.addon.description;
+			else if ( this.addon.description )
+				return this.addon.description;
+
+			return this.t('addon.no-desc', '*No description.*');
 		},
 
 		maintainer() {

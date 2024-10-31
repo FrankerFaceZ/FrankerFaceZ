@@ -8,7 +8,6 @@ import Module from 'utilities/module';
 
 import {createElement, on, off} from 'utilities/dom';
 import {isValidShortcut, debounce, has} from 'utilities/object';
-import { IS_FIREFOX } from 'utilities/constants';
 import { getFontsList, useFont } from 'utilities/fonts';
 
 const STYLE_VALIDATOR = createElement('span');

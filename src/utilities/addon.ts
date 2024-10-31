@@ -3,6 +3,7 @@ import type { AddonInfo } from './types';
 import type Logger from './logging';
 import type TranslationManager from '../i18n';
 import type SettingsManager from '../settings';
+import type AddonManager from '../addons';
 
 /**
  * A special sub-class of {@link Module} used for the root module of an add-on.
@@ -61,10 +62,18 @@ export class Addon<TPath extends string = '', TEventMap extends ModuleEvents = M
 		if ( ! info && this.info )
 			info = this.info;
 
-		const ffz = window.FrankerFaceZ.get();
-		if ( info ) {
-			info.id = id;
-			(ffz as any).addons.addAddon(info);
+		const ffz = window.FrankerFaceZ.get(),
+			addons = (ffz as any)?.addons as AddonManager;
+
+		if ( addons ) {
+			if ( info ) {
+				info.id = id;
+				addons.addAddon(info);
+
+			} else if ( ! addons.hasAddon(id) )
+				addons.addAddon({
+					id
+				});
 		}
 
 		try {

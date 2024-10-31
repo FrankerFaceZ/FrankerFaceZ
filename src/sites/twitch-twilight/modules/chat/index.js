@@ -219,7 +219,7 @@ export default class ChatHook extends Module {
 
 		this.ChatRenderer = this.fine.define(
 			'chat-renderer',
-			n => n.mapMessageToChatLine && n.reportChatRenderSent,
+			n => n.mapMessagesToChatLines && n.reportChatRenderSent,
 			Twilight.CHAT_ROUTES
 		);
 
