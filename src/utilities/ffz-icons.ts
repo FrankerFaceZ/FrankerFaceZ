@@ -124,5 +124,6 @@ export default [
 	"discord",
 	"tiktok",
 	"bluesky",
-	"bits"
+	"bits",
+	"hype-train"
 ] as const;

@@ -16,6 +16,7 @@ import type AddonManager from '../addons';
 export class Addon<TPath extends string = '', TEventMap extends ModuleEvents = ModuleEvents> extends Module<TPath, TEventMap> {
 
 	static info?: AddonInfo;
+	static version: string;
 
 	// Dependencies
 	i18n: TranslationManager = null as any;
@@ -46,7 +47,7 @@ export class Addon<TPath extends string = '', TEventMap extends ModuleEvents = M
 	 * @param id This add-on's ID, or an {@link AddonInfo} object.
 	 * @param info An optional AddonInfo object if {@link id} was not set to an AddonInfo object.
 	 */
-	static register(id?: string | AddonInfo, info?: AddonInfo) {
+	static register(id?: string | AddonInfo, info?: AddonInfo, version?: string) {
 		if ( typeof id === 'object' ) {
 			info = id;
 			id = info.id || undefined;
@@ -62,6 +63,9 @@ export class Addon<TPath extends string = '', TEventMap extends ModuleEvents = M
 		if ( ! info && this.info )
 			info = this.info;
 
+		if ( version )
+			this.version = version;
+
 		const ffz = window.FrankerFaceZ.get(),
 			addons = (ffz as any)?.addons as AddonManager;
 
@@ -74,6 +78,9 @@ export class Addon<TPath extends string = '', TEventMap extends ModuleEvents = M
 				addons.addAddon({
 					id
 				});
+
+			if ( version )
+				addons.setVersion(id, version);
 		}
 
 		try {

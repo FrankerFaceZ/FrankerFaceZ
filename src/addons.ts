@@ -70,6 +70,7 @@ export default class AddonManager extends Module<'addons'> {
 
 	addons: Record<string, FullAddonInfo | string[]>;
 	enabled_addons: string[];
+	versions: Record<string, string>;
 
 	private _loader?: Promise<void>;
 
@@ -90,6 +91,7 @@ export default class AddonManager extends Module<'addons'> {
 		this.reload_required = false;
 		this.addons = {};
 		this.enabled_addons = [];
+		this.versions = {};
 
 		this.load_tracker.schedule('chat-data', 'addon-initial');
 	}
@@ -111,6 +113,7 @@ export default class AddonManager extends Module<'addons'> {
 			getFFZ: () => this,
 			isReady: () => this.enabled,
 			getAddons: () => Object.values(this.addons),
+			getVersions: () => deep_copy(this.versions),
 			hasAddon: (id: string) => this.hasAddon(id),
 			getVersion: (id: string) => this.getVersion(id),
 			doesAddonTarget: (id: string) => this.doesAddonTarget(id),
@@ -178,7 +181,10 @@ export default class AddonManager extends Module<'addons'> {
 		for(const [id, addon] of Object.entries(this.addons)) {
 			if ( Array.isArray(addon) )
 				continue;
-			out.push(`${id} | ${this.isAddonEnabled(id) ? 'enabled' : 'disabled'} | ${addon.dev ? 'dev | ' : ''}${this.isAddonExternal(id) ? 'external | ' : ''}${addon.short_name} v${addon.version}`);
+
+			const version = this.versions[id];
+
+			out.push(`${id} | ${this.isAddonEnabled(id) ? 'enabled' : 'disabled'} | ${version ? `${version} | ` : ''}${addon.dev ? 'dev | ' : ''}${this.isAddonExternal(id) ? 'external | ' : ''}${addon.short_name} v${addon.version}`);
 		}
 
 		out.push('');
@@ -245,6 +251,10 @@ export default class AddonManager extends Module<'addons'> {
 		this.emit(':data-loaded');
 	}
 
+	setVersion(addon_id: string, version: string) {
+		this.versions[addon_id] = version;
+	}
+
 	addAddon(input: BasicAddonInfo, is_dev: boolean = false) {
 		let addon = input as FullAddonInfo;
 
@@ -286,7 +296,8 @@ export default class AddonManager extends Module<'addons'> {
 				force_seen: true,
 				addons: true,
 				addon: deep_copy(addon),
-				getFFZ: () => this
+				getFFZ: () => this,
+				getVersion: () => this.versions[addon.id]
 			});
 
 		this.emit(':added', addon.id, addon);
