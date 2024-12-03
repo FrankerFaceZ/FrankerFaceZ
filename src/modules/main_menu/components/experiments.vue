@@ -60,7 +60,7 @@
 			>
 				<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
 					<div class="tw-flex-grow-1">
-						<h4>{{ exp.name }}</h4>
+						<h4>{{ exp.name ? exp.name : key }}</h4>
 						<div v-if="exp.description" class="description">
 							{{ exp.description }}
 						</div>
@@ -359,8 +359,8 @@ export default {
 					if ( a_r > b_r ) return 1;
 				}
 
-				const a_n = a.exp.name.toLowerCase(),
-					b_n = b.exp.name.toLowerCase();
+				const a_n = a.exp.name?.toLowerCase() ?? a.key?.toLowerCase(),
+					b_n = b.exp.name?.toLowerCase() ?? b.key?.toLowerCase();
 
 				if ( a_n < b_n ) return -1;
 				if ( a_n > b_n ) return 1;

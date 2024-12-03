@@ -7,7 +7,7 @@
 import Module, { buildAddonProxy } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 
-import {get, has, timeout, SourcedSet, make_enum_flags, makeAddonIdChecker} from 'utilities/object';
+import {get, has, timeout, SourcedSet, make_enum_flags, makeAddonIdChecker, deep_copy} from 'utilities/object';
 import {NEW_API, IS_OSX, EmoteTypes, TWITCH_GLOBAL_SETS, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, DEBUG} from 'utilities/constants';
 
 import GET_EMOTE from './emote_info.gql';
@@ -463,15 +463,30 @@ export default class Emotes extends Module {
 
 		this.providers = new Map;
 
-		this.providers.set('featured', {
-			name: 'Featured',
-			i18n_key: 'emote-menu.featured',
+		this.setProvider('ffz', {
+			name: 'FrankerFaceZ',
+			font_icon: 'ffz-i-zreknarf',
+			//icon: 'https://cdn.frankerfacez.com/badge/4/4/solid'
+		});
+
+		/*this.providers.set('ffz-featured', {
+			menu_name: 'Featured',
+			menu_i18n_key: 'emote-menu.featured',
 			sort_key: 75
-		})
+		});*/
 
 		this.emote_sets = {};
 		this._set_refs = {};
 		this._set_timers = {};
+
+		this.settings.add('chat.emotes.source-priorities', {
+			default: null,
+			ui: {
+				path: 'Chat > Emote Priorities',
+				component: 'emote-priorities',
+				data: () => deep_copy(this.providers)
+			}
+		});
 
 		this.settings.add('chat.emotes.enabled', {
 			default: 2,
@@ -631,9 +646,25 @@ export default class Emotes extends Module {
 			return this.addFilter(filter);
 		}
 
+		overrides.setProvider = (provider, data) => {
+			if ( is_dev && ! id_checker.test(provider) )
+					module.log.warn('[DEV-CHECK] Call to emotes.setProvider did not include addon ID in provider:', provider);
+
+			if ( data )
+				data.__source = addon_id;
+
+			return this.setProvider(provider, data);
+		}
+
 		overrides.addDefaultSet = (provider, set_id, data) => {
 			if ( is_dev && ! id_checker.test(provider) )
-					module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet did not include addon ID in provider:', provider);
+				module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet did not include addon ID in provider:', provider);
+
+			if ( ! this.providers.has(provider) ) {
+				this.inferProvider(provider, addon_id);
+				if ( is_dev )
+					module.log.warn('[DEV-CHECK] Call to emotes.addDefaultSet for provider that has not been registered with emotes.setProvider:', provider);
+			}
 
 			if ( data ) {
 				if ( is_dev && ! id_checker.test(set_id) )
@@ -647,7 +678,13 @@ export default class Emotes extends Module {
 
 		overrides.addSubSet = (provider, set_id, data) => {
 			if ( is_dev && ! id_checker.test(provider) )
-					module.log.warn('[DEV-CHECK] Call to emotes.addSubSet did not include addon ID in provider:', provider);
+				module.log.warn('[DEV-CHECK] Call to emotes.addSubSet did not include addon ID in provider:', provider);
+
+			if ( ! this.providers.has(provider) ) {
+				this.inferProvider(provider, addon_id);
+				if ( is_dev )
+					module.log.warn('[DEV-CHECK] Call to emotes.addSubSet for provider that has not been registered with emotes.setProvider:', provider);
+			}
 
 			if ( data ) {
 				if ( is_dev && ! id_checker.test(set_id) )
@@ -712,6 +749,8 @@ export default class Emotes extends Module {
 
 		// Generate the base filter CSS.
 		this.base_effect_css = generateBaseFilterCss();
+
+		this.parent.context.getChanges('chat.emotes.source-priorities', this.updatePriorities, this);
 
 		this.parent.context.on('changed:chat.effects.enable', this.updateEffects, this);
 		for(const input of EFFECT_STYLES)
@@ -807,6 +846,13 @@ export default class Emotes extends Module {
 				}
 			}
 
+			for(const [key, data] of this.providers.entries()) {
+				if ( data?.__source === addon_id ) {
+					removed++;
+					this.setProvider(key, null);
+				}
+			}
+
 			if ( removed ) {
 				this.log.debug(`Cleaned up ${removed} entries when unloading addon:`, addon_id);
 				// TODO: Debounced retokenize all chat messages.
@@ -814,6 +860,62 @@ export default class Emotes extends Module {
 		})
 
 		this.loadGlobalSets();
+	}
+
+
+	// ========================================================================
+	// Providers
+	// ========================================================================
+
+	updatePriorities(priorities) {
+		const l = priorities?.length;
+
+		if (! l || l <= 0)
+			this.sourceSortFn = null;
+		else
+			this.sourceSortFn = (first, second) => {
+				if (first.startsWith('ffz-'))
+					first = 'ffz';
+				if (second.startsWith('ffz-'))
+					second = 'ffz';
+
+				let first_priority = priorities.indexOf(first),
+					second_priority = priorities.indexOf(second);
+
+				if (first_priority === -1) first_priority = l;
+				if (second_priority === -1) second_priority = l;
+
+				return first_priority - second_priority;
+			};
+
+		// Update all existing sourced sets now.
+		this.default_sets.setSortFunction(this.sourceSortFn);
+
+		this.emit(':update-priorities', this.sourceSortFn);
+	}
+
+	inferProvider(provider, addon_id) {
+		if ( this.providers.has(provider) )
+			return;
+
+		const data = this.resolve('addons')?.getAddon(addon_id);
+		if ( data )
+			this.setProvider(provider, {
+				name: data.name,
+				i18n_key: data.name_i18n,
+				icon: data.icon,
+				description: provider,
+				__source: addon_id
+			});
+	}
+
+	setProvider(provider, data) {
+		if ( ! data )
+			this.providers.delete(provider);
+		else {
+			data.id = provider;
+			this.providers.set(provider, data);
+		}
 	}
 
 
@@ -1183,17 +1285,17 @@ export default class Emotes extends Module {
 					emote_sets = room.emote_sets,
 					providers = emote_sets && emote_sets._sources;
 
-				if ( providers && providers.has('featured') )
-					for(const item of providers.get('featured')) {
+				if ( providers && providers.has('ffz-featured') )
+					for(const item of providers.get('ffz-featured')) {
 						const idx = new_sets.indexOf(item);
 						if ( idx === -1 )
-							room.removeSet('featured', item);
+							room.removeSet('ffz-featured', item);
 						else
 							new_sets.splice(idx, 1);
 					}
 
 				for(const set_id of new_sets) {
-					room.addSet('featured', set_id);
+					room.addSet('ffz-featured', set_id);
 
 					if ( ! this.emote_sets[set_id] )
 						this.loadSet(set_id);

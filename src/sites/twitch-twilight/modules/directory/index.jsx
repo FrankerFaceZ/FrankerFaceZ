@@ -661,6 +661,9 @@ export default class Directory extends Module {
 			props = react.return?.return?.return?.memoizedProps;
 
 		if ( ! props?.channelLogin )
+			props = react.return?.return?.return?.return?.return?.memoizedProps;
+
+		if ( ! props?.channelLogin )
 			return;
 
 		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,

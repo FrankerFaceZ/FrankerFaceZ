@@ -93,8 +93,6 @@ export default class LoadTracker extends Module<'load_tracker', LoadEvents> {
 
 	/** @internal */
 	onEnable() {
-		this.emit('load_tracker:schedule', 'test', 'fish');
-
 		this.on(':schedule', this.schedule);
 	}
 

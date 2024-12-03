@@ -1,5 +1,6 @@
 {
 	"api_load": {
+		"in_use": false,
 		"name": "New API Stress Testing",
 		"description": "Send duplicate requests to the new API server for load testing.",
 		"groups": [
@@ -8,25 +9,27 @@
 		]
 	},
 	"api_links": {
-		"name": "API-Based Link Lookups",
-		"description": "Use the new API to look up links instead of the socket cluster.",
+		"in_use": false,
 		"groups": [
-			{"value": true, "weight": 0},
-			{"value": "cf", "weight": 100},
-			{"value": false, "weight": 0}
+			{"value": false, "weight": 100}
 		]
 	},
 	"emqx_pubsub": {
-		"name": "EMQX MQTT-Based PubSub",
-		"description": "An experimental pubsub system running on an EMQX cluster, to see how that performs.",
+		"in_use": false,
+		"groups": [
+			{"value": false, "weight": 100}
+		]
+	},
+	"cf_pubsub": {
+		"in_use": false,
 		"groups": [
 			{"value": true, "weight": 0},
 			{"value": false, "weight": 100}
 		]
 	},
-	"cf_pubsub": {
-		"name": "CF MQTT-Based PubSub",
-		"description": "An experimental new pubsub system that should be more reliable than the existing socket cluster.",
+	"worker_pubsub": {
+		"name": "Worker PubSub",
+		"description": "Whether or not to connect to the new Cloudflare Worker based PubSub system.",
 		"groups": [
 			{"value": true, "weight": 0},
 			{"value": false, "weight": 100}

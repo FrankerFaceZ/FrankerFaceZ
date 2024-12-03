@@ -27,18 +27,67 @@
 		type: 'ffz_injecting'
 	});
 
-	// Set up the extension message bridge.
-	window.addEventListener('message', evt => {
-		if (evt.source !== window)
+	// Set up a bridge for connections, since Firefox
+	// doesn't support externally_connectable.
+	const connections = new Map;
+
+	function handleConnect(id) {
+		if ( connections.has(id) )
 			return;
 
-		if (evt.data && evt.data.type === 'ffz_to_ext')
-			browser.runtime.sendMessage(evt.data.data, resp => {
-				if (resp?.type === 'ffz_to_page')
-					window.postMessage(resp.data, '*');
+		const port = browser.runtime.connect();
+		connections.set(id, port);
+
+		port.onMessage.addListener(msg => {
+			window.postMessage({
+				type: 'ffz-con-message',
+				id,
+				payload: msg
+			})
+		});
+
+		port.onDisconnect.addListener(() => {
+			connections.delete(id);
+			window.postMessage({
+				type: 'ffz-con-disconnect',
+				id
 			});
+		});
+	}
+
+	function handleDisconnect(id) {
+		const port = connections.get(id);
+		if ( port ) {
+			connections.delete(id);
+			port.disconnect();
+		}
+	}
+
+	function handleMessage(id, payload) {
+		const port = connection.get(id);
+		if ( port ) {
+			port.postMessage(payload);
+		}
+	}
+
+	window.addEventListener('message', evt => {
+		if (evt.source !== window || ! evt.data )
+			return;
+
+		const { type, id, payload } = evt.data;
+
+		if ( type === 'ffz-con-connect' )
+			handleConnect(id);
+
+		else if ( type === 'ffz-con-message' )
+			handleMessage(id, payload);
+
+		else if ( type === 'ffz-con-disconnect' )
+			handleDisconnect(id);
 	});
 
+
+	// Let the extension send messages to the page directly.
 	browser.runtime.onMessage.addListener((msg, sender) => {
 		if (msg?.type === 'ffz_to_page')
 			window.postMessage(msg.data, '*');

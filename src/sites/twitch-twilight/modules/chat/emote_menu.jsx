@@ -2483,13 +2483,13 @@ export default class EmoteMenu extends Module {
 
 				const key = `${emote_set.merge_source || fav_key}-${emote_set.merge_id || emote_set.id}`,
 					pdata = t.emotes.providers.get(provider),
-					source = pdata && pdata.name ?
-						(pdata.i18n_key ?
-							t.i18n.t(pdata.i18n_key, pdata.name, pdata) :
-							pdata.name) :
+					source = pdata && pdata.menu_name ?
+						(pdata.menu_i18n_key ?
+							t.i18n.t(pdata.menu_i18n_key, pdata.menu_name, pdata) :
+							pdata.menu_name) :
 						emote_set.source || 'FFZ',
 
-					title = (provider === 'main' || emote_set.title_is_channel)
+					title = (provider === 'ffz-main' || emote_set.title_is_channel)
 						? source_name
 								? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
 								: t.i18n.t('emote-menu.main-set', 'Channel Emotes')

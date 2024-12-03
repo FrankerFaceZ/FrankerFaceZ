@@ -5,12 +5,10 @@
 // ============================================================================
 
 import Module, { GenericModule } from 'utilities/module';
-import { PUBSUB_CLUSTERS } from 'utilities/constants';
+import { PubSubClient } from './client';
 import type ExperimentManager from '../experiments';
 import type SettingsManager from '../settings';
-import type PubSubClient from 'utilities/pubsub';
 import type { PubSubCommands } from 'utilities/types';
-import type { SettingUi_Select_Entry } from '../settings/types';
 
 declare module 'utilities/types' {
 	interface ModuleMap {
@@ -20,10 +18,10 @@ declare module 'utilities/types' {
 		pubsub: PubSubEvents;
 	}
 	interface SettingsTypeMap {
-		'pubsub.use-cluster': keyof typeof PUBSUB_CLUSTERS | null;
+		'pubsub.enabled': boolean;
 	}
 	interface ExperimentTypeMap {
-		cf_pubsub: boolean;
+		worker_pubsub: boolean;
 	}
 }
 
@@ -54,81 +52,47 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 	_topics: Map<string, Set<unknown>>;
 	_client: PubSubClient | null;
 
-	_mqtt?: typeof PubSubClient | null;
-	_mqtt_loader?: Promise<typeof PubSubClient> | null;
-
 	constructor(name?: string, parent?: GenericModule) {
 		super(name, parent);
 
 		this.inject('settings');
 		this.inject('experiments');
 
-		this.settings.add('pubsub.use-cluster', {
-			default: () => {
-				if ( this.experiments.getAssignment('emqx_pubsub') )
-					return 'EMQXTest';
-				if ( this.experiments.getAssignment('cf_pubsub') )
-					return 'Staging';
-				return null;
-			},
+		this.settings.add('pubsub.enabled', {
+			default: () => this.experiments.getAssignment('worker_pubsub') ?? false,
 
 			ui: {
 				path: 'Debugging @{"expanded": false, "sort": 9999} > PubSub >> General',
-				title: 'Server Cluster',
-				description: 'Which server cluster to connect to. You can use this setting to disable PubSub if you want, but should otherwise leave this on the default value unless you know what you\'re doing.',
+				title: 'Enable PubSub.',
+				description: 'Whether or not you want your client to connect to FrankerFaceZ\'s PubSub system. This is still in testing and should be left alone unless you know what you\'re doing.',
 				force_seen: true,
 
-				component: 'setting-select-box',
-
-				data: [{
-					value: null,
-					title: 'Disabled'
-				} as SettingUi_Select_Entry<string | null>].concat(Object.keys(PUBSUB_CLUSTERS).map(x => ({
-					value: x,
-					title: x
-				})))
+				component: 'setting-check-box',
 			},
 
-			changed: () => this.reconnect()
+			changed: val => val ? this.connect() : this.disconnect()
 		});
 
 		this._topics = new Map;
 		this._client = null;
 	}
 
-	loadPubSubClient() {
-		if ( this._mqtt )
-			return Promise.resolve(this._mqtt);
-
-		if ( ! this._mqtt_loader )
-			this._mqtt_loader = import(/* webpackChunkName: 'pubsub' */ 'utilities/pubsub')
-				.then(thing => {
-					this._mqtt = thing.default;
-					return thing.default;
-				})
-				.finally(() => this._mqtt_loader = null);
-
-		return this._mqtt_loader;
-	}
-
 	onEnable() {
-		this.on('experiments:changed:cf_pubsub', this._updateSetting, this);
-
 		this.subscribe(null, 'global');
-
 		this.connect();
+
+		this.on('experiments:changed:worker_pubsub', this._updateSetting, this);
 	}
 
 	onDisable() {
+		this.off('experiments:changed:worker_pubsub', this._updateSetting, this);
+
 		this.disconnect();
-
 		this.unsubscribe(null, 'global');
-
-		this.off('experiments:changed:cf_pubsub', this._updateSetting, this);
 	}
 
 	_updateSetting() {
-		this.settings.update('pubsub.use-cluster');
+		this.settings.update('pubsub.enabled');
 	}
 
 
@@ -137,18 +101,7 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 	// ========================================================================
 
 	get connected() {
-		return this._client?.connected ?? false;
-	}
-
-
-	get connecting() {
-		return this._client?.connecting ?? false;
-	}
-
-
-	get disconnected() {
-		// If this is null, we have no client, so we aren't connected.
-		return this._client?.disconnected ?? true;
+		return this._client != null;
 	}
 
 
@@ -162,47 +115,21 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 	}
 
 	async connect() {
-
-		if ( this._client )
+		// If there's already a client, or PubSub is disabled
+		// then we have nothing to do.
+		if ( this._client || ! this.settings.get('pubsub.enabled') )
 			return;
 
-		let cluster_id = this.settings.get('pubsub.use-cluster');
-		if ( cluster_id === null )
-			return;
+		// Create a new instance of the PubSubClient class.
+		const client = this._client = new PubSubClient();
 
-		let cluster = PUBSUB_CLUSTERS[cluster_id];
-
-		// If we didn't get a valid cluster, use production.
-		if ( ! cluster?.length ) {
-			cluster_id = 'Production';
-			cluster = PUBSUB_CLUSTERS.Production;
-		}
-
-		this.log.info(`Using PubSub: ${cluster_id} (${cluster})`);
-
-		const user = this.resolve('site')?.getUser?.();
-
-		// The client class handles everything for us. We only
-		// maintain a separate list of topics in case topics are
-		// subscribed when the client does not exist, or if the
-		// client needs to be recreated.
-
-		const PubSubClient = await this.loadPubSubClient();
-
-		const client = this._client = new PubSubClient(cluster, {
-			logger: this.log.get('client'),
-			user: user?.id ? {
-				provider: 'twitch',
-				id: user.id
-			} : null
+		// Connect to the various events.
+		client.on('connect', () => {
+			this.log.info('Connected to PubSub.');
 		});
 
-		client.on('connect', msg => {
-			this.log.info('Connected to PubSub.', msg);
-		});
-
-		client.on('disconnect', msg => {
-			this.log.info('Disconnected from PubSub.', msg);
+		client.on('disconnect', () => {
+			this.log.info('Disconnected from PubSub.');
 		});
 
 		client.on('error', err => {
@@ -225,7 +152,7 @@ export default class PubSub extends Module<'pubsub', PubSubEvents> {
 			this.emit(`:command:${data.cmd}` as PubSubCommandKey, data.data, data);
 		});
 
-		// Subscribe to topics.
+		// Subscribe to our topics.
 		const topics = [...this._topics.keys()];
 		client.subscribe(topics);
 

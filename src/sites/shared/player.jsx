@@ -93,6 +93,34 @@ export default class PlayerBase extends Module {
 			}
 		});
 
+		this.settings.add('player.clip-button.hide-native', {
+			default: null,
+			requires: ['player.clip-button.custom'],
+			process: (ctx, val) => val ?? ctx.get('player.clip-button.custom'),
+			ui: {
+				path: 'Player > General >> Appearance',
+				component: 'setting-check-box',
+				title: 'Hide the native Clip button.',
+				description: 'By default, this is enabled when using the setting to add a custom Clip button.'
+			},
+
+			changed: val => this.css_tweaks.toggle('player-hide-native-clip', val)
+		});
+
+		this.settings.add('player.clip-button.custom', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Appearance',
+				component: 'setting-check-box',
+				title: 'Display a custom Clip button.',
+				description: 'Add a custom Clip button to the player that better fits the style of the other buttons.'
+			},
+			changed: () => {
+				for(const inst of this.Player.instances)
+					this.addClipButton(inst);
+			}
+		});
+
 		this.settings.add('player.fade-pause-buffer', {
 			default: false,
 			ui: {
@@ -600,6 +628,7 @@ export default class PlayerBase extends Module {
 		await this.settings.provider.awaitReady();
 
 		this.css_tweaks.toggleHide('player-gain-volume', this.settings.get('player.gain.no-volume'));
+		this.css_tweaks.toggle('player-hide-native-clip', this.settings.get('player.clip-button.hide-native'));
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
 		this.css_tweaks.toggle('player-ext-mouse', !this.settings.get('player.ext-interaction'));
 		this.css_tweaks.toggle('player-hide-mouse', this.settings.get('player.hide-mouse'));
@@ -1237,6 +1266,7 @@ export default class PlayerBase extends Module {
 		this.skipContentWarnings(inst);
 		this.addPiPButton(inst);
 		this.addResetButton(inst);
+		this.addClipButton(inst);
 		this.addCompressorButton(inst, false);
 		this.addGainSlider(inst, false);
 		this.addMetadata(inst);
@@ -1979,6 +2009,81 @@ export default class PlayerBase extends Module {
 		else
 		//if ( ! is_this )
 			video.requestPictureInPicture();
+	}
+
+
+	addClipButton(inst, tries = 0) {
+		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
+			container = outer && outer.querySelector(RIGHT_CONTROLS),
+			has_clip_button = this.settings.get('player.clip-button.custom');
+
+		if ( ! container ) {
+			if ( ! has_clip_button )
+				return;
+
+			if ( tries < 5 )
+				return setTimeout(this.addClipButton.bind(this, inst, (tries || 0) + 1), 250);
+
+			return; // this.log.warn('Unable to find container element for Clip button.');
+		}
+
+		let tip, btn, cont = container.querySelector('.ffz--player-clip');
+		if ( ! has_clip_button ) {
+			if ( cont )
+				cont.remove();
+			return;
+		}
+
+		if ( ! cont ) {
+			// We need the native clip button, so we can dispatch a click.
+			const native_clip = container.querySelector('button[aria-label*="alt+x"]');
+			if ( ! native_clip )
+				return;
+
+			const on_click = e => native_clip.click();
+
+			cont = (<div class="ffz--player-clip tw-inline-flex tw-relative ffz-il-tooltip__container">
+				{btn = (<button
+					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+					type="button"
+					data-a-target="ffz-player-clip-button"
+					onClick={on_click}
+				>
+					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
+						<div class="tw-button-icon__icon">
+							<figure class="ffz-player-icon ffz-i-clip" />
+						</div>
+					</div>
+				</button>)}
+				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
+			</div>);
+
+			const thing = container.querySelector('.ffz--player-reset button') ||
+				container.querySelector('.ffz--player-pip button') ||
+				container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
+				//container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
+				container.querySelector('button[aria-label*="Theat"]') ||
+				container.querySelector('button[data-a-target="player-fullscreen-button"]');
+
+			if ( thing ) {
+				container.insertBefore(cont, thing.parentElement);
+			} else
+				container.appendChild(cont);
+
+		} else {
+			btn = cont.querySelector('button');
+			tip = cont.querySelector('.ffz-il-tooltip');
+		}
+
+		btn.setAttribute('aria-label',
+			tip.textContent = this.i18n.t(
+				'player.clip-button',
+				'Clip (Alt+X)'
+			));
+	}
+
+	clickClip(inst, e) {
+		console.log('clicked clip', inst, e);
 	}
 
 

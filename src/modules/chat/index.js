@@ -135,17 +135,7 @@ export default class Chat extends Module {
 
 		this.settings.add('debug.link-resolver.source', {
 			process: (ctx, val) => {
-				if ( val == null ) {
-					const exp = this.experiments.getAssignment('api_links');
-					if ( exp === 'cf' )
-						val = 'test-cf';
-					else if ( exp )
-						val = 'test';
-					else
-						val = 'socket';
-				}
-
-				return LINK_DATA_HOSTS[val] ?? LINK_DATA_HOSTS.test;
+				return LINK_DATA_HOSTS[val] ?? LINK_DATA_HOSTS.Production;
 			},
 
 			default: null,
@@ -1326,6 +1316,12 @@ export default class Chat extends Module {
 				if ( is_dev && ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to getUser().addSet() did not include addon ID in provider:', provider);
 
+				if ( ! this.manager.emotes.providers.has(provider) ) {
+					this.manager.emotes.inferProvider(provider, addon_id);
+					if ( is_dev )
+						module.log.warn('[DEV-CHECK] Call to getUser().addSet() for provider that has not been registered with emotes.setProvider:', provider);
+				}
+
 				if ( data ) {
 					if ( is_dev && ! id_checker.test(set_id) )
 						module.log.warn('[DEV-CHECK] Call to getUser().addSet() loaded set data but did not include addon ID in set ID:', set_id);
@@ -1365,6 +1361,12 @@ export default class Chat extends Module {
 			addSet(provider, set_id, data) {
 				if ( is_dev && ! id_checker.test(provider) )
 					module.log.warn('[DEV-CHECK] Call to getRoom().addSet() did not include addon ID in provider:', provider);
+
+				if ( ! this.manager.emotes.providers.has(provider) ) {
+					this.manager.emotes.inferProvider(provider, addon_id);
+					if ( is_dev )
+						module.log.warn('[DEV-CHECK] Call to getRoom().addSet() for provider that has not been registered with emotes.setProvider:', provider);
+				}
 
 				if ( data ) {
 					if ( is_dev && ! id_checker.test(set_id) )
@@ -1524,6 +1526,12 @@ export default class Chat extends Module {
 		this.settings.provider.on('changed', this.onProviderChange, this);
 
 		this.on('site.subpump:pubsub-message', this.onPubSub, this);
+		this.on('chat.emotes:update-priorities', fn => {
+			for(const thing of this.iterateAllRoomsAndUsers()) {
+				if (thing.emote_sets)
+					thing.emote_sets.setSortFunction(fn);
+			}
+		});
 
 		if ( this.context.get('chat.filtering.need-colors') )
 			this.createColorCache().then(() => this.emit(':update-line-tokens'));

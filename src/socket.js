@@ -126,12 +126,12 @@ export default class SocketClient extends Module {
 
 
 	onEnable() {
+		// We don't connect anymore.
 		// For now, stop connecting to the sockets for people using the
 		// API links experiment.
-		if ( this.experiments.getAssignment('api_links') )
-			return;
-
-		this.connect();
+		//if ( this.experiments.getAssignment('api_links') )
+		//	return;
+		//this.connect();
 	}
 	onDisable() { this.disconnect() }
 

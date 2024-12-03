@@ -369,10 +369,10 @@ export default class Room {
 
 		this.data = d;
 
-		this.removeAllSets('main');
+		this.removeAllSets('ffz-main');
 
 		if ( d.set )
-			this.addSet('main', d.set);
+			this.addSet('ffz-main', d.set);
 
 		if ( data.sets )
 			for(const set_id in data.sets)
@@ -408,7 +408,7 @@ export default class Room {
 			return;
 
 		if ( ! this.emote_sets )
-			this.emote_sets = new SourcedSet;
+			this.emote_sets = new SourcedSet(false, this.manager.emotes.sourceSortFn);
 
 		if ( typeof set_id === 'number' )
 			set_id = `${set_id}`;

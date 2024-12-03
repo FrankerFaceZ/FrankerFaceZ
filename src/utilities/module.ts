@@ -225,6 +225,13 @@ export class Module<
 	get addon_id() { return this.__addon_id }
 	/** If this module is part of an add-on, the add-on's root module. */
 	get addon_root() { return this.__addon_root }
+	/** If this module is part of an add-on, the add-on's manifest. */
+	get addon_manifest() {
+		if (this.__addon_id)
+			return this.resolve('addons')?.getAddon(this.__addon_id!) ??
+				(this.__addon_root?.constructor as typeof Addon)?.info ??
+				undefined;
+	}
 
 	/** A Logger instance for this module. */
 	get log(): Logger {

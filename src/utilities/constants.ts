@@ -279,10 +279,10 @@ export const WS_CLUSTERS = {
 
 
 export const LINK_DATA_HOSTS = {
-	socket: {
+	/*socket: {
 		title: 'Socket Cluster (Deprecated)',
 		value: 'special:socket'
-	},
+	},*/
 	localhost: {
 		title: 'Local Dev Server (Port 8002)',
 		value: 'https://localhost:8002',
@@ -292,17 +292,17 @@ export const LINK_DATA_HOSTS = {
 		title: 'Local Dev Worker (Wrangler, Port 8787)',
 		value: 'https://localhost:8787'
 	},
-	test: {
+	/*test: {
 		title: 'API Test Server',
 		value: 'https://api-test.frankerfacez.com/v2/link'
 	},
 	'test-cf': {
 		title: 'Cloudflare Test Worker',
 		value: 'https://link-service.workers.frankerfacez.com'
-	},
+	},*/
 	Production: {
 		title: 'Production',
-		value: 'https://api.frankerfacez.com/v2/link'
+		value: 'https://link-service.workers.frankerfacez.com'
 	}
 };
 

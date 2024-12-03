@@ -1121,6 +1121,8 @@ export function generateHex(length: number = 40) {
 }
 
 
+export type StringSortFn = (first: string, second: string) => number;
+
 /**
  * SourcedSet is similar to a Set, except that entries in the set are kept
  * track of based upon a `source`. This allows entries from a specific source
@@ -1150,6 +1152,9 @@ export class SourcedSet<T> {
 	_cache: Set<T> | T[];
 
 	private _sources?: Map<string, T[]>;
+	private _sorted_sources?: T[][] | null;
+
+	private _sourceSortFn?: StringSortFn | null;
 
 	/**
 	 * Create a new SourcedSet.
@@ -1159,9 +1164,52 @@ export class SourcedSet<T> {
 	 *
 	 * @param T The type of object to hold.
 	 */
-	constructor(use_set = false) {
+	constructor(use_set = false, source_sorter?: StringSortFn) {
 		this._use_set = use_set;
 		this._cache = use_set ? new Set : [];
+		this._sourceSortFn = source_sorter;
+	}
+
+
+	resortSources() {
+		this._sorted_sources = null;
+
+		// We don't need to rebuild if we have less than 2 sources
+		// since sorting wouldn't change anything.
+		if (this._sources && this._sources.size > 1)
+			this._rebuild();
+	}
+
+
+	setSortFunction(fn: StringSortFn | null) {
+		// If the method isn't changing, then we don't need
+		// to do anything.
+		if (this._sourceSortFn === fn)
+			return;
+
+		// Set the new sort function.
+		this._sourceSortFn = fn;
+
+		// And re-sort.
+		this.resortSources();
+	}
+
+
+	_sortSources() {
+		if (!this._sources || this._sources.size === 0) {
+			this._sorted_sources = [];
+			return;
+		}
+
+		if (this._sources.size === 1 || !this._sourceSortFn) {
+			this._sorted_sources = [...this._sources.values()];
+			return;
+		}
+
+		const sources = [...this._sources?.entries()];
+		sources.sort((a, b) => this._sourceSortFn!(a[0], b[0]));
+
+		this._sorted_sources = sources.map(entry => entry[1]);
 	}
 
 	/**
@@ -1174,7 +1222,11 @@ export class SourcedSet<T> {
 
 		const use_set = this._use_set,
 			cache = this._cache = use_set ? new Set : [];
-		for(const items of this._sources.values())
+
+		if (!this._sorted_sources)
+			this._sortSources();
+
+		for(const items of this._sorted_sources!)
 			for(const i of items)
 				if ( use_set )
 					(cache as Set<T>).add(i);
@@ -1210,6 +1262,7 @@ export class SourcedSet<T> {
 	delete(source: string) {
 		if ( this._sources && this._sources.has(source) ) {
 			this._sources.delete(source);
+			this._sorted_sources = null;
 			this._rebuild();
 		}
 	}
@@ -1224,7 +1277,19 @@ export class SourcedSet<T> {
 			items = [...existing, ...items];
 
 		this._sources.set(source, items);
-		if ( existing )
+
+		// If we have a sort function and more than one source, then
+		// we need to do a rebuild when making modifications.
+		const need_sorting = this._sourceSortFn != null && this._sources.size > 1;
+
+		// If this is a new source, we need to clear the cache for
+		// future rebuilds to include this.
+		if ( ! existing )
+			this._sorted_sources = null;
+
+		// If we need sorting, do a rebuild, otherwise go ahead
+		// and add the items normally.
+		if ( need_sorting )
 			this._rebuild();
 		else {
 			const use_set = this._use_set,
@@ -1256,7 +1321,20 @@ export class SourcedSet<T> {
 
 		const existing = this._sources.has(source);
 		this._sources.set(source, items);
-		if ( existing )
+
+		// If we have a sort function and more than one source, then
+		// we need to do a rebuild when making modifications.
+		const need_sorting = this._sourceSortFn != null && this._sources.size > 1;
+
+		// If this is a new source, we need to clear the cache for
+		// future rebuilds to include this.
+		if ( ! existing )
+			this._sorted_sources = null;
+
+		// If we need sorting, or if we replaced an existing source,
+		// then we need a rebuild. Otherwise, go ahead and add the
+		// items normally.
+		if ( existing || need_sorting )
 			this._rebuild();
 		else {
 			const use_set = this._use_set,
@@ -1284,7 +1362,14 @@ export class SourcedSet<T> {
 			return;
 
 		existing.push(item);
-		if ( this._use_set )
+
+		// If we have a sort function and more than one source, then
+		// we need to do a rebuild when making modifications.
+		const need_sorting = this._sourceSortFn != null && this._sources.size > 1;
+
+		if ( need_sorting )
+			this._rebuild();
+		else if ( this._use_set )
 			(this._cache as Set<T>).add(item);
 		else if ( ! (this._cache as T[]).includes(item) )
 			(this._cache as T[]).push(item);
@@ -1302,6 +1387,8 @@ export class SourcedSet<T> {
 			return;
 
 		(existing as T[]).splice(idx, 1);
+
+		// Removal always requires a rebuild.
 		this._rebuild();
 	}
 }

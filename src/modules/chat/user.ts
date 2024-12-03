@@ -138,7 +138,7 @@ export default class User {
 			data = {id: badge_id};
 
 		if ( ! this.badges )
-			this.badges = new SourcedSet;
+			this.badges = new SourcedSet(false, this.manager.emotes.sourceSortFn);
 
 		const existing = this.badges.get(provider);
 		if ( existing )

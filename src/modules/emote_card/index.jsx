@@ -24,6 +24,8 @@ function getEmoteTypeFromTwitchType(type) {
 		return EmoteTypes.LimitedTime;
 	if ( type === 'BITS_BADGE_TIERS' )
 		return EmoteTypes.BitsTier;
+	if ( type === 'CHANNEL_POINTS' )
+		return EmoteTypes.ChannelPoints;
 	if ( type === 'TWO_FACTOR' )
 		return EmoteTypes.TwoFactor;
 	if ( type === 'PRIME' )

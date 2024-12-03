@@ -346,7 +346,7 @@ export default class AddonManager extends Module<'addons'> {
 	}
 
 	getAddon(id: string) {
-		const addon = this.addons[id];
+		const addon = this.addons[id] ?? null;
 		return Array.isArray(addon) ? null : addon;
 	}
 
