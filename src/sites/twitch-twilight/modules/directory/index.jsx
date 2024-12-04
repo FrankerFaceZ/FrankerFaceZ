@@ -840,7 +840,7 @@ export default class Directory extends Module {
 		if ( ! hide_container )
 			hide_container = el;
 
-		if ( hide_container.querySelectorAll('.tw-aspect .tw-image').length < 2 )
+		if ( hide_container.querySelectorAll('.tw-aspect .tw-image:not(.tw-image-avatar)').length < 2 )
 			hide_container.classList.toggle('tw-hide', should_hide);
 
 		this.updateUptime(el, item, for_exp);
