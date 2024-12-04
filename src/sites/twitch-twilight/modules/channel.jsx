@@ -119,7 +119,7 @@ export default class Channel extends Module {
 		);
 
 		this.InfoBar = this.elemental.define(
-			'channel-info-bar', '.channel-info-content',
+			'channel-info-bar', '#live-channel-stream-information', //.channel-info-content',
 			USER_PAGES,
 			{childNodes: true, subtree: true}, 1
 		);
@@ -305,9 +305,29 @@ export default class Channel extends Module {
 			el._ffz_link_login = null;
 		}
 
+		let nvc = el.querySelector('.ffz--native-viewers-container');
+		if ( ! nvc ) {
+			let i = 0,
+				vel = el.querySelector('p[data-a-target="animated-channel-viewers-count"]');
+			while(vel && vel != el && i < 5) {
+				if ( vel.querySelector('svg') ) {
+					vel.classList.add('ffz--native-viewers-container');
+					nvc = vel;
+					break;
+				}
+				vel = vel.parentElement;
+				i++;
+			}
+		}
+
 		if ( ! el._ffz_cont ) {
-			const report = el.querySelector('.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"],button[data-a-target="report-button-more-button"]');
-			let cont = report && (report.closest('.tw-flex-wrap.tw-justify-content-end') || report.closest('.tw-justify-content-end'));
+			let report = el.querySelector(`.report-button,button[data-test-selector="video-options-button"],button[data-test-selector="clip-options-button"],button[data-a-target="report-button-more-button"]`);
+			if (!report && nvc)
+				report = nvc.parentElement;
+			let cont = report && (
+				report.closest('.tw-flex-wrap.tw-justify-content-end') ||
+				report.closest('.tw-justify-content-end')
+			);
 
 			if ( ! cont && report ) {
 				cont = report.parentElement?.parentElement;
@@ -331,19 +351,6 @@ export default class Channel extends Module {
 			if ( cont && el.contains(cont) ) {
 				el._ffz_links = <div class="ffz--links tw-mg-l-1"></div>;
 				cont.appendChild(el._ffz_links);
-			}
-		}
-
-		if ( ! el.querySelector('ffz--native-viewers-container') ) {
-			let i = 0,
-				vel = el.querySelector('p[data-a-target="animated-channel-viewers-count"]');
-			while(vel && vel != el && i < 5) {
-				if ( vel.querySelector('svg') ) {
-					vel.classList.add('ffz--native-viewers-container');
-					break;
-				}
-				vel = vel.parentElement;
-				i++;
 			}
 		}
 

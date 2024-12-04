@@ -62,7 +62,13 @@ export default class Directory extends Module {
 
 		this.DirectoryCard = this.elemental.define(
 			'directory-card',
-			'article[data-a-target^="video-carousel-card-"],article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article',
+			`article[data-a-target^="video-carousel-card-"],article[data-a-target^="followed-vod-"],article[data-a-target^="card-"],div[data-a-target^="video-tower-card-"] article,div[data-a-target^="clips-card-"] article,.shelf-card__impression-wrapper article,.tw-tower div article`,
+			DIR_ROUTES, null, 0, 0
+		);
+
+		this.DirectoryExperimentCard = this.elemental.define(
+			'directory-experiment-card',
+			'.switcher-hopper__scroll-container .tw-tower > div > a',
 			DIR_ROUTES, null, 0, 0
 		);
 
@@ -531,6 +537,11 @@ export default class Directory extends Module {
 
 		this.on('i18n:update', () => this.updateCards());
 
+		this.DirectoryExperimentCard.on('mount', this.updateExpCard, this);
+		this.DirectoryExperimentCard.on('mutate', this.updateExpCard, this);
+		this.DirectoryExperimentCard.on('unmount', this.clearExpCard, this);
+		this.DirectoryExperimentCard.each(el => this.updateExpCard(el));
+
 		this.DirectoryCard.on('mount', this.updateCard, this);
 		this.DirectoryCard.on('mutate', this.updateCard, this);
 		this.DirectoryCard.on('unmount', this.clearCard, this);
@@ -647,27 +658,53 @@ export default class Directory extends Module {
 			hide_container.classList.toggle('tw-hide', should_hide);
 	}
 
+	updateCards() {
+		this.DirectoryCard.each(el => this.updateCard(el));
+		this.DirectoryExperimentCard.each(el => this.updateExpCard(el));
+		this.DirectoryGameCard.each(el => this.updateGameCard(el));
+		this.DirectoryShelf.forceUpdate();
+
+		this.emit(':update-cards');
+	}
+
+	clearCard(el, for_exp = false) {
+		this.clearUptime(el);
+		this.clearFlags(el);
+
+		const cont = this._getTopRightContainer(el, for_exp);
+		if ( cont )
+			cont.remove();
+
+		el._ffz_top_right = null;
+	}
+
+	clearExpCard(el) {
+		return this.clearCard(el, true);
+	}
 
 	updateCard(el) {
-		const react = this.fine.getReactInstance(el);
-		if ( ! react )
+		const parent = this.fine.searchParentNode(el, n => n.memoizedProps?.channelLogin);
+		if ( ! parent )
 			return;
 
-		let props = react.child?.memoizedProps;
-		if ( ! props?.channelLogin )
-			props =  react.return?.stateNode?.props;
+		const props = parent.memoizedProps;
+		return this._updateCard(el, false, props, props.trackingProps);
+	}
 
-		if ( ! props?.channelLogin )
-			props = react.return?.return?.return?.memoizedProps;
-
-		if ( ! props?.channelLogin )
-			props = react.return?.return?.return?.return?.return?.memoizedProps;
-
-		if ( ! props?.channelLogin )
+	updateExpCard(el) {
+		const parent = this.fine.searchParentNode(el, n => n.memoizedProps?.item?.channelID);
+		if ( ! parent )
 			return;
 
-		const game = props.gameTitle || props.trackingProps?.categoryName || props.trackingProps?.category || props.contextualCardActionProps?.props?.categoryName,
-			tags = props.tagListProps?.freeformTags;
+		const props = parent.memoizedProps,
+			item = props.item;
+
+		return this._updateCard(el, true, item, props.tracking);
+	}
+
+	_updateCard(el, for_exp, item, tracking) {
+		const game = item.categoryName || item.gameTitle || tracking?.game || tracking?.categoryName || tracking?.category,
+			tags = item.tags ?? item.tagListProps?.freeformTags;
 
 		const need_flags = this.settings.get('directory.wait-flags'),
 			show_flags = this.settings.get('directory.show-flags'),
@@ -680,12 +717,12 @@ export default class Directory extends Module {
 			el._ffz_flags = null;
 
 			// Are we getting a clip, a video, or a stream?
-			if ( props.slug ) {
+			if ( item.slug || item.type === 'clips' ) {
 				// Clip
 				//console.log('need flags for clip', props.slug);
 				el._ffz_flags = [];
 
-			} else if ( props.vodID ) {
+			} else if ( item.vodID || item.type === 'videos' ) {
 				// Video
 				//console.log('need flags for vod', props.vodID);
 				el._ffz_flags = [];
@@ -693,9 +730,11 @@ export default class Directory extends Module {
 			} else {
 				// Stream?
 				//console.log('need flags for stream', props.channelLogin);
-				this.twitch_data.getStreamFlags(null, props.channelLogin).then(data => {
+				this.twitch_data.getStreamFlags(item.channelID, item.channelID ? null : item.channelLogin).then(data => {
 					el._ffz_flags = data ?? [];
-					this.updateCard(el);
+					for_exp
+						? this.updateExpCard(el)
+						: this.updateCard(el);
 				});
 			}
 		}
@@ -742,22 +781,24 @@ export default class Directory extends Module {
 				if ( regexes[1] )
 					regexes[1].lastIndex = -1;
 
-				if (( regexes[0] && regexes[0].test(props.title) ) || ( regexes[1] && regexes[1].test(props.title) ))
+				if (( regexes[0] && regexes[0].test(item.title) ) || ( regexes[1] && regexes[1].test(item.title) ))
 					should_blur = true;
 			}
 		}
 
+		const type = item.type ?? item.streamType;
+
 		el.classList.toggle('ffz-hide-thumbnail', should_blur);
-		el.dataset.ffzType = props.streamType;
+		el.dataset.ffzType = type;
 
 		let should_hide = false;
 		if ( bad_tag )
 			should_hide = true;
-		else if ( props.streamType === 'rerun' && this.settings.get('directory.hide-vodcasts') )
+		else if ( type === 'rerun' && this.settings.get('directory.hide-vodcasts') )
 			should_hide = true;
-		else if ( props.context != null && props.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game) )
+		else if ( item.context != null && item.context !== CARD_CONTEXTS.SingleGameList && this.settings.provider.get('directory.game.blocked-games', []).includes(game) )
 			should_hide = true;
-		else if ( (props.isPromotion || props.sourceType === 'COMMUNITY_BOOST' || props.sourceType === 'PROMOTION' || props.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted') )
+		else if ( (item.isPromotion || item.sourceType === 'COMMUNITY_BOOST' || item.sourceType === 'PROMOTION' || item.sourceType === 'SPONSORED') && this.settings.get('directory.hide-promoted') )
 			should_hide = true;
 		else {
 			if ( block_flags.size && el._ffz_flags ) {
@@ -776,7 +817,7 @@ export default class Directory extends Module {
 					if ( regexes[1] )
 						regexes[1].lastIndex = -1;
 
-					if (( regexes[0] && regexes[0].test(props.channelLogin) ) || ( regexes[1] && regexes[1].test(props.channelLogin) ))
+					if (( regexes[0] && regexes[0].test(item.channelLogin) ) || ( regexes[1] && regexes[1].test(item.channelLogin) ))
 						should_hide = true;
 				}
 			}
@@ -789,7 +830,7 @@ export default class Directory extends Module {
 					if ( regexes[1] )
 						regexes[1].lastIndex = -1;
 
-					if (( regexes[0] && regexes[0].test(props.title) ) || ( regexes[1] && regexes[1].test(props.title) ))
+					if (( regexes[0] && regexes[0].test(item.title) ) || ( regexes[1] && regexes[1].test(item.title) ))
 						should_hide = true;
 				}
 			}
@@ -799,14 +840,14 @@ export default class Directory extends Module {
 		if ( ! hide_container )
 			hide_container = el;
 
-		if ( hide_container.querySelectorAll('a[data-a-target="preview-card-image-link"]').length < 2 )
+		if ( hide_container.querySelectorAll('.tw-aspect .tw-image').length < 2 )
 			hide_container.classList.toggle('tw-hide', should_hide);
 
-		this.updateUptime(el, props);
-		this.updateFlags(el);
+		this.updateUptime(el, item, for_exp);
+		this.updateFlags(el, for_exp);
 	}
 
-	updateFlags(el) {
+	updateFlags(el, for_exp = false) {
 		if ( ! document.contains(el) )
 			return this.clearFlags(el);
 
@@ -815,7 +856,7 @@ export default class Directory extends Module {
 		if ( ! setting || ! el._ffz_flags?.length )
 			return this.clearFlags(el);
 
-		const container = this._getTopRightContainer(el);
+		const container = this._getTopRightContainer(el, true, for_exp);
 		if ( ! container )
 			return this.clearFlags(el);
 
@@ -827,6 +868,9 @@ export default class Directory extends Module {
 				{el.ffz_flags_tt = <div class="ffz-il-tooltip ffz-il-tooltip--pre ffz-il-tooltip--down ffz-il-tooltip--align-right" />}
 			</div>));
 
+		else if ( ! el.contains(el.ffz_flags_el) )
+			container.appendChild(el.ffz_flags_el);
+
 		el.ffz_flags_tt.textContent = this.i18n.t('metadata.flags.tooltip', 'Intended for certain audiences. May contain:')
 			+ '\n\n'
 			+ el._ffz_flags.map(x => x.localizedName).join('\n');
@@ -836,34 +880,21 @@ export default class Directory extends Module {
 		if ( el.ffz_flags_el ) {
 			el.ffz_flags_el.remove();
 			el.ffz_flags_tt = null;
+			el.ffz_flags_el = null;
 		}
 	}
 
-	updateCards() {
-		this.DirectoryCard.each(el => this.updateCard(el));
-		this.DirectoryGameCard.each(el => this.updateGameCard(el));
-		this.DirectoryShelf.forceUpdate();
 
-		this.emit(':update-cards');
-	}
-
-	clearCard(el) {
-		this.clearUptime(el);
-		this.clearFlags(el);
-
-		const cont = this._getTopRightContainer(el, false);
-		if ( cont )
-			cont.remove();
-
-		el._ffz_top_right = null;
-	}
-
-	_getTopRightContainer(el, should_create = true) {
+	_getTopRightContainer(el, should_create = true, for_exp = false) {
 		let cont = el._ffz_top_right ?? el.querySelector('.ffz-top-right');
 		if ( cont || ! should_create )
 			return cont;
 
-		const container = el.querySelector('a[data-a-target="preview-card-image-link"] > div');
+		let container = for_exp
+			? el.querySelector('.tw-aspect .tw-image')
+			: el.querySelector('a[data-a-target="preview-card-image-link"] > div');
+		if ( container && for_exp )
+			container = container.parentElement?.parentElement;
 		if ( ! container )
 			return null;
 
@@ -878,17 +909,17 @@ export default class Directory extends Module {
 	}
 
 
-	updateUptime(el, props) {
+	updateUptime(el, props, for_exp = false) {
 		if ( ! document.contains(el) )
 			return this.clearUptime(el);
 
-		const container = this._getTopRightContainer(el),
-			setting = this.settings.get('directory.uptime');
+		const setting = this.settings.get('directory.uptime'),
+			container = this._getTopRightContainer(el, setting > 0, for_exp);
 
 		//const container = el.querySelector('a[data-a-target="preview-card-image-link"] > div'),
 		//	setting = this.settings.get('directory.uptime');
 
-		if ( ! container || setting === 0 || props.viewCount || props.animatedImageProps )
+		if ( ! container || setting === 0 || props.viewCount || props.animatedImageProps || props.type === 'videos' || props.type === 'clips' )
 			return this.clearUptime(el);
 
 		let created_at = props.createdAt;
@@ -898,7 +929,7 @@ export default class Directory extends Module {
 				el.ffz_stream_meta = null;
 				this.twitch_data.getStreamMeta(null, props.channelLogin).then(data => {
 					el.ffz_stream_meta = data;
-					this.updateUptime(el, props);
+					this.updateUptime(el, props, for_exp);
 				});
 			}
 
@@ -913,24 +944,27 @@ export default class Directory extends Module {
 
 		const up_text = duration_to_string(uptime, false, false, false, setting === 1);
 
-		if ( ! el.ffz_uptime_el ) {
+		if ( ! el.ffz_uptime_el )
 			el.ffz_uptime_el = container.querySelector('.ffz-uptime-element');
-			if ( ! el.ffz_uptime_el )
-				container.appendChild(el.ffz_uptime_el = (
-					<div class="ffz-uptime-element tw-relative ffz-il-tooltip__container">
-						<div class="tw-border-radius-small tw-c-background-overlay tw-c-text-overlay tw-flex tw-pd-x-05">
-							<div class="tw-flex tw-c-text-live">
-								<figure class="ffz-i-clock" />
-							</div>
-							{el.ffz_uptime_span = <p />}
+
+		if ( ! el.ffz_uptime_el )
+			container.appendChild(el.ffz_uptime_el = (
+				<div class="ffz-uptime-element tw-relative ffz-il-tooltip__container">
+					<div class="tw-border-radius-small tw-c-background-overlay tw-c-text-overlay tw-flex tw-pd-x-05">
+						<div class="tw-flex tw-c-text-live">
+							<figure class="ffz-i-clock" />
 						</div>
-						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
-							{this.i18n.t('metadata.uptime.tooltip', 'Stream Uptime')}
-							{el.ffz_uptime_tt = <div class="tw-pd-t-05" />}
-						</div>
+						{el.ffz_uptime_span = <p />}
 					</div>
-				));
-		}
+					<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">
+						{this.i18n.t('metadata.uptime.tooltip', 'Stream Uptime')}
+						{el.ffz_uptime_tt = <div class="tw-pd-t-05" />}
+					</div>
+				</div>
+			));
+
+		else if ( ! el.contains(el.ffz_uptime_el) )
+			container.appendChild(el.ffz_uptime_el);
 
 		if ( ! el.ffz_uptime_span )
 			el.ffz_uptime_span = el.ffz_uptime_el.querySelector('p');
@@ -943,7 +977,7 @@ export default class Directory extends Module {
 			return this.clearUptime(el);
 
 		if ( ! el.ffz_update_timer )
-			el.ffz_update_timer = setInterval(this.updateUptime.bind(this, el, props), 1000);
+			el.ffz_update_timer = setInterval(this.updateUptime.bind(this, el, props, for_exp), 1000);
 
 		el.ffz_uptime_span.textContent = up_text;
 

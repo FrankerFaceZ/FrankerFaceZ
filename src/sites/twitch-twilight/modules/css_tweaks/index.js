@@ -37,6 +37,7 @@ const CLASSES = {
 
 	'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
 	'player-ext-hover': '.video-player__container[data-controls="false"] .extension-taskbar,.video-player__container[data-controls="false"] .extension-container,.video-player__container[data-controls="false"] .extensions-dock__layout,.video-player__container[data-controls="false"] .extensions-notifications,.video-player__container[data-controls="false"] .extensions-video-overlay-size-container',
+	'player-cast': '.video-player button:has(.tw-chromecast-button__icon)',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
@@ -44,7 +45,7 @@ const CLASSES = {
 	'pinned-cheer': '.pinned-cheer,.pinned-cheer-v2,.channel-leaderboard,.channel-leaderboard-marquee,div[data-test-selector="channel-leaderboard-container"]',
 	'whispers': 'body .whispers-open-threads,.tw-core-button[data-a-target="whisper-box-button"],.whispers__pill',
 
-	'dir-live-ind': '.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator, article[data-ffz-type="live"] .tw-channel-status-text-indicator',
+	'dir-live-ind': `.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator,article[data-ffz-type="live"] .tw-channel-status-text-indicator,.switcher-hopper__scroll-container .tw-tower a[data-ffz-type="live"] .tw-channel-status-text-indicator`,
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
 	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',

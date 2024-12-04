@@ -93,6 +93,17 @@ export default class PlayerBase extends Module {
 			}
 		});
 
+		this.settings.add('player.cast-button.hide', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Appearance',
+				component: 'setting-check-box',
+				title: 'Hide the Cast button.',
+			},
+
+			changed: val => this.css_tweaks.toggleHide('player-cast', val)
+		});
+
 		this.settings.add('player.clip-button.hide-native', {
 			default: null,
 			requires: ['player.clip-button.custom'],
@@ -627,6 +638,7 @@ export default class PlayerBase extends Module {
 		await this.settings.awaitProvider();
 		await this.settings.provider.awaitReady();
 
+		this.css_tweaks.toggleHide('player-cast', this.settings.get('player.cast-button.hide'));
 		this.css_tweaks.toggleHide('player-gain-volume', this.settings.get('player.gain.no-volume'));
 		this.css_tweaks.toggle('player-hide-native-clip', this.settings.get('player.clip-button.hide-native'));
 		this.css_tweaks.toggle('player-volume', this.settings.get('player.volume-always-shown'));
