@@ -1,3 +1,5 @@
-.player-controls__right-control-group button[aria-label*="alt+x"] {
+.player-controls__right-control-group button[aria-label*="alt+x"]:not(.ffz-core-button),
+.player-controls__right-control-group button[aria-disabled]:has(path[d="M8 9H6v2h2V9zm1 0h2v2H9V9zm5 0h-2v2h2V9z"])
+{
 	display: none !important;
 }

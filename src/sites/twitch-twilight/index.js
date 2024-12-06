@@ -220,7 +220,19 @@ Twilight.KNOWN_MODULES = {
 	},
 	cookie: n => n && n.set && n.get && n.getJSON && n.withConverter,
 	'extension-service': n => n.extensionService,
+	'callout-types': n => {
+		if ( n.o?.ClipLiveNudge && n.o?.Drop && n.o?.ShareResub )
+			return n.o;
+	},
 	'chat-types': n => {
+		if ( has(n.ZW, 'Message') && has(n.ZW, 'RoomMods') )
+			return {
+				automod: n.sq,
+				chat: n.ZW,
+				message: n.IF,
+				mod: n.RB
+			};
+
 		if ( has(n.b, 'Message') && has(n.b, 'RoomMods') )
 			return {
 				automod: n.a,
@@ -255,6 +267,12 @@ Twilight.KNOWN_MODULES = {
 			return n.a;
 		if ( n.w9?.prototype?.queryTopResults && n.w9.prototype.queryForType )
 			return n.w9;
+	},
+	calloutstack: n => {
+		if ( has(n.at?._currentValue, 'callouts') && typeof n.at._currentValue.pinCallout === 'function' )
+			return {
+				stack: n.at
+			};
 	},
 	highlightstack: n => {
 		if ( has(n['g$']?._currentValue, 'highlights') && typeof n.SP?._currentValue === 'function' )
@@ -301,8 +319,10 @@ Twilight.KNOWN_MODULES.mousetrap.chunks = VEND_CORE;
 
 const CHAT_CHUNK = n => ! n || n.includes('chat');
 
+Twilight.KNOWN_MODULES['callout-types'].use_result = true;
 Twilight.KNOWN_MODULES['chat-types'].use_result = true;
 Twilight.KNOWN_MODULES['chat-types'].chunks = CHAT_CHUNK;
+Twilight.KNOWN_MODULES['calloutstack'].use_result = true;
 Twilight.KNOWN_MODULES['highlightstack'].use_result = true;
 Twilight.KNOWN_MODULES['highlightstack'].chunks = CHAT_CHUNK;
 

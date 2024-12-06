@@ -155,6 +155,39 @@ const NULL_TYPES = [
 ];
 
 
+const INLINE_CALLOUT_TYPES = {
+	'pinned_re_sub': 'share-resub'
+};
+
+const CALLOUT_TYPES = {
+	"AppointedModerator": "appointed-moderator",
+	"BitsBadgeTier": "bits-badge-tier",
+	"CommunityMoment": "community-moment",
+	"ClipLiveNudge": "clip-live-nudge",
+	"ShareResub": "share-resub",
+	"ThankSubGifter": "thank-sub-gifter",
+	"CommunityPointsRewards": "community-points-rewards",
+	"HypeTrainRewards": "hype-train-rewards",
+	"ReplyByKeyboard": "reply-by-keyboard",
+	"Drop": "drop",
+	"EarnedSubBadge": "earned-sub-badge",
+	"TurnOffAnimatedEmotes": "turn-off-animated-emotes",
+	"CreatorAnniversaries": "creator-anniversaries",
+	"RequestToJoinAccepted": "request-to-join-accepted",
+	"FavoritedGuestCollab": "favorited-guest-collab",
+	"STPromo": "st-promo",
+	"LapsedBitsUser": "lapsed-bits-user",
+	"BitsPowerUps": "bits-power-ups",
+	"CosmicAbyss": "cosmic-abyss",
+	"PartnerPlusUpSellNudge": "partner-plus-up-sell-nudge",
+	"SubtemberPromoBits": "subtember-promo-bits",
+	"GiftBundleUpSell": "gift-bundle-up-sell",
+	"WalletDrop": "wallet-drop"
+};
+
+const UNBLOCKABLE_CALLOUTS = [];
+
+
 const MISBEHAVING_EVENTS = [
 	'onBadgesUpdatedEvent',
 ];
@@ -255,11 +288,11 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		this.CalloutSelector = this.fine.define(
+		/*this.CalloutSelector = this.fine.define(
 			'callout-selector',
-			n => n.selectCalloutComponent && n.props && n.props.callouts,
+			n => n.selectCalloutComponent && n.props && has(n.props, 'callouts'),
 			Twilight.CHAT_ROUTES
-		);
+		);*/
 
 		this.PointsButton = this.fine.define(
 			'points-button',
@@ -342,6 +375,30 @@ export default class ChatHook extends Module {
 			force_seen: true
 		});
 
+		this.settings.add('chat.filtering.blocked-callouts', {
+			default: [],
+			type: 'array_merge',
+			always_inherit: true,
+			process: (ctx, val) => {
+				const out = new Set,
+					type_map = this.callout_types ?? CALLOUT_TYPES;
+				for(const v of val)
+					if ( v?.v && type_map[v.v] && ! UNBLOCKABLE_CALLOUTS.includes(v.v) )
+						out.add(type_map[v.v]);
+
+				return out;
+			},
+
+			ui: {
+				path: 'Chat > Filtering > Block >> Callout Types @{"description":"This filter allows you to remove callouts of specific types from Twitch chat. Callouts are special messages that can be pinned to the bottom of chat and often have associated actions, like claiming a drop or sharing your resubscription."}',
+				component: 'blocked-types',
+				data: () => Object
+					.keys(this.callout_types)
+					.filter(key => ! UNBLOCKABLE_CALLOUTS.includes(key))
+					.sort()
+			}
+		})
+
 		this.settings.add('chat.filtering.blocked-types', {
 			default: [],
 			type: 'array_merge',
@@ -349,7 +406,7 @@ export default class ChatHook extends Module {
 			process(ctx, val) {
 				const out = new Set;
 				for(const v of val)
-					if ( v?.v || ! UNBLOCKABLE_TYPES.includes(v.v) )
+					if ( v?.v && ! UNBLOCKABLE_TYPES.includes(v.v) )
 						out.add(v.v);
 
 				return out;
@@ -550,6 +607,15 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Appearance >> Community',
 				title: 'Allow Predictions to be displayed in chat.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.callouts.clip', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow the \"Chat seems active.\" clip suggestion to be displayed in chat.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1067,8 +1133,10 @@ export default class ChatHook extends Module {
 		if ( this.types_loaded )
 			return;
 
-		const ct = await this.web_munch.findModule('chat-types');
+		const ct = await this.web_munch.findModule('chat-types'),
+			callouts = await this.web_munch.findModule('callout-types');
 
+		this.callout_types = callouts || CALLOUT_TYPES;
 		this.automod_types = ct?.automod || AUTOMOD_TYPES;
 		this.chat_types = ct?.chat || CHAT_TYPES;
 		this.message_types = ct?.message || MESSAGE_TYPES;
@@ -1077,8 +1145,14 @@ export default class ChatHook extends Module {
 		if ( ! ct )
 			return;
 
+		if ( callouts )
+			this.chat.context.update('chat.filtering.blocked-callouts');
+
 		this.types_loaded = true;
 		const changes = [];
+
+		if ( ! shallow_object_equals(this.callout_types, CALLOUT_TYPES) )
+			changes.push('CALLOUT_TYPES');
 
 		if ( ! shallow_object_equals(this.automod_types, AUTOMOD_TYPES) )
 			changes.push('AUTOMOD_TYPES');
@@ -1123,10 +1197,9 @@ export default class ChatHook extends Module {
 		this.grabTypes();
 		this.defineClasses();
 
-		this.chat.context.on('changed:chat.points.show-callouts', () => {
-			this.InlineCallout.forceUpdate();
-			this.CalloutSelector.forceUpdate();
-		});
+		this.chat.context.on('changed:chat.callouts.clip', this.updateCallouts, this);
+		this.chat.context.on('changed:chat.filtering.blocked-callouts', this.updateCallouts, this);
+		this.chat.context.on('changed:chat.points.show-callouts', this.updateCallouts, this);
 		this.chat.context.on('changed:chat.points.show-button', () => this.PointsButton.forceUpdate());
 		this.chat.context.on('changed:chat.points.show-rewards', () => {
 			this.PointsButton.forceUpdate();
@@ -1180,7 +1253,7 @@ export default class ChatHook extends Module {
 
 		this.chat.context.on('changed:chat.community-chest.show', () => {
 			this.CommunityChestBanner.forceUpdate();
-			this.CalloutSelector.forceUpdate();
+			this.updateCallouts();
 		}, this);
 
 		this.chat.context.getChanges('chat.emotes.2x', val => {
@@ -1399,66 +1472,6 @@ export default class ChatHook extends Module {
 			this.CommunityChestBanner.forceUpdate();
 		});
 
-		this.InlineCallout.ready(cls => {
-			const old_render = cls.prototype.render;
-			cls.prototype.render = function() {
-				try {
-					const callout = this.props?.event?.callout,
-						ctype = callout?.trackingType;
-
-					if ( ctype === 'community_points_reward' && ! t.chat.context.get('chat.points.show-callouts') )
-						return null;
-
-					if ( ctype === 'prime_gift_bomb' && ! t.chat.context.get('chat.community-chest.show') )
-						return null;
-
-					if ( ctype === 'megacheer_emote_recipient' && ! t.chat.context.get('chat.bits.show-rewards') )
-						return null;
-
-				} catch(err) {
-					t.log.capture(err);
-					t.log.error(err);
-				}
-
-				return old_render.call(this);
-			}
-
-			this.InlineCallout.forceUpdate();
-		});
-
-		this.CalloutSelector.ready(cls => {
-			const old_render = cls.prototype.render;
-			cls.prototype.render = function() {
-				try {
-					const callout = this.props.callouts[0] || this.props.pinnedCallout,
-						ctype = callout?.event?.type;
-
-					if ( ctype === 'prime-gift-bomb-gifter' && ! t.chat.context.get('chat.community-chest.show') )
-						return null;
-
-					if ( ctype === 'community-points-rewards' && ! t.chat.context.get('chat.points.show-callouts') )
-						return null;
-
-					if ( (ctype === 'mega-recipient-rewards' || ctype === 'mega-benefactor-rewards') && ! t.chat.context.get('chat.bits.show-rewards') )
-						return null;
-
-					if ( ctype === 'drop' && ! this._ffz_auto_drop && t.chat.context.get('chat.drops.auto-rewards') )
-						this._ffz_auto_drop = setTimeout(() => {
-							this._ffz_auto_drop = null;
-							t.autoClickDrop(this);
-						}, 0);
-
-				} catch(err) {
-					t.log.capture(err);
-					t.log.error(err);
-				}
-
-				return old_render.call(this);
-			}
-
-			this.CalloutSelector.forceUpdate();
-		});
-
 		this.PointsButton.ready(cls => {
 			const old_render = cls.prototype.render;
 
@@ -1656,6 +1669,33 @@ export default class ChatHook extends Module {
 		this.ChatContainer.on('unmount', this.containerUnmounted, this); //removeRoom, this);
 		this.ChatContainer.on('update', this.containerUpdated, this);
 
+		/*this.CalloutSelector.ready((cls, instances) => {
+			const t = this,
+				old_render = cls.prototype.render;
+
+			cls.prototype.render = function() {
+				try {
+					if ( t.CalloutStackHandler ) {
+						const React = t.site.getReact(),
+							out = old_render.call(this),
+							thing = out?.props?.children;
+
+						if ( Array.isArray(thing) )
+							thing.push(React.createElement(t.CalloutStackHandler));
+
+						return out;
+					}
+				} catch(err) {
+					/* no-op * /
+				}
+
+				return old_render.call(this);
+			}
+
+			for(const inst of instances)
+				inst.forceUpdate();
+		});*/
+
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
 				old_render = cls.prototype.render,
@@ -1765,17 +1805,129 @@ export default class ChatHook extends Module {
 	}
 
 
+	shouldHideCallout(type) {
+		if ( ! type )
+			return;
+
+		type = INLINE_CALLOUT_TYPES[type] ?? type;
+
+		const ctm = this.callout_types ?? CALLOUT_TYPES,
+			blocked = this.chat.context.get('chat.filtering.blocked-callouts');
+
+		if ( blocked && blocked.has(type) )
+			return true;
+
+		if ( type === ctm.CommunityPointsRewards &&
+			! this.chat.context.get('chat.points.show-callouts')
+		)
+			return true;
+
+		if ( type === ctm.ClipLiveNudge &&
+			! this.chat.context.get('chat.callouts.clip')
+		)
+			return true;
+
+		if ( type === 'prime_gift_bomb' &&
+			! this.chat.context.get('chat.community-chest.show')
+		)
+			return true;
+
+		if ( type === 'megacheer_emote_recipient' &&
+			! t.chat.context.get('chat.bits.show-rewards')
+		)
+			return true;
+
+		return false;
+	}
+
+
+	updateCallouts() {
+		this.updatePinnedCallouts();
+		this.updateInlineCallouts();
+	}
+
+
+	updatePinnedCallouts() {
+		for(const inst of this.PinnedCallout.instances)
+			this.onPinnedCallout(inst);
+	}
+
+	onPinnedCallout(inst) {
+		const props = inst.props,
+			event = props?.event,
+			type = event?.type;
+
+		//console.warn('pinned-callout', type, event, inst);
+
+		// Hidden callouts
+		if ( this.shouldHideCallout(type) ) {
+			if ( inst.props.pinned )
+				inst.unpin();
+			else
+				inst.hide();
+		}
+
+		// Auto-pin resubs
+		if ( type === 'share-resub' && ! props.pinned && this.chat.context.get('chat.pin-resubs') && ! inst._ffz_pinned ) {
+			this.log.info('Automatically pinning re-sub notice.');
+			inst._ffz_pinned = true;
+			inst.pin();
+		}
+
+		// Auto-claim drops
+		if ( type === 'drop' )
+			this.autoClickDrop(inst);
+	}
+
+	updateInlineCallouts() {
+		for(const inst of this.InlineCallout.instances)
+			this.onInlineCallout(inst);
+	}
+
+	onInlineCallout(inst) {
+		// Skip hidden inline callouts.
+		if ( inst.state.isHidden )
+			return;
+
+		const contextMenuProps = inst.props?.event?.callout?.contextMenuProps,
+			event = contextMenuProps?.event ?? inst.props?.event,
+			type = event?.type;
+
+		//console.warn('inline-callout', type, event, inst);
+
+		// Hidden callouts
+		if ( this.shouldHideCallout(type) || this.shouldHideCallout(inst.props?.event?.trackingType) ) {
+			inst.setState({isHidden: true});
+			return;
+		}
+
+		// Auto-pin resubs
+		if ( type === 'share-resub' && this.chat.context.get('chat.pin-resubs') && ! inst._ffz_pinned ) {
+			const onPin = contextMenuProps?.onPin;
+			if ( onPin ) {
+				this.log.info('Automatically pinning re-sub notice.');
+				inst._ffz_pinned = true;
+				if ( inst.hideOnContextMenuAction )
+					inst.hideOnContextMenuAction(onPin)();
+				else
+					onPin();
+			}
+		}
+
+		// Auto-claim drops
+		if ( type === 'drop' )
+			this.autoClickDrop(inst);
+	}
+
+
 	autoClickDrop(inst) {
-		if ( inst._ffz_clicking )
+		const event = inst.props?.event?.callout?.contextMenuProps?.event ?? inst.props?.event,
+			type = event?.type;
+
+		if ( type !== 'drop' || inst._ffz_clicking || ! this.chat.context.get("chat.drops.auto-rewards") )
 			return;
 
-		// Check to ensure the active callout is a drop to claim.
-		const callout = inst.props?.callouts?.[0] || inst.props?.pinnedCallout,
-			ctype = callout?.event?.type;
-
-		if ( ctype !== 'drop' || ! this.chat.context.get('chat.drops.auto-rewards') )
-			return;
-
+		//console.warn('autoClickDrop', event, inst);
 		inst._ffz_clicking = true;
 
 		// Wait for the button to be added to the DOM.
@@ -1789,10 +1941,10 @@ export default class ChatHook extends Module {
 			inst._ffz_clicking = false;
 
 			// Check AGAIN because time has passed.
-			const callout = inst.props?.callouts?.[0] || inst.props?.pinnedCallout,
-				ctype = callout?.event?.type;
+			const event = inst.props?.event?.callout?.contextMenuProps?.event ?? inst.props?.event,
+				type = event?.type;
 
-			if ( ctype !== 'drop' || ! this.chat.context.get('chat.drops.auto-rewards') )
+			if ( type !== 'drop' || ! this.chat.context.get("chat.drops.auto-rewards") )
 				return;
 
 			btn.click();
@@ -1909,30 +2061,47 @@ export default class ChatHook extends Module {
 
 
 	defineClasses() {
-		if ( this.CommunityStackHandler )
+		if ( this.CommunityStackHandler ) // && this.CalloutStackHandler )
 			return true;
 
 		const t = this,
 			React = this.site.getReact(),
 			createElement = React?.createElement,
 			StackMod = this.web_munch.getModule('highlightstack');
+			//CalloutMod = this.web_munch.getModule('calloutstack');
 
-		if ( ! createElement || ! StackMod )
+		if ( ! createElement )
 			return false;
 
-		this.CommunityStackHandler = function() {
-			const stack = React.useContext(StackMod.stack),
-				dispatch = React.useContext(StackMod.dispatch);
+		/*if ( ! this.CalloutStackHandler && CalloutMod ) {
+			this.CalloutStackHandler = function() {
+				const stack = React.useContext(CalloutMod.stack);
 
-			t.community_stack = stack;
-			t.community_dispatch = dispatch;
+				t.callout_stack = stack;
+				t.cleanCallouts();
+				return null;
+			}
 
-			t.cleanHighlights();
+			this.CalloutSelector.forceUpdate();
+		}*/
 
-			return null;
+		if ( ! this.CommunityStackHandler && StackMod ) {
+			this.CommunityStackHandler = function() {
+				const stack = React.useContext(StackMod.stack),
+					dispatch = React.useContext(StackMod.dispatch);
+
+				t.community_stack = stack;
+				t.community_dispatch = dispatch;
+
+				t.cleanHighlights();
+
+				return null;
+			}
+
+			this.ChatContainer.forceUpdate();
 		}
 
-		this.ChatContainer.forceUpdate();
+		return true;
 	}
 
 
@@ -1946,52 +2115,6 @@ export default class ChatHook extends Module {
 		});
 
 		this.input.updateInput();
-	}
-
-
-	updatePinnedCallouts() {
-		for(const inst of this.PinnedCallout.instances)
-			this.onPinnedCallout(inst);
-	}
-
-	onPinnedCallout(inst) {
-		if ( ! this.chat.context.get('chat.pin-resubs') || inst._ffz_pinned )
-			return;
-
-		const props = inst.props,
-			event = props && props.event;
-		if ( props.pinned || ! event || event.type !== 'share-resub' )
-			return;
-
-		this.log.info('Automatically pinning re-sub notice.');
-		inst._ffz_pinned = true;
-		inst.pin();
-	}
-
-	updateInlineCallouts() {
-		for(const inst of this.InlineCallout.instances)
-			this.onInlineCallout(inst);
-	}
-
-	onInlineCallout(inst) {
-		if ( ! this.chat.context.get('chat.pin-resubs') || inst._ffz_pinned )
-			return;
-
-		const event = get('props.event.callout', inst);
-		if ( ! event || event.cta !== 'Share' )
-			return;
-
-		const onPin = get('contextMenuProps.onPin', event);
-		if ( ! onPin )
-			return;
-
-		this.log.info('Automatically pinning re-sub notice.');
-		inst._ffz_pinned = true;
-
-		if ( inst.hideOnContextMenuAction )
-			inst.hideOnContextMenuAction(onPin)();
-		else
-			onPin();
 	}
 
 

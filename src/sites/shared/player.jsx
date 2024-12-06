@@ -31,6 +31,11 @@ const SCROLL_I18N = 'setting.entry.player.volume-scroll.values',
 		{value: 8, title: 'Enabled with Ctrl + Right-Click', i18n_key: `${SCROLL_I18N}.8`}
 	];
 
+function getNativeClipButton(container) {
+	return container.querySelector('button[aria-label*="alt+x"]') ??
+	container.querySelector('button[aria-label]:has(path[d="M8 9H6v2h2V9zm1 0h2v2H9V9zm5 0h-2v2h2V9z"]');
+}
+
 function wantsRMB(setting) {
 	return setting === 2 || setting === 4 || setting === 6 || setting === 8;
 }
@@ -2023,7 +2028,6 @@ export default class PlayerBase extends Module {
 			video.requestPictureInPicture();
 	}
 
-
 	addClipButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			container = outer && outer.querySelector(RIGHT_CONTROLS),
@@ -2046,13 +2050,16 @@ export default class PlayerBase extends Module {
 			return;
 		}
 
+		if (! container.ffz_native_clip || ! container.contains(container.ffz_native_clip) )
+			container.ffz_native_clip = getNativeClipButton(container);
+
 		if ( ! cont ) {
 			// We need the native clip button, so we can dispatch a click.
-			const native_clip = container.querySelector('button[aria-label*="alt+x"]');
-			if ( ! native_clip )
-				return;
-
-			const on_click = e => native_clip.click();
+			const on_click = e => {
+				const native = getNativeClipButton(container);
+				if (native)
+					native.click();
+			}
 
 			cont = (<div class="ffz--player-clip tw-inline-flex tw-relative ffz-il-tooltip__container">
 				{btn = (<button
@@ -2087,11 +2094,22 @@ export default class PlayerBase extends Module {
 			tip = cont.querySelector('.ffz-il-tooltip');
 		}
 
+		const native = container.ffz_native_clip,
+			disabled = native
+				? (native.disabled || native.ariaDisabled === 'true')
+				: false;
+
+		btn.disabled = disabled;
 		btn.setAttribute('aria-label',
-			tip.textContent = this.i18n.t(
-				'player.clip-button',
-				'Clip (Alt+X)'
-			));
+			tip.textContent = disabled
+				? (native.ariaLabel || this.i18n.t(
+					'player.clip-button.disabled',
+					'Clips are Disabled'
+				))
+				: this.i18n.t(
+					'player.clip-button',
+					'Clip (Alt+X)'
+				));
 	}
 
 	clickClip(inst, e) {

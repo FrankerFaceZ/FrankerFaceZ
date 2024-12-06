@@ -238,7 +238,13 @@ export default class ChatLine extends Module {
 				const months = msg.sub_cumulative || msg.sub_months,
 					setting = this.chat.context.get('chat.subs.show');
 
-				if ( !(setting === 3 || (setting === 1 && out && months > 1) || (setting === 2 && months > 1)) )
+				let has_message;
+				if (setting === 1 && months > 1) {
+					const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, current_user);
+					has_message = tokens.length > 0;
+				}
+
+				if ( !(setting === 3 || (setting === 1 && has_message && months > 1) || (setting === 2 && months > 1)) )
 					return null;
 
 				const user = msg.user,

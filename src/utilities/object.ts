@@ -1166,7 +1166,7 @@ export class SourcedSet<T> {
 	 */
 	constructor(use_set = false, source_sorter?: StringSortFn) {
 		this._use_set = use_set;
-		this._cache = use_set ? new Set : [];
+		this._cache = use_set ? new Set<T>() : [];
 		this._sourceSortFn = source_sorter;
 	}
 
@@ -1221,7 +1221,7 @@ export class SourcedSet<T> {
 			return;
 
 		const use_set = this._use_set,
-			cache = this._cache = use_set ? new Set : [];
+			cache = this._cache = use_set ? new Set<T>() : ([] as T[]);
 
 		if (!this._sorted_sources)
 			this._sortSources();
@@ -1273,19 +1273,24 @@ export class SourcedSet<T> {
 			this._sources = new Map;
 
 		const existing = this._sources.get(source);
-		if ( existing )
-			items = [...existing, ...items];
+		if ( existing ) {
+			// If there are existing items, add our new items
+			// to the existing array.
+			for(const item of items)
+				if (! existing.includes(item))
+					existing.push(item);
 
-		this._sources.set(source, items);
+		} else {
+			// If there aren't existing items, just insert our
+			// array into the sources list. Also, clear the
+			// sorted sources cache.
+			this._sources.set(source, items);
+			this._sorted_sources = null;
+		}
 
 		// If we have a sort function and more than one source, then
 		// we need to do a rebuild when making modifications.
 		const need_sorting = this._sourceSortFn != null && this._sources.size > 1;
-
-		// If this is a new source, we need to clear the cache for
-		// future rebuilds to include this.
-		if ( ! existing )
-			this._sorted_sources = null;
 
 		// If we need sorting, do a rebuild, otherwise go ahead
 		// and add the items normally.
@@ -1321,15 +1326,11 @@ export class SourcedSet<T> {
 
 		const existing = this._sources.has(source);
 		this._sources.set(source, items);
+		this._sorted_sources = null;
 
 		// If we have a sort function and more than one source, then
 		// we need to do a rebuild when making modifications.
 		const need_sorting = this._sourceSortFn != null && this._sources.size > 1;
-
-		// If this is a new source, we need to clear the cache for
-		// future rebuilds to include this.
-		if ( ! existing )
-			this._sorted_sources = null;
 
 		// If we need sorting, or if we replaced an existing source,
 		// then we need a rebuild. Otherwise, go ahead and add the
