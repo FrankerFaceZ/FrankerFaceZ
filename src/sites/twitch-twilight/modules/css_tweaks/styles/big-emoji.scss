@@ -1,6 +1,6 @@
 .ffz--inline:not(.scaled-modified-emote) .ffz-emoji {
 	width: 3.6rem !important;
 	height: 3.6rem !important;
-	width: calc(var(--ffz-chat-font-size) * 3) !important;
-	height: calc(var(--ffz-chat-font-size) * 3) !important;
+	width: calc(var(--ffz-chat-font-size, 1em) * 3) !important;
+	height: calc(var(--ffz-chat-font-size, 1em) * 3) !important;
 }
