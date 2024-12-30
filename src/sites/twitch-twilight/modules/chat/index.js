@@ -156,32 +156,37 @@ const NULL_TYPES = [
 
 
 const INLINE_CALLOUT_TYPES = {
-	'pinned_re_sub': 'share-resub'
+	'pinned_re_sub': 'share-resub',
+	'community_points_reward': 'community-points-rewards',
+	'clip_live_nudge_chat_trigger': 'clip-live-nudge',
+	'cheer_badge_grant': 'bits-badge-tier'
 };
 
 const CALLOUT_TYPES = {
 	"AppointedModerator": "appointed-moderator",
 	"BitsBadgeTier": "bits-badge-tier",
-	"CommunityMoment": "community-moment",
+	"BitsPowerUps": "bits-power-ups",
 	"ClipLiveNudge": "clip-live-nudge",
-	"ShareResub": "share-resub",
-	"ThankSubGifter": "thank-sub-gifter",
+	"CommunityMoment": "community-moment",
 	"CommunityPointsRewards": "community-points-rewards",
-	"HypeTrainRewards": "hype-train-rewards",
-	"ReplyByKeyboard": "reply-by-keyboard",
+	"CosmicAbyss": "cosmic-abyss",
+	"CreatorAnniversaries": "creator-anniversaries",
 	"Drop": "drop",
 	"EarnedSubBadge": "earned-sub-badge",
-	"TurnOffAnimatedEmotes": "turn-off-animated-emotes",
-	"CreatorAnniversaries": "creator-anniversaries",
-	"RequestToJoinAccepted": "request-to-join-accepted",
 	"FavoritedGuestCollab": "favorited-guest-collab",
-	"STPromo": "st-promo",
-	"LapsedBitsUser": "lapsed-bits-user",
-	"BitsPowerUps": "bits-power-ups",
-	"CosmicAbyss": "cosmic-abyss",
-	"PartnerPlusUpSellNudge": "partner-plus-up-sell-nudge",
-	"SubtemberPromoBits": "subtember-promo-bits",
+	"GiftBadgeExpiration": "gift-badge-expiration",
+	"GiftBadgeRestored": "gift-badge-restored",
 	"GiftBundleUpSell": "gift-bundle-up-sell",
+	"HypeTrainRewards": "hype-train-rewards",
+	"LapsedBitsUser": "lapsed-bits-user",
+	"PartnerPlusUpSellNudge": "partner-plus-up-sell-nudge",
+	"ReplyByKeyboard": "reply-by-keyboard",
+	"RequestToJoinAccepted": "request-to-join-accepted",
+	"STPromo": "st-promo",
+	"ShareResub": "share-resub",
+	"SubtemberPromoBits": "subtember-promo-bits",
+	"ThankSubGifter": "thank-sub-gifter",
+	"TurnOffAnimatedEmotes": "turn-off-animated-emotes",
 	"WalletDrop": "wallet-drop"
 };
 
@@ -288,11 +293,11 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
-		/*this.CalloutSelector = this.fine.define(
+		this.CalloutSelector = this.fine.define(
 			'callout-selector',
 			n => n.selectCalloutComponent && n.props && has(n.props, 'callouts'),
 			Twilight.CHAT_ROUTES
-		);*/
+		);
 
 		this.PointsButton = this.fine.define(
 			'points-button',
@@ -1669,7 +1674,7 @@ export default class ChatHook extends Module {
 		this.ChatContainer.on('unmount', this.containerUnmounted, this); //removeRoom, this);
 		this.ChatContainer.on('update', this.containerUpdated, this);
 
-		/*this.CalloutSelector.ready((cls, instances) => {
+		this.CalloutSelector.ready((cls, instances) => {
 			const t = this,
 				old_render = cls.prototype.render;
 
@@ -1686,7 +1691,7 @@ export default class ChatHook extends Module {
 						return out;
 					}
 				} catch(err) {
-					/* no-op * /
+					/* no-op */
 				}
 
 				return old_render.call(this);
@@ -1694,7 +1699,7 @@ export default class ChatHook extends Module {
 
 			for(const inst of instances)
 				inst.forceUpdate();
-		});*/
+		});
 
 		this.ChatContainer.ready((cls, instances) => {
 			const t = this,
@@ -1809,7 +1814,7 @@ export default class ChatHook extends Module {
 		if ( ! type )
 			return;
 
-		type = INLINE_CALLOUT_TYPES[type] ?? type;
+		type = INLINE_CALLOUT_TYPES[type] ?? type.replace(/_/g, '-');
 
 		const ctm = this.callout_types ?? CALLOUT_TYPES,
 			blocked = this.chat.context.get('chat.filtering.blocked-callouts');
@@ -2059,21 +2064,29 @@ export default class ChatHook extends Module {
 		}
 	}
 
+	cleanCallouts() {
+		const stack = this.callout_stack;
+		if (stack?.pinnedCallout?.event?.type && this.shouldHideCallout(stack.pinnedCallout.event.type))
+			stack.unpinCallout();
+
+		if (stack?.callouts?.[0]?.event?.type && this.shouldHideCallout(stack.callouts[0].event.type))
+			stack.clearCalloutType(stack.callouts[0].event.type);
+	}
 
 	defineClasses() {
-		if ( this.CommunityStackHandler ) // && this.CalloutStackHandler )
+		if ( this.CommunityStackHandler && this.CalloutStackHandler )
 			return true;
 
 		const t = this,
 			React = this.site.getReact(),
 			createElement = React?.createElement,
-			StackMod = this.web_munch.getModule('highlightstack');
-			//CalloutMod = this.web_munch.getModule('calloutstack');
+			StackMod = this.web_munch.getModule('highlightstack'),
+			CalloutMod = this.web_munch.getModule('calloutstack');
 
 		if ( ! createElement )
 			return false;
 
-		/*if ( ! this.CalloutStackHandler && CalloutMod ) {
+		if ( ! this.CalloutStackHandler && CalloutMod ) {
 			this.CalloutStackHandler = function() {
 				const stack = React.useContext(CalloutMod.stack);
 
@@ -2083,7 +2096,7 @@ export default class ChatHook extends Module {
 			}
 
 			this.CalloutSelector.forceUpdate();
-		}*/
+		}
 
 		if ( ! this.CommunityStackHandler && StackMod ) {
 			this.CommunityStackHandler = function() {

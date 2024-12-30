@@ -233,6 +233,29 @@ export default class Scroller extends Module {
 				}
 			}
 
+			cls.prototype.ffzInstallCleaner = function() {
+				if ( this._ffz_cleaner )
+					return;
+
+				this._ffz_cleaner = this.ffzOnClean.bind(this);
+				this._ffz_clean_timer = setInterval(this._ffz_cleaner, 60_000);
+			}
+
+			cls.prototype.ffzOnClean = function() {
+				const el = t.fine.getChildNode(this);
+				if (!el)
+					return this.ffzRemoveCleaner();
+
+				requestAnimationFrame(() => t.cleanMessages(el.querySelector('.chat-scrollable-area__message-container')));
+			}
+
+			cls.prototype.ffzRemoveCleaner = function() {
+				if ( this._ffz_clean_timer )
+					clearInterval(this._ffz_clean_timer);
+
+				this._ffz_clean_timer = this._ffz_cleaner = null;
+			}
+
 			cls.prototype.ffzInstallHandler = function() {
 				if ( this._ffz_installed )
 					return;
@@ -681,6 +704,7 @@ export default class Scroller extends Module {
 	onMount(inst) {
 		inst.ffzSetSmoothScroll(this.smooth_scroll);
 		inst.ffzInstallHandler();
+		inst.ffzInstallCleaner();
 	}
 
 	onUnmount(inst) { // eslint-disable-line class-methods-use-this
@@ -697,7 +721,49 @@ export default class Scroller extends Module {
 			inst._ffz_outside_timer = null;
 		}
 
+		inst.ffzRemoveCleaner();
+
 		window.removeEventListener('keydown', inst.ffzHandleKey);
 		window.removeEventListener('keyup', inst.ffzHandleKey);
 	}
+
+
+	cleanMessages(el) {
+		const react = ffz.site.fine.getReactInstance(el);
+
+		// Make sure we have the right thing.
+		if (!react || !Array.isArray(react.child?.memoizedProps))
+			return;
+
+		// Find the first real child
+		let node = null,
+			r = react.child,
+			i = 0;
+		while(r && i < 10) {
+			if (r.stateNode instanceof HTMLDivElement) {
+				node = r.stateNode;
+				break;
+			}
+			r = r.child;
+			i++;
+		}
+
+		if (!node || node.parentElement !== el)
+			return;
+
+		let to_remove = node.previousElementSibling;
+		i = 0;
+
+		while(to_remove) {
+			const removable = to_remove;
+			to_remove = to_remove.previousElementSibling;
+			removable.remove();
+			i++;
+		}
+
+		if (i > 0)
+			this.log.debug(`Removed ${i} dead chat lines from`, el);
+	}
+
+
 }

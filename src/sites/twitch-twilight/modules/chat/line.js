@@ -240,7 +240,7 @@ export default class ChatLine extends Module {
 
 				let has_message;
 				if (setting === 1 && months > 1) {
-					const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, current_user);
+					const tokens = msg.ffz_tokens = msg.ffz_tokens || this.chat.tokenizeMessage(msg, current_user);
 					has_message = tokens.length > 0;
 				}
 
