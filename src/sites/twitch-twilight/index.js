@@ -474,7 +474,9 @@ Twilight.ROUTES = {
 	'command-center': '/:userName/commandcenter',
 	'embed-chat': '/embed/:userName/chat',
 	'mod-view': '/moderator/:userName',
-	'mod-popout-chat': '/popout/moderator/:userName/chat'
+	'mod-popout-chat': '/popout/moderator/:userName/chat',
+	'drops-inventory': '/drops/inventory',
+	'drops-campaigns': '/drops/campaigns'
 };
 
 

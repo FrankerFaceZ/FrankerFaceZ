@@ -104,20 +104,23 @@ export default class ModView extends Module {
 	updateRoot(el) {
 		const root = this.fine.getReactInstance(el);
 
-		let channel = null, node = root, j = 0, i;
-		while(node != null && channel == null && j < 10) {
-			let state = node.memoizedState;
-			i = 0;
+		let channel = null;
+		let node = this.fine.searchNode(root, n => {
+			let i = 0;
+			let state = n.memoizedState;
 			while(state != null && channel == null && i < 50) {
 				channel = state?.memoizedState?.current?.result?.data?.user ??
 					state?.memoizedState?.current?.previousData?.user;
 
+				if (!channel?.id || !channel?.login)
+					channel = null;
+
 				state = state?.next;
 				i++;
 			}
-			node = node?.child;
-			j++;
-		}
+			if (channel)
+				return true;
+		});
 
 		if ( channel?.id ) {
 			if ( this._cached_id != channel.id ) {

@@ -397,6 +397,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering > Block >> Callout Types @{"description":"This filter allows you to remove callouts of specific types from Twitch chat. Callouts are special messages that can be pinned to the bottom of chat and often have associated actions, like claiming a drop or sharing your resubscription."}',
 				component: 'blocked-types',
+				getExtraTerms: () => Object.keys(this.callout_types).filter(key => ! UNBLOCKABLE_CALLOUTS.includes(key)),
 				data: () => Object
 					.keys(this.callout_types)
 					.filter(key => ! UNBLOCKABLE_CALLOUTS.includes(key))
@@ -420,6 +421,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering > Block >> Message Types @{"description":"This filter allows you to remove all messages of a certain type from Twitch chat. It can be used to filter system messages, such as Hosts or Raids. Some types, such as moderation actions, cannot be blocked to prevent chat functionality from breaking."}',
 				component: 'blocked-types',
+				getExtraTerms: () => Object.keys(this.chat_types).filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key)),
 				data: () => Object
 					.keys(this.chat_types)
 					.filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key))
