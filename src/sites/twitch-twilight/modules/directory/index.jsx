@@ -437,6 +437,7 @@ export default class Directory extends Module {
 			ui: {
 				path: 'Directory > Channels >> Block by Flag',
 				component: 'blocked-types',
+				getExtraTerms: () => [...CONTENT_FLAGS],
 				data: () => [...CONTENT_FLAGS]
 					.sort()
 			},
@@ -460,6 +461,7 @@ export default class Directory extends Module {
 			ui: {
 				path: 'Directory > Channels >> Hide Thumbnails by Flag',
 				component: 'blocked-types',
+				getExtraTerms: () => [...CONTENT_FLAGS],
 				data: () => [...CONTENT_FLAGS]
 					.sort()
 			},

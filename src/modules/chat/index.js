@@ -476,6 +476,9 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Appearance >> Hidden Token Types @{"description":"This filter allows you to prevent specific content token types from appearing chat messages, such as hiding all cheers or emotes."}',
 				component: 'blocked-types',
+				getExtraTerms: () => Object
+					.keys(this.tokenizers)
+					.filter(key => ! UNBLOCKABLE_TOKENS.includes(key) && this.tokenizers[key]?.render),
 				data: () => Object
 					.keys(this.tokenizers)
 					.filter(key => ! UNBLOCKABLE_TOKENS.includes(key) && this.tokenizers[key]?.render)

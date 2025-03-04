@@ -524,7 +524,7 @@ export default class Channel extends Module {
 					// is actually a static string.
 					if ( typeof c === 'string' && /^[0-9,.]+$/.test(c) ) {
 						try {
-							const val = parseInt(c.replace(/\.,/, ''), 10);
+							const val = parseInt(c.replace(/[\.,]+/, ''), 10);
 							if ( ! isNaN(val) && isFinite(val) && val > 0 )
 								return val;
 						} catch(err) { /* no-op */ }

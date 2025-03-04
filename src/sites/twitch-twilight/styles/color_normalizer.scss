@@ -22,6 +22,7 @@
 	.qa-vod-chat,
 	.extensions-popover-view-layout,
 	.modview-dock-widget__preview__body > div,
+	.carousel-metadata,
 	.video-card {
 		background-color: var(--color-background-base) !important;
 	}
@@ -94,6 +95,15 @@
 	.persistent-notification__card-image-unread,
 	.ach-card--expanded .ach-card__inner {
 		border-color: var(--color-border-brand) !important;
+	}
+
+	.carousel-metadata--fadeout {
+		background: linear-gradient(
+			180deg,
+			transparent 0,
+			var(--color-background-base) 80%,
+			var(--color-background-base) 100%
+		);
 	}
 
 	.creator-chat-stats-carousel__right-arrow {

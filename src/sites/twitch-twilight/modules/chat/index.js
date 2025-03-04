@@ -1136,12 +1136,12 @@ export default class ChatHook extends Module {
 	}
 
 
-	async grabTypes() {
+	grabTypes() {
 		if ( this.types_loaded )
 			return;
 
-		const ct = await this.web_munch.findModule('chat-types'),
-			callouts = await this.web_munch.findModule('callout-types');
+		const ct = this.web_munch.getModule('chat-types'),
+			callouts = this.web_munch.getModule('callout-types');
 
 		this.callout_types = callouts || CALLOUT_TYPES;
 		this.automod_types = ct?.automod || AUTOMOD_TYPES;
@@ -1199,8 +1199,8 @@ export default class ChatHook extends Module {
 
 
 	onEnable() {
-		this.on('site.web_munch:loaded', this.grabTypes);
-		this.on('site.web_munch:loaded', this.defineClasses);
+		this.on('site.web_munch:new-ready', this.grabTypes);
+		this.on('site.web_munch:new-ready', this.defineClasses);
 		this.grabTypes();
 		this.defineClasses();
 

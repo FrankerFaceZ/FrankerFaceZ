@@ -23,6 +23,45 @@ const ATTRS = [
 	'title', 'type', 'usemap', 'value', 'width', 'wrap'
 ];
 
+const SVG_TAGS = [
+	'svg', 'animate', 'animateMotion', 'animateTransform', 'circle', 'clipPath',
+	'cursor', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix', 'feComponentTransfer',
+	'feComposite', 'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight',
+	'feDropShadow', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur',
+	'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight',
+	'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'font-face-format',
+	'font-face-name', 'font-face-src', 'font-face-uri', 'font-face', 'font', 'foreignObject',
+	'g', 'glyph', 'glyphRef', 'hkern', 'image', 'line', 'linearGradient', 'marker', 'mask',
+	'metadata', 'missing-glyph', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient',
+	'rect', 'set', 'stop', 'svg', 'switch', 'symbol', 'text', 'textPath', 'tref',
+	'tspan', 'use', 'view', 'vkern'
+];
+
+/*const SVG_ATTRS = [
+	'accent-height', 'accumulate', 'additive', 'alignment-baseline', 'alphabetic',
+	'amplitude', 'arabic-form', 'ascent', 'attributeName', 'attributeType', 'azimuth',
+	'baseFrequency', 'baseline-shift', 'baseProfile', 'bbox', 'begin', 'bias', 'by',
+	'calcMode', 'cap-height', 'class', 'clip', 'clipPathUnits', 'clip-path', 'clip-rule',
+	'color', 'color-interpolation', 'color-interpolation-filters', 'crossorigin',
+	'cursor', 'cx', 'cy', 'd', 'decoding', 'descent', 'diffuseConstant', 'direction', 'display',
+	'divisor', 'dominant-baseline', 'dur', 'dx', 'dy', 'edgeMode', 'elevation', 'end', 'exponent',
+	'fill', 'fill-opacity', 'fill-rule', 'filter', 'filterUnits', 'flood-color', 'flood-opacity',
+	'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant',
+	'font-weight', 'fr', 'from', 'fx', 'fy', 'g1', 'g2', 'glyph-name', 'glyph-orientation-horizontal',
+	'glyph-orientation-vertical', 'gradientTransform', 'gradientUnits', 'hanging',
+	'horiz-adv-x', 'horiz-origin-x', 'ideographic', 'image-rendering', 'in', 'in2', 'intercept',
+	'k', 'k1', 'k2', 'k3', 'k4', 'kernelMatrix', 'kernelUnitLength', 'keyPoints', 'keySplines',
+	'keyTimes', 'lang', 'lengthAdjust', 'letter-spacing', 'lighting-color', 'limitingConeAngle',
+	'local', 'marker-end', 'marker-mid', 'marker-start', 'markerHeight', 'markerUnits', 'markerWidth',
+	'mask', 'maskContentUnits', 'maskUnits', 'mathematical', 'max', 'media', 'method', 'min', 'mode',
+	'name', 'numOctaves', 'offset', 'opacity', 'operator', 'order', 'orient', 'orientation', 'origin',
+	'overflow', 'overline-position', 'overline-thickness', 'paint-order', 'panose-1', 'path',
+	'pathLength', 'patternContentUnits', 'patternTransform', 'patternUnits', 'ping', 'pointer-events',
+	'points', 'pointsAtX', 'pointsAtY', 'pointsAtZ', 'preserveAlpha', 'preserveAspectRatio',
+	'primitiveUnits', 'r', 'radius', 'refX', 'refY', 'result', 'rotate', 'rx', 'ry', 'scale', 'seed',
+	'side', 'spacing', 'stop-color', 'stop-opacity', 'st'
+];*/
+
 const BOOLEAN_ATTRS = [
 	'controls', 'autoplay', 'loop'
 ];
@@ -211,7 +250,7 @@ export function createElement(tag: string, props?: any, ...children: DomFragment
 					if ( prop && prop !== 'false' )
 						el.setAttribute(key, prop);
 
-				} else if ( lk.startsWith('aria-') || ATTRS.includes(lk) )
+				} else if ( lk.startsWith('aria-') || ATTRS.includes(lk) || SVG_TAGS.includes(tag) )
 					el.setAttribute(key, prop);
 
 				else
