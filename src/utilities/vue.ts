@@ -218,16 +218,16 @@ export class VueModule extends Module<'vue'> {
 			methods: {
 				reactNavigate(url, event, state) {
 					const router = t.resolve('site.router');
-					if ( router && router.history ) {
+					if ( router ) {
 						if ( event ) {
 							event.preventDefault();
 							event.stopPropagation();
 						}
-						router.history.push(url, state ?? undefined);
+						router.push(url, state ?? undefined);
 					}
 				},
 				getReactURL(route, data, opts, ...args) {
-					const router = t.resolve('site.router');
+					const router = t.resolve('site.router')!;
 					return router.getURL(route, data, opts, ...args);
 				},
 				getI18n() {

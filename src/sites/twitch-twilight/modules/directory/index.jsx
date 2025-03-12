@@ -621,7 +621,7 @@ export default class Directory extends Module {
 			link.props.onClick();
 
 		// And follow the generated link.
-		this.router.history.push(link.props.linkTo);
+		this.router.push(link.props.linkTo);
 	}
 
 	updateGameCard(el) {
@@ -1029,7 +1029,7 @@ export default class Directory extends Module {
 		}
 
 		if ( url )
-			this.router.history.push(url);
+			this.router.push(url);
 	}
 
 

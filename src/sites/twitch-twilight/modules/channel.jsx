@@ -247,7 +247,7 @@ export default class Channel extends Module {
 		if ( this.router.old_location === this.router.location )
 			return;
 
-		this.router.history.replace(this.router.location, {channelView: 'Watch'});
+		this.router.replace(this.router.location, {channelView: 'Watch'});
 	}
 
 	updateLinks() {

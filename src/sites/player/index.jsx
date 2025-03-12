@@ -211,3 +211,6 @@ export default class PlayerSite extends BaseSite {
 		ver.textContent = this.resolve('core').constructor.version_info.toString();
 	}
 }
+
+
+PlayerSite.CHAT_ROUTES = [];

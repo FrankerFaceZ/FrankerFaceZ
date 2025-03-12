@@ -9,6 +9,7 @@ import Module, { GenericModule } from 'utilities/module';
 import {has, deep_equals, sleep} from 'utilities/object';
 import type Fine from './fine';
 import type { OptionalPromise } from 'utilities/types';
+import { ReactNode, ReactStateNode } from './react-types';
 
 declare module 'utilities/types' {
 	interface ModuleEventMap {
@@ -34,6 +35,36 @@ export type RouteInfo = {
 };
 
 
+type ReactLocation = Location & {
+	state: unknown;
+}
+
+
+type HistoryObject = {
+	listen(fn: (location: ReactLocation) => void): void;
+	push(url: string, state: unknown): void;
+	replace(url: string, state: unknown): void;
+	location: ReactLocation;
+};
+
+type RouterState = {
+	historyAction: string;
+	location: ReactLocation;
+};
+
+type RouterObject = {
+	subscribe(fn: (state: RouterState) => void): void;
+	router: {
+		state: RouterState
+	}
+};
+
+type NavigationObject = {
+	push(url: string, state: unknown): void;
+	replace(url: string, state: unknown): void;
+}
+
+
 export default class FineRouter extends Module<'site.router', FineRouterEvents> {
 
 	// Dependencies
@@ -51,6 +82,10 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 	match: unknown | null;
 	location: unknown | null;
 
+	// Things
+	history?: HistoryObject | null;
+	router?: RouterObject | null;
+	navigator?: NavigationObject | null;
 
 
 	constructor(name?: string, parent?: GenericModule) {
@@ -69,26 +104,75 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 	}
 
 	/** @internal */
-	onEnable(): OptionalPromise<void> {
-		const thing = this.fine.searchTree(null, n => n.props && n.props.history),
-			history = this.history = thing && thing.props && thing.props.history;
+	onEnable(tries = 0): OptionalPromise<void> {
+		const thing = this.fine.searchTree<ReactStateNode<{history: HistoryObject}>>(null, n => n?.props?.history);
+		this.history = thing?.props?.history;
 
-		if ( ! history )
-			return sleep(50).then(() => this.onEnable());
+		if ( this.history ) {
+			this.history.listen(location => {
+				if ( this.enabled )
+					this._navigateTo(location);
+			});
 
-		history.listen(location => {
-			if ( this.enabled )
-				this._navigateTo(location);
+			this._navigateTo(this.history.location);
+			return;
+		}
+
+
+		const other = this.fine.searchNode(null, n => n?.pendingProps?.router?.subscribe);
+		this.router = other?.pendingProps?.router;
+
+		const nav = this.fine.searchNode(null, n => n?.pendingProps?.navigator?.push);
+		this.navigator = nav?.pendingProps?.navigator;
+
+		if ( ! this.router || ! this.navigator ) {
+			if (tries > 100) {
+				this.log.warn('Finding React\'s router is taking a long time.');
+				tries = -500;
+			}
+
+			return sleep(50).then(() => this.onEnable(tries + 1));
+		}
+
+		this.router.subscribe(evt => {
+			if ( this.enabled && evt?.location )
+				this._navigateTo(evt.location);
 		});
 
-		this._navigateTo(history.location);
+		this._navigateTo(this.router.router.state.location);
 	}
 
 	navigate(route, data, opts, state) {
-		this.history.push(this.getURL(route, data, opts), state);
+		const url = this.getURL(route, data, opts);
+		this.push(url, state);
 	}
 
-	private _navigateTo(location) {
+	get reactLocation() {
+		if (this.history)
+			return this.history.location;
+		else if (this.router)
+			return this.router.router.state.location;
+	}
+
+	push(url: string, state: unknown) {
+		if (this.history)
+			this.history.push(url, state);
+		else if (this.navigator)
+			this.navigator.push(url, state);
+		else
+			throw new Error('unable to push new route');
+	}
+
+	replace(url: string, state: unknown) {
+		if (this.history)
+			this.history.replace(url, state);
+		else if (this.navigator)
+			this.navigator.replace(url, state);
+		else
+			throw new Error('unable to replace route');
+	}
+
+	private _navigateTo(location: ReactLocation) {
 		this.log.debug('New Location', location);
 		const host = window.location.host,
 			path = location.pathname,

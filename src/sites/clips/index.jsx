@@ -140,10 +140,10 @@ export default class ClipsSite extends BaseSite {
 	updateContext() {
 		try {
 			const state = this.store.getState(),
-				history = this.router && this.router.history;
+				location = this.router?.reactLocation;
 
 			this.settings.updateContext({
-				location: history?.location,
+				location,
 				ui: state?.ui,
 				session: state?.session
 			});
@@ -222,5 +222,9 @@ export default class ClipsSite extends BaseSite {
 ClipsSite.CLIP_ROUTES = {
 	'clip-page': '/:slug'
 };
+
+ClipsSite.CHAT_ROUTES = [
+	'clip-page'
+];
 
 ClipsSite.DIALOG_SELECTOR = '#root > div';
