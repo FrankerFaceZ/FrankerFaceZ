@@ -33,7 +33,7 @@ const SVG_TAGS = [
 	'font-face-name', 'font-face-src', 'font-face-uri', 'font-face', 'font', 'foreignObject',
 	'g', 'glyph', 'glyphRef', 'hkern', 'image', 'line', 'linearGradient', 'marker', 'mask',
 	'metadata', 'missing-glyph', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient',
-	'rect', 'set', 'stop', 'svg', 'switch', 'symbol', 'text', 'textPath', 'tref',
+	'rect', 'set', 'stop', 'switch', 'symbol', 'text', 'textPath', 'tref',
 	'tspan', 'use', 'view', 'vkern'
 ];
 
@@ -199,7 +199,11 @@ export function findReactFragment<TNode extends SimpleNodeLike>(
 export function createElement<K extends keyof HTMLElementTagNameMap>(tag: K, props?: any, ...children: DomFragment[]): HTMLElementTagNameMap[K];
 export function createElement<K extends keyof HTMLElementDeprecatedTagNameMap>(tag: K, props?: any, ...children: DomFragment[]): HTMLElementDeprecatedTagNameMap[K];
 export function createElement(tag: string, props?: any, ...children: DomFragment[]): HTMLElement {
-	const el = document.createElement(tag);
+	const isSvg = SVG_TAGS.includes(tag);
+	const el = isSvg
+		// This is technically wrong. I do not really care.
+		? document.createElementNS('http://www.w3.org/2000/svg', tag) as unknown as HTMLElement
+		: document.createElement(tag);
 
 	if ( children.length === 0)
 		children = null as any;
@@ -207,14 +211,17 @@ export function createElement(tag: string, props?: any, ...children: DomFragment
 		children = children[0] as any;
 
 	if ( typeof props === 'string' )
-		el.className = props;
+		el.setAttribute('class', props);
 	else if ( props )
 		for(const key in props)
 			if ( has(props, key) ) {
 				const lk = key.toLowerCase(),
 					prop = props[key];
 
-				if ( lk === 'style' ) {
+				if ( key === 'className' ) {
+					el.setAttribute('class', prop);
+
+				} else if ( lk === 'style' ) {
 					if ( typeof prop === 'string' )
 						el.style.cssText = prop;
 					else if ( prop && typeof prop === 'object' )

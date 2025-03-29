@@ -10,6 +10,7 @@ import {get, debounce, TranslatableError} from 'utilities/object';
 import type Apollo from './compat/apollo';
 import type { DocumentNode } from 'graphql';
 
+
 declare module 'utilities/types' {
 	interface ModuleEventMap {
 
@@ -19,14 +20,120 @@ declare module 'utilities/types' {
 	}
 }
 
-/**
- * PaginatedResult
- *
- * @typedef {Object} PaginatedResult
- * @property {String} cursor A cursor usable to fetch the next page of results
- * @property {Object[]} items This page of results
- * @property {Boolean} finished Whether or not we have reached the end of results.
- */
+type ID = string | number | null;
+type LOGIN = string | null;
+
+export type QueryResult<T> = {
+	data: T;
+	loading: boolean;
+	networkStatus: number;
+}
+
+export type MutationResult<T> = {
+	data: T;
+	extensions: {
+		durationMilliseconds: number;
+		operationName: string;
+		requestID: string;
+	}
+}
+
+export type CategorySearch = {
+	totalCount: number;
+	pageInfo: {
+		hasNextPage: boolean;
+	}
+	edges: {
+		cursor: string;
+		node: TwitchCategory
+	}[];
+}
+
+export type FollowState = {
+	disableNotifications: boolean;
+	followedAt: string;
+} | null;
+
+export type TwitchBadge = {
+	id: string;
+	image1x: string;
+	image2x: string;
+	image4x: string;
+	setID: string;
+	title: string;
+	version: string;
+	clickURL: string | null;
+	onClickAction: string | null;
+}
+
+export type TwitchRecentBroadcast = {
+	id: string;
+	title: string | null;
+	createdAt: string;
+	publishedAt: string | null;
+}
+
+export type TwitchCategory = {
+	id: string;
+	name: string;
+	displayName: string;
+	boxArtURL: string;
+}
+
+export type TwitchBasicUser = {
+	id: string;
+	login: string;
+	displayName: string;
+	profileImageURL: string | null;
+	roles: {
+		isPartner: boolean;
+	}
+}
+
+export type TwitchUser = {
+	id: string;
+	login: string;
+	displayName: string;
+	description: string | null;
+	profileImageURL: string | null;
+	profileViewCount: number;
+	primaryColorHex: string | null;
+	broadcastSettings: {
+		id: string;
+		title: string | null;
+		game: TwitchCategory | null;
+	};
+	stream: {
+		id: string;
+		previewImageURL: string
+	} | null;
+	followers: {
+		totalCount: number
+	};
+	roles: {
+		isAffiliate: boolean;
+		isPartner: boolean;
+		isStaff: boolean;
+	};
+}
+
+export type TwitchStreamCreatedAt = {
+	id: string;
+	createdAt: string;
+}
+
+export type TwitchContentLabel = {
+	id: string;
+	localizedName: string;
+}
+
+
+export type StoredPromise<T> = [
+	Promise<T>,
+	(value: T) => void,
+	(reason?: any) => void
+]
+
 
 /**
  * TwitchData is a container for getting different types of Twitch data
@@ -35,22 +142,21 @@ declare module 'utilities/types' {
  */
 export default class TwitchData extends Module {
 
-	apollo: Apollo = null as any;
-	site: GenericModule = null as any;
+	apollo: Apollo = null!;
+	site: GenericModule = null!;
 
+	private _waiting_user_ids: Map<string, StoredPromise<TwitchBasicUser | null>>;
+	private _waiting_user_logins: Map<string, StoredPromise<TwitchBasicUser | null>>;
 
-	private _waiting_user_ids: Map<string, unknown>;
-	private _waiting_user_logins: Map<string, unknown>;
-	private _waiting_stream_ids: Map<string, unknown>;
-	private _waiting_stream_logins: Map<string, unknown>;
-	private _waiting_flag_ids: Map<string, unknown>;
-	private _waiting_flag_logins: Map<string, unknown>;
+	private _waiting_stream_ids: Map<string, StoredPromise<TwitchStreamCreatedAt | null>>;
+	private _waiting_stream_logins: Map<string, StoredPromise<TwitchStreamCreatedAt | null>>;
+
+	private _waiting_flag_ids: Map<string, StoredPromise<TwitchContentLabel[] | null>>;
+	private _waiting_flag_logins: Map<string, StoredPromise<TwitchContentLabel[] | null>>;
 
 	private _loading_streams?: boolean;
 	private _loading_flags?: boolean;
-
-	private tag_cache: Map<string, unknown>;
-	private _waiting_tags: Map<string, unknown>;
+	private _loading_users?: boolean;
 
 	constructor(name?: string, parent?: GenericModule) {
 		super(name, parent);
@@ -68,15 +174,14 @@ export default class TwitchData extends Module {
 		this._waiting_flag_ids = new Map;
 		this._waiting_flag_logins = new Map;
 
-		this.tag_cache = new Map;
-		this._waiting_tags = new Map;
-
-		// The return type doesn't match, because this method returns
-		// a void and not a Promise. We don't care.
+		// Debounce our loading methods. We don't care that the
+		// return types don't match, so just cast to any.
 		this._loadStreams = debounce(this._loadStreams, 50) as any;
+		this._loadStreamFlags = debounce(this._loadStreamFlags, 50) as any;
+		this._loadUsers = debounce(this._loadUsers, 50) as any;
 	}
 
-	queryApollo(
+	queryApollo<T = any>(
 		query: DocumentNode | {query: DocumentNode, variables: any},
 		variables?: any,
 		options?: any
@@ -94,10 +199,10 @@ export default class TwitchData extends Module {
 				thing = Object.assign(thing, options);
 		}
 
-		return this.apollo.client.query(thing);
+		return this.apollo.client.query(thing) as Promise<QueryResult<T>>;
 	}
 
-	mutate(
+	mutate<T = any>(
 		mutation: DocumentNode | {mutation: DocumentNode, variables: any},
 		variables?: any,
 		options?: any
@@ -115,15 +220,15 @@ export default class TwitchData extends Module {
 				thing = Object.assign(thing, options);
 		}
 
-		return this.apollo.client.mutate(thing);
+		return this.apollo.client.mutate(thing) as Promise<MutationResult<T>>;
 	}
 
-	get languageCode() {
+	get languageCode(): string {
 		const session = this.site.getSession();
 		return session && session.languageCode || 'en'
 	}
 
-	get locale() {
+	get locale(): string {
 		const session = this.site.getSession();
 		return session && session.locale || 'en-US'
 	}
@@ -133,13 +238,17 @@ export default class TwitchData extends Module {
 	// Badges
 	// ========================================================================
 
+	/**
+	 * Fetch all the global chat badges.
+	 */
 	async getBadges() {
-
-		const data = await this.queryApollo(
+		const data = await this.queryApollo<{
+			badges: TwitchBadge[]
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/global-badges.gql')
 		);
 
-		return get('data.badges', data);
+		return data?.data?.badges;
 	}
 
 
@@ -150,18 +259,18 @@ export default class TwitchData extends Module {
 	/**
 	 * Find categories matching the search query
 	 *
-	 * @param {String} query The category name to match
-	 * @param {Number} [first=15] How many results to return
-	 * @param {String} [cursor=null] A cursor, to be used in fetching the
-	 * next page of results.
-	 * @returns {PaginatedResult} The results
+	 * @param query The category name to match
+	 * @param first How many results to return
+	 * @param cursor A cursor, to be used in fetching the next page of results.
 	 */
 	async getMatchingCategories(
 		query: string,
 		first: number = 15,
 		cursor: string | null = null
 	) {
-		const data = await this.queryApollo(
+		const data = await this.queryApollo<{
+			searchCategories: CategorySearch
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/search-category.gql'),
 			{
 				query,
@@ -192,26 +301,20 @@ export default class TwitchData extends Module {
 	}
 
 	/**
-	 * Queries Apollo for category details given the id or name. One of (id, name) MUST be specified
-	 * @function getCategory
-	 * @memberof TwitchData
-	 * @async
+	 * Look up a category.
 	 *
-	 * @param {int|string|null|undefined} id - the category id number (can be an integer string)
-	 * @param {string|null|undefined} name - the category name
-	 * @returns {Object} information about the requested stream
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getCategory(null, 'Just Chatting'));
+	 * @param id - the category id
+	 * @param name - the category name
 	 */
-	async getCategory(id, name) {
-		const data = await this.queryApollo(
+	async getCategory(id?: ID, name?: string | null) {
+		const data = await this.queryApollo<{
+			game: TwitchCategory | null
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/category-fetch.gql'),
 			{ id, name }
 		);
 
-		return get('data.game', data);
+		return data?.data?.game;
 	}
 
 
@@ -219,13 +322,23 @@ export default class TwitchData extends Module {
 	// Chat
 	// ========================================================================
 
+	/**
+	 * Delete a chat message.
+	 *
+	 * @param channel_id The channel to delete it from.
+	 * @param message_id The message ID.
+	 */
 	async deleteChatMessage(
-		channel_id/* :string*/,
-		message_id/* :string*/
+		channel_id: ID,
+		message_id: string
 	) {
 		channel_id = String(channel_id);
 
-		const data = await this.mutate({
+		const data = await this.mutate<{
+			deleteChatMessage: {
+				responseCode: string;
+			}
+		}>({
 			mutation: await import(/* webpackChunkName: 'queries' */ './mutations/delete-chat-message.gql'),
 			variables: {
 				input: {
@@ -235,7 +348,7 @@ export default class TwitchData extends Module {
 			}
 		});
 
-		const code = get('data.deleteChatMessage.responseCode', data);
+		const code = data?.data?.deleteChatMessage?.responseCode;
 
 		if ( code === 'TARGET_IS_BROADCASTER' )
 			throw new TranslatableError(
@@ -267,14 +380,23 @@ export default class TwitchData extends Module {
 	/**
 	 * Find users matching the search query.
 	 *
-	 * @param {String} query Text to match in the login or display name
-	 * @param {Number} [first=15] How many results to return
-	 * @param {String} [cursor=null] A cursor, to be used in fetching the next
-	 * page of results.
-	 * @returns {PaginatedResult} The results
+	 * @param query Text to match in the login or display name
+	 * @param first How many results to return
+	 * @param cursor A cursor, to be used in fetching the next page of results.
 	 */
-	async getMatchingUsers(query, first = 15, cursor = null) {
-		const data = await this.queryApollo(
+	async getMatchingUsers(query: string, first = 15, cursor: string | null = null) {
+		const data = await this.queryApollo<{
+			searchUsers: {
+				edges: {
+					cursor: string;
+					node: TwitchBasicUser;
+				}[];
+				totalCount: number;
+				pageInfo: {
+					hasNextPage: boolean;
+				}
+			}
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/search-user.gql'),
 			{
 				query,
@@ -305,90 +427,104 @@ export default class TwitchData extends Module {
 	}
 
 	/**
-	 * Queries Apollo for user details given the id or name. One of (id, login) MUST be specified
-	 * @function getUser
-	 * @memberof TwitchData
-	 * @async
+	 * Fetch information about a user.
 	 *
-	 * @param {int|string|null|undefined} id - the user id number (can be an integer string)
-	 * @param {string|null|undefined} login - the username
-	 * @returns {Object} information about the requested user
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getUser(19571641, null));
+	 * @param id The user's ID
+	 * @param login The user's login
 	 */
-	async getUser(id, login) {
-		const data = await this.queryApollo(
+	async getUser(id?: ID, login?: LOGIN) {
+		const data = await this.queryApollo<{
+			user: TwitchUser | null
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/user-fetch.gql'),
 			{ id, login }
 		);
 
-		return get('data.user', data);
+		return data?.data?.user;
 	}
 
 	/**
-	 * Queries Apollo for the user's current game, details given the user id or name. One of (id, login) MUST be specified
-	 * @function getUserGame
-	 * @memberof TwitchData
-	 * @async
+	 * Fetch a user's current game.
 	 *
-	 * @param {int|string|null|undefined} id - the user id number (can be an integer string)
-	 * @param {string|null|undefined} login - the username
-	 * @returns {Object} information about the requested user
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getUserGame(19571641, null));
+	 * @param id The user's ID
+	 * @param login The user's login
 	 */
-	async getUserGame(id, login) {
-		const data = await this.queryApollo(
+	async getUserGame(id?: ID, login?: LOGIN) {
+		const data = await this.queryApollo<{
+			user: {
+				broadcastSettings: {
+					game: TwitchCategory | null;
+				}
+			} | null;
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/user-game.gql'),
 			{ id, login }
 		);
 
-		return get('data.user.broadcastSettings.game', data);
+		return data?.data?.user?.broadcastSettings?.game;
 	}
 
 	/**
-	 * Queries Apollo for the logged in user's relationship to the channel with given the id or name. One of (id, login) MUST be specified
-	 * @function getUserSelf
-	 * @memberof TwitchData
-	 * @async
+	 * Look up the current user's moderator and editor status in a channel.
 	 *
-	 * @param {int|string|null|undefined} id - the channel id number (can be an integer string)
-	 * @param {string|null|undefined} login - the channel username
-	 * @returns {Object} information about your status in the channel
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getUserSelf(null, "ninja"));
+	 * @param id The target channel's ID
+	 * @param login The target channel's login
 	 */
-	async getUserSelf(id, login) {
-		const data = await this.queryApollo(
+	async getUserSelf(id?: ID, login?: LOGIN) {
+		const data = await this.queryApollo<{
+			user: {
+				self: {
+					isEditor: boolean;
+					isModerator: boolean;
+				}
+			} | null;
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/user-self.gql'),
 			{ id, login }
 		);
 
-		return get('data.user.self', data);
+		return data?.data?.user?.self;
 	}
 
-
-	async getUserFollowed(id, login) {
-		const data = await this.queryApollo(
+	/**
+	 * Look up if the current user follows a channel.
+	 *
+	 * @param id The target channel's ID
+	 * @param login The target channel's login
+	 */
+	async getUserFollowed(id?: ID, login?: LOGIN) {
+		const data = await this.queryApollo<{
+			user: {
+				self: {
+					follower: FollowState;
+				}
+			} | null;
+		}>(
 			await import(/* webpackChunkName: 'queries' */ './data/user-followed.gql'),
 			{ id, login }
 		);
 
-		return get('data.user.self.follower', data);
+		return data?.data?.user?.self?.follower;
 	}
 
-
-	async followUser(channel_id, disable_notifications = false) {
+	/**
+	 * Follow a channel.
+	 *
+	 * @param channel_id The target channel's ID
+	 * @param disable_notifications Whether or not notifications should be disabled.
+	 */
+	async followUser(channel_id: ID, disable_notifications = false) {
 		channel_id = String(channel_id);
 		disable_notifications = !! disable_notifications;
 
-		const data = await this.mutate({
+		const data = await this.mutate<{
+			followUser: {
+				follow: FollowState;
+				error: {
+					code: string;
+				} | null;
+			}
+		}>({
 			mutation: await import(/* webpackChunkName: 'queries' */ './data/follow-user.gql'),
 			variables: {
 				input: {
@@ -398,20 +534,27 @@ export default class TwitchData extends Module {
 			}
 		});
 
-		console.log('result', data);
-		const err = get('data.followUser.error', data);
+		console.log('follow result', data);
+		const err = data?.data?.followUser?.error;
 		if ( err?.code )
 			throw new Error(err.code);
 
-		return get('data.followUser.follow', data);
+		return data?.data?.followUser?.follow;
 	}
 
-
-	async unfollowUser(channel_id, disable_notifications = false) {
+	/**
+	 * Unfollow a channel.
+	 *
+	 * @param channel_id The target channel's ID
+	 */
+	async unfollowUser(channel_id: ID) {
 		channel_id = String(channel_id);
-		disable_notifications = !! disable_notifications;
 
-		const data = await this.mutate({
+		const data = await this.mutate<{
+			unfollowUser: {
+				follow: FollowState;
+			}
+		}>({
 			mutation: await import(/* webpackChunkName: 'queries' */ './data/unfollow-user.gql'),
 			variables: {
 				input: {
@@ -420,32 +563,41 @@ export default class TwitchData extends Module {
 			}
 		});
 
-		console.log('result', data);
-		return get('data.unfollowUser.follow', data);
+		console.log('unfollow result', data);
+		return data?.data?.unfollowUser?.follow;
 	}
 
 
 	/**
-	 * Queries Apollo for the requested user's latest broadcast. One of (id, login) MUST be specified
-	 * @function getLastBroadcast
-	 * @memberof TwitchData
-	 * @async
+	 * Fetch basic information about a channel's most recent broadcast.
 	 *
-	 * @param {int|string|null|undefined} id - the channel id number (can be an integer string)
-	 * @param {string|null|undefined} login - the channel username
-	 * @returns {Object} information about the requested user's latest broadcast
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getLastBroadcast(19571641, null));
+	 * @param id The channel's ID
+	 * @param login The channel's login
 	 */
-	async getLastBroadcast(id, login) {
-		const data = await this.queryApollo(
-			await import(/* webpackChunkName: 'queries' */ './data/last-broadcast.gql'),
-			{ id, login }
+	async getLastBroadcast(id?: ID, login?: LOGIN) {
+		const data = await this.queryApollo<{
+			user: {
+				videos: {
+					pageInfo: {
+						hasNextPage: boolean;
+					}
+					edges: {
+						cursor: string;
+						node: TwitchRecentBroadcast;
+					}[];
+				}
+			} | null
+		}>(
+			await import(/* webpackChunkName: 'queries' */ './data/recent-broadcasts.gql'),
+			{
+				id, login,
+				type: 'ARCHIVE',
+				sort: 'TIME',
+				limit: 1
+			}
 		);
 
-		return get('data.user.lastBroadcast', data);
+		return data?.data?.user?.videos?.edges?.[0]?.node;
 	}
 
 
@@ -453,29 +605,41 @@ export default class TwitchData extends Module {
 	 * Fetch basic information on a user from Twitch. This is automatically batched
 	 * for performance, but not directly cached. Either an id or login must be provided.
 	 *
-	 * @param {Number|String} [id] The ID of the channel
-	 * @param {String} [login] The username of the channel
-	 *
-	 * @returns {Promise} A basic user object.
+	 * @param id The channel's ID
+	 * @param login The channel's login
 	 */
-	getUserBasic(id, login) {
-		return new Promise((s, f) => {
-			if ( id ) {
-				if ( this._waiting_user_ids.has(id) )
-					this._waiting_user_ids.get(id).push([s,f]);
-				else
-					this._waiting_user_ids.set(id, [[s,f]]);
-			} else if ( login ) {
-				if ( this._waiting_user_logins.has(login) )
-					this._waiting_user_logins.get(login).push([s,f]);
-				else
-					this._waiting_user_logins.set(login, [[s,f]]);
-			} else
-				f('id and login cannot both be null');
+	getUserBasic(id?: ID, login?: LOGIN) {
+		let store: Map<string, StoredPromise<TwitchBasicUser | null>>;
+		let retval: Promise<TwitchBasicUser | null>;
+		let key: string;
 
-			if ( ! this._loading_users )
-				this._loadUsers();
-		})
+		if ( id ) {
+			store = this._waiting_user_ids;
+			key = String(id);
+		} else if ( login ) {
+			store = this._waiting_user_logins;
+			key = login;
+		} else
+			return Promise.reject('id and login cannot both be null');
+
+		let stored = store.get(key);
+		if (stored)
+			return stored[0];
+
+		let success: (value: TwitchBasicUser | null) => void,
+			failure: (reason?: any) => void;
+
+		retval = new Promise<TwitchBasicUser | null>((s, f) => {
+			success = s;
+			failure = f;
+		});
+
+		store.set(key, [retval, success!, failure!]);
+
+		if ( ! this._loading_users )
+			this._loadUsers();
+
+		return retval;
 	}
 
 	async _loadUsers() {
@@ -489,10 +653,12 @@ export default class TwitchData extends Module {
 			remaining = 50 - ids.length,
 			logins = remaining > 0 ? [...this._waiting_user_logins.keys()].slice(0, remaining) : [];
 
-		let nodes;
+		let nodes: TwitchBasicUser[];
 
 		try {
-			const data = await this.queryApollo({
+			const data = await this.queryApollo<{
+				users: TwitchBasicUser[]
+			}>({
 				query: await import(/* webpackChunkName: 'queries' */ './data/user-bulk.gql'),
 				variables: {
 					ids: ids.length ? ids : null,
@@ -500,23 +666,21 @@ export default class TwitchData extends Module {
 				}
 			});
 
-			nodes = get('data.users', data);
+			nodes = data?.data?.users ?? [];
 
 		} catch(err) {
 			for(const id of ids) {
-				const promises = this._waiting_user_ids.get(id);
+				const stored = this._waiting_user_ids.get(id);
 				this._waiting_user_ids.delete(id);
-
-				for(const pair of promises)
-					pair[1](err);
+				if (stored)
+					stored[2](err);
 			}
 
 			for(const login of logins) {
-				const promises = this._waiting_user_logins.get(login);
+				const stored = this._waiting_user_logins.get(login);
 				this._waiting_user_logins.delete(login);
-
-				for(const pair of promises)
-					pair[1](err);
+				if (stored)
+					stored[2](err);
 			}
 
 			return;
@@ -533,36 +697,32 @@ export default class TwitchData extends Module {
 				id_set.delete(node.id);
 				login_set.delete(node.login);
 
-				let promises = this._waiting_user_ids.get(node.id);
-				if ( promises ) {
+				let stored = this._waiting_user_ids.get(node.id);
+				if ( stored ) {
 					this._waiting_user_ids.delete(node.id);
-					for(const pair of promises)
-						pair[0](node);
+					stored[1](node);
 				}
 
-				promises = this._waiting_user_logins.get(node.login);
-				if ( promises ) {
+				stored = this._waiting_user_logins.get(node.login);
+				if ( stored ) {
 					this._waiting_user_logins.delete(node.login);
-					for(const pair of promises)
-						pair[0](node);
+					stored[1](node);
 				}
 			}
 
 		for(const id of id_set) {
-			const promises = this._waiting_user_ids.get(id);
-			if ( promises ) {
+			const stored = this._waiting_user_ids.get(id);
+			if ( stored ) {
 				this._waiting_user_ids.delete(id);
-				for(const pair of promises)
-					pair[0](null);
+				stored[1](null);
 			}
 		}
 
 		for(const login of login_set) {
-			const promises = this._waiting_user_logins.get(login);
-			if ( promises ) {
+			const stored = this._waiting_user_logins.get(login);
+			if ( stored ) {
 				this._waiting_user_logins.delete(login);
-				for(const pair of promises)
-					pair[0](null);
+				stored[1](null);
 			}
 		}
 
@@ -578,34 +738,23 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	/**
-	 * Queries Apollo for the ID of the specified user's current broadcast. This ID will become the VOD ID. One of (id, login) MUST be specified
-	 * @function getBroadcastID
-	 * @memberof TwitchData
-	 * @async
+	 * Fetch the id of a channel's most recent broadcast.
 	 *
-	 * @param {int|string|null|undefined} id - the channel id number (can be an integer string)
-	 * @param {string|null|undefined} login - the channel username
-	 * @returns {Object} information about the current broadcast
-	 *
-	 * @example
-	 *
-	 *  console.log(this.twitch_data.getBroadcastID(null, "ninja"));
+	 * @param id The channel's ID
+	 * @param login The channel's login
 	 */
-	async getBroadcastID(id, login) {
-		const data = await this.queryApollo({
-			query: await import(/* webpackChunkName: 'queries' */ './data/broadcast-id.gql'),
-			variables: {
-				id,
-				login
-			}
-		});
-
-		return get('data.user.stream.archiveVideo.id', data);
+	async getBroadcastID(id?: ID, login?: LOGIN) {
+		const data = await this.getLastBroadcast(id, login);
+		return data?.id;
 	}
 
 
-	async getChannelColor(id, login) {
-		const data = await this.queryApollo({
+	async getChannelColor(id?: ID, login?: LOGIN) {
+		const data = await this.queryApollo<{
+			user: {
+				primaryColorHex: string | null;
+			} | null;
+		}>({
 			query: await import(/* webpackChunkName: 'queries' */ './data/user-color.gql'),
 			variables: {
 				id,
@@ -613,7 +762,7 @@ export default class TwitchData extends Module {
 			}
 		});
 
-		return get('data.user.primaryColorHex', data);
+		return data?.data?.user?.primaryColorHex;
 	}
 
 
@@ -634,7 +783,7 @@ export default class TwitchData extends Module {
 	 *
 	 *  console.log(this.twitch_data.getPoll(1337));
 	 */
-	async getPoll(poll_id) {
+	async getPoll(poll_id: ID) {
 		const data = await this.queryApollo({
 			query: await import(/* webpackChunkName: 'queries' */ './data/poll-get.gql'),
 			variables: {
@@ -752,36 +901,43 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	/**
-	 * Queries Apollo for stream metadata. One of (id, login) MUST be specified
-	 * @function getStreamMeta
-	 * @memberof TwitchData
+	 * Fetch the stream id and creation time for a channel.
 	 *
-	 * @param {int|string|null|undefined} id - the channel id number (can be an integer string)
-	 * @param {string|null|undefined} login - the channel name
-	 * @returns {Promise} information about the requested stream
-	 *
-	 * @example
-	 *
-	 *  this.twitch_data.getStreamMeta(19571641, null).then(function(returnObj){console.log(returnObj);});
+	 * @param id The channel's ID
+	 * @param login The channel's login
 	 */
-	getStreamMeta(id, login) {
-		return new Promise((s, f) => {
-			if ( id ) {
-				if ( this._waiting_stream_ids.has(id) )
-					this._waiting_stream_ids.get(id).push([s, f]);
-				else
-					this._waiting_stream_ids.set(id, [[s, f]]);
-			} else if ( login ) {
-				if ( this._waiting_stream_logins.has(login) )
-					this._waiting_stream_logins.get(login).push([s, f]);
-				else
-					this._waiting_stream_logins.set(login, [[s, f]]);
-			} else
-				f('id and login cannot both be null');
+	getStreamMeta(id?: ID, login?: LOGIN) {
+		let store: Map<string, StoredPromise<TwitchStreamCreatedAt | null>>;
+		let retval: Promise<TwitchStreamCreatedAt | null>;
+		let key: string;
 
-			if ( ! this._loading_streams )
-				this._loadStreams();
-		})
+		if ( id ) {
+			store = this._waiting_stream_ids;
+			key = String(id);
+		} else if ( login ) {
+			store = this._waiting_stream_logins;
+			key = login;
+		} else
+			return Promise.reject('id and login cannot both be null');
+
+		let stored = store.get(key);
+		if (stored)
+			return stored[0];
+
+		let success: (value: TwitchStreamCreatedAt | null) => void,
+			failure: (reason?: any) => void;
+
+		retval = new Promise<TwitchStreamCreatedAt | null>((s, f) => {
+			success = s;
+			failure = f;
+		});
+
+		store.set(key, [retval, success!, failure!]);
+
+		if ( ! this._loading_streams )
+			this._loadStreams();
+
+		return retval;
 	}
 
 	async _loadStreams() {
@@ -795,10 +951,20 @@ export default class TwitchData extends Module {
 			remaining = 50 - ids.length,
 			logins = remaining > 0 ? [...this._waiting_stream_logins.keys()].slice(0, remaining) : [];
 
-		let nodes;
+		let nodes: {
+			id: string;
+			login: string;
+			stream: TwitchStreamCreatedAt | null;
+		}[];
 
 		try {
-			const data = await this.queryApollo({
+			const data = await this.queryApollo<{
+				users: {
+					id: string;
+					login: string;
+					stream: TwitchStreamCreatedAt | null;
+				}[]
+			}>({
 				query: await import(/* webpackChunkName: 'queries' */ './data/stream-fetch.gql'),
 				variables: {
 					ids: ids.length ? ids : null,
@@ -806,23 +972,21 @@ export default class TwitchData extends Module {
 				}
 			});
 
-			nodes = get('data.users', data);
+			nodes = data?.data?.users;
 
 		} catch(err) {
 			for(const id of ids) {
-				const promises = this._waiting_stream_ids.get(id);
+				const stored = this._waiting_stream_ids.get(id);
 				this._waiting_stream_ids.delete(id);
-
-				for(const pair of promises)
-					pair[1](err);
+				if ( stored )
+					stored[2](err);
 			}
 
 			for(const login of logins) {
-				const promises = this._waiting_stream_logins.get(login);
+				const stored = this._waiting_stream_logins.get(login);
 				this._waiting_stream_logins.delete(login);
-
-				for(const pair of promises)
-					pair[1](err);
+				if ( stored )
+					stored[2](err);
 			}
 
 			return;
@@ -839,36 +1003,32 @@ export default class TwitchData extends Module {
 				id_set.delete(node.id);
 				login_set.delete(node.login);
 
-				let promises = this._waiting_stream_ids.get(node.id);
-				if ( promises ) {
+				let stored = this._waiting_stream_ids.get(node.id);
+				if ( stored ) {
 					this._waiting_stream_ids.delete(node.id);
-					for(const pair of promises)
-						pair[0](node.stream);
+					stored[1](node.stream);
 				}
 
-				promises = this._waiting_stream_logins.get(node.login);
-				if ( promises ) {
+				stored = this._waiting_stream_logins.get(node.login);
+				if ( stored ) {
 					this._waiting_stream_logins.delete(node.login);
-					for(const pair of promises)
-						pair[0](node.stream);
+					stored[1](node.stream);
 				}
 			}
 
 		for(const id of id_set) {
-			const promises = this._waiting_stream_ids.get(id);
-			if ( promises ) {
+			const stored = this._waiting_stream_ids.get(id);
+			if ( stored ) {
 				this._waiting_stream_ids.delete(id);
-				for(const pair of promises)
-					pair[0](null);
+				stored[1](null);
 			}
 		}
 
 		for(const login of login_set) {
-			const promises = this._waiting_stream_logins.get(login);
-			if ( promises ) {
+			const stored = this._waiting_stream_logins.get(login);
+			if ( stored ) {
 				this._waiting_stream_logins.delete(login);
-				for(const pair of promises)
-					pair[0](null);
+				stored[1](null);
 			}
 		}
 
@@ -889,33 +1049,38 @@ export default class TwitchData extends Module {
 	 * @param id - the channel id number (can be an integer string)
 	 * @param login - the channel name
 	 */
-	getStreamFlags(id: string | number): Promise<any>;
-	getStreamFlags(id: null, login: string): Promise<any>;
-	getStreamFlags(id: string | number | null, login?: string | null) {
-		return new Promise((s, f) => {
-			if ( typeof id === 'number' )
-				id = `${id}`;
+	getStreamFlags(id?: ID, login?: LOGIN) {
+		let store: Map<string, StoredPromise<TwitchContentLabel[] | null>>;
+		let retval: Promise<TwitchContentLabel[] | null>;
+		let key: string;
 
-			if ( id ) {
-				const existing = this._waiting_flag_ids.get(id);
-				if ( existing )
-					existing.push([s,f]);
-				else
-					this._waiting_flag_ids.set(id, [[s,f]]);
+		if ( id ) {
+			store = this._waiting_flag_ids;
+			key = String(id);
+		} else if ( login ) {
+			store = this._waiting_flag_logins;
+			key = login;
+		} else
+			return Promise.reject('id and login cannot both be null');
 
-			} else if ( login ) {
-				const existing = this._waiting_flag_logins.get(login);
-				if ( existing )
-					existing.push([s,f]);
-				else
-					this._waiting_flag_logins.set(login, [[s,f]]);
+		let stored = store.get(key);
+		if (stored)
+			return stored[0];
 
-			} else
-				f('id and login cannot both be null');
+		let success: (value: TwitchContentLabel[] | null) => void,
+			failure: (reason?: any) => void;
 
-			if ( ! this._loading_flags )
-				this._loadStreamFlags();
-		})
+		retval = new Promise<TwitchContentLabel[] | null>((s, f) => {
+			success = s;
+			failure = f;
+		});
+
+		store.set(key, [retval, success!, failure!]);
+
+		if ( ! this._loading_flags )
+			this._loadStreamFlags();
+
+		return retval;
 	}
 
 	async _loadStreamFlags() {
@@ -929,10 +1094,18 @@ export default class TwitchData extends Module {
 			remaining = 50 - ids.length,
 			logins = remaining > 0 ? [...this._waiting_flag_logins.keys()].slice(0, remaining) : [];
 
-		let nodes;
+		let nodes: {
+			id: string;
+			login: string;
+			stream: {
+				contentClassificationLabels: TwitchContentLabel[];
+			} | null;
+		}[];
 
 		try {
-			const data = await this.queryApollo({
+			const data = await this.queryApollo<{
+				users: typeof nodes;
+			}>({
 				query: await import(/* webpackChunkName: 'queries' */ './data/stream-flags.gql'),
 				variables: {
 					ids: ids.length ? ids : null,
@@ -940,28 +1113,22 @@ export default class TwitchData extends Module {
 				}
 			});
 
-			nodes = get('data.users', data);
+			nodes = data?.data?.users;
 
 		} catch(err) {
 			for(const id of ids) {
-				const promises = this._waiting_flag_ids.get(id);
-
-				if ( promises ) {
+				const stored = this._waiting_flag_ids.get(id);
+				if ( stored ) {
 					this._waiting_flag_ids.delete(id);
-
-					for(const pair of promises)
-						pair[1](err);
+					stored[2](err);
 				}
 			}
 
 			for(const login of logins) {
-				const promises = this._waiting_flag_logins.get(login);
-
-				if ( promises ) {
+				const stored = this._waiting_flag_logins.get(login);
+				if ( stored ) {
 					this._waiting_flag_logins.delete(login);
-
-					for(const pair of promises)
-						pair[1](err);
+					stored[2](err);
 				}
 			}
 
@@ -979,36 +1146,32 @@ export default class TwitchData extends Module {
 				id_set.delete(node.id);
 				login_set.delete(node.login);
 
-				let promises = this._waiting_flag_ids.get(node.id);
-				if ( promises ) {
+				let stored = this._waiting_flag_ids.get(node.id);
+				if ( stored ) {
 					this._waiting_flag_ids.delete(node.id);
-					for(const pair of promises)
-						pair[0](node.stream?.contentClassificationLabels);
+					stored[1](node.stream?.contentClassificationLabels ?? null);
 				}
 
-				promises = this._waiting_flag_logins.get(node.login);
-				if ( promises ) {
+				stored = this._waiting_flag_logins.get(node.login);
+				if ( stored ) {
 					this._waiting_flag_logins.delete(node.login);
-					for(const pair of promises)
-						pair[0](node.stream?.contentClassificationLabels);
+					stored[1](node.stream?.contentClassificationLabels ?? null);
 				}
 			}
 
 		for(const id of id_set) {
-			const promises = this._waiting_flag_ids.get(id);
-			if ( promises ) {
+			const stored = this._waiting_flag_ids.get(id);
+			if ( stored ) {
 				this._waiting_flag_ids.delete(id);
-				for(const pair of promises)
-					pair[0](null);
+				stored[1](null);
 			}
 		}
 
 		for(const login of login_set) {
-			const promises = this._waiting_flag_logins.get(login);
-			if ( promises ) {
+			const stored = this._waiting_flag_logins.get(login);
+			if ( stored ) {
 				this._waiting_flag_logins.delete(login);
-				for(const pair of promises)
-					pair[0](null);
+				stored[1](null);
 			}
 		}
 
@@ -1024,20 +1187,20 @@ export default class TwitchData extends Module {
 	// ========================================================================
 
 	/**
-	 * Search tags
-	 * @function getMatchingTags
-	 * @memberof TwitchData
-	 * @async
+	 * Fetch a list of matching tags.
 	 *
-	 * @param {string} query - the search string
-	 * @returns {string[]} an array containing tags that match the query string
-	 *
-	 * @example
-	 *
-	 *  console.log(await this.twitch_data.getMatchingTags("Rainbo"));
+	 * @param query The string to search for.
 	 */
 	async getMatchingTags(query: string) {
-		const data = await this.queryApollo({
+		const data = await this.queryApollo<{
+			searchFreeformTags: {
+				edges: {
+					node: {
+						tagName: string;
+					}
+				}[];
+			}
+		}>({
 			query: await import(/* webpackChunkName: 'queries' */ './data/tag-search.gql'),
 			variables: {
 				query,
@@ -1049,7 +1212,7 @@ export default class TwitchData extends Module {
 		if ( ! Array.isArray(edges) || ! edges.length )
 			return [];
 
-		const out = [];
+		const out: string[] = [];
 		for(const edge of edges) {
 			const tag = edge?.node?.tagName;
 			if ( tag )

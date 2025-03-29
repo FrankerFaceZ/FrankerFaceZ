@@ -378,11 +378,8 @@ export default class Channel extends Module {
 						if ( event.ctrlKey || event.shiftKey || event.altKey )
 							return;
 
-						const history = this.router.history;
-						if ( history ) {
-							event.preventDefault();
-							history.push(link);
-						}
+						event.preventDefault();
+						this.router.push(link);
 					});
 
 					return a;

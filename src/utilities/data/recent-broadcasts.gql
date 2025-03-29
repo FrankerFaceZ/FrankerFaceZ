@@ -1,0 +1,25 @@
+query FFZ_RecentBroadcasts($id: ID, $login: String, $limit: Int, $cursor: Cursor, $type: BroadcastType, $sort: VideoSort, $options: VideoConnectionOptionsInput) {
+	user(id: $id, login: $login) {
+		id
+		videos(
+			first: $limit
+			after: $cursor
+			type: $type
+			sort: $sort
+			options: $options
+		) {
+			edges {
+				cursor
+				node {
+					id
+					title
+					createdAt
+					publishedAt
+				}
+			}
+			pageInfo {
+				hasNextPage
+			}
+		}
+	}
+}

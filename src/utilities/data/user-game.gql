@@ -5,7 +5,9 @@ query FFZ_UserGame($id: ID, $login: String) {
 			id
 			game {
 				id
+				name
 				displayName
+				boxArtURL(width: 40, height: 56)
 			}
 		}
 	}

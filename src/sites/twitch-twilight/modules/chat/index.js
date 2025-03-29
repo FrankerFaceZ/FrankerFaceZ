@@ -273,6 +273,12 @@ export default class ChatHook extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.ChatRewardEventHandler = this.fine.define(
+			'chat-reward-event-handler',
+			n => n.unsubscribe && n.handleMessage && n.props?.messageHandlerAPI && n.props?.rewardMap,
+			Twilight.CHAT_ROUTES
+		);
+
 		this.joined_raids = new Set;
 
 		this.RaidController = this.fine.define(
@@ -1612,6 +1618,85 @@ export default class ChatHook extends Module {
 					_ffz_inst: inst
 				});
 			}
+		});
+
+		this.ChatRewardEventHandler.ready((cls, instances) => {
+			const t = this,
+				old_subscribe = cls.prototype.subscribe;
+
+			cls.prototype.ffzInstall = function() {
+				if (this._ffz_installed)
+					return;
+
+				this._ffz_installed = true;
+				const inst = this;
+				const old_handle = this.handleMessage;
+				this.handleMessage = function(msg) {
+					//t.log.info('reward-message', msg, inst);
+					try {
+						if ( ! inst.props?.channelID || ! msg )
+							return;
+
+						// TODO: Refactor this code and the PubSub code to remove code dupe.
+						const type = msg.type,
+							data = msg.data?.redemption,
+							isAutomaticReward = type === 'automatic-reward-redeemed',
+							isRedeemed = 'reward-redeemed';
+
+						if (!data?.reward || (!isAutomaticReward && !isRedeemed))
+							return;
+
+						if ((isRedeemed && data.user_input) || (isAutomaticReward && data.reward.reward_type !== 'celebration'))
+							return;
+
+						let rewardID;
+						if (isAutomaticReward)
+							rewardID = `${inst.props.channelID}:${data.reward.reward_type}`;
+						else
+							rewardID = data.reward.id;
+
+						const reward = inst.props.rewardMap[rewardID];
+						if ( ! reward )
+							return;
+
+						if ( t.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') )
+							return;
+
+						inst.addMessage({
+							id: data.id,
+							type: t.chat_types.Message,
+							ffz_type: 'points',
+							ffz_reward: reward,
+							ffz_reward_highlight: isHighlightedReward(reward),
+							messageParts: [],
+							user: {
+								id: data.user.id,
+								login: data.user.login,
+								displayName: data.user.display_name
+							},
+							timestamp: new Date(msg.data.timestamp || data.redeemed_at).getTime()
+						});
+
+						return;
+
+					} catch(err) {
+						t.log.error('Error handling reward event:', err);
+						return old_handle.call(this, msg);
+					}
+				}
+			};
+
+			cls.prototype.subscribe = function(...args) {
+				try {
+					this.ffzInstall();
+				} catch(err) {
+					t.log.error('Error in subscribe for RewardEventHandler:', err);
+				}
+				return old_subscribe.call(this, ...args);
+			}
+
+			for(const inst of instances)
+				inst.subscribe();
 		});
 
 		this.ChatBufferConnector.on('mount', this.connectorMounted, this);

@@ -12,7 +12,9 @@ query FFZ_FetchUser($id: ID, $login: String) {
 			title
 			game {
 				id
+				name
 				displayName
+				boxArtURL(width: 40, height: 56)
 			}
 		}
 		stream {
