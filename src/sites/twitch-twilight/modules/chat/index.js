@@ -1633,50 +1633,14 @@ export default class ChatHook extends Module {
 				const old_handle = this.handleMessage;
 				this.handleMessage = function(msg) {
 					//t.log.info('reward-message', msg, inst);
+					if ( t.disable_handling )
+						return old_handle.call(this, msg);
+
 					try {
 						if ( ! inst.props?.channelID || ! msg )
 							return;
 
-						// TODO: Refactor this code and the PubSub code to remove code dupe.
-						const type = msg.type,
-							data = msg.data?.redemption,
-							isAutomaticReward = type === 'automatic-reward-redeemed',
-							isRedeemed = 'reward-redeemed';
-
-						if (!data?.reward || (!isAutomaticReward && !isRedeemed))
-							return;
-
-						if ((isRedeemed && data.user_input) || (isAutomaticReward && data.reward.reward_type !== 'celebration'))
-							return;
-
-						let rewardID;
-						if (isAutomaticReward)
-							rewardID = `${inst.props.channelID}:${data.reward.reward_type}`;
-						else
-							rewardID = data.reward.id;
-
-						const reward = inst.props.rewardMap[rewardID];
-						if ( ! reward )
-							return;
-
-						if ( t.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') )
-							return;
-
-						inst.addMessage({
-							id: data.id,
-							type: t.chat_types.Message,
-							ffz_type: 'points',
-							ffz_reward: reward,
-							ffz_reward_highlight: isHighlightedReward(reward),
-							messageParts: [],
-							user: {
-								id: data.user.id,
-								login: data.user.login,
-								displayName: data.user.display_name
-							},
-							timestamp: new Date(msg.data.timestamp || data.redeemed_at).getTime()
-						});
-
+						t.insertChannelPointMessage(msg);
 						return;
 
 					} catch(err) {
@@ -1866,33 +1830,54 @@ export default class ChatHook extends Module {
 			if ( ! message || ! service || message.type !== 'reward-redeemed' || service.props.channelID != data?.channel_id )
 				return;
 
-			if ( data.user_input )
-				return;
+			this.insertChannelPointMessage(message);
+		});
+	}
 
-			const reward = data.reward?.id && get(data.reward.id, service.props.rewardMap);
-			if ( ! reward )
-				return;
+	insertChannelPointMessage(msg) {
+		const service = this.ChatService.first,
+			data = msg?.data?.redemption,
+			type = msg?.type,
+			isRedeemed = type === 'reward-redeemed',
+			isAutomaticReward = type === 'automatic-reward-redeemed';
 
-			if ( ! this.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') ) {
-				const msg = {
-					id: data.id,
-					type: this.chat_types.Message,
-					ffz_type: 'points',
-					ffz_reward: reward,
-					ffz_reward_highlight: isHighlightedReward(reward),
-					messageParts: [],
-					user: {
-						id: data.user.id,
-						login: data.user.login,
-						displayName: data.user.display_name
-					},
-					timestamp: new Date(message.data.timestamp || data.redeemed_at).getTime()
-				};
+		if ( ! data?.reward || ! service || (!isAutomaticReward && !isRedeemed) || service.props.channelID != data?.channel_id )
+			return;
 
-				service.postMessageToCurrentChannel({}, msg);
-			}
+		if ((isRedeemed && data.user_input) || (isAutomaticReward && data.reward.reward_type !== 'celebration'))
+			return;
 
-			//event.preventDefault();
+		let rewardID;
+		if (isAutomaticReward)
+			rewardID = `${inst.props.channelID}:${data.reward.reward_type}`;
+		else
+			rewardID = data.reward.id;
+
+		const reward = service.props.rewardMap[rewardID];
+		if ( ! reward )
+			return;
+
+		if ( this.chat.context.get('chat.filtering.blocked-types').has('ChannelPointsReward') )
+			return;
+
+		if ( this.last_points_redeem === data.id )
+			return;
+
+		this.last_points_redeem = data.id;
+
+		service.postMessageToCurrentChannel({}, {
+			id: data.id,
+			type: this.chat_types.Message,
+			ffz_type: 'points',
+			ffz_reward: reward,
+			ffz_reward_highlight: isHighlightedReward(reward),
+			messageParts: [],
+			user: {
+				id: data.user.id,
+				login: data.user.login,
+				displayName: data.user.display_name
+			},
+			timestamp: new Date(msg.data.timestamp || data.redeemed_at).getTime()
 		});
 	}
 
