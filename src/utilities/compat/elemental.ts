@@ -24,6 +24,7 @@ export default class Elemental extends Module<'site.elemental'> {
 	private _timer?: number | null;
 
 	private _timeout?: ReturnType<typeof setTimeout> | null;
+	private _clean_timeout?: ReturnType<typeof setTimeout> | null;
 	private _clean_all?: ReturnType<typeof requestAnimationFrame> | null;
 
 	constructor(name?: string, parent?: GenericModule) {
@@ -36,6 +37,8 @@ export default class Elemental extends Module<'site.elemental'> {
 		this._observer = null;
 		this._watching = new Set;
 		this._live_watching = null;
+
+		this.scheduleCleaning();
 	}
 
 	/** @internal */
@@ -74,6 +77,16 @@ export default class Elemental extends Module<'site.elemental'> {
 		this.cleanAll();
 	}
 
+	scheduleCleaning() {
+		if ( this._clean_timeout )
+			clearTimeout(this._clean_timeout);
+
+		this._clean_timeout = setTimeout(() => {
+			this._clean_timeout = null;
+			this.cleanAll();
+			this.scheduleCleaning();
+		}, 1000);
+	}
 
 	cleanAll() {
 		if ( this._clean_all )
@@ -182,7 +195,7 @@ export default class Elemental extends Module<'site.elemental'> {
 
 
 	listen(inst: ElementalWrapper<any>, ensure_live = true) {
-		if ( this._watching.has(inst) )
+		if ( this._watching.has(inst) || ! ensure_live )
 			return;
 
 		if ( ensure_live )
@@ -284,9 +297,18 @@ export class ElementalWrapper<
 
 	clean() {
 		const instances = Array.from(this.instances);
+		let removed = false;
 		for(const el of instances) {
-			if ( ! document.contains(el) )
-				this.remove(el);
+			if ( ! document.contains(el) ) {
+				this.remove(el, false);
+				removed = true;
+			}
+		}
+
+		if ( removed ) {
+			if ( this.limit === 0 || this.count < this.limit )
+				this.check();
+			this.schedule();
 		}
 	}
 
@@ -378,7 +400,7 @@ export class ElementalWrapper<
 		this.emit('mount', element);
 	}
 
-	remove(element: TElement) {
+	remove(element: TElement, do_schedule = true) {
 		const observer = element[this.param];
 		if ( observer ) {
 			observer.disconnect();
@@ -397,7 +419,8 @@ export class ElementalWrapper<
 		this.instances.delete(element);
 		this.count--;
 
-		this.schedule();
+		if ( do_schedule )
+			this.schedule();
 		this.emit('unmount', element);
 	}
 }

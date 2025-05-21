@@ -102,6 +102,7 @@ export default class Loadable extends Module {
 				proto = cls.prototype as ErrorBoundaryNode,
 				old_render = proto.render;
 
+			(proto as any)._ffz_wrapped_render = old_render;
 			proto.render = function() {
 				try {
 					const type = this.props.name;
@@ -181,14 +182,16 @@ export default class Loadable extends Module {
 	update(cmp: string) {
 		for(const inst of this.LoadableComponent.instances) {
 			const type = inst.props?.component;
-			if ( type && type === cmp )
+			if ( type && type === cmp ) {
 				inst.forceUpdate();
+			}
 		}
 
 		for(const inst of this.ErrorBoundaryComponent.instances) {
 			const name = inst.props?.name;
-			if ( name && name === cmp )
+			if ( name && name === cmp ) {
 				inst.forceUpdate();
+			}
 		}
 	}
 

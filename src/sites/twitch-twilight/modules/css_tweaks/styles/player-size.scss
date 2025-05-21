@@ -1,0 +1,6 @@
+.channel-root__info--with-chat .channel-info-content,
+.channel-root__player--with-chat,
+.persistent-player:has(+.channel-root--hold-chat),
+.persistent-player:has(+.channel-root--watch-chat) {
+	width: 100% !important;
+}

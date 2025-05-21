@@ -138,6 +138,13 @@ export default class Layout extends Module {
 			//changed: val => this.css_tweaks.toggle('portrait', val)
 		});
 
+		this.settings.add('layout.fix-player-size', {
+			requires: ['layout.inject-portrait', 'chat.use-width', 'layout.swap-sidebars'],
+			process(ctx) {
+				return ctx.get('layout.inject-portrait') || ctx.get('chat.use-width') || ctx.get('layout.swap-sidebars');
+			}
+		});
+
 		this.settings.add('layout.use-portrait-swapped', {
 			requires: ['layout.inject-portrait', 'layout.swap-sidebars'],
 			process(ctx) {
@@ -245,6 +252,7 @@ export default class Layout extends Module {
 
 		this.settings.getChanges('layout.portrait-extra-width', val => this.css_tweaks.setVariable('portrait-extra-width', `${val}rem`));
 		this.settings.getChanges('layout.portrait-extra-height', val => this.css_tweaks.setVariable('portrait-extra-height', `${val}rem`));
+		this.settings.getChanges('layout.fix-player-size', val => this.css_tweaks.toggle('player-size', val));
 
 		/*this.css_tweaks.toggle('portrait-chat', this.settings.get('layout.portrait-min-chat'));
 		this.css_tweaks.toggle('portrait', this.settings.get('layout.inject-portrait'));
