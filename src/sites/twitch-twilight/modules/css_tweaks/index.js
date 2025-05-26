@@ -481,6 +481,18 @@ export default class CSSTweaks extends Module {
 			changed: val => this.toggle('square-avatars', !val)
 		});
 
+		this.settings.add('channel.gift-sub-buttons.hide', {
+			default: false,
+			ui: {
+				order: -1,
+				path: 'Channel > Appearance >> General',
+				title: 'Hide the sub gifting buttons in the channel header and channel goals.',
+				description: 'Note: This will not hide sub gifting buttons in chat.',
+				component: 'setting-check-box'
+			},
+			changed: val => this.toggle('hide-channel-gift-sub-buttons', val)
+		});
+
 		/*this.settings.add('channel.hide-not-live-bar', {
 			default: false,
 			ui: {
@@ -515,6 +527,7 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('pinned-hype-chat', ! this.settings.get('chat.hype.show-pinned'));
 
 		this.toggle('square-avatars', ! this.settings.get('channel.round-avatars'));
+		this.toggle('hide-channel-gift-sub-buttons', this.settings.get('channel.gift-sub-buttons.hide'));
 		//this.toggleHide('not-live-bar', this.settings.get('channel.hide-not-live-bar'));
 		this.toggleHide('channel-live-ind', this.settings.get('channel.hide-live-indicator'));
 
