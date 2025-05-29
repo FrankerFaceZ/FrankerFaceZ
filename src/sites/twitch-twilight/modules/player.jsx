@@ -172,6 +172,17 @@ export default class Player extends PlayerBase {
 			changed: val => this.css_tweaks.toggleHide('player-extensions-overlay', val)
 		});
 
+		this.settings.add('player.prime-benefits.hide', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Appearance',
+				component: 'setting-check-box',
+				title: 'Hide the Prime Benefits dropdown button in the player overlay.',
+			},
+
+			changed: val => this.css_tweaks.toggleHide('player-prime-benefits', val)
+		});
+
 		/*this.settings.add('player.hide-rerun-bar', {
 			default: false,
 			ui: {
@@ -194,6 +205,7 @@ export default class Player extends PlayerBase {
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
 		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
 		this.css_tweaks.toggleHide('player-extensions-overlay', this.settings.get('player.extensions-overlay.hide'));
+		this.css_tweaks.toggleHide('player-prime-benefits', this.settings.get('player.prime-benefits.hide'));
 		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
 		//this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 

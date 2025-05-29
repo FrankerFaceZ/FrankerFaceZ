@@ -39,6 +39,7 @@ const CLASSES = {
 	'player-ext-hover': '.video-player__container[data-controls="false"] .extension-taskbar,.video-player__container[data-controls="false"] .extension-container,.video-player__container[data-controls="false"] .extensions-dock__layout,.video-player__container[data-controls="false"] .extensions-notifications,.video-player__container[data-controls="false"] .extensions-video-overlay-size-container',
 	'player-cast': '.video-player button:has(.tw-chromecast-button__icon)',
 	'player-extensions-overlay': '.video-player .video-player__overlay .extensions-dock__dock',
+	'player-prime-benefits': '.video-player .extensions-video-overlay-size-container div[data-test-selector="iframe_container_selector"] iframe.extension-view__iframe',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
