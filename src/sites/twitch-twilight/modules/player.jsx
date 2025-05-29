@@ -161,6 +161,17 @@ export default class Player extends PlayerBase {
 			}
 		});
 
+		this.settings.add('player.extensions-overlay.hide', {
+			default: false,
+			ui: {
+				path: 'Player > General >> Appearance',
+				component: 'setting-check-box',
+				title: 'Hide the extensions dock overlay.',
+			},
+
+			changed: val => this.css_tweaks.toggle('player-extensions-overlay', val)
+		});
+
 		/*this.settings.add('player.hide-rerun-bar', {
 			default: false,
 			ui: {
@@ -182,6 +193,7 @@ export default class Player extends PlayerBase {
 
 		this.css_tweaks.toggle('theatre-no-whispers', this.settings.get('player.theatre.no-whispers'));
 		this.css_tweaks.toggle('theatre-metadata', this.settings.get('player.theatre.metadata'));
+		this.css_tweaks.toggle('player-extensions-overlay', this.settings.get('player.extensions-overlay.hide'));
 		this.css_tweaks.toggleHide('player-event-bar', this.settings.get('player.hide-event-bar'));
 		//this.css_tweaks.toggleHide('player-rerun-bar', this.settings.get('player.hide-rerun-bar'));
 
