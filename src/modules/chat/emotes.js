@@ -81,10 +81,9 @@ function appearLeaveToKeyframes(source, multi = 1, offset = 0, has_var = false) 
 
 	for(const line of source) {
 		const pct = (line[0] * multi) + offset;
-
-		let vr, tx, scale, ty;
-		vr = has_var ? `var(--ffz-effect-transforms) ` : '';
-		tx = line[1] === 0 ? '' : `translateX(${line[1]}px) `;
+		const vr = has_var ? `var(--ffz-effect-transforms) ` : '';
+		const tx = line[1] === 0 ? '' : `translateX(${line[1]}px) `;
+		let scale, ty;
 
 		if ( line.length === 4 ) {
 			scale = `scale(${line[2]})`;
@@ -1168,7 +1167,8 @@ export default class Emotes extends Module {
 		if ( ! this.parent.context.get('chat.effects.enable') )
 			return null;
 
-		let filter, transformOrigin, transform, animation, animations = [];
+		const animations = [];
+		let filter, transformOrigin, transform, animation;
 
 		for(const input of this.activeEffectStyles) {
 			if ( (flags & input.flags) !== input.flags )
@@ -2184,7 +2184,7 @@ export default class Emotes extends Module {
 	}
 
 
-	processEmote(emote, set_id) {
+	static processEmote(emote, set_id) {
 		if ( ! emote.id || ! emote.name || ! emote.urls )
 			return null;
 
@@ -2269,7 +2269,7 @@ export default class Emotes extends Module {
 		if ( ! set )
 			throw new Error(`Invalid emote set "${set_id}"`);
 
-		const processed = this.processEmote(emote, set_id);
+		const processed = this.constructor.processEmote(emote, set_id);
 		if ( ! processed )
 			throw new Error('Invalid emote data object.');
 
@@ -2456,7 +2456,7 @@ export default class Emotes extends Module {
 		const bad_emotes = [];
 
 		for(const emote of ems) {
-			const processed = this.processEmote(emote, set_id);
+			const processed = this.constructor.processEmote(emote, set_id);
 			if ( ! processed ) {
 				bad_emotes.push(emote);
 				continue;
