@@ -308,7 +308,7 @@ export default class Channel extends Module {
 		let nvc = el.querySelector('.ffz--native-viewers-container');
 		if ( ! nvc ) {
 			let i = 0,
-				vel = el.querySelector('p[data-a-target="animated-channel-viewers-count"]');
+				vel = el.querySelector('strong[data-a-target="animated-channel-viewers-count"]');
 			while(vel && vel != el && i < 5) {
 				if ( vel.querySelector('svg') ) {
 					vel.classList.add('ffz--native-viewers-container');
@@ -406,7 +406,7 @@ export default class Channel extends Module {
 				channel = state?.memoizedState?.current?.result?.data?.user ??
 					state?.memoizedState?.current?.previousData?.user;
 
-				if ( !channel?.lastBroadcast?.game )
+				if ( !channel?.lastBroadcast || !channel?.stream?.game )
 					channel = null;
 
 				if ( ! channel )
@@ -416,12 +416,12 @@ export default class Channel extends Module {
 			return channel != null;
 		});
 
-		const game = channel?.lastBroadcast?.game,
+		const game = channel?.stream?.game,
 			title = channel?.lastBroadcast?.title;
 
 		if (game?.id !== el._ffz_game_cache || title !== el._ffz_title_cache)
 			this.settings.updateContext({
-				category: game?.displayName,
+				category: game?.name,
 				categoryID: game?.id,
 				title
 			});
@@ -513,7 +513,7 @@ export default class Channel extends Module {
 				},*/
 				el,
 				getViewerCount: () => {
-					const thing = cont.querySelector('p[data-a-target="animated-channel-viewers-count"]'),
+					const thing = cont.querySelector('strong[data-a-target="animated-channel-viewers-count"]'),
 						r = thing && this.fine.getReactInstance(thing),
 						c = r?.memoizedProps?.children;
 

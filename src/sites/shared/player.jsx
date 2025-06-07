@@ -1964,14 +1964,17 @@ export default class PlayerBase extends Module {
 				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			const thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
+			let thing = container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
 				//container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
 				container.querySelector('button[aria-label*="Theat"]') ||
 				container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
-			if ( thing ) {
-				container.insertBefore(cont, thing.parentElement);
-			} else
+			while(thing?.parentElement && thing.parentElement !== container)
+				thing = thing.parentElement;
+
+			if ( thing?.parentElement === container )
+				container.insertBefore(cont, thing);
+			else
 				container.appendChild(cont);
 
 		} else {
@@ -2077,16 +2080,19 @@ export default class PlayerBase extends Module {
 				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			const thing = container.querySelector('.ffz--player-reset button') ||
+			let thing = container.querySelector('.ffz--player-reset button') ||
 				container.querySelector('.ffz--player-pip button') ||
 				container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
 				//container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
 				container.querySelector('button[aria-label*="Theat"]') ||
 				container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
-			if ( thing ) {
-				container.insertBefore(cont, thing.parentElement);
-			} else
+			while(thing?.parentElement && thing.parentElement !== container)
+				thing = thing.parentElement;
+
+			if ( thing?.parentElement === container )
+				container.insertBefore(cont, thing);
+			else
 				container.appendChild(cont);
 
 		} else {
@@ -2111,11 +2117,6 @@ export default class PlayerBase extends Module {
 					'Clip (Alt+X)'
 				));
 	}
-
-	clickClip(inst, e) {
-		console.log('clicked clip', inst, e);
-	}
-
 
 	addResetButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
@@ -2157,15 +2158,18 @@ export default class PlayerBase extends Module {
 				{tip = (<div class="ffz-il-tooltip ffz-il-tooltip--align-right ffz-il-tooltip--up" role="tooltip" />)}
 			</div>);
 
-			const thing = container.querySelector('.ffz--player-pip button') ||
+			let thing = container.querySelector('.ffz--player-pip button') ||
 				container.querySelector('button[data-a-target="player-theatre-mode-button"]') ||
 				//container.querySelector('div:not(:has(.tw-tooltip)) button:not([data-a-target])') ||
 				container.querySelector('button[aria-label*="Theat"]') ||
 				container.querySelector('button[data-a-target="player-fullscreen-button"]');
 
-			if ( thing ) {
-				container.insertBefore(cont, thing.parentElement);
-			} else
+			while(thing?.parentElement && thing.parentElement !== container)
+				thing = thing.parentElement;
+
+			if ( thing?.parentElement === container )
+				container.insertBefore(cont, thing);
+			else
 				container.appendChild(cont);
 
 		} else {
