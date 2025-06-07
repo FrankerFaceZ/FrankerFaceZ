@@ -64,7 +64,7 @@
 	}
 
 	function handleMessage(id, payload) {
-		const port = connection.get(id);
+		const port = connections.get(id);
 		if ( port ) {
 			port.postMessage(payload);
 		}
@@ -88,7 +88,7 @@
 
 
 	// Let the extension send messages to the page directly.
-	browser.runtime.onMessage.addListener((msg, sender) => {
+	browser.runtime.onMessage.addListener(msg => {
 		if (msg?.type === 'ffz_to_page')
 			window.postMessage(msg.data, '*');
 
