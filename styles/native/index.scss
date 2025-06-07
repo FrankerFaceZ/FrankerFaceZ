@@ -1,14 +1,14 @@
-@import "button";
-@import "checkbox";
-@import "interactable";
-@import "text";
-@import "link";
-@import "card";
-@import "tag";
-@import "progress";
-@import "tooltip";
-@import "balloon";
-@import "slider";
+@use "button";
+@use "checkbox";
+@use "interactable";
+@use "text";
+@use "link";
+@use "card";
+@use "tag";
+@use "progress";
+@use "tooltip";
+@use "balloon";
+@use "slider";
 
 .tw-line-height-body {
     line-height: 1.5!important
