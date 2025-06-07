@@ -1,3 +1,4 @@
+@use "sass:meta";
 @font-face {
 	font-family: 'ffz-fontello';
 	src: url('~res/font/ffz-fontello.woff2') format('woff2'),
@@ -94,7 +95,7 @@
 	}
 }
 
-@import "./fontello/ffz-fontello-codes.scss";
+@include meta.load-css("fontello/ffz-fontello-codes.scss");
 
 .ffz-i-pd-1:before { margin-right: 1rem }
 .ffz-i-pd-2:before { margin-right: 2rem }

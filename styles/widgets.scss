@@ -1,21 +1,21 @@
-@import "./widgets/container.scss";
+@use "widgets/container.scss";
 
-@import "./widgets/main-menu.scss";
-@import "./widgets/menu-container.scss";
-@import "./widgets/tab-container.scss";
+@use "widgets/main-menu.scss";
+@use "widgets/menu-container.scss";
+@use "widgets/tab-container.scss";
 
-@import "./widgets/key-picker.scss";
-@import "./widgets/menu-tree.scss";
-@import "./widgets/profile-selector.scss";
-@import "./widgets/badge-visibility.scss";
-@import "./widgets/add-ons.scss";
+@use "widgets/key-picker.scss";
+@use "widgets/menu-tree.scss";
+@use "widgets/profile-selector.scss";
+@use "widgets/badge-visibility.scss";
+@use "widgets/add-ons.scss";
 
-@import "./widgets/color-picker.scss";
-@import "./widgets/icon-picker.scss";
+@use "widgets/color-picker.scss";
+@use "widgets/icon-picker.scss";
 
-@import "./widgets/chat-tester.scss";
+@use "widgets/chat-tester.scss";
 
-@import "./widgets/check-box.scss";
+@use "widgets/check-box.scss";
 
 .tw-display-inline { display: inline !important }
 .tw-width-auto { width: auto !important }
