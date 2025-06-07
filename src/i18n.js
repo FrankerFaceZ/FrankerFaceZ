@@ -187,7 +187,7 @@ export default class TranslationManager extends Module {
 				},
 				data: () => {
 					const out = [], now = new Date;
-					for (const [key, fmt] of Object.entries(this._.formats.date)) {
+					for (const [key] of Object.entries(this._.formats.date)) {
 						out.push({
 							value: key, title: `${this.formatDate(now, key)} (${key})`
 						})
@@ -217,7 +217,7 @@ export default class TranslationManager extends Module {
 				},
 				data: () => {
 					const out = [], now = new Date;
-					for (const [key,fmt] of Object.entries(this._.formats.time)) {
+					for (const [key] of Object.entries(this._.formats.time)) {
 						out.push({
 							value: key, title: `${this.formatTime(now, key)} (${key})`
 						})
@@ -247,7 +247,7 @@ export default class TranslationManager extends Module {
 				},
 				data: () => {
 					const out = [], now = new Date;
-					for (const [key,fmt] of Object.entries(this._.formats.datetime)) {
+					for (const [key] of Object.entries(this._.formats.datetime)) {
 						out.push({
 							value: key, title: `${this.formatDateTime(now, key)} (${key})`
 						})
