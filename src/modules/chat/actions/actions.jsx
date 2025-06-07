@@ -802,7 +802,7 @@ export default class Actions extends Module {
 		if ( u ) {
 			u.moderator = line.props.isCurrentUserModerator;
 			u.staff = line.props.isCurrentUserStaff;
-			u.reply_mode = this.parent.context.get('chat.replies.style'),
+			u.reply_mode = this.parent.context.get('chat.replies.style');
 			u.can_reply = can_reply;
 		}
 
