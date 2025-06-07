@@ -442,14 +442,12 @@ export const Mentions = {
 		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
 			priority = this.context.get('chat.filtering.mention-priority');
 
-		let login, display, mentionable = false;
+		let login, display = false;
 		if ( user && user.login && ! can_highlight_user ) {
 			login = user.login.toLowerCase();
 			display = user.displayName && user.displayName.toLowerCase();
 			if ( display === login )
 				display = null;
-
-			mentionable = true;
 		}
 
 		const out = [];
@@ -464,9 +462,9 @@ export const Mentions = {
 			for(const segment of token.text.split(/ +/)) {
 				const match = /^(@?)(\S+?)(?:\b|$)/.exec(segment);
 				if ( match ) {
-					let recipient = match[2],
-						has_at = match[1] === '@',
-						mentioned = false;
+					const recipient = match[2],
+						has_at = match[1] === '@';
+					let mentioned = false;
 
 					const rlower = recipient ? recipient.toLowerCase() : '',
 						color = this.color_cache ? this.color_cache.get(rlower) : null;
@@ -1696,6 +1694,7 @@ export const AddonEmotes = {
 					}
 
 					// Whip up a special preview.
+					/* eslint-disable indent -- disagrees with react/jsx-indent-props */
 					preview = (<div class="ffz-effect-tip">
 						<img
 							src={target.src}
@@ -1713,20 +1712,21 @@ export const AddonEmotes = {
 						>
 							{as_bg
 								? <div
-									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
-									style={style}
+										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+										style={style}
 								/>
 								: <img
-									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
-									src={target.src}
-									srcSet={target.srcSet}
-									style={style}
-									height={style ? undefined : `${target.height * 2}px`}
-									onLoad={tip.update}
+										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+										src={target.src}
+										srcSet={target.srcSet}
+										style={style}
+										height={style ? undefined : `${target.height * 2}px`}
+										onLoad={tip.update}
 								/>
 							}
 						</div>
 					</div>);
+					/* eslint-enable indent */
 				}
 			}
 
