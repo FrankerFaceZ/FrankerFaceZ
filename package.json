@@ -51,7 +51,7 @@
 		"raw-loader": "^4.0.2",
 		"rimraf": "^5.0.10",
 		"sass": "^1.89.1",
-		"sass-loader": "^13.3.2",
+		"sass-loader": "^16.0.5",
 		"semver": "^7.7.2",
 		"typedoc": "^0.25.13",
 		"typedoc-plugin-markdown": "^3.17.1",
