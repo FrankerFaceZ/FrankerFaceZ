@@ -657,7 +657,7 @@ export default class Badges extends Module {
 
 				const existing = this.badges[badge_id];
 				if ( existing && existing.addon !== addon_id )
-					module.log.warn('[DEV-CHECK] Removed un-owned badge with chat.badges.removeBadge():', key, ' owner:', existing.addon ?? 'ffz');
+					module.log.warn('[DEV-CHECK] Removed un-owned badge with chat.badges.removeBadge():', badge_id, ' owner:', existing.addon ?? 'ffz');
 
 				return this.removeBadge(badge_id, ...args);
 			};
