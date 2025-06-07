@@ -360,8 +360,7 @@ export const Video = {
 			return null;
 
 		const video = result.data.video,
-			game = video.game,
-			game_display = game && game.displayName;
+			game = video.game;
 
 		const fragments = {
 			title: video.title,
