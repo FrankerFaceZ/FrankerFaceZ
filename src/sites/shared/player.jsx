@@ -633,7 +633,7 @@ export default class PlayerBase extends Module {
 			default: false,
 			ui: {
 				path: 'Player > General >> Playback',
-				title: "Pause/Unpause the player by clicking.",
+				title: 'Pause/Unpause the player by clicking.',
 				component: 'setting-check-box'
 			}
 		});

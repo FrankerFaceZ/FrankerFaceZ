@@ -42,7 +42,7 @@ export default class BaseSite extends Module {
 		if ( this._reactDom )
 			return this._reactDom;
 
-		let reactDom = this.resolve('site.web_munch')?.getModule?.('react-dom');
+		const reactDom = this.resolve('site.web_munch')?.getModule?.('react-dom');
 		if ( reactDom?.createPortal )
 			return this._reactDom = reactDom;
 	}

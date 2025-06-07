@@ -93,7 +93,7 @@ export default class Room {
 			this.manager.room_ids[this._id] = null;
 	}
 
-0
+	0
 	merge(other) {
 		if ( ! this.login && other.login )
 			this.login = other.login;

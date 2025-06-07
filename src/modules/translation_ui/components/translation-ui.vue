@@ -4,7 +4,9 @@
 		class="ffz-dialog tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
 	>
 		<header class="tw-c-background-base tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
-			<h3 class="ffz-i-zreknarf ffz-i-pd-1">{{ t('i18n.ui.title', 'Translation Tester') }}</h3>
+			<h3 class="ffz-i-zreknarf ffz-i-pd-1">
+				{{ t('i18n.ui.title', 'Translation Tester') }}
+			</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
 				<div class="tw-search-input">
 					<label for="ffz-main-menu.search" class="tw-hide-accessible">{{ t('i18n.ui.search', 'Search Strings') }}</label>

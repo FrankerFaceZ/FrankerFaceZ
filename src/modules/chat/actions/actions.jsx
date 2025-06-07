@@ -27,7 +27,7 @@ export default class Actions extends Module {
 		this.actions = {};
 		this.renderers = {};
 
-		this.filterAction = (x) => x.appearance &&
+		this.filterAction = x => x.appearance &&
 			this.renderers[x.appearance.type] &&
 			(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
 			(! x.action || this.actions[x.action]);

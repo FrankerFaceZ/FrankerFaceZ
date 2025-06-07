@@ -100,8 +100,8 @@
 				<input
 					id="ffz:editor:name"
 					ref="name"
-					:disabled="isEphemeral"
 					v-model="name"
+					:disabled="isEphemeral"
 					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				>
 			</div>
@@ -114,8 +114,8 @@
 				<textarea
 					id="ffz:editor:description"
 					ref="desc"
-					:disabled="isEphemeral"
 					v-model="desc"
+					:disabled="isEphemeral"
 					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				/>
 			</div>
@@ -129,8 +129,8 @@
 					<key-picker
 						id="ffz:editor:hotkey"
 						ref="hotkey"
-						:disabled="isEphemeral"
 						v-model="hotkey"
+						:disabled="isEphemeral"
 					/>
 				</div>
 

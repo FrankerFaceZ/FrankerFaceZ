@@ -1184,7 +1184,7 @@ export default class Input extends Module {
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
 			if (match_type < emoteMatchingType)
-					continue;
+				continue;
 
 			const element = {
 				current: input,

@@ -541,7 +541,7 @@ export default {
 			prof.update({
 				i18n_key: undefined,
 				desc_i18n_key: undefined,
-				description: `${prof.description ? prof.description + '\n' : ''}${this.t('setting.backup-restore.imported-at', 'Imported at {now,datetime}.', {now: new Date})}`
+				description: `${prof.description ? `${prof.description  }\n` : ''}${this.t('setting.backup-restore.imported-at', 'Imported at {now,datetime}.', {now: new Date})}`
 			});
 
 			let i = 0;

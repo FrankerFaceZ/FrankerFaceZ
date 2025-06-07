@@ -76,7 +76,7 @@ export const Clip = {
 		if ( ! clip || ! clip.broadcaster )
 			return null;
 
-			const game = clip.game,
+		const game = clip.game,
 			game_display = game && game.displayName;
 
 		let user = {
@@ -406,7 +406,7 @@ export const Video = {
 				}
 			};
 
-		let length = video.lengthSeconds;
+		const length = video.lengthSeconds;
 
 		return {
 			v: 5,
@@ -483,7 +483,7 @@ export const Video = {
 							type: 'icon',
 							name: 'twitch'
 						},
-						" Twitch • ",
+						' Twitch • ',
 						{
 							type: 'format',
 							format: 'datetime',

@@ -827,7 +827,7 @@ export default {
 		},
 
 		maybeDynamic(data) {
-			let ap = data.appearance;
+			const ap = data.appearance;
 			if (ap?.type === 'dynamic') {
 				const act = this.action_def,
 					ffz = this.vuectx.getFFZ(),

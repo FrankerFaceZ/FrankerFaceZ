@@ -97,7 +97,7 @@
 
 	// Now, inject our script into the page context.
 	const HOST = location.hostname,
-		SERVER = browser.runtime.getURL("web"),
+		SERVER = browser.runtime.getURL('web'),
 		script = document.createElement('script');
 
 	let FLAVOR =

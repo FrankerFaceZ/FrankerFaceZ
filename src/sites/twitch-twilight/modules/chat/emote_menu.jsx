@@ -2491,8 +2491,8 @@ export default class EmoteMenu extends Module {
 
 					title = (provider === 'ffz-main' || emote_set.title_is_channel)
 						? source_name
-								? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
-								: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
+							? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
+							: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
 						: (emote_set.title || t.i18n.t('emote-menu.unknown-set', `Set #{set_id}`, {set_id: emote_set.id}));
 
 				let sort_key = pdata && pdata.sort_key || emote_set.sort;
@@ -2572,7 +2572,7 @@ export default class EmoteMenu extends Module {
 								effect_prefix: emote.modifier ? emote.modifier_prefix : false,
 								name: emote.name,
 								favorite: is_fav,
-								locked: locked,
+								locked,
 								hidden: known_hidden.includes(emote.id),
 								height: emote.height,
 								width: emote.width

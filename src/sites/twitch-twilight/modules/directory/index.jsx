@@ -873,9 +873,9 @@ export default class Directory extends Module {
 		else if ( ! el.contains(el.ffz_flags_el) )
 			container.appendChild(el.ffz_flags_el);
 
-		el.ffz_flags_tt.textContent = this.i18n.t('metadata.flags.tooltip', 'Intended for certain audiences. May contain:')
-			+ '\n\n'
-			+ el._ffz_flags.map(x => x.localizedName).join('\n');
+		el.ffz_flags_tt.textContent = `${this.i18n.t('metadata.flags.tooltip', 'Intended for certain audiences. May contain:')
+			 }\n\n${
+			 el._ffz_flags.map(x => x.localizedName).join('\n')}`;
 	}
 
 	clearFlags(el) {

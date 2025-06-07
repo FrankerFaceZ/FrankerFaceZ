@@ -16,7 +16,6 @@
 				<figure class="ffz-emote-card__live-indicator tw-mg-r-05" />
 				{{ t('emote-card.live', 'LIVE') }}
 			</div>
-
 		</section>
 		<template v-if="isSubscriptionEmote">
 			<p v-if="emote.unlocked">
@@ -75,7 +74,7 @@
 				:data-title="extra.name"
 				class="ffz-tooltip"
 			>
-				<img :src="extra.src" :srcset="extra.srcSet" :alt="extra.name" />
+				<img :src="extra.src" :srcset="extra.srcSet" :alt="extra.name">
 			</div>
 		</div>
 		<div v-if="emote.channel_id" class="tw-mg-t-1 tw-flex">
