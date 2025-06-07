@@ -384,7 +384,7 @@ if ( DEV_SERVER )
 				next();
 			});
 
-			return middlewares;
+			return middlewares.filter(middleware => middleware.name !== 'cross-origin-header-check');
 		}
 	};
 
