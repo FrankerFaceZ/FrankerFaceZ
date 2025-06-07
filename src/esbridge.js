@@ -32,7 +32,7 @@ class FFZESBridge {
 
 		window.addEventListener('message', this.onWindowMessage);
 
-		document.addEventListener('readystatechange', event => {
+		document.addEventListener('readystatechange', () => {
 			if ( document.documentElement )
 				document.documentElement.dataset.ffzEsbridge = true;
 		});
