@@ -1,12 +1,12 @@
-@import 'icons';
-@import 'tooltips';
-@import 'widgets';
-@import 'dialog';
+@use 'icons';
+@use 'tooltips';
+@use 'widgets';
+@use 'dialog';
 
-@import 'native/index';
-@import 'structure/index';
+@use 'native/index';
+@use 'structure/index' as index2;
 
-@import 'chat';
+@use 'chat';
 
 @keyframes ffz-rotateplane {
 	0% { transform: rotateY(90deg) rotateX(180deg) }
