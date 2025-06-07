@@ -1549,7 +1549,7 @@ export default class Chat extends Module {
 			if ( has(LINK_PROVIDERS, key) )
 				this.addLinkProvider(LINK_PROVIDERS[key]);
 
-		this.on('chat:reload-data', flags => {
+		this.on('chat:reload-data', () => {
 			for(const room of this.iterateRooms())
 				room.load_data();
 		});
@@ -1565,7 +1565,7 @@ export default class Chat extends Module {
 
 		this.triggered_reload = false;
 
-		this.on('chat:ffz-command:reload', event => {
+		this.on('chat:ffz-command:reload', () => {
 			if ( this.triggered_reload )
 				return;
 
@@ -2871,7 +2871,7 @@ export default class Chat extends Module {
 	}
 
 
-	onProviderChange(key, value) {
+	onProviderChange(key) {
 		if ( key !== 'agreed-tos' && key !== 'declined-tos' )
 			return;
 
