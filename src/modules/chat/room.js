@@ -176,10 +176,11 @@ export default class Room {
 
 
 
+	/* TODO: This
 	_unloadAddon(addon_id) {
-		// TODO: This
 		return 0;
 	}
+	*/
 
 
 	get id() {
