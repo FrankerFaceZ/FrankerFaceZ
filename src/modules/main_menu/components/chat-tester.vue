@@ -36,7 +36,7 @@
 					class="tw-block tw-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p"
 					@blur="updateMessage"
 					@input="onMessageChange"
-				/>
+				>
 				<textarea
 					ref="message"
 					class="tw-block tw-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium"
@@ -151,17 +151,25 @@
 				{{ tTime(item.timestamp, 'HH:mm:ss') }}
 			</time>
 			<div v-if="item.pubsub" class="tw-flex-grow-1">
-				<div class="tw-mg-b-05 tw-border-b tw-pd-b-05">{{ item.topic }}</div>
+				<div class="tw-mg-b-05 tw-border-b tw-pd-b-05">
+					{{ item.topic }}
+				</div>
 				<div v-html="highlightJson(item.data)" />
 			</div>
 			<div v-else-if="item.chat" class="tw-flex-grow-1">
 				<div v-if="item.tags" class="ffz-ct--tags">
-					@<template v-for="(tag, key) in item.tags"><span class="ffz-ct--tag">{{ key }}</span>=<span class="ffz-ct--tag-value">{{ tag }}</span>;</template>
+					@<template v-for="(tag, key) in item.tags">
+						<span class="ffz-ct--tag">{{ key }}</span>=<span class="ffz-ct--tag-value">{{ tag }}</span>;
+					</template>
 				</div>
 				<div class="ffz-ct--prefix">
-					<template v-if="item.prefix">:<span v-if="item.user" class="ffz-ct--user">{{ item.user }}</span><span class="ffz-ct--prefix">{{ item.prefix }}</span></template>
+					<template v-if="item.prefix">
+						:<span v-if="item.user" class="ffz-ct--user">{{ item.user }}</span><span class="ffz-ct--prefix">{{ item.prefix }}</span>
+					</template>
 					<span class="ffz-ct--command">{{ item.command }}</span>
-					<template v-if="item.channel">#<span class="ffz-ct--channel">{{ item.channel }}</span></template>
+					<template v-if="item.channel">
+						#<span class="ffz-ct--channel">{{ item.channel }}</span>
+					</template>
 				</div>
 				<div v-if="item.last_param" class="ffz-ct--params">
 					<span v-for="para in item.params" class="ffz-ct--param">{{ para }}</span>
@@ -212,8 +220,8 @@ const IGNORE_COMMANDS = [
 
 let LOADED_SAMPLES = [
 	{
-		"name": "Ping",
-		"data": "PING :tmi.twitch.tv"
+		'name': 'Ping',
+		'data': 'PING :tmi.twitch.tv'
 	}
 ];
 
@@ -228,7 +236,7 @@ export default {
 		const message = state?.ffz_ct_message ?? samples[0].data;
 		const topic = state?.ffz_ct_topic ?? samples[0].topic ?? '';
 
-		let is_custom = true;
+		const is_custom = true;
 		/*for(const item of samples) {
 			if ( ! item.topic )
 				item.topic = '';
@@ -384,7 +392,7 @@ export default {
 			if ( conn.ws )
 				conn.ws.onmessage = conn.onSocketMessage;
 
-			this.addLog("Started capturing chat.");
+			this.addLog('Started capturing chat.');
 
 			this.listening_chat = true;
 		},
@@ -400,7 +408,7 @@ export default {
 			if ( conn.ws )
 				conn.ws.onmessage = conn.onSocketMessage;
 
-			this.addLog("Stopped capturing chat.");
+			this.addLog('Stopped capturing chat.');
 
 			this.listening_chat = false;
 		},
@@ -451,7 +459,7 @@ export default {
 				return;
 
 			this.chat.on('site.subpump:pubsub-message', this.handlePubsub, this);
-			this.addLog("Started capturing PubSub.");
+			this.addLog('Started capturing PubSub.');
 
 			this.listening_pubsub = true;
 		},
@@ -461,7 +469,7 @@ export default {
 				return;
 
 			this.chat.off('site.subpump:pubsub-message', this.handlePubsub, this);
-			this.addLog("Stopped capturing PubSub.");
+			this.addLog('Stopped capturing PubSub.');
 
 			this.listening_pubsub = false;
 		},
@@ -589,7 +597,7 @@ export default {
 					data = JSON.parse(this.message);
 				} catch(err) {
 					console.error(err);
-					alert("Unable to parse message.");
+					alert('Unable to parse message.');
 					return;
 				}
 
@@ -612,7 +620,7 @@ export default {
 
 				} catch (err) {
 					console.error(err);
-					alert("Unable to parse message.");
+					alert('Unable to parse message.');
 					return;
 				}
 			}

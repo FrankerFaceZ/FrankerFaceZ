@@ -7,8 +7,8 @@
 		</div>
 		<template v-else>
 			<button
-				@click="accept"
 				class="tw-button tw-mg-b-05"
+				@click="accept"
 			>
 				<span class="tw-button__text">
 					{{ acceptText }}
@@ -16,8 +16,8 @@
 			</button>
 			<button
 				v-if="! declined"
-				@click="reject"
 				class="tw-button tw-button--text tw-block"
+				@click="reject"
 			>
 				<span class="tw-button__text">
 					{{ t('tooltip.decline-tos', 'I do not accept.') }}

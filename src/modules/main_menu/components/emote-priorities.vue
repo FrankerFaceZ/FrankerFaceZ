@@ -56,17 +56,19 @@
 						<img
 							:src="provider.icon"
 							class="tw-image"
-						/>
+						>
 					</div>
 					<div>
 						<h4 v-if="! provider.name">
 							{{ t('emote-source.unknown', 'Unknown ({id})', provider) }}
 						</h4>
-						<h4 v-else>{{
-							provider.i18n_key
-								? t(provider.i18n_key, provider.name, provider)
-								: provider.name
-						}}</h4>
+						<h4 v-else>
+							{{
+								provider.i18n_key
+									? t(provider.i18n_key, provider.name, provider)
+									: provider.name
+							}}
+						</h4>
 						<div v-if="provider.description">
 							{{ provider.desc_i18n_key ? t(provider.desc_i18n_key, provider.description, provider) : provider.description }}
 						</div>
@@ -83,7 +85,7 @@ import settingMixin from '../setting-mixin';
 import Sortable from 'sortablejs';
 import { deep_copy } from 'utilities/object';
 
-let last_id = 0;
+const last_id = 0;
 
 export default {
 	mixins: [settingMixin],

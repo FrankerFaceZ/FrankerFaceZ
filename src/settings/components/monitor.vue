@@ -42,10 +42,6 @@ export default {
 		}
 	},
 
-	created() {
-		this.detectMonitors();
-	},
-
 	watch: {
 		selected() {
 			if ( ! this.ready || ! this.selected )
@@ -60,6 +56,10 @@ export default {
 			data.width = this.selected.width;
 			data.height = this.selected.height;
 		}
+	},
+
+	created() {
+		this.detectMonitors();
 	},
 
 	methods: {

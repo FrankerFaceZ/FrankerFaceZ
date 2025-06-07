@@ -40,7 +40,7 @@ export const pin = {
 	},
 
 	hidden(data, message, current_room, current_user, mod_icons, instance) {
-		let line = instance;
+		const line = instance;
 
 		if ( ! line )
 			return true;

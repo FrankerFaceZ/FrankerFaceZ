@@ -644,7 +644,7 @@ export default class Metadata extends Module {
 				if ( order != null )
 					el.style.order = order;
 
-				let subcontainer = container;
+				const subcontainer = container;
 
 				/*if ( button )
 					subcontainer = container.querySelector('.tw-flex:last-child') || container;

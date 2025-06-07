@@ -58,7 +58,6 @@
 					{{ t('setting.filter.add-default-tip', 'Add all of the default values to this profile.') }}
 				</span>
 			</button>
-
 		</div>
 
 		<filter-editor
@@ -68,7 +67,6 @@
 			:preview="preview"
 			@input="onInput"
 		/>
-
 	</div>
 </template>
 

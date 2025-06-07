@@ -673,7 +673,7 @@ function header_vue(token, h, ctx) {
 			background = renderWithCapture(token.background, h, ctx, token.markdown).content;
 	}
 
-	let subtok = resolveToken(token.sub_logo, ctx);
+	const subtok = resolveToken(token.sub_logo, ctx);
 	if ( ! token.compact && subtok && canShowImage(subtok, ctx) ) {
 		const aspect = subtok.aspect;
 
@@ -848,7 +848,7 @@ function header_normal(token, createElement, ctx) {
 			background = renderWithCapture(token.background, createElement, ctx, token.markdown).content;
 	}
 
-	let subtok = resolveToken(token.sub_logo, ctx);
+	const subtok = resolveToken(token.sub_logo, ctx);
 	if ( ! token.compact && subtok && canShowImage(subtok, ctx) ) {
 		const aspect = subtok.aspect;
 
@@ -1124,7 +1124,7 @@ function findMatchingLocale(locale, list) {
 	}
 
 	// What about partials?
-	let prefixed = `${locale.toLowerCase()}-`;
+	const prefixed = `${locale.toLowerCase()}-`;
 	for(const item of list) {
 		if ( item.toLowerCase().startsWith(prefixed) )
 			return item;
@@ -1141,7 +1141,7 @@ TOKEN_TYPES.i18n_select = function(token, createElement, ctx) {
 
 	// What locale and choices do we have.
 	const choices = token.choices || {};
-	let locale = ctx.i18n?.locale ?? 'en';
+	const locale = ctx.i18n?.locale ?? 'en';
 
 	// Try to find a valid match, or use the default.
 	let selected = findMatchingLocale(locale, Object.keys(choices));
@@ -1182,7 +1182,7 @@ TOKEN_TYPES.link = function(token, createElement, ctx) {
 		klass.push(`ffz-link--inherit`);
 
 	if ( ctx.vue ) {
-		let on = {};
+		const on = {};
 		if ( ctx.link_click_handler )
 			on.click = ctx.link_click_handler;
 
@@ -1317,8 +1317,8 @@ TOKEN_TYPES.player = function(token, createElement, ctx) {
 	const style = {};
 
 	const aspect = token.active_aspect ?? token.aspect;
-		if ( aspect )
-			style.aspectRatio = aspect;
+	if ( aspect )
+		style.aspectRatio = aspect;
 
 	if ( ctx.vue )
 		return createElement(token.audio ? 'audio' : 'video', {

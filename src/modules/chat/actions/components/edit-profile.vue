@@ -15,7 +15,9 @@
 					v-for="profile in profiles"
 					:key="profile.value"
 					:value="profile.value"
-				>{{ profile.i18n_key ? t(profile.i18n_key, profile.name) : profile.name }}</option>
+				>
+					{{ profile.i18n_key ? t(profile.i18n_key, profile.name) : profile.name }}
+				</option>
 			</select>
 		</div>
 	</div>
