@@ -1,15 +1,15 @@
-@import 'styles/main.scss';
+@use '../../../../styles/main.scss';
 
-@import 'menu_button';
-@import 'player';
-@import 'channel';
+@use 'menu_button';
+@use 'player';
+@use 'channel';
 
-@import 'chat';
-@import 'directory';
+@use 'chat';
+@use 'directory';
 
-@import 'fixes';
+@use 'fixes';
 
 //@import 'host_options';
-@import 'featured_follow';
-@import 'mod_card';
-@import 'easteregg';
+@use 'featured_follow';
+@use 'mod_card';
+@use 'easteregg';
