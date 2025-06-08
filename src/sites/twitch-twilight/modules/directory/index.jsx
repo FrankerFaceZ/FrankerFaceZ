@@ -671,9 +671,9 @@ export default class Directory extends Module {
 
 	clearCard(el, for_exp = false) {
 		this.clearUptime(el);
-		this.clearFlags(el);
+		this.constructor.clearFlags(el);
 
-		const cont = this._getTopRightContainer(el, for_exp);
+		const cont = this.constructor._getTopRightContainer(el, for_exp);
 		if ( cont )
 			cont.remove();
 
@@ -851,16 +851,16 @@ export default class Directory extends Module {
 
 	updateFlags(el, for_exp = false) {
 		if ( ! document.contains(el) )
-			return this.clearFlags(el);
+			return this.constructor.clearFlags(el);
 
 		const setting = this.settings.get('directory.show-flags');
 
 		if ( ! setting || ! el._ffz_flags?.length )
-			return this.clearFlags(el);
+			return this.constructor.clearFlags(el);
 
-		const container = this._getTopRightContainer(el, true, for_exp);
+		const container = this.constructor._getTopRightContainer(el, true, for_exp);
 		if ( ! container )
-			return this.clearFlags(el);
+			return this.constructor.clearFlags(el);
 
 		if ( ! el.ffz_flags_el )
 			container.appendChild(el.ffz_flags_el = (<div class="tw-mg-y-05 ffz-flags-element tw-relative ffz-il-tooltip__container">
@@ -874,11 +874,11 @@ export default class Directory extends Module {
 			container.appendChild(el.ffz_flags_el);
 
 		el.ffz_flags_tt.textContent = `${this.i18n.t('metadata.flags.tooltip', 'Intended for certain audiences. May contain:')
-			 }\n\n${
-			 el._ffz_flags.map(x => x.localizedName).join('\n')}`;
+		}\n\n${
+			el._ffz_flags.map(x => x.localizedName).join('\n')}`;
 	}
 
-	clearFlags(el) {
+	static clearFlags(el) {
 		if ( el.ffz_flags_el ) {
 			el.ffz_flags_el.remove();
 			el.ffz_flags_tt = null;
@@ -887,7 +887,7 @@ export default class Directory extends Module {
 	}
 
 
-	_getTopRightContainer(el, should_create = true, for_exp = false) {
+	static _getTopRightContainer(el, should_create = true, for_exp = false) {
 		let cont = el._ffz_top_right ?? el.querySelector('.ffz-top-right');
 		if ( cont || ! should_create )
 			return cont;
@@ -916,7 +916,7 @@ export default class Directory extends Module {
 			return this.clearUptime(el);
 
 		const setting = this.settings.get('directory.uptime'),
-			container = this._getTopRightContainer(el, setting > 0, for_exp);
+			container = this.constructor._getTopRightContainer(el, setting > 0, for_exp);
 
 		//const container = el.querySelector('a[data-a-target="preview-card-image-link"] > div'),
 		//	setting = this.settings.get('directory.uptime');
