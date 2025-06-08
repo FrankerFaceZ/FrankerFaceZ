@@ -359,8 +359,7 @@ export const Video = {
 		if ( ! result || ! result.data || ! result.data.video || ! result.data.video.owner )
 			return null;
 
-		const video = result.data.video,
-			game = video.game;
+		const video = result.data.video;
 
 		const fragments = {
 			title: video.title,
