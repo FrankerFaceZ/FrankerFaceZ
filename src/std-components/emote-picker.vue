@@ -232,7 +232,7 @@ export default {
 				id: val.id,
 				name: val.name,
 				src: val.src
-			},
+			};
 			this.$emit('input', this.val);
 			if ( close )
 				this.open = false;
