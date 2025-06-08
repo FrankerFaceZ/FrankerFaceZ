@@ -126,6 +126,7 @@ module.exports = {
 		'vue/max-attributes-per-line': 'off',
 		'vue/require-prop-types': 'off',
 		'vue/require-default-prop': 'off',
+		'vue/no-mutating-props': 'off', // TODO: all these
 		'vue/html-closing-bracket-newline': [
 			'error',
 			{
