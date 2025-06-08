@@ -462,9 +462,9 @@ export default class EmoteMenu extends Module {
 				this._ffz_no_scan = false;
 
 				if ( ! this.props ||
-					 this.props.emotePickerSource === 'bits-rewards' ||
-					 ! has(this.props, 'channelID') ||
-					 ! t.chat.context.get('chat.emote-menu.enabled')
+					this.props.emotePickerSource === 'bits-rewards' ||
+					! has(this.props, 'channelID') ||
+					! t.chat.context.get('chat.emote-menu.enabled')
 				) {
 					return old_render.call(this);
 				}
@@ -980,8 +980,8 @@ export default class EmoteMenu extends Module {
 				if ( ! data.all_locked || ! data.locks )
 					return null;
 
-				let lock = data.locks[this.state.unlocked],
-					locks = Object.values(data.locks).filter(x => x.id !== 'cheer'),
+				let lock = data.locks[this.state.unlocked];
+				const locks = Object.values(data.locks).filter(x => x.id !== 'cheer'),
 					has_ffz = locks.filter(x => x.is_ffz).length > 0;
 
 				if ( ! lock && data.locks.length === 1 )
@@ -1792,11 +1792,11 @@ export default class EmoteMenu extends Module {
 				const state = Object.assign({}, old_state),
 
 					data = state.set_data || {},
-					modifiers = state.emote_modifiers = {},
 					channel = state.channel_sets = [],
 					all = state.all_sets = [],
 					effects = state.effect_sets = [],
 					favorites = state.favorites = [];
+					state.emote_modifiers = {};
 
 				// If we're still loading, don't set any data.
 				if ( props.loading || props.error || state.loading )
@@ -2344,8 +2344,8 @@ export default class EmoteMenu extends Module {
 				}
 
 				let wants_resub_info = false,
-					wants_plan_info = false,
 					has_new_effects = false;
+				const wants_plan_info = false;
 
 				const unlocked_effects = [...t.settings.provider.get('unlocked-effects', [])];
 
@@ -2395,7 +2395,7 @@ export default class EmoteMenu extends Module {
 							section.emotes.sort(sort_emotes);
 
 							if ( use_effect_tab && ! effects.includes(section) && section.has_effects ) {
-								has_new_effects = this.checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
+								has_new_effects = this.constructor.checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
 								effects.push(section);
 							} else if ( ! all.includes(section) )
 								all.push(section);
@@ -2414,7 +2414,7 @@ export default class EmoteMenu extends Module {
 							section.emotes.sort(sort_emotes);
 
 							if ( use_effect_tab && ! effects.includes(section) && section.has_effects ) {
-								has_new_effects = this.checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
+								has_new_effects = this.constructor.checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
 								effects.push(section);
 
 							} else if ( ! all.includes(section) )
@@ -2454,7 +2454,7 @@ export default class EmoteMenu extends Module {
 			}
 
 
-			checkNewEffects(emotes, unlocked) {
+			static checkNewEffects(emotes, unlocked) {
 				let added = false;
 				for(const emote of emotes) {
 					if ( emote && ! emote.locked && emote.id && emote.provider === 'ffz' && ! unlocked.includes(emote.id) ) {
@@ -2696,7 +2696,7 @@ export default class EmoteMenu extends Module {
 				if ( ! loading )
 					this.loadedOnce = true;
 
-				let tab, sets, is_emoji, is_favs, is_effect;
+				let tab, sets, is_emoji, is_favs;
 
 				if ( no_tabs ) {
 					sets = [
@@ -2714,7 +2714,6 @@ export default class EmoteMenu extends Module {
 
 					is_emoji = tab === 'emoji';
 					is_favs = tab === 'fav';
-					is_effect = tab === 'effect';
 
 					switch(tab) {
 						case 'fav':
