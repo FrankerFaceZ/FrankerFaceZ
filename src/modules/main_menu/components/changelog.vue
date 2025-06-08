@@ -149,7 +149,7 @@
 
 import {get} from 'utilities/object';
 
-const TITLE_MATCH = /^(.+?)?\s*v?(\d+\.\d+\.\d+(?:\-[a-z0-9-]+)?)$/i,
+const TITLE_MATCH = /^(.+?)?\s*v?(\d+\.\d+\.\d+(?:-[a-z0-9-]+)?)$/i,
 	SETTING_REGEX = /\]\(~([^)]+)\)/g,
 	CHANGE_REGEX = /^\*\s*([^:]+?):\s*(.+)$/i,
 	ISSUE_REGEX = /(^|\s)#(\d+)\b/g;
@@ -186,13 +186,13 @@ export default {
 				old_commit = this.t('home.changelog.nonversioned', 'Non-Versioned Commit');
 
 			for(const commit of this.commits) {
-				const input = commit.commit.message;
+				const input = commit.commit.message,
+					sections = {};
 				let title = old_commit,
 					title_nav = null,
 					icon = null,
 					version = null,
 					author = null,
-					sections = {},
 					description = [];
 
 				if ( /\bskiplog\b/i.test(input) && ! this.nonversion )
