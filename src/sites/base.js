@@ -1,6 +1,6 @@
 'use strict';
 
-import Module, { GenericModule } from 'utilities/module';
+import Module from 'utilities/module';
 
 let last_site = 0;
 let last_call = 0;
