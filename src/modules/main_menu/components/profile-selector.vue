@@ -132,7 +132,7 @@ export default {
 			if (!scroller || ! window.ffzSimplebar || scroller.SimpleBar)
 				return;
 
-			new ffzSimplebar(scroller, ffzSimplebar.getElOptions(scroller));
+			new window.ffzSimplebar(scroller, window.ffzSimplebar.getElOptions(scroller));
 		},
 
 		openConfigure() {

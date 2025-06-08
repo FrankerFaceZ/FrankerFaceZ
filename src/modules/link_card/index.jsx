@@ -6,7 +6,6 @@
 
 import { createElement } from 'utilities/dom';
 import { getDialogNextZ } from 'utilities/dialog';
-import { deep_copy } from 'utilities/object';
 
 import Module from 'utilities/module';
 
@@ -88,7 +87,7 @@ export default class LinkCard extends Module {
 
 				out.push(createElement('span', url.host));
 
-				let suffix = url.toString().slice(url.origin.length);
+				const suffix = url.toString().slice(url.origin.length);
 
 				if ( suffix.length && suffix !== '/' )
 					out.push(createElement('span', {
@@ -112,7 +111,7 @@ export default class LinkCard extends Module {
 			return;
 		}
 
-		let pos_x = event ? event.clientX : window.innerWidth / 2,
+		const pos_x = event ? event.clientX : window.innerWidth / 2,
 			pos_y = event ? event.clientY + 15 : window.innerHeight / 2;
 
 		/*if ( this.last_card ) {
@@ -150,7 +149,7 @@ export default class LinkCard extends Module {
 			render: h => h('link-card', {
 				props: {
 					url: link,
-					data: data,
+					data,
 
 					use_dest: this.settings.get('link-cards.use-destination'),
 

@@ -6,7 +6,7 @@ import { IS_FIREFOX } from 'src/utilities/constants';
 // ============================================================================
 
 import Module from 'utilities/module';
-import {debounce, has} from 'utilities/object';
+import {debounce} from 'utilities/object';
 
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 const MINIMAL_ROUTES = ['popout', 'embed-chat', 'dash-chat'];
@@ -127,7 +127,7 @@ export default class Layout extends Module {
 				const ratio = size.width / size.height;
 				return ratio <= ctx.get('layout.portrait-threshold');
 			},
-			changed: () => this.updatePortraitMode()
+			// changed: () => this.updatePortraitMode()
 		});
 
 		this.settings.add('layout.inject-portrait', {
@@ -184,7 +184,7 @@ export default class Layout extends Module {
 				// TODO: Calculate this based on the expected player height.
 				return true;
 			},
-			changed: () => this.updatePortraitMode()
+			// changed: () => this.updatePortraitMode()
 		});
 
 		this.settings.add('layout.portrait-extra-height', {
@@ -241,7 +241,7 @@ export default class Layout extends Module {
 	onEnable() {
 		document.body.classList.toggle('ffz--portrait-invert', this.settings.get('layout.portrait-invert'));
 
-		this.on(':update-nav', this.updateNavLinks, this);
+		// this.on(':update-nav', this.updateNavLinks, this);
 		this.on(':resize', this.handleResize, this);
 
 		this.settings.getChanges('layout.portrait-min-chat', val => this.css_tweaks.toggle('portrait-chat', val));
@@ -440,11 +440,11 @@ export default class Layout extends Module {
 		}
 	}*/
 
-	updateNavLinks() {
-
-	}
-
-	updatePortraitMode() {
-
-	}
+	// updateNavLinks() {
+	//
+	// }
+	//
+	// updatePortraitMode() {
+	//
+	// }
 }

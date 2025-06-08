@@ -5,7 +5,7 @@
 			<div class="tw-relative">
 				<div class="tw-absolute tw-align-items-center tw-c-text-alt-2 tw-flex tw-full-height ffz-input__icon tw-justify-content-center tw-left-0 tw-top-0 tw-z-default">
 					<figure class="tw-mg-y-05 tw-mg-x-05">
-						<img class="ffz-preview-emote" v-if="val.src" :src="val.src" />
+						<img v-if="val.src" class="ffz-preview-emote" :src="val.src">
 					</figure>
 				</div>
 				<input
@@ -24,7 +24,7 @@
 					@focus="onFocus"
 					@blur="onBlur"
 					@keydown.escape="open = false"
-				/>
+				>
 				<button
 					v-if="clearable"
 					class="tw-absolute tw-right-0 tw-top-0 tw-button tw-button--text ffz-il-tooltip__container"
@@ -65,7 +65,7 @@
 							@blur="onBlur"
 						>
 							<figure :class="`tw-mg-y-05 tw-mg-x-1`">
-								<img :src="i.src" />
+								<img :src="i.src">
 							</figure>
 						</div>
 					</div>
@@ -232,7 +232,7 @@ export default {
 				id: val.id,
 				name: val.name,
 				src: val.src
-			},
+			};
 			this.$emit('input', this.val);
 			if ( close )
 				this.open = false;
