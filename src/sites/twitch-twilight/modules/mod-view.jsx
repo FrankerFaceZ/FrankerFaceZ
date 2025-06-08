@@ -105,7 +105,7 @@ export default class ModView extends Module {
 		const root = this.fine.getReactInstance(el);
 
 		let channel = null;
-		const node = this.fine.searchNode(root, n => {
+		this.fine.searchNode(root, n => {
 			let i = 0;
 			let state = n.memoizedState;
 			while(state != null && channel == null && i < 50) {
