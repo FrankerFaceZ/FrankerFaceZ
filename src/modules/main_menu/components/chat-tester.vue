@@ -597,7 +597,7 @@ export default {
 					data = JSON.parse(this.message);
 				} catch(err) {
 					console.error(err);
-					alert('Unable to parse message.');
+					alert('Unable to parse message.'); // eslint-disable-line no-alert -- this is a dev tool
 					return;
 				}
 
@@ -620,7 +620,7 @@ export default {
 
 				} catch (err) {
 					console.error(err);
-					alert('Unable to parse message.');
+					alert('Unable to parse message.'); // eslint-disable-line no-alert -- this is a dev tool
 					return;
 				}
 			}
