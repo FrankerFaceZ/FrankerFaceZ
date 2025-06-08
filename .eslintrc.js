@@ -127,6 +127,7 @@ module.exports = {
 		'vue/require-prop-types': 'off',
 		'vue/require-default-prop': 'off',
 		'vue/no-mutating-props': 'off', // TODO: all these
+		'vue/prop-name-casing': 'off', // TODO: do we need this?
 		'vue/html-closing-bracket-newline': [
 			'error',
 			{
