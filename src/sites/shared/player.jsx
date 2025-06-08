@@ -2057,7 +2057,7 @@ export default class PlayerBase extends Module {
 
 		if ( ! cont ) {
 			// We need the native clip button, so we can dispatch a click.
-			const on_click = e => {
+			const on_click = () => {
 				const native = getNativeClipButton(container);
 				if (native)
 					native.click();
@@ -2187,7 +2187,8 @@ export default class PlayerBase extends Module {
 	addErrorResetButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			container = outer && outer.querySelector('.content-overlay-gate'),
-			has_reset = this.settings.get('player.button.reset');
+			has_reset = this.settings.get('player.button.reset'),
+			t = this;
 
 		if ( ! container ) {
 			if ( ! has_reset )
@@ -2383,7 +2384,7 @@ export default class PlayerBase extends Module {
 	}
 
 
-	getUptime(inst) {
+	getUptime() {
 		// TODO: Support multiple instances.
 		const source = this.getData(),
 			user = source?.props?.data?.user;
