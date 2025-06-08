@@ -202,7 +202,7 @@ export default {
 				out = [];
 
 			for(const line of lines) {
-				const match = /^(?:(.*?) \()?(\/[^:\)]+):(\d+):(\d+)\)?$/.exec(line);
+				const match = /^(?:(.*?) \()?(\/[^:)]+):(\d+):(\d+)\)?$/.exec(line);
 				if ( match )
 					out.push([
 						match[1] || '???',
