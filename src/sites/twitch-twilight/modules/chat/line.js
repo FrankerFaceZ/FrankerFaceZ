@@ -12,7 +12,7 @@ import { has } from 'utilities/object';
 import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
 
-import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits, isMessageEffect } from './points';
+import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits } from './points';
 import awaitMD, {getMD} from 'utilities/markdown';
 
 const SUB_TIERS = {
@@ -41,7 +41,7 @@ export default class ChatLine extends Module {
 		this.line_types = {};
 
 		this.line_types.unknown = {
-			renderNotice: (msg, current_user, room, inst, e) => `Unknown message type: ${msg.ffz_type}`
+			renderNotice: msg => `Unknown message type: ${msg.ffz_type}`
 		};
 
 		this.line_types.notice = {
@@ -177,7 +177,7 @@ export default class ChatLine extends Module {
 		};
 
 		this.line_types.cheer = {
-			renderNotice: (msg, current_user, room, inst, e) => this.i18n.tList(
+			renderNotice: msg => this.i18n.tList(
 				'chat.bits-message',
 				'Cheered {count, plural, one {# Bit} other {# Bits}}',
 				{
