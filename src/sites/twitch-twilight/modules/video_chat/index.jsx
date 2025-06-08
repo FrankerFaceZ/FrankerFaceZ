@@ -4,7 +4,7 @@
 // Video Chat Hooks
 // ============================================================================
 
-import {get, has} from 'utilities/object';
+import {get} from 'utilities/object';
 import {print_duration} from 'utilities/time';
 //import {ClickOutside} from 'utilities/dom';
 import {formatBitsConfig} from '../chat';
@@ -183,23 +183,23 @@ export default class VideoChatHook extends Module {
 				}
 			}
 
-			render() {
-				//if ( ! t.VideoChatMenu._class )
-				return null;
-
-				/*return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
-					<t.VideoChatMenu._class
-						context={this.props.context}
-						isCurrentUserModerator={this.props.isCurrentUserModerator}
-						isExpandedLayout={this.props.isExpandedLayout}
-						onBanUserClick={this.onBanUser}
-						onClose={this.onClose}
-						onDeleteCommentClick={this.onDeleteComment}
-						onOpen={this.onOpen}
-						onReplyClick={this.props.onReplyClick}
-					/>
-				</div>);*/
-			}
+			// render() {
+			// 	//if ( ! t.VideoChatMenu._class )
+			// 	return null;
+			//
+			// 	/*return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
+			// 		<t.VideoChatMenu._class
+			// 			context={this.props.context}
+			// 			isCurrentUserModerator={this.props.isCurrentUserModerator}
+			// 			isExpandedLayout={this.props.isExpandedLayout}
+			// 			onBanUserClick={this.onBanUser}
+			// 			onClose={this.onClose}
+			// 			onDeleteCommentClick={this.onDeleteComment}
+			// 			onOpen={this.onOpen}
+			// 			onReplyClick={this.props.onReplyClick}
+			// 		/>
+			// 	</div>);*/
+			// }
 		}
 
 		this.VideoChatLine.ready(cls => {
