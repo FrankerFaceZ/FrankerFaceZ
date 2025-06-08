@@ -33,7 +33,6 @@
 <script>
 
 import ProviderMixin from '../provider-mixin';
-import { deep_copy } from 'utilities/object';
 
 let last_id = 0;
 
