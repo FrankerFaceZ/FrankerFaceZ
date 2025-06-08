@@ -1418,7 +1418,6 @@ export default class PlayerBase extends Module {
 		else {
 			input = cont.querySelector('input');
 			fill = cont.querySelector('.ffz--gain-value');
-			tipcont = cont.querySelector('.ffz-il-tooltip');
 			tip = cont.querySelector('.ffz-il-tooltip .ffz--p-tip');
 			extra = cont.querySelector('.ffz-il-tooltip .ffz--p-value');
 		}
@@ -1550,7 +1549,7 @@ export default class PlayerBase extends Module {
 					this.replaceVideoElement(player, video);
 				}
 			} catch(err) {
-				t.log.error('Error while handling player load.', err);
+				this.log.error('Error while handling player load.', err);
 			}
 
 			return player._ffz_load(...args);
@@ -1769,7 +1768,7 @@ export default class PlayerBase extends Module {
 				try {
 					ctx.addEventListener('statechange', evt);
 					ctx.resume();
-				} catch(err) { }
+				} catch(err) { null }
 
 				return;
 			}
