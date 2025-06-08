@@ -83,9 +83,6 @@
 
 import settingMixin from '../setting-mixin';
 import Sortable from 'sortablejs';
-import { deep_copy } from 'utilities/object';
-
-const last_id = 0;
 
 export default {
 	mixins: [settingMixin],
