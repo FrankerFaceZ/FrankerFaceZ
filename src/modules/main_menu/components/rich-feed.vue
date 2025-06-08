@@ -11,8 +11,6 @@
 
 <script>
 
-import { maybe_call } from 'utilities/object';
-
 export default {
 	components: {
 		'chat-rich': async () => {
