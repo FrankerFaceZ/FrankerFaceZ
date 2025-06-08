@@ -6,7 +6,6 @@
 
 import { createElement } from 'utilities/dom';
 import { getDialogNextZ } from 'utilities/dialog';
-import { deep_copy } from 'utilities/object';
 
 import Module from 'utilities/module';
 
