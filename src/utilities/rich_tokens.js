@@ -550,9 +550,9 @@ TOKEN_TYPES.gallery = function(token, createElement, ctx) {
 	if ( ! Array.isArray(token.items) || ! token.items.length )
 		return null;
 
-	let first_column = [],
-		second_column = [],
-		first = true,
+	const first_column = [],
+		second_column = [];
+	let first = true,
 		i = 0;
 
 	for(const item of token.items) {
