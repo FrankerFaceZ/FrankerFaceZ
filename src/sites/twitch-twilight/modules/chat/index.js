@@ -628,7 +628,7 @@ export default class ChatHook extends Module {
 			default: true,
 			ui: {
 				path: 'Chat > Appearance >> Community',
-				title: 'Allow the \"Chat seems active.\" clip suggestion to be displayed in chat.',
+				title: 'Allow the "Chat seems active." clip suggestion to be displayed in chat.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1372,7 +1372,8 @@ export default class ChatHook extends Module {
 		});
 
 		this.on('chat:pre-send-message', e => {
-			const msg = e.message,
+			const t = this,
+				msg = e.message,
 				inst = e._inst;
 
 			if ( ! /^\/reconnect ?/i.test(msg) )
@@ -1641,7 +1642,7 @@ export default class ChatHook extends Module {
 							return;
 
 						t.insertChannelPointMessage(msg);
-						
+
 
 					} catch(err) {
 						t.log.error('Error handling reward event:', err);
@@ -1849,7 +1850,7 @@ export default class ChatHook extends Module {
 
 		let rewardID;
 		if (isAutomaticReward)
-			rewardID = `${inst.props.channelID}:${data.reward.reward_type}`;
+			rewardID = `${service.props.channelID}:${data.reward.reward_type}`;
 		else
 			rewardID = data.reward.id;
 
@@ -1910,7 +1911,7 @@ export default class ChatHook extends Module {
 			return true;
 
 		if ( type === 'megacheer_emote_recipient' &&
-			! t.chat.context.get('chat.bits.show-rewards')
+			! this.chat.context.get('chat.bits.show-rewards')
 		)
 			return true;
 
@@ -3662,7 +3663,7 @@ export default class ChatHook extends Module {
 				let count = 0;
 				if (bd) {
 					for(const entry of bd.values()) {
-						for(const _ of entry.values()) {
+						for(const _ of entry.values()) { // eslint-disable-line no-unused-vars
 							count++;
 						}
 					}
