@@ -1,3 +1,5 @@
+@use "container";
+
 .ffz--menu-container {
 	@extend .ffz--outer-container;
 	@extend .ffz--inner-container;
@@ -5,7 +7,7 @@
 	position: relative;
 
 	&:not(.border):not(.border-b) {
-		margin-bottom: $spacing;
+		margin-bottom: container.$spacing;
 	}
 
 	& > div {
@@ -19,7 +21,7 @@
 
 	& > header {
 		position: absolute;
-		top: 0; left: $spacing - 0.5rem;
+		top: 0; left: container.$spacing - 0.5rem;
 		transform: translateY(-50%);
 		padding: 0 0.5rem;
 
