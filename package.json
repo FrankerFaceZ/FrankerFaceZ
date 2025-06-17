@@ -107,7 +107,12 @@
 			"glob-parent@<5.1.2": ">=5.1.2"
 		},
 		"onlyBuiltDependencies": [
-			"esbuild"
+			"esbuild",
+			"libxmljs2"
+		],
+		"ignoredBuiltDependencies": [
+			"@parcel/watcher",
+			"core-js"
 		]
 	}
 }
