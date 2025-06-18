@@ -235,7 +235,14 @@ export default class Input extends Module {
 	async onEnable() {
 		this.chat.context.on('changed:chat.hype.display-input', () => this.ChatInput.forceUpdate());
 		this.chat.context.on('changed:chat.actions.room', () => this.ChatInput.forceUpdate());
-		this.chat.context.on('changed:chat.actions.room-above', () => this.ChatInput.forceUpdate());
+		this.chat.context.on('changed:chat.actions.room-above', () => {
+			this.ChatInput.forceUpdate();
+			if ( this.use_previews )
+				for(const inst of this.ChatInput.instances) {
+					this.removePreviewObserver(inst);
+					this.installPreviewObserver(inst);
+				}
+		});
 		this.chat.context.on('changed:chat.tab-complete.emotes-without-colon', enabled => {
 			for (const inst of this.EmoteSuggestions.instances)
 				inst.canBeTriggeredByTab = enabled;
@@ -417,8 +424,9 @@ export default class Input extends Module {
 		if ( ! this.use_previews )
 			return;
 
-		const el = this.fine.getHostNode(inst),
-			target = el && el.querySelector('.chat-input__textarea');
+		const el = this.fine.getHostNode(inst);
+		const above = this.chat.context.get('chat.actions.room-above');
+		const target = above && el ? el : el.querySelector('.chat-input__textarea');
 		if ( ! target )
 			return;
 
