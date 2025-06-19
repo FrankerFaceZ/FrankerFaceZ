@@ -30,11 +30,15 @@
 			</div>
 			<div class="ffz--i18n-sub-entry tw-mg-l-05 tw-flex-grow-1">
 				<div v-if="error && ! open">
-					<div class="tw-strong">{{ t('i18n.ui.error', 'Error') }}</div>
+					<div class="tw-strong">
+						{{ t('i18n.ui.error', 'Error') }}
+					</div>
 					<code class="tw-font-size-7 tw-c-text-alt-2">{{ error }}</code>
 				</div>
 				<div v-if="source">
-					<div class="tw-strong">{{ t('i18n.ui.source', 'Source') }}</div>
+					<div class="tw-strong">
+						{{ t('i18n.ui.source', 'Source') }}
+					</div>
 					<div
 						v-for="(line, idx) in source"
 						:key="idx"
@@ -50,7 +54,9 @@
 					</div>
 				</div>
 				<div v-if="context_str && ! open">
-					<div class="tw-strong">{{ t('i18n.ui.context', 'Context') }}</div>
+					<div class="tw-strong">
+						{{ t('i18n.ui.context', 'Context') }}
+					</div>
 					<code class="tw-font-size-7 tw-c-text-alt-2">{{ context_str }}</code>
 				</div>
 			</div>
@@ -196,7 +202,7 @@ export default {
 				out = [];
 
 			for(const line of lines) {
-				const match = /^(?:(.*?) \()?(\/[^:\)]+):(\d+):(\d+)\)?$/.exec(line);
+				const match = /^(?:(.*?) \()?(\/[^:)]+):(\d+):(\d+)\)?$/.exec(line);
 				if ( match )
 					out.push([
 						match[1] || '???',

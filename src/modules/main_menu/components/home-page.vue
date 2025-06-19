@@ -213,9 +213,6 @@
 
 import HOME_MD from '../home.md';
 
-import {createElement as e} from 'utilities/dom';
-import { EXTENSION } from 'utilities/constants';
-
 export default {
 	props: ['item', 'context'],
 

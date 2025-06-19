@@ -59,7 +59,6 @@
 <script>
 
 import SettingMixin from '../setting-mixin';
-import {deep_copy} from 'utilities/object';
 
 let last_id = 0;
 
@@ -114,7 +113,7 @@ export default {
 			}
 		},
 
-		handleLink(i) {
+		handleLink(i) { // eslint-disable-line no-unused-vars
 			//this.router.navigate('dir-game-index', {gameName: i});
 		},
 

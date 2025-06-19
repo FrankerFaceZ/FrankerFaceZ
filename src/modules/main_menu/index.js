@@ -1186,7 +1186,9 @@ export default class MainMenu extends Module {
 				key = params?.get('ffz-settings');
 			current = key && settings.keys[key];
 			if ( ! current )
-				restored = false;
+				restored = false; // eslint-disable-line no-unused-vars
+			// TODO: `restored` isn't used after this, but we go through
+			// a lot of effort to set it; do we need to?
 		}
 		if ( ! current )
 			current = this.has_update ?

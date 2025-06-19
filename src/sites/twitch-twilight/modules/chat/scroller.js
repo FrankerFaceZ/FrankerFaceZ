@@ -729,7 +729,7 @@ export default class Scroller extends Module {
 
 
 	cleanMessages(el) {
-		const react = ffz.site.fine.getReactInstance(el);
+		const react = window.ffz.site.fine.getReactInstance(el);
 
 		// Make sure we have the right thing.
 		if (!react || !Array.isArray(react.child?.memoizedProps))

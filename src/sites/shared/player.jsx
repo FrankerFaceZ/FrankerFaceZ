@@ -633,7 +633,7 @@ export default class PlayerBase extends Module {
 			default: false,
 			ui: {
 				path: 'Player > General >> Playback',
-				title: "Pause/Unpause the player by clicking.",
+				title: 'Pause/Unpause the player by clicking.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1418,7 +1418,6 @@ export default class PlayerBase extends Module {
 		else {
 			input = cont.querySelector('input');
 			fill = cont.querySelector('.ffz--gain-value');
-			tipcont = cont.querySelector('.ffz-il-tooltip');
 			tip = cont.querySelector('.ffz-il-tooltip .ffz--p-tip');
 			extra = cont.querySelector('.ffz-il-tooltip .ffz--p-value');
 		}
@@ -1550,7 +1549,7 @@ export default class PlayerBase extends Module {
 					this.replaceVideoElement(player, video);
 				}
 			} catch(err) {
-				t.log.error('Error while handling player load.', err);
+				this.log.error('Error while handling player load.', err);
 			}
 
 			return player._ffz_load(...args);
@@ -1769,7 +1768,7 @@ export default class PlayerBase extends Module {
 				try {
 					ctx.addEventListener('statechange', evt);
 					ctx.resume();
-				} catch(err) { }
+				} catch(err) { null }
 
 				return;
 			}
@@ -2058,7 +2057,7 @@ export default class PlayerBase extends Module {
 
 		if ( ! cont ) {
 			// We need the native clip button, so we can dispatch a click.
-			const on_click = e => {
+			const on_click = () => {
 				const native = getNativeClipButton(container);
 				if (native)
 					native.click();
@@ -2188,7 +2187,8 @@ export default class PlayerBase extends Module {
 	addErrorResetButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
 			container = outer && outer.querySelector('.content-overlay-gate'),
-			has_reset = this.settings.get('player.button.reset');
+			has_reset = this.settings.get('player.button.reset'),
+			t = this;
 
 		if ( ! container ) {
 			if ( ! has_reset )
@@ -2384,7 +2384,7 @@ export default class PlayerBase extends Module {
 	}
 
 
-	getUptime(inst) {
+	getUptime() {
 		// TODO: Support multiple instances.
 		const source = this.getData(),
 			user = source?.props?.data?.user;

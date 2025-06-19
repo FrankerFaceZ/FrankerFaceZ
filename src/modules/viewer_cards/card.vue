@@ -120,7 +120,7 @@
 					:channel="channel"
 					:user="user"
 					:self="self"
-					:getFFZ="getFFZ"
+					:get-f-f-z="getFFZ"
 					@close="close"
 				/>
 			</keep-alive>
