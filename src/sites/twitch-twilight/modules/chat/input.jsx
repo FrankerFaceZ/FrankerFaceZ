@@ -426,7 +426,7 @@ export default class Input extends Module {
 
 		const el = this.fine.getHostNode(inst);
 		const above = this.chat.context.get('chat.actions.room-above');
-		const target = above && el ? el : el.querySelector('.chat-input__textarea');
+		const target = above ? el : el && el.querySelector('.chat-input__textarea');
 		if ( ! target )
 			return;
 
