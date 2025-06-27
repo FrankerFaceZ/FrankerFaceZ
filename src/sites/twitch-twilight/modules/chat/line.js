@@ -386,7 +386,7 @@ export default class ChatLine extends Module {
 
 			getClass: () => 'ffz--subscribe-line',
 
-			renderNotice: (msg, user, room, inst, e) => {
+			renderNotice: (msg, user, room, inst, e, source) => {
 				const mystery = msg.mystery;
 				if ( mystery )
 					mystery.line = inst;
@@ -404,7 +404,7 @@ export default class ChatLine extends Module {
 						}, msg.user.displayName)),
 					count: msg.sub_count,
 					tier: SUB_TIERS[msg.sub_plan] || 1,
-					channel: msg.roomLogin
+					channel: source?.displayName || source?.login || msg.roomLogin
 				});
 
 				if ( msg.sub_total === 1 )
@@ -989,13 +989,13 @@ other {# messages were deleted by a moderator.}
 
 				if ( type ) {
 					if ( type.render )
-						return type.render(msg, current_user, current_room, this, e);
+						return type.render(msg, current_user, current_room, this, e, source);
 
 					if ( type.renderNotice )
-						notice = type.renderNotice(msg, current_user, current_room, this, e);
+						notice = type.renderNotice(msg, current_user, current_room, this, e, source);
 
 					if ( type.getClass )
-						klass = type.getClass(msg, current_user, current_room, this, e);
+						klass = type.getClass(msg, current_user, current_room, this, e, source);
 				}
 
 				// Render the line.
@@ -1201,7 +1201,7 @@ other {# messages were deleted by a moderator.}
 
 					// The reply element for Twitch style.
 					const twitch_reply = reply_mode === 1 && this.props.reply && this.props.repliesAppearancePreference && this.props.repliesAppearancePreference === 'expanded'
-						? this.renderReplyLine()
+						? e('div', {className: 'ffz--fix-reply-line'}, this.renderReplyLine())
 						: null;
 
 					// Now assemble the pieces.

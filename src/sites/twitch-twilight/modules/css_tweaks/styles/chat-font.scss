@@ -17,3 +17,9 @@ textarea[data-a-target="video-chat-input"] {
 	font-family: var(--ffz-chat-font-family) !important;
 	font-size: var(--ffz-chat-font-size) !important;
 }
+
+.ffz--fix-reply-line p {
+	font-size: var(--ffz-chat-font-size) !important;
+	line-height: var(--ffz-chat-line-height) !important;
+	font-family: var(--ffz-chat-font-family) !important;
+}

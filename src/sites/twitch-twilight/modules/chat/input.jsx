@@ -418,7 +418,7 @@ export default class Input extends Module {
 			return;
 
 		const el = this.fine.getHostNode(inst),
-			target = el && el.querySelector('.chat-input__textarea');
+			target = el; // && el.querySelector('.chat-input__textarea');
 		if ( ! target )
 			return;
 
