@@ -19,8 +19,8 @@
 			/>
 		</div>
 		<div
-			v-if="expanded"
 			v-for="(mod, idx) in modifiers"
+			v-if="expanded"
 			:key="idx"
 			class="tw-pd-05 tw-flex tw-align-items-center tw-border-t"
 		>
@@ -48,7 +48,9 @@
 				</figure>
 			</div>
 			<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-x-1">
-				<h4 class="tw-inline" :title="mod.name">{{ mod.name }}</h4>
+				<h4 class="tw-inline" :title="mod.name">
+					{{ mod.name }}
+				</h4>
 				<p
 					v-if="mod.source"
 					class="tw-c-text-alt-2 tw-font-size-6"

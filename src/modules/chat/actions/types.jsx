@@ -40,7 +40,7 @@ export const pin = {
 	},
 
 	hidden(data, message, current_room, current_user, mod_icons, instance) {
-		let line = instance;
+		const line = instance;
 
 		if ( ! line )
 			return true;
@@ -549,7 +549,8 @@ export const mod = {
 		return this.i18n.t('chat.actions.mod.tooltip', 'Mod {user.login}', {user: data.user});
 	},
 
-	hidden(data, message, current_room, current_user, mod_icons, instance) {
+	// can accept (data, message, current_room, current_user, mod_icons, instance)
+	hidden(data, message, current_room, current_user) {
 		// You cannot mod mods.
 		if ( message.user.type === 'mod' )
 			return true;
@@ -584,7 +585,8 @@ export const unmod = {
 		return this.i18n.t('chat.actions.unmod.tooltip', 'Un-Mod {user.login}', {user: data.user});
 	},
 
-	hidden(data, message, current_room, current_user, mod_icons, instance) {
+	// can accept (data, message, current_room, current_user, mod_icons, instance)
+	hidden(data, message, current_room, current_user) {
 		// You can only un-mod mods.
 		if ( message.user.type !== 'mod' )
 			return true;

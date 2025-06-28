@@ -2,6 +2,7 @@
 module.exports = {
 	'env': {
 		'browser': true,
+		'es2020': true,
 		'es6': true
 	},
 	'extends': [
@@ -33,6 +34,7 @@ module.exports = {
 		'__version_major__': false,
 		'__version_minor__': false,
 		'__version_patch__': false,
+		'__version_build__': false,
 		'__version_prerelease__': false,
 		'__extension__': false,
 		'FrankerFaceZ': false
@@ -70,7 +72,6 @@ module.exports = {
 		'no-useless-concat': ['warn'],
 		'no-useless-return': ['warn'],
 		'no-void': ['error'],
-		'no-warning-comments': ['warn'],
 		'no-with': ['error'],
 		'radix': ['error'],
 		'require-await': ['warn'],
@@ -121,9 +122,12 @@ module.exports = {
 			'tab'
 		],
 		'vue/valid-template-root': 'off',
+		'vue/multi-word-component-names': 'off',
 		'vue/max-attributes-per-line': 'off',
 		'vue/require-prop-types': 'off',
 		'vue/require-default-prop': 'off',
+		'vue/no-mutating-props': 'off', // TODO: all these
+		'vue/prop-name-casing': 'off', // TODO: do we need this?
 		'vue/html-closing-bracket-newline': [
 			'error',
 			{

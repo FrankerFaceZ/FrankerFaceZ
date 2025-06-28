@@ -32,7 +32,7 @@ class FFZESBridge {
 
 		window.addEventListener('message', this.onWindowMessage);
 
-		document.addEventListener('readystatechange', event => {
+		document.addEventListener('readystatechange', () => {
 			if ( document.documentElement )
 				document.documentElement.dataset.ffzEsbridge = true;
 		});
@@ -55,7 +55,7 @@ class FFZESBridge {
 				msg,
 				location.origin,
 				transfer ? (Array.isArray(transfer) ? transfer : [transfer]) : undefined
-				);
+			);
 		} catch(err) {
 			this.log.error('Error sending message to window.', err, msg, transfer);
 		}
@@ -63,21 +63,21 @@ class FFZESBridge {
 
 	onWindowMessage(event) {
 		if ( event.origin !== location.origin )
-		return;
+			return;
 
 		const msg = event.data,
-		id = msg?.id,
-		type = msg?.ffz_esb_type;
+			id = msg?.id,
+			type = msg?.ffz_esb_type;
 
 		if ( ! type )
-		return;
+			return;
 
 		this.log.info('Received Message from Page', type, id, msg);
 
 		if ( type === 'init' ) {
 			this.received_init = true;
 			if ( this.active )
-			this.runtimeHeartbeat();
+				this.runtimeHeartbeat();
 		}
 
 		this.runtimeSend(msg);
@@ -89,7 +89,7 @@ class FFZESBridge {
 
 	runtimeOpen() {
 		if ( this.active )
-		return Promise.resolve();
+			return Promise.resolve();
 
 		this.log.info('Connecting to worker.');
 
@@ -99,7 +99,7 @@ class FFZESBridge {
 		this.port.onDisconnect.addListener(this.onRuntimeDisconnect);
 
 		if ( this.received_init )
-		this.runtimeHeartbeat();
+			this.runtimeHeartbeat();
 	}
 
 	onRuntimeMessage(msg) {
@@ -118,27 +118,27 @@ class FFZESBridge {
 
 	runtimeHeartbeat() {
 		if ( this._heartbeat )
-		return;
+			return;
 
 		this._heartbeat = setInterval(() => {
 			if ( this.active )
-			this.runtimeSend('heartbeat');
+				this.runtimeSend('heartbeat');
 		}, 30000);
 	}
 
 	runtimeSend(msg) {
 		if ( typeof msg === 'string' )
-		msg = {ffz_esb_type: msg};
+			msg = {ffz_esb_type: msg};
 
 		if ( ! this.active )
 		// We need to create our port.
-		this.runtimeOpen();
+			this.runtimeOpen();
 
 		// Send the message, knowing we have an open port.
 		this.port.postMessage(msg);
 	}
 
-};
+}
 
 FFZESBridge.Logger = Logger;
 
@@ -151,7 +151,7 @@ const VER = FFZESBridge.version_info = Object.freeze({
 	build: __version_build__,
 	hash: __webpack_hash__,
 	toString: () =>
-	`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${VER.build ? `+${VER.build}` : ''}`
+		`${VER.major}.${VER.minor}.${VER.revision}${VER.extra || ''}${VER.build ? `+${VER.build}` : ''}`
 });
 
 window.FFZESBridge = FFZESBridge;

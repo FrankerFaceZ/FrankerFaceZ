@@ -163,31 +163,31 @@ const INLINE_CALLOUT_TYPES = {
 };
 
 const CALLOUT_TYPES = {
-	"AppointedModerator": "appointed-moderator",
-	"BitsBadgeTier": "bits-badge-tier",
-	"BitsPowerUps": "bits-power-ups",
-	"ClipLiveNudge": "clip-live-nudge",
-	"CommunityMoment": "community-moment",
-	"CommunityPointsRewards": "community-points-rewards",
-	"CosmicAbyss": "cosmic-abyss",
-	"CreatorAnniversaries": "creator-anniversaries",
-	"Drop": "drop",
-	"EarnedSubBadge": "earned-sub-badge",
-	"FavoritedGuestCollab": "favorited-guest-collab",
-	"GiftBadgeExpiration": "gift-badge-expiration",
-	"GiftBadgeRestored": "gift-badge-restored",
-	"GiftBundleUpSell": "gift-bundle-up-sell",
-	"HypeTrainRewards": "hype-train-rewards",
-	"LapsedBitsUser": "lapsed-bits-user",
-	"PartnerPlusUpSellNudge": "partner-plus-up-sell-nudge",
-	"ReplyByKeyboard": "reply-by-keyboard",
-	"RequestToJoinAccepted": "request-to-join-accepted",
-	"STPromo": "st-promo",
-	"ShareResub": "share-resub",
-	"SubtemberPromoBits": "subtember-promo-bits",
-	"ThankSubGifter": "thank-sub-gifter",
-	"TurnOffAnimatedEmotes": "turn-off-animated-emotes",
-	"WalletDrop": "wallet-drop"
+	'AppointedModerator': 'appointed-moderator',
+	'BitsBadgeTier': 'bits-badge-tier',
+	'BitsPowerUps': 'bits-power-ups',
+	'ClipLiveNudge': 'clip-live-nudge',
+	'CommunityMoment': 'community-moment',
+	'CommunityPointsRewards': 'community-points-rewards',
+	'CosmicAbyss': 'cosmic-abyss',
+	'CreatorAnniversaries': 'creator-anniversaries',
+	'Drop': 'drop',
+	'EarnedSubBadge': 'earned-sub-badge',
+	'FavoritedGuestCollab': 'favorited-guest-collab',
+	'GiftBadgeExpiration': 'gift-badge-expiration',
+	'GiftBadgeRestored': 'gift-badge-restored',
+	'GiftBundleUpSell': 'gift-bundle-up-sell',
+	'HypeTrainRewards': 'hype-train-rewards',
+	'LapsedBitsUser': 'lapsed-bits-user',
+	'PartnerPlusUpSellNudge': 'partner-plus-up-sell-nudge',
+	'ReplyByKeyboard': 'reply-by-keyboard',
+	'RequestToJoinAccepted': 'request-to-join-accepted',
+	'STPromo': 'st-promo',
+	'ShareResub': 'share-resub',
+	'SubtemberPromoBits': 'subtember-promo-bits',
+	'ThankSubGifter': 'thank-sub-gifter',
+	'TurnOffAnimatedEmotes': 'turn-off-animated-emotes',
+	'WalletDrop': 'wallet-drop'
 };
 
 const UNBLOCKABLE_CALLOUTS = [];
@@ -628,7 +628,7 @@ export default class ChatHook extends Module {
 			default: true,
 			ui: {
 				path: 'Chat > Appearance >> Community',
-				title: 'Allow the \"Chat seems active.\" clip suggestion to be displayed in chat.',
+				title: 'Allow the "Chat seems active." clip suggestion to be displayed in chat.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1372,7 +1372,8 @@ export default class ChatHook extends Module {
 		});
 
 		this.on('chat:pre-send-message', e => {
-			const msg = e.message,
+			const t = this,
+				msg = e.message,
 				inst = e._inst;
 
 			if ( ! /^\/reconnect ?/i.test(msg) )
@@ -1641,7 +1642,7 @@ export default class ChatHook extends Module {
 							return;
 
 						t.insertChannelPointMessage(msg);
-						return;
+
 
 					} catch(err) {
 						t.log.error('Error handling reward event:', err);
@@ -1849,7 +1850,7 @@ export default class ChatHook extends Module {
 
 		let rewardID;
 		if (isAutomaticReward)
-			rewardID = `${inst.props.channelID}:${data.reward.reward_type}`;
+			rewardID = `${service.props.channelID}:${data.reward.reward_type}`;
 		else
 			rewardID = data.reward.id;
 
@@ -1910,7 +1911,7 @@ export default class ChatHook extends Module {
 			return true;
 
 		if ( type === 'megacheer_emote_recipient' &&
-			! t.chat.context.get('chat.bits.show-rewards')
+			! this.chat.context.get('chat.bits.show-rewards')
 		)
 			return true;
 
@@ -2001,7 +2002,7 @@ export default class ChatHook extends Module {
 		const event = inst.props?.event?.callout?.contextMenuProps?.event ?? inst.props?.event,
 			type = event?.type;
 
-		if ( type !== 'drop' || inst._ffz_clicking || ! this.chat.context.get("chat.drops.auto-rewards") )
+		if ( type !== 'drop' || inst._ffz_clicking || ! this.chat.context.get('chat.drops.auto-rewards') )
 			return;
 
 		//console.warn('autoClickDrop', event, inst);
@@ -2021,7 +2022,7 @@ export default class ChatHook extends Module {
 			const event = inst.props?.event?.callout?.contextMenuProps?.event ?? inst.props?.event,
 				type = event?.type;
 
-			if ( type !== 'drop' || ! this.chat.context.get("chat.drops.auto-rewards") )
+			if ( type !== 'drop' || ! this.chat.context.get('chat.drops.auto-rewards') )
 				return;
 
 			btn.click();
@@ -3317,7 +3318,7 @@ export default class ChatHook extends Module {
 									id: out.id,
 									displayName: out.user.userDisplayName,
 									login: out.user.userLogin,
-									reward: reward,
+									reward,
 									message: out,
 									userID: out.user.userID,
 									animationID: e.animationID,
@@ -3662,7 +3663,7 @@ export default class ChatHook extends Module {
 				let count = 0;
 				if (bd) {
 					for(const entry of bd.values()) {
-						for(const _ of entry.values()) {
+						for(const _ of entry.values()) { // eslint-disable-line no-unused-vars
 							count++;
 						}
 					}

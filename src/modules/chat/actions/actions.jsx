@@ -27,7 +27,7 @@ export default class Actions extends Module {
 		this.actions = {};
 		this.renderers = {};
 
-		this.filterAction = (x) => x.appearance &&
+		this.filterAction = x => x.appearance &&
 			this.renderers[x.appearance.type] &&
 			(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
 			(! x.action || this.actions[x.action]);
@@ -802,7 +802,7 @@ export default class Actions extends Module {
 		if ( u ) {
 			u.moderator = line.props.isCurrentUserModerator;
 			u.staff = line.props.isCurrentUserStaff;
-			u.reply_mode = this.parent.context.get('chat.replies.style'),
+			u.reply_mode = this.parent.context.get('chat.replies.style');
 			u.can_reply = can_reply;
 		}
 

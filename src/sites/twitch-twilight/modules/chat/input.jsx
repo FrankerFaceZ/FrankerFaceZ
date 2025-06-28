@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
 
-import { SourcedSet, getTwitchEmoteSrcSet } from 'utilities/object';
+import { getTwitchEmoteSrcSet } from 'utilities/object';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
@@ -355,7 +355,7 @@ export default class Input extends Module {
 		this.ChatInput.on('mount', this.overrideChatInput, this);
 
 		this.ChatInput.on('mount', this.installPreviewObserver, this);
-		this.ChatInput.on('unmount', this.removePreviewObserver, this);
+		this.ChatInput.on('unmount', this.constructor.removePreviewObserver, this);
 
 		this.EmoteSuggestions.on('mount', this.overrideEmoteMatcher, this);
 		this.MentionSuggestions.on('mount', this.overrideMentionMatcher, this);
@@ -461,9 +461,12 @@ export default class Input extends Module {
 				this.updatePreview(inst, target);
 		}*/
 
-		for(const target of node.querySelectorAll?.('img.chat-line__message--emote')) {
-			if ( target && (target.dataset.ffzId || target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__')) )
-				this.updatePreview(inst, target);
+		const img = node.querySelectorAll?.('img.chat-line__message--emote');
+		if ( img !== undefined ) {
+			for(const target of img) {
+				if ( target && (target.dataset.ffzId || target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__')) )
+					this.updatePreview(inst, target);
+			}
 		}
 	}
 
@@ -539,7 +542,7 @@ export default class Input extends Module {
 		evt.stopImmediatePropagation();
 	}
 
-	removePreviewObserver(inst) {
+	static removePreviewObserver(inst) {
 		if ( inst._ffz_preview_observer ) {
 			inst._ffz_preview_observer.disconnect();
 			inst._ffz_preview_observer = null;
@@ -580,8 +583,8 @@ export default class Input extends Module {
 				this.props.emotes.splice(idx, 1, data);
 			else if ( idx !== -1 && ! data )
 				this.props.emotes.splice(idx, 1);
-			else
-				return;
+			// else
+			// 	return;
 
 			// TODO: Somehow update other React state to deal with our
 			// injected changes. Making a shallow copy of the array
@@ -864,7 +867,7 @@ export default class Input extends Module {
 			createElement = React?.createElement;
 
 		if ( createElement )
-			inst.renderCommandSuggestion = function(cmd, input) {
+			inst.renderCommandSuggestion = function(cmd) {
 				const args = Array.isArray(cmd?.commandArgs)
 					? cmd.commandArgs.map(arg => (<div class={`tw-mg-r-05${arg.isRequired ? '' : ' tw-c-text-alt'}`}>[{arg.name}]</div>))
 					: null;
@@ -910,8 +913,6 @@ export default class Input extends Module {
 		for(const set of sets) {
 			if ( ! set || ! set.emotes )
 				continue;
-
-			const source = set.source || 'ffz';
 
 			for(const emote of Object.values(set.emotes)) {
 				if ( ! emote || ! emote.id || ! emote.name || added_emotes.has(emote.name) )
@@ -1184,7 +1185,7 @@ export default class Input extends Module {
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
 			if (match_type < emoteMatchingType)
-					continue;
+				continue;
 
 			const element = {
 				current: input,

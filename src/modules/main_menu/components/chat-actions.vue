@@ -296,7 +296,7 @@
 											:act="maybeDynamic(preset)"
 											:process-color="color"
 											:renderers="data.renderers"
-											/>
+										/>
 									</div>
 								</button>
 							</template>
@@ -794,7 +794,7 @@ export default {
 		},
 
 		maybeDynamic(data) {
-			let ap = data.appearance;
+			const ap = data.appearance;
 			if (ap?.type === 'dynamic') {
 				const act = this.data.actions[data.action],
 					ffz = this.context.getFFZ(),

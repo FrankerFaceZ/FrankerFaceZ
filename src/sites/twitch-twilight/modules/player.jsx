@@ -202,8 +202,8 @@ export default class Player extends PlayerBase {
 			}
 		});
 
-		this.PlayerSource.on('mount', this.checkCarousel, this);
-		this.PlayerSource.on('update', this.checkCarousel, this);
+		// this.PlayerSource.on('mount', this.checkCarousel, this);
+		// this.PlayerSource.on('update', this.checkCarousel, this);
 	}
 
 	maybeOpenChat() {
@@ -220,24 +220,24 @@ export default class Player extends PlayerBase {
 	}
 
 
-	checkCarousel(inst) {
-		/*if ( this.settings.get('channel.hosting.enable') )
-			return;
-
-		if ( inst.props?.playerType === 'channel_home_carousel' ) {
-			if ( inst.props.content?.hostChannel === inst._ffz_cached_login )
-				return;
-
-			inst._ffz_cached_login = inst.props.content?.hostChannel;
-			if ( ! inst._ffz_cached_login )
-				return;
-
-			const player = inst.props.mediaPlayerInstance,
-				events = inst.props.playerEvents;
-
-			this.stopPlayer(player, events, inst);
-		}*/
-	}
+	// checkCarousel(inst) {
+	// 	/*if ( this.settings.get('channel.hosting.enable') )
+	// 		return;
+	//
+	// 	if ( inst.props?.playerType === 'channel_home_carousel' ) {
+	// 		if ( inst.props.content?.hostChannel === inst._ffz_cached_login )
+	// 			return;
+	//
+	// 		inst._ffz_cached_login = inst.props.content?.hostChannel;
+	// 		if ( ! inst._ffz_cached_login )
+	// 			return;
+	//
+	// 		const player = inst.props.mediaPlayerInstance,
+	// 			events = inst.props.playerEvents;
+	//
+	// 		this.stopPlayer(player, events, inst);
+	// 	}*/
+	// }
 
 
 	getData() {
@@ -275,18 +275,18 @@ export default class Player extends PlayerBase {
 	 * @memberof Player
 	 * @returns {void}
 	 */
-	repositionPlayer() {
-		// TODO: New implementation that works.
-	}
-
-	updateSquadContext() {
-		this.settings.updateContext({
-			squad_bar: this.hasSquadBar
-		});
-	}
-
-	get hasSquadBar() {
-		// TODO: New implementation that works.
-		return false;
-	}
+	// repositionPlayer() {
+	// 	// TODO: New implementation that works.
+	// }
+	//
+	// updateSquadContext() {
+	// 	this.settings.updateContext({
+	// 		squad_bar: this.hasSquadBar
+	// 	});
+	// }
+	//
+	// get hasSquadBar() {
+	// 	// TODO: New implementation that works.
+	// 	return false;
+	// }
 }

@@ -5,7 +5,6 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement} from 'utilities/dom';
 import {Color} from 'utilities/color';
 
 //import THEME_CSS from 'site/styles/theme.scss';
@@ -447,7 +446,7 @@ export default class ThemeEngine extends Module {
 			this.css_tweaks.delete('accent-normal');
 	}
 
-	toggleNormalizer(enable) { // eslint-disable-line class-methods-use-this
+	toggleNormalizer(enable) { // eslint-disable-line class-methods-use-this, no-unused-vars
 		// Intentionally disabled~
 		/*if ( ! this._normalizer ) {
 			if ( ! enable )

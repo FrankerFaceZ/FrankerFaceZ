@@ -12,7 +12,7 @@ import { has } from 'utilities/object';
 import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
 
-import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits, isMessageEffect } from './points';
+import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits } from './points';
 import awaitMD, {getMD} from 'utilities/markdown';
 
 const SUB_TIERS = {
@@ -41,9 +41,7 @@ export default class ChatLine extends Module {
 		this.line_types = {};
 
 		this.line_types.unknown = {
-			renderNotice: (msg, current_user, room, inst, e) => {
-				return `Unknown message type: ${msg.ffz_type}`
-			}
+			renderNotice: msg => `Unknown message type: ${msg.ffz_type}`
 		};
 
 		this.line_types.notice = {
@@ -179,19 +177,17 @@ export default class ChatLine extends Module {
 		};
 
 		this.line_types.cheer = {
-			renderNotice: (msg, current_user, room, inst, e) => {
-				return this.i18n.tList(
-					'chat.bits-message',
-					'Cheered {count, plural, one {# Bit} other {# Bits}}',
-					{
-						count: msg.bits || 0
-					}
-				);
-			}
+			renderNotice: msg => this.i18n.tList(
+				'chat.bits-message',
+				'Cheered {count, plural, one {# Bit} other {# Bits}}',
+				{
+					count: msg.bits || 0
+				}
+			)
 		};
 
 		this.line_types.points = {
-			getClass: (msg) => {
+			getClass: msg => {
 				const highlight = msg.ffz_reward_highlight && this.chat.context.get('chat.points.allow-highlight') === 2;
 
 				return `ffz--points-line tw-pd-l-1 tw-pd-r-2 ${highlight ? 'ffz-custom-color ffz--points-highlight' : ''}`;
@@ -1099,7 +1095,7 @@ other {# messages were deleted by a moderator.}
 								hl_position === 1
 									? 'ffz-highlight-tags__above'
 									: 'tw-mg-r-05'
-								}`
+							}`
 						}, highlight_tags);
 					else
 						highlight_tags = null;
@@ -1173,7 +1169,7 @@ other {# messages were deleted by a moderator.}
 											className: 'tw-font-size-8 tw-mg-t-05'
 										}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
 										: null
-									]
+								]
 								)
 							]
 							: want_source_tip

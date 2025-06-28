@@ -23,7 +23,7 @@ const SHRINK_X = MODIFIER_FLAGS.ShrinkX,
 const EMOTE_CLASS = 'chat-image chat-line__message--emote',
 	//WHITESPACE = /^\s*$/,
 	//LINK_REGEX = /([^\w@#%\-+=:~])?((?:(https?:\/\/)?(?:[\w@#%\-+=:~]+\.)+[a-z]{2,6}(?:\/[\w./@#%&()\-+=:?~]*)?))([^\w./@#%&()\-+=:?~]|\s|$)/g,
-	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*[^\s\.!,?])?))/g,
+	NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*[^\s.!,?])?))/g,
 	//OLD_NEW_LINK_REGEX = /(?:(https?:\/\/)?((?:[\w#%\-+=:~]+\.)+[a-z]{2,10}(?:\/[\w./#%&@()\-+=:?~]*)?))/g,
 	//MENTION_REGEX = /([^\w@#%\-+=:~])?(@([^\u0000-\u007F]+|\w+)+)([^\w./@#%&()\-+=:?~]|\s|$)/g; // eslint-disable-line no-control-regex
 	MENTION_REGEX = /^(['"*([{<\\/]*)(@)((?:[^\u0000-\u007F]|[\w-])+)(?:\b|$)/; // eslint-disable-line no-control-regex
@@ -322,81 +322,6 @@ export const Replies = {
 // Mentions
 // ============================================================================
 
-function mention_processAll(tokens, msg, user, color_mentions) {
-	const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
-		priority = this.context.get('chat.filtering.mention-priority');
-
-	let login, display, mentionable = false;
-	if ( user && user.login && ! can_highlight_user ) {
-		login = user.login.toLowerCase();
-		display = user.displayName && user.displayName.toLowerCase();
-		if ( display === login )
-			display = null;
-
-		mentionable = true;
-	}
-
-	const out = [];
-	for(const token of tokens) {
-		if ( token.type !== 'text' ) {
-			out.push(token);
-			continue;
-		}
-
-		let text = [];
-
-		for(const segment of token.text.split(/ +/)) {
-			const match = /^(@?)(\S+?)(?:\b|$)/.exec(segment);
-			if ( match ) {
-				let recipient = match[2],
-					has_at = match[1] === '@',
-					mentioned = false;
-
-				const rlower = recipient ? recipient.toLowerCase() : '',
-					color = this.color_cache ? this.color_cache.get(rlower) : null;
-
-				if ( rlower === login || rlower === display )
-					mentioned = true;
-
-				if ( ! has_at && ! color && ! mentioned ) {
-					text.push(segment);
-
-				} else {
-					// If we have pending text, join it together.
-					if ( text.length )  {
-						out.push({
-							type: 'text',
-							text: `${text.join(' ')} `
-						});
-						text = [];
-					}
-
-					out.push({
-						type: 'mention',
-						text: match[0],
-						me: mentioned,
-						color: color_mentions ? color : null,
-						recipient: rlower
-					});
-
-					if ( mentioned )
-						this.applyHighlight(msg, priority, null, 'mention', true);
-
-					// Push the remaining text from the token.
-					text.push(segment.substr(match[0].length));
-				}
-
-			} else
-				text.push(segment);
-		}
-
-		if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
-			out.push({type: 'text', text: text.join(' ')})
-	}
-
-	return out;
-}
-
 export const Mentions = {
 	type: 'mention',
 	priority: 0,
@@ -434,7 +359,7 @@ export const Mentions = {
 			color_mentions = this.context.get('chat.filtering.color-mentions');
 
 		if ( all_mentions )
-			return mention_processAll.call(this, tokens, msg, user, color_mentions);
+			return this.processAll(tokens, msg, user, color_mentions);
 
 		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
 			priority = this.context.get('chat.filtering.mention-priority');
@@ -501,6 +426,79 @@ export const Mentions = {
 
 					// Push the remaining text from the token.
 					text.push(segment.substr(match[0].length));
+
+				} else
+					text.push(segment);
+			}
+
+			if ( text.length > 1 || (text.length === 1 && text[0] !== '') )
+				out.push({type: 'text', text: text.join(' ')})
+		}
+
+		return out;
+	},
+
+	processAll(tokens, msg, user, color_mentions) {
+		const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
+			priority = this.context.get('chat.filtering.mention-priority');
+
+		let login, display = false;
+		if ( user && user.login && ! can_highlight_user ) {
+			login = user.login.toLowerCase();
+			display = user.displayName && user.displayName.toLowerCase();
+			if ( display === login )
+				display = null;
+		}
+
+		const out = [];
+		for(const token of tokens) {
+			if ( token.type !== 'text' ) {
+				out.push(token);
+				continue;
+			}
+
+			let text = [];
+
+			for(const segment of token.text.split(/ +/)) {
+				const match = /^(@?)(\S+?)(?:\b|$)/.exec(segment);
+				if ( match ) {
+					const recipient = match[2],
+						has_at = match[1] === '@';
+					let mentioned = false;
+
+					const rlower = recipient ? recipient.toLowerCase() : '',
+						color = this.color_cache ? this.color_cache.get(rlower) : null;
+
+					if ( rlower === login || rlower === display )
+						mentioned = true;
+
+					if ( ! has_at && ! color && ! mentioned ) {
+						text.push(segment);
+
+					} else {
+						// If we have pending text, join it together.
+						if ( text.length )  {
+							out.push({
+								type: 'text',
+								text: `${text.join(' ')} `
+							});
+							text = [];
+						}
+
+						out.push({
+							type: 'mention',
+							text: match[0],
+							me: mentioned,
+							color: color_mentions ? color : null,
+							recipient: rlower
+						});
+
+						if ( mentioned )
+							this.applyHighlight(msg, priority, null, 'mention', true);
+
+						// Push the remaining text from the token.
+						text.push(segment.substr(match[0].length));
+					}
 
 				} else
 					text.push(segment);
@@ -1312,13 +1310,13 @@ export const AddonEmotes = {
 			hoverSrcSet = big ? token.animSrcSet2 : token.animSrcSet;
 		}
 
-		let style = undefined, outerStyle = undefined;
+		let style, outerStyle;
 		const mods = token.modifiers || [], ml = mods.length,
 			effects = token.modifier_flags,
 			is_big = (token.big && ! token.can_big && token.height);
 
 		let as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
-		let no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
+		const no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
 
 		if ( no_wide || effects || ml ) {
 			// We need to calculate the size of the emote and the biggest
@@ -1620,19 +1618,19 @@ export const AddonEmotes = {
 
 					const target = this.emotes.getTargetEmote();
 
-					let style = {
+					const style = {
 						width: (target.width ?? 28) * 2,
 						height: (target.height ?? 28) * 2
 					};
 
-					let outerStyle = {
+					const outerStyle = {
 						width: style.width,
 						height: style.height
 					};
 
 
-					let as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
-					let no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
+					const as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
+					const no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
 
 					let changed = false;
 
@@ -1696,6 +1694,7 @@ export const AddonEmotes = {
 					}
 
 					// Whip up a special preview.
+					/* eslint-disable indent -- disagrees with react/jsx-indent-props */
 					preview = (<div class="ffz-effect-tip">
 						<img
 							src={target.src}
@@ -1713,20 +1712,21 @@ export const AddonEmotes = {
 						>
 							{as_bg
 								? <div
-									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
-									style={style}
+										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+										style={style}
 								/>
 								: <img
-									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
-									src={target.src}
-									srcSet={target.srcSet}
-									style={style}
-									height={style ? undefined : `${target.height * 2}px`}
-									onLoad={tip.update}
+										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+										src={target.src}
+										srcSet={target.srcSet}
+										style={style}
+										height={style ? undefined : `${target.height * 2}px`}
+										onLoad={tip.update}
 								/>
 							}
 						</div>
 					</div>);
+					/* eslint-enable indent */
 				}
 			}
 
@@ -1861,10 +1861,10 @@ export const AddonEmotes = {
 
 							last_token.modifiers.push(
 								Object.assign({
-										big,
-										anim
-									},
-									emote.token
+									big,
+									anim
+								},
+								emote.token
 								)
 							);
 						}
@@ -2010,7 +2010,7 @@ export const Emoji = {
 			}
 
 			const text = replace ?
-				token.text.replace(JOINER_REPLACEMENT, "\u200d") :
+				token.text.replace(JOINER_REPLACEMENT, '\u200d') :
 				token.text;
 
 			splitter.lastIndex = 0;

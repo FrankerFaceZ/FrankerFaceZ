@@ -8,8 +8,8 @@
 			{{ t('setting.filters.missing', 'This rule of type "{type}" cannot be loaded. It may be from an add-on that is not loaded.', {type: editing && editing.type}) }}
 		</div>
 		<component
-			v-else
 			:is="component"
+			v-else
 			v-model="editing"
 			:type="type"
 			:filters="filters"
