@@ -200,7 +200,7 @@ export default class ThemeEngine extends Module {
 	--font-size-7: ${(12/14) * size}rem;
 	--font-size-8: ${(12/14) * size}rem;
 	--font-size-base: ${size}rem;
-`);
+}`);
 
 	}
 

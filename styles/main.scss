@@ -35,6 +35,24 @@
 	100% { transform: rotate(360deg); }
 }
 
+:root {
+	--ffz-font-size-1: calc(var(--font-size-base) * 3.8571428571);
+	--ffz-font-size-2: calc(var(--font-size-base) * 2.5714285714);
+	--ffz-font-size-3: calc(var(--font-size-base) * 1.7142857143);
+	--ffz-font-size-4: calc(var(--font-size-base) * 1.2857142857);
+	--ffz-font-size-5: var(--font-size-base);
+	--ffz-font-size-6: calc(var(--font-size-base) * 0.9285714286);
+	--ffz-font-size-7: calc(var(--font-size-base) * 0.8571428571);
+}
+
+.ffz-font-size-1 { font-size: var(--ffz-font-size-1); }
+.ffz-font-size-2 { font-size: var(--ffz-font-size-2); }
+.ffz-font-size-3 { font-size: var(--ffz-font-size-3); }
+.ffz-font-size-4 { font-size: var(--ffz-font-size-4); }
+.ffz-font-size-5 { font-size: var(--ffz-font-size-5); }
+.ffz-font-size-6 { font-size: var(--ffz-font-size-6); }
+.ffz-font-size-7 { font-size: var(--ffz-font-size-7); }
+
 .ffz--inline {
 	display: inline;
 }

@@ -175,7 +175,7 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.font-size', {
-			default: 13,
+			default: 14,
 			ui: {
 				path: 'Chat > Appearance >> General',
 				title: 'Font Size',
