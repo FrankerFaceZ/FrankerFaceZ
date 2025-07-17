@@ -46,7 +46,7 @@
 		</header>
 		<section v-if="context.currentProfile.ephemeral && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
-				<h3 class="ffz-i-attention">
+				<h3 class="ffz-i-attention ffz-font-size-3">
 					{{ t('setting.profiles.ephemeral', "This profile is ephemeral.") }}
 				</h3>
 
@@ -63,7 +63,7 @@
 		</section>
 		<section v-if="(! context.currentProfile.live || ! context.currentProfile.toggled) && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
-				<h3 class="ffz-i-attention">
+				<h3 class="ffz-i-attention ffz-font-size-3">
 					{{ t('setting.profiles.inactive', "This profile is not active.") }}
 				</h3>
 
@@ -83,7 +83,7 @@
 		</section>
 		<section v-if="context.currentProfile.url && ! context.currentProfile.pause_updates && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
-				<h3 class="ffz-i-attention">
+				<h3 class="ffz-i-attention ffz-font-size-3">
 					{{ t('setting.profiles.updates', 'This profile will update automatically.') }}
 				</h3>
 
@@ -96,7 +96,7 @@
 		</section>
 		<section v-if="context.has_update" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
-				<h3 class="ffz-i-arrows-cw">
+				<h3 class="ffz-i-arrows-cw ffz-font-size-3">
 					{{ t('setting.update', 'There is an update available.') }}
 				</h3>
 

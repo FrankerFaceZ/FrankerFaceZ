@@ -1935,7 +1935,8 @@ export default class Chat extends Module {
 				is_action,
 				ffz_emotes: emotes,
 				timestamp: msg.sentAt && msg.sentAt.getTime(),
-				deleted: false
+				deleted: false,
+				toJSON: () => null
 			};
 
 		out.user.color = out.user.chatColor;
@@ -1982,7 +1983,7 @@ export default class Chat extends Module {
 		if ( ! reply )
 			return null;
 
-		return [
+		const out = [
 			{
 				type: 'reply',
 				text: reply.parentDisplayName,
@@ -1996,6 +1997,9 @@ export default class Chat extends Module {
 				text: ' '
 			}
 		];
+
+		out.toJSON = () => null;
+		return out;
 	}
 
 
@@ -2576,7 +2580,10 @@ export default class Chat extends Module {
 			}
 		}
 
-		return tokens || [];
+		tokens = tokens || [];
+		tokens.toJSON = () => null
+
+		return tokens;
 	}
 
 

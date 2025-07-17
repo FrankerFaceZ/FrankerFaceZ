@@ -4,7 +4,7 @@
 			ref="button"
 			:class="{active: opened}"
 			tabindex="0"
-			class="tw-flex tw-align-items-center tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+			class="tw-flex tw-align-items-center tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 			@keyup.up.stop.prevent="focusShow"
 			@keyup.left.stop.prevent="focusShow"
 			@keyup.down.stop.prevent="focusShow"
@@ -86,7 +86,7 @@
 									</div>
 								</div>
 
-								<h4>{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
+								<h4 class="ffz-font-size-4">{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
 								<div v-if="p.description" class="description">
 									{{ p.desc_i18n_key ? t(p.desc_i18n_key, p.description, p) : p.description }}
 								</div>

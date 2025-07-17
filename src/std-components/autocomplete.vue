@@ -12,7 +12,7 @@
 					:placeholder="placeholder"
 					:class="[hasIcon ? 'tw-pd-l-3' : 'tw-pd-l-1']"
 					type="search"
-					class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-r-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-r-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 					autocomplete="off"
@@ -39,7 +39,7 @@
 						{{ t('autocomplete.empty', 'There are no results.') }}
 					</div>
 					<div v-else-if="! hasItems && loading" class="tw-align-center tw-c-text-alt-2 tw-pd-05">
-						<h3 class="ffz-i-zreknarf loading" />
+						<h3 class="ffz-i-zreknarf loading ffz-font-size-3" />
 					</div>
 					<button
 						v-for="(item, idx) of filteredItems"

@@ -877,7 +877,7 @@ export default class Input extends Module {
 						</div>
 						{args}
 					</div>
-					<p class="tw-c-text-alt-2 tw-font-size-7">{ cmd.description }</p>
+					<p class="tw-c-text-alt-2 ffz-font-size-7">{ cmd.description }</p>
 				</div>);
 			}
 	}

@@ -14,16 +14,16 @@
 				/>
 			</div>
 			<div class="tw-flex-grow-1 tw-mg-r-05">
-				<h4 v-if="! editing && ! current" class="ffz-monospace">
+				<h4 v-if="! editing && ! current" class="ffz-monospace ffz-font-size-4">
 					<pre>{{ t('setting.terms.invalid-badge', 'unknown/unloaded badge') }}</pre>
 				</h4>
-				<h4 v-if="! editing && current">
+				<h4 v-if="! editing && current" class="ffz-font-size-4">
 					{{ current.name }}
 				</h4>
 				<select
 					v-if="editing"
 					v-model="edit_data.v"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				>
 					<option v-if="adding" value="">
 						{{ t('setting.terms.please-select', 'Please select an option.') }}
@@ -71,7 +71,7 @@
 					v-model.number="edit_data.p"
 					type="number"
 					step="1"
-					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-min-width-unset ffz-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium ffz-font-size-6 ffz-min-width-unset ffz-input tw-pd-x-1 tw-pd-y-05"
 					style="width: 5rem"
 				>
 				<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-right">

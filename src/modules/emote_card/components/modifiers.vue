@@ -8,7 +8,7 @@
 			@click="toggle"
 		>
 			<div class="tw-flex-grow-1">
-				<h4>{{ t('emote-card.modifiers', 'Modifiers') }}</h4>
+				<h4 class="ffz-font-size-4">{{ t('emote-card.modifiers', 'Modifiers') }}</h4>
 			</div>
 
 			<figure
@@ -48,15 +48,15 @@
 				</figure>
 			</div>
 			<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-x-1">
-				<h4 class="tw-inline" :title="mod.name">{{ mod.name }}</h4>
+				<h4 class="tw-inline ffz-font-size-4" :title="mod.name">{{ mod.name }}</h4>
 				<p
 					v-if="mod.source"
-					class="tw-c-text-alt-2 tw-font-size-6"
+					class="tw-c-text-alt-2 ffz-font-size-6"
 					:title="mod.source_i18n ? t(mod.source_i18n, mod.source) : mod.source"
 				>
 					{{ mod.source_i18n ? t(mod.source_i18n, mod.source) : mod.source }}
 				</p>
-				<p v-if="mod.owner" class="tw-c-text-alt-2 tw-font-size-6">
+				<p v-if="mod.owner" class="tw-c-text-alt-2 ffz-font-size-6">
 					<t-list
 						phrase="emote-card.owner"
 						default="Owner: {owner}"
@@ -72,7 +72,7 @@
 						</template>
 					</t-list>
 				</p>
-				<p v-if="mod.artist" class="tw-c-text-alt-2 tw-font-size-6">
+				<p v-if="mod.artist" class="tw-c-text-alt-2 ffz-font-size-6">
 					<t-list
 						phrase="emote-card.artist"
 						default="Artist: {artist}"

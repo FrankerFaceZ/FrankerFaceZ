@@ -207,9 +207,9 @@
 				{{ t('debug.link-provider.raw', 'Raw Data') }}
 			</label>
 			<div class="tw-full-width tw-overflow-hidden ffz--example-report">
-				<div v-if="url" class="tw-c-background-alt-2 tw-font-size-5 tw-pd-y-05 tw-pd-x-1 tw-border-radius-large">
+				<div v-if="url" class="tw-c-background-alt-2 ffz-font-size-5 tw-pd-y-05 tw-pd-x-1 tw-border-radius-large">
 					<div v-if="raw_loading" class="tw-align-center">
-						<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+						<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 					</div>
 					<code v-else-if="typeof raw_data === 'string'">{{ raw_data }}</code>
 					<code v-else v-html="highlightJson(raw_data, true)"></code>

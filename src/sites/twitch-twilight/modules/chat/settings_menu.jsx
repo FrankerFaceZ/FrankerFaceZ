@@ -158,7 +158,7 @@ export default class SettingsMenu extends Module {
 
 				return (<div class="ffz-identity">
 					<div class="tw-mg-y-05 tw-pd-x-05">
-						<p class="tw-c-text-alt-2 tw-font-size-6 tw-strong tw-upcase">
+						<p class="tw-c-text-alt-2 ffz-font-size-6 tw-strong tw-upcase">
 							{ t.i18n.t('chat.identity-menu', 'Chat Identity') }
 						</p>
 					</div>
@@ -339,7 +339,7 @@ export default class SettingsMenu extends Module {
 
 		const out = (<div class="ffz--badge-selector tw-border-b tw-mg-b-1">
 			<div class="tw-mg-y-05 tw-pd-x-05">
-				<p class="tw-c-text-alt-2 tw-font-size-6 tw-strong tw-upcase">
+				<p class="tw-c-text-alt-2 ffz-font-size-6 tw-strong tw-upcase">
 					{ this.i18n.t('chat.ffz-badge.title', 'FrankerFaceZ Badge') }
 				</p>
 			</div>

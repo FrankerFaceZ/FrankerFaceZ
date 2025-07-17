@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz-featured-follow tw-c-background-base">
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
-			<h4>{{ t('metadata.featured-follow.title', 'Featured Channels') }}</h4>
+			<h4 class="ffz-font-size-4">{{ t('metadata.featured-follow.title', 'Featured Channels') }}</h4>
 
 			<div class="tw-flex-grow-1 tw-pd-x-2" />
 			<button
@@ -26,7 +26,7 @@
 								<div class="ffz-channel-avatar">
 									<a :href="'/' + user.login" :title="user.login" @click.prevent="route(user.login)"><img :src="user.avatar"></a>
 								</div>
-								<a :href="'/' + user.login" :title="user.login" @click.prevent="route(user.login)"><p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">{{ user.displayName }}</p></a>
+								<a :href="'/' + user.login" :title="user.login" @click.prevent="route(user.login)"><p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 ffz-font-size-5">{{ user.displayName }}</p></a>
 								<div class="tw-flex-grow-1 tw-pd-x-2" />
 
 								<div v-if="user.error">

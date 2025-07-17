@@ -6,7 +6,7 @@
 
 		<div class="tw-flex-grow-1">
 			<template v-if="! editing">
-				<h4>{{ title }}</h4>
+				<h4 class="ffz-font-size-4">{{ title }}</h4>
 				<div class="description">
 					{{ description }}
 				</div>
@@ -19,13 +19,13 @@
 					ref="json"
 					v-model="json"
 					readonly
-					class="tw-full-width tw-full-height tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+					class="tw-full-width tw-full-height tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 					@focus="$event.target.select()"
 				/>
 			</template>
 			<template v-else>
 				<section>
-					<h5>{{ t('setting.actions.appearance', 'Appearance') }}</h5>
+					<h5 class="ffz-font-size-5">{{ t('setting.actions.appearance', 'Appearance') }}</h5>
 
 					<div class="tw-flex tw-align-items-center">
 						<label for="tooltip">
@@ -34,7 +34,7 @@
 
 						<input
 							v-model="edit_data.appearance.tooltip"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 						>
 					</div>
 
@@ -47,7 +47,7 @@
 							id="renderer_type"
 							ref="renderer_type"
 							v-model="edit_data.appearance.type"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
 								v-for="(r, key) in data.renderers"
@@ -88,7 +88,7 @@
 				</section>
 
 				<section class="tw-mg-t-1 tw-border-t tw-pd-t-1">
-					<h5>{{ t('setting.actions.visibility', 'Visibility') }}</h5>
+					<h5 class="ffz-font-size-5">{{ t('setting.actions.visibility', 'Visibility') }}</h5>
 
 					<div class="tw-flex tw-align-items-center">
 						<label for="vis_mod">
@@ -98,7 +98,7 @@
 						<select
 							id="vis_mod"
 							v-model="edit_data.display.mod"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -120,7 +120,7 @@
 						<select
 							id="vis_mod_icons"
 							v-model="edit_data.display.mod_icons"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -142,7 +142,7 @@
 						<select
 							id="vis_following"
 							v-model="edit_data.display.following"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -164,7 +164,7 @@
 						<select
 							id="vis_deleted"
 							v-model="edit_data.display.deleted"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -186,7 +186,7 @@
 						<select
 							id="vis_emote"
 							v-model="edit_data.display.emoteOnly"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -208,7 +208,7 @@
 						<select
 							id="vis_slow"
 							v-model="edit_data.display.slowMode"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -230,7 +230,7 @@
 						<select
 							id="vis_subs"
 							v-model="edit_data.display.followersOnly"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -252,7 +252,7 @@
 						<select
 							id="vis_subs"
 							v-model="edit_data.display.subsMode"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -274,7 +274,7 @@
 						<select
 							id="vis_r9k"
 							v-model="edit_data.display.r9kMode"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option :value="undefined" selected>
 								{{ t('setting.unset', 'Unset') }}
@@ -380,7 +380,7 @@
 				</section>
 
 				<section class="tw-mg-t-1 tw-border-t tw-pd-t-1">
-					<h5>{{ t('setting.actions.action', 'Action') }}</h5>
+					<h5 class="ffz-font-size-5">{{ t('setting.actions.action', 'Action') }}</h5>
 
 					<div class="tw-flex tw-align-items-center">
 						<label for="action_type">
@@ -390,7 +390,7 @@
 						<select
 							id="action_type"
 							v-model="edit_data.action"
-							class="tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
+							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
 								v-for="(a, key) in data.actions"

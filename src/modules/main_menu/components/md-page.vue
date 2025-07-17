@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--home tw-border-t tw-pd-y-1">
 		<div v-if="loading" class="tw-align-center tw-pd-1">
-			<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+			<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 		</div>
 		<markdown v-else :source="t(`home.${key}`, md)" />
 	</div>

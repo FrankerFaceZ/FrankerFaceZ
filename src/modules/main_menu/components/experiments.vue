@@ -10,7 +10,7 @@
 			</div>
 			<select
 				ref="sort_select"
-				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+				class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 				@change="onSort"
 			>
 				<option :selected="sort_by === 0">
@@ -40,7 +40,7 @@
 			</div>
 		</div>
 
-		<h3 class="tw-mg-b-1">
+		<h3 class="tw-mg-b-1 ffz-font-size-3">
 			<span>
 				{{ t('setting.experiments.ffz', 'FrankerFaceZ Experiments') }}
 			</span>
@@ -60,7 +60,7 @@
 			>
 				<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
 					<div class="tw-flex-grow-1">
-						<h4>{{ exp.name ? exp.name : key }}</h4>
+						<h4 class="ffz-font-size-4">{{ exp.name ? exp.name : key }}</h4>
 						<div v-if="exp.description" class="description">
 							{{ exp.description }}
 						</div>
@@ -69,7 +69,7 @@
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
 						<select
 							:data-key="key"
-							class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+							class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 							@change="onChange($event)"
 						>
 							<option
@@ -103,7 +103,7 @@
 			</div>
 		</div>
 
-		<h3 class="tw-mg-t-5 tw-mg-b-1">
+		<h3 class="tw-mg-t-5 tw-mg-b-1 ffz-font-size-3">
 			<span>
 				{{ t('setting.experiments.twitch', 'Twitch Experiments') }}
 			</span>
@@ -117,7 +117,7 @@
 
 		<section v-if="experiments_locked">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-2">
-				<h3 class="ffz-i-attention">
+				<h3 class="ffz-i-attention ffz-font-size-3">
 					{{ t('setting.dev-warning', "It's dangerous to go at all.") }}
 				</h3>
 				<markdown :source="t('setting.dev-warning.explain', 'Be careful, this is an advanced feature intended for developer use only. Normal users should steer clear. Adjusting your experiments can have unexpected impacts on your Twitch experience. FrankerFaceZ is not responsible for any issues you encounter as a result of tampering with experiments, and we will not provide support.\n\nIf you\'re sure about this, please type `{code}` into the box below and hit enter.', {code})" />
@@ -127,7 +127,7 @@
 				<input
 					ref="code"
 					type="text"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-b-5"
+					class="tw-block tw-full-width tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05 tw-mg-b-5"
 					autocapitalize="off"
 					autocorrect="off"
 					@keydown.enter="enterCode"
@@ -160,7 +160,7 @@
 						</div>
 
 						<div class="tw-flex-grow-1">
-							<h4>{{ exp.name }}</h4>
+							<h4 class="ffz-font-size-4">{{ exp.name }}</h4>
 							<div class="description">
 								{{ exp.remainder }}
 							</div>
@@ -169,7 +169,7 @@
 						<div class="tw-flex tw-flex-shrink-0 tw-align-items-start">
 							<select
 								:data-key="key"
-								class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+								class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 								@change="onTwitchChange($event)"
 							>
 								<option

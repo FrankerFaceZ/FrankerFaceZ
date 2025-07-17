@@ -18,7 +18,7 @@
 				<input
 					ref="url_box"
 					:value="url"
-					class="tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+					class="tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 					type="text"
 					readonly
 					@focusin="selectURL"
@@ -38,9 +38,9 @@
 				</button>
 			</div>
 		</div>
-		<div class="tw-c-background-alt-2 tw-font-size-5 tw-pd-y-05 tw-pd-x-1 tw-border-radius-large">
+		<div class="tw-c-background-alt-2 ffz-font-size-5 tw-pd-y-05 tw-pd-x-1 tw-border-radius-large">
 			<div v-if="loading" class="tw-align-center">
-				<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+				<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 			</div>
 			<code v-else>{{ text }}</code>
 		</div>

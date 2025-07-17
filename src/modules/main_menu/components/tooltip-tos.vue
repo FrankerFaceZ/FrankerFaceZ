@@ -1,6 +1,6 @@
 <template lang="html">
 	<section class="ffz--widget ffz--service-tos">
-		<h4>{{ key }}</h4>
+		<h4 class="ffz-font-size-4">{{ key }}</h4>
 		<markdown class="tw-mg-b-05" :source="linkText" />
 		<div v-if="hasAccepted">
 			{{ t('tooltip.has-accepted', 'You have accepted the Terms of Service.') }}

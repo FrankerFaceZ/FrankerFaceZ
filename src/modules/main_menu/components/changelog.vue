@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--changelog tw-border-t tw-pd-t-1">
 		<div class="tw-align-center">
-			<h3 v-if="addon" class="tw-mg-b-1 tw-flex tw-align-items-center tw-justify-content-center">
+			<h3 v-if="addon" class="tw-mg-b-1 tw-flex tw-align-items-center tw-justify-content-center ffz-font-size-3">
 				<figure
 					v-if="addon.icon"
 					class="ffz-avatar ffz-avatar--size-30 tw-mg-r-05"
@@ -15,10 +15,10 @@
 					name: addon.name
 				}) }}
 			</h3>
-			<h3 v-else-if="addons" class="tw-mg-b-1">
+			<h3 v-else-if="addons" class="tw-mg-b-1 ffz-font-size-3">
 				{{ t('setting.add_ons.changelog.title', 'Add-Ons Changelog') }}
 			</h3>
-			<h3 v-else class="tw-mg-b-1">
+			<h3 v-else class="tw-mg-b-1 ffz-font-size-3">
 				{{ t('home.changelog', 'Changelog') }}
 			</h3>
 		</div>
@@ -63,16 +63,16 @@
 					</figure>
 					<a
 						v-if="commit.title && commit.title_nav"
-						class="tw-font-size-5 ffz-link ffz-link--inherit"
+						class="ffz-font-size-5 ffz-link ffz-link--inherit"
 						href="#"
 						@click.prevent="titleNav(commit.title_nav)"
 					>
 						{{ commit.title }}
 					</a>
-					<div v-else-if="commit.title" class="tw-font-size-5">
+					<div v-else-if="commit.title" class="ffz-font-size-5">
 						{{ commit.title }}
 					</div>
-					<div v-if="commit.version" class="tw-font-size-4 tw-mg-l-05">
+					<div v-if="commit.version" class="ffz-font-size-4 tw-mg-l-05">
 						<span class="tw-c-text-alt-2">v</span>{{ commit.version }}
 					</div>
 					<div v-if="commit.author" class="tw-mg-l-05">
@@ -109,7 +109,7 @@
 					</div>
 					<div
 						v-if="commit.hash"
-						class="tw-font-size-8 tw-c-text-alt-2"
+						class="ffz-font-size-8 tw-c-text-alt-2"
 					>
 						@<a :href="commit.link" target="_blank" rel="noopener noreferrer" class="ffz-link ffz-link--inherit ffz-tooltip" data-tooltip-type="link">{{ commit.hash }}</a>
 					</div>
@@ -131,7 +131,7 @@
 			<div v-if="error">
 				{{ t('home.changelog.error', 'An error occurred loading changes from GitHub.') }}
 			</div>
-			<h1 v-else-if="loading" class="tw-mg-5 ffz-i-zreknarf loading" />
+			<h1 v-else-if="loading" class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 			<div v-else-if="! more">
 				{{ t('home.changelog.no-more', 'There are no more commits to load.') }}
 			</div>

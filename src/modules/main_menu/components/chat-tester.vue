@@ -1,7 +1,7 @@
 <template>
 	<div class="ffz--chat-tester">
 		<div v-if="context.exclusive" class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-2">
-			<h3 class="ffz-i-attention">
+			<h3 class="ffz-i-attention ffz-font-size-3">
 				{{ t('debug.chat-tester.exclusive', "Hey! This won't work here!") }}
 			</h3>
 			<markdown :source="t('debug.chat-tester.exclusive-explain', 'This feature does not work when the FFZ Control Center is popped out. It needs to be used in a window where you can see chat.')" />
@@ -16,7 +16,7 @@
 				<select
 					id="selector"
 					ref="selector"
-					class="tw-full-width tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
+					class="tw-full-width tw-border-top-left-radius-medium tw-border-top-right-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 					@change="onSelectChange"
 				>
 					<option :selected="is_custom" value="custom">
@@ -33,13 +33,13 @@
 				</select>
 				<input
 					ref="topic"
-					class="tw-block tw-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p"
+					class="tw-block ffz-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p"
 					@blur="updateMessage"
 					@input="onMessageChange"
 				/>
 				<textarea
 					ref="message"
-					class="tw-block tw-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium"
+					class="tw-block ffz-font-size-6 tw-full-width ffz-textarea ffz-mg-t-1p tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium"
 					rows="10"
 					@blur="updateMessage"
 					@input="onMessageChange"

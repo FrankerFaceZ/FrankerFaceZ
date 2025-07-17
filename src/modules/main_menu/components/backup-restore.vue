@@ -31,7 +31,7 @@
 		</div>
 
 		<div v-if="error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1">
-			<h3 class="ffz-i-attention">
+			<h3 class="ffz-i-attention ffz-font-size-3">
 				{{ t('setting.backup-restore.error', 'There was an error processing this backup.') }}
 			</h3>
 			<div v-if="error_desc">

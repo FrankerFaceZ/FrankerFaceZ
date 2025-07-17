@@ -31,7 +31,7 @@
 		</div>
 
 		<div ref="list" class="ffz--action-list">
-			<div v-if="! val.length" class="tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-c-text-alt-2 tw-pd-1">
+			<div v-if="! val.length" class="tw-c-text-alt-2 ffz-font-size-4 tw-align-center tw-c-text-alt-2 tw-pd-1">
 				{{ t('setting.priorities.none', 'no priorities are defined in this profile') }}
 
 				<div class="tw-mg-t-1">
@@ -51,7 +51,7 @@
 					<div class="tw-flex tw-flex-shrink-0 tw-align-items-start handle tw-pd-x-05 tw-pd-t-1 tw-pd-b-05">
 						<span class="ffz-i-ellipsis-vert" />
 					</div>
-					<figure v-if="provider.font_icon" class="tw-font-size-2 tw-mg-r-1" :class="provider.font_icon" />
+					<figure v-if="provider.font_icon" class="ffz-font-size-2 tw-mg-r-1" :class="provider.font_icon" />
 					<div v-else-if="provider.icon" class="tw-flex-shrink-0 ffz-card-img--size-4 tw-overflow-hidden tw-mg-r-1">
 						<img
 							:src="provider.icon"
@@ -59,10 +59,10 @@
 						/>
 					</div>
 					<div>
-						<h4 v-if="! provider.name">
+						<h4 v-if="! provider.name" class="ffz-font-size-4">
 							{{ t('emote-source.unknown', 'Unknown ({id})', provider) }}
 						</h4>
-						<h4 v-else>{{
+						<h4 v-else class="ffz-font-size-4">{{
 							provider.i18n_key
 								? t(provider.i18n_key, provider.name, provider)
 								: provider.name

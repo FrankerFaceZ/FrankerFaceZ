@@ -2,7 +2,7 @@
 	<div class="ffz--home tw-flex tw-flex-nowrap">
 		<div class="tw-flex-grow-1">
 			<div class="tw-align-center">
-				<h2 class="ffz-i-zreknarf ffz-i-pd-1">
+				<h2 class="ffz-i-zreknarf ffz-i-pd-1 ffz-font-size-2">
 					FrankerFaceZ
 				</h2>
 				<span class="tw-c-text-alt">
@@ -18,7 +18,7 @@
 				v-if="unseen"
 				class="tw-pd-t-1 tw-border-t tw-mg-t-1"
 			>
-				<h3 class="tw-pd-b-05">
+				<h3 class="tw-pd-b-05 ffz-font-size-3">
 					{{ t('home.new-settings', 'New Settings') }}
 				</h3>
 
@@ -57,7 +57,7 @@
 				v-if="addons"
 				class="tw-pd-t-1 tw-border-t tw-mg-t-1"
 			>
-				<h3 class="tw-pd-b-05">
+				<h3 class="tw-pd-b-05 ffz-font-size-3">
 					{{ t('home.addon-updates', 'Updated Add-Ons') }}
 				</h3>
 
@@ -101,7 +101,7 @@
 				v-if="new_addons"
 				class="tw-pd-t-1 tw-border-t tw-mg-t-1"
 			>
-				<h3 class="tw-pd-b-05">
+				<h3 class="tw-pd-b-05 ffz-font-size-3">
 					{{ t('home.addon-new', 'New Add-Ons') }}
 				</h3>
 
@@ -151,7 +151,7 @@
 					rel="noopener"
 				>
 					<span class="tw-button__icon tw-pd-05">
-						<figure class="ffz-i-zreknarf tw-font-size-3" />
+						<figure class="ffz-i-zreknarf ffz-font-size-3" />
 					</span>
 				</a>
 				<a
@@ -162,7 +162,7 @@
 					rel="noopener noreferrer"
 				>
 					<span class="tw-button__icon tw-pd-05-1">
-						<figure class="ffz-i-discord tw-font-size-3" />
+						<figure class="ffz-i-discord ffz-font-size-3" />
 					</span>
 				</a>
 				<!--a
@@ -173,7 +173,7 @@
 					rel="noopener noreferrer"
 				>
 					<span class="tw-button__icon tw-pd-05">
-						<figure class="ffz-i-twitter tw-font-size-3" />
+						<figure class="ffz-i-twitter ffz-font-size-3" />
 					</span>
 				</a-->
 				<a
@@ -184,7 +184,7 @@
 					rel="noopener noreferrer"
 				>
 					<span class="tw-button__icon tw-pd-05">
-						<figure class="ffz-i-github tw-font-size-3" />
+						<figure class="ffz-i-github ffz-font-size-3" />
 					</span>
 				</a>
 			</div>

@@ -2,7 +2,7 @@
 	<div class="ffz--profile-editor">
 		<section v-if="isEphemeral" class="tw-border-t tw-pd-t-1 tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
-				<h3 class="ffz-i-attention">
+				<h3 class="ffz-i-attention ffz-font-size-3">
 					{{ t('setting.profiles.ephemeral', "This profile is ephemeral.") }}
 				</h3>
 
@@ -54,7 +54,7 @@
 
 		<div v-if="export_error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
 			<section class="tw-flex-grow-1">
-				<h4 class="ffz-i-attention">
+				<h4 class="ffz-i-attention ffz-font-size-4">
 					{{ t('setting.backup-restore.error', 'There was an error processing this backup.') }}
 				</h4>
 				<div v-if="export_error_message">
@@ -102,7 +102,7 @@
 					ref="name"
 					:disabled="isEphemeral"
 					v-model="name"
-					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+					class="tw-full-width tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				>
 			</div>
 
@@ -116,7 +116,7 @@
 					ref="desc"
 					:disabled="isEphemeral"
 					v-model="desc"
-					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+					class="tw-full-width tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				/>
 			</div>
 
@@ -161,7 +161,7 @@
 					id="ffz:editor:url"
 					readonly
 					:value="url"
-					class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+					class="tw-full-width tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				>
 			</div>
 

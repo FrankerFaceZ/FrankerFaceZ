@@ -373,7 +373,7 @@ export default class Channel extends Module {
 			const login = el._ffz_link_login = props.channelLogin;
 			if ( login ) {
 				const make_link = (link, text) => {
-					const a = <a href={link} class="tw-c-text-alt-2 tw-interactive tw-pd-x-1 tw-font-size-5">{text}</a>;
+					const a = <a href={link} class="tw-c-text-alt-2 tw-interactive tw-pd-x-1 ffz-font-size-5">{text}</a>;
 					a.addEventListener('click', event => {
 						if ( event.ctrlKey || event.shiftKey || event.altKey )
 							return;

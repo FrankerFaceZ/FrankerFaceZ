@@ -2680,7 +2680,7 @@ export default class EmoteMenu extends Module {
 
 			renderLoading() { // eslint-disable-line class-methods-use-this
 				return (<div class="tw-align-center tw-pd-1">
-					<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+					<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 					{t.i18n.t('emote-menu.loading', 'Loading...')}
 				</div>)
 			}
@@ -2834,7 +2834,7 @@ export default class EmoteMenu extends Module {
 										<div class="tw-flex">
 											<input
 												type="text"
-												class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
+												class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 												placeholder={
 													is_emoji ?
 														t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
@@ -2883,7 +2883,7 @@ export default class EmoteMenu extends Module {
 												data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
 												onClick={this.clickTab}
 											>
-												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
 													<figure class="ffz-i-star" />
 												</div>
 											</button>
@@ -2897,7 +2897,7 @@ export default class EmoteMenu extends Module {
 												data-title={t.i18n.t('emote-menu.channel', 'Channel')}
 												onClick={this.clickTab}
 											>
-												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
 													<figure class="ffz-i-camera" />
 												</div>
 											</button>
@@ -2912,7 +2912,7 @@ export default class EmoteMenu extends Module {
 												onClick={this.clickTab}
 											>
 												{this.state.hasNewEffects && (<div class="ffz-new-indicator" />)}
-												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
 													<figure class="ffz-i-fx" />
 												</div>
 											</button>
@@ -2926,7 +2926,7 @@ export default class EmoteMenu extends Module {
 												data-title={t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
 												onClick={this.clickTab}
 											>
-												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
 													<figure class="ffz-i-channels" />
 												</div>
 											</button>
@@ -2940,7 +2940,7 @@ export default class EmoteMenu extends Module {
 												data-title={t.i18n.t('emote-menu.emoji', 'Emoji')}
 												onClick={this.clickTab}
 											>
-												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
 													<figure class="ffz-i-smile" />
 												</div>
 											</button>
@@ -2953,7 +2953,7 @@ export default class EmoteMenu extends Module {
 												data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
 												onClick={this.clickSettings}
 											>
-												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 tw-font-size-4">
+												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
 													<figure class="ffz-i-cog" />
 												</div>
 											</button>

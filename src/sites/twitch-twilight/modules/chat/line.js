@@ -452,7 +452,7 @@ export default class ChatLine extends Module {
 
 				if ( mystery )
 					target.push(e('span', {
-						className: `tw-pd-l-05 tw-font-size-4 ffz-i-${expanded ? 'down' : 'right'}-dir`
+						className: `tw-pd-l-05 ffz-font-size-4 ffz-i-${expanded ? 'down' : 'right'}-dir`
 					}));
 
 				const out = [
@@ -1170,7 +1170,7 @@ other {# messages were deleted by a moderator.}
 									username,
 									want_source_tip
 										? e('div', {
-											className: 'tw-font-size-8 tw-mg-t-05'
+											className: 'ffz-font-size-8 tw-mg-t-05'
 										}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
 										: null
 									]

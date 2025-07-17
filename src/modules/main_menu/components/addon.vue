@@ -28,11 +28,11 @@
 
 		<div class="tw-flex-grow-1">
 			<div class="tw-border-b tw-mg-b-05">
-				<h4>
+				<h4 class="ffz-font-size-4">
 					{{ addon.name_i18n ? t(addon.name_i18n, addon.name) : addon.name }}
 					<span
 						v-if="addon.dev || addon.unlisted "
-						class="tw-c-text-alt-2 tw-font-size-6"
+						class="tw-c-text-alt-2 ffz-font-size-6"
 					>
 						({{ addon.id }})
 					</span>
