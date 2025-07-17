@@ -3214,7 +3214,8 @@ export default class ChatHook extends Module {
 							mystery = mysteries[key] = {
 								recipients: [],
 								size: e.massGiftCount,
-								expires: Date.now() + 30000
+								expires: Date.now() + 30000,
+								toJSON: () => null
 							};
 						}
 
@@ -3253,7 +3254,8 @@ export default class ChatHook extends Module {
 							mystery = mysteries[key] = {
 								recipients: [],
 								size: e.massGiftCount,
-								expires: Date.now() + 30000
+								expires: Date.now() + 30000,
+								toJSON: () => null
 							};
 						}
 
