@@ -21,6 +21,8 @@ import {has} from 'utilities/object';
 
 import MAIN_URL from 'site/styles/main.scss';
 
+//import SimpleBar from 'simplebar';
+
 
 // ============================================================================
 // The Site
@@ -67,10 +69,12 @@ export default class Twilight extends BaseSite {
 	onEnable() {
 		this.settings = this.resolve('settings');
 
-		this.web_munch.findModule('simplebar').then(sb => {
+		//window.ffzSimplebar = window.ffzSimplebar || SimpleBar;
+
+		/*this.web_munch.findModule('simplebar').then(sb => {
 			if (! window.ffzSimplebar && sb )
 				window.ffzSimplebar = sb;
-		}).catch(() => {});
+		}).catch(() => {});*/
 
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
@@ -466,6 +470,8 @@ Twilight.ROUTES = {
 	'user-events': '/:userName/events',
 	'user-followers': '/:userName/followers',
 	'user-following': '/:userName/following',
+	'user-schedule': '/:userName/schedule',
+	'user-about': '/:userName/about',
 	'product': '/products/:productName',
 	'prime': '/prime',
 	'turbo': '/turbo',

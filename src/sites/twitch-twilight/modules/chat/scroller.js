@@ -562,10 +562,11 @@ export default class Scroller extends Module {
 			cls.prototype.ffz_updateActing = function() {
 				this._ffz_key_frame_acting = null;
 
-				if ( ! this.scrollRef?.root )
+				const root = t.fine.getChildNode(this);
+				if ( ! root )
 					return;
 
-				this.scrollRef.root.dataset.acting = this.ffz_acting;
+				root.dataset.acting = this.ffz_acting;
 			}
 
 			cls.prototype.ffzUpdateKeyTags = function() {
@@ -579,13 +580,14 @@ export default class Scroller extends Module {
 				if ( ! t.use_keys && this.ffz_use_keys === t.use_keys )
 					return;
 
-				if ( ! this.scrollRef?.root )
+				const root = t.fine.getChildNode(this);
+				if ( ! root )
 					return;
 
 				this.ffz_use_keys = t.use_keys;
-				this.scrollRef.root.classList.toggle('ffz--keys', t.use_keys);
+				root.classList.toggle('ffz--keys', t.use_keys);
 
-				const ds = this.scrollRef.root.dataset;
+				const ds = root.dataset;
 
 				if ( ! t.use_keys ) {
 					delete ds.alt;

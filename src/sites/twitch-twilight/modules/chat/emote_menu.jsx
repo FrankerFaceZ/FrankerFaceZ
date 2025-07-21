@@ -2749,83 +2749,73 @@ export default class EmoteMenu extends Module {
 							<div class={`emote-picker${whisper ? '__whisper' : ''}`}>
 								<div class="tw-flex">
 									<div
-										class={`emote-picker__tab-content${whisper ? '-whisper' : ''} tw-full-width scrollable-area scrollable-area--suppress-scroll-x`}
-										data-test-selector="scrollable-area-wrapper"
-										data-simplebar
+										ref={this.saveScrollRef}
+										class={`emote-picker__tab-content${whisper ? '-whisper' : ''} tw-full-width ffz-emote-menu--scroll-area`}
 									>
-										<div ref={this.saveScrollRef} class="simplebar-scroll-content">
-											<div class="simplebar-content">
-												{loading && this.renderLoading()}
-												{!loading && sets && sets.map((data,idx) => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
-													data.emoji ? t.EmojiSection : t.MenuSection,
-													{
-														key: data.key,
-														idx,
-														data,
-														ffz_sub_data: this.state.ffz_sub_data,
-														emote_modifiers: this.state.emote_modifiers,
-														animated: this.state.animated,
-														combineTabs: this.state.combineTabs,
-														showHeading: this.state.showHeading,
-														filtered: this.state.filtered,
-														visibility_control: visibility,
-														onClickToken: this.props.onClickToken,
-														addSection: this.addSection,
-														removeSection: this.removeSection,
-														startObserving: this.startObserving,
-														stopObserving: this.stopObserving
-													}
-												))}
-												{! loading && (! sets || ! sets.length) && this.renderEmpty()}
-											</div>
-										</div>
+										{loading && this.renderLoading()}
+										{!loading && sets && sets.map((data,idx) => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
+											data.emoji ? t.EmojiSection : t.MenuSection,
+											{
+												key: data.key,
+												idx,
+												data,
+												ffz_sub_data: this.state.ffz_sub_data,
+												emote_modifiers: this.state.emote_modifiers,
+												animated: this.state.animated,
+												combineTabs: this.state.combineTabs,
+												showHeading: this.state.showHeading,
+												filtered: this.state.filtered,
+												visibility_control: visibility,
+												onClickToken: this.props.onClickToken,
+												addSection: this.addSection,
+												removeSection: this.removeSection,
+												startObserving: this.startObserving,
+												stopObserving: this.stopObserving
+											}
+										))}
+										{! loading && (! sets || ! sets.length) && this.renderEmpty()}
 									</div>
 									{(! loading && this.state.quickNav && ! is_favs) && (<div class={`emote-picker__nav_content${whisper ? '-whisper' : ''} tw-block tw-border-radius-none tw-c-background-alt-2`}>
 										<div
-											class={`emote-picker__nav-content-overflow${whisper ? '-whisper' : ''} scrollable-area scrollable-area--suppress-scroll-x`}
-											data-test-selector="scrollable-area-wrapper"
-											data-simplebar
+											ref={this.saveNavRef}
+											class={`emote-picker__nav-content-overflow${whisper ? '-whisper' : ''} ffz-emote-menu--scroll-area tw-pd-x-05`}
 										>
-											<div ref={this.saveNavRef} class="simplebar-scroll-content">
-												<div class="simplebar-content">
-													{!loading && sets && sets.map(data => {
-														if ( ! data || (visibility && (data.is_favorites || data.emoji)) )
-															return null;
+											{!loading && sets && sets.map(data => {
+												if ( ! data || (visibility && (data.is_favorites || data.emoji)) )
+													return null;
 
-														const active = this.state.active_nav === data.key;
+												const active = this.state.active_nav === data.key;
 
-														return (<button
-															key={data.key}
-															class={`${active ? 'emote-picker-tab-item-wrapper__active ' : ''}${padding ? 'tw-mg-y-05' : 'tw-mg-y-1'} tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse`}
-															data-key={data.key}
-															data-title={`${data.i18n ? t.i18n.t(data.i18n, data.title) : data.title}\n${data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source}${data.channel_source ? ` (${data.channel_source})` : ''}`}
-															data-tooltip-side="left"
-															onClick={this.clickSideNav}
-														>
-															<div class={`tw-align-items-center tw-flex tw-justify-content-center ${padding ? '' : 'tw-pd-x-05 '}tw-pd-y-05${active ? ' emote-picker-tab-item-avatar__active tw-c-text-link' : ''}`}>
-																{data.image ? <figure class="ffz-avatar ffz-avatar--size-20">
-																	<img
-																		class="tw-block tw-border-radius-rounded tw-img tw-image-avatar"
-																		src={data.image}
-																		srcSet={data.image_set}
-																	/>
-																</figure> : <figure class={`ffz-emote-picker--nav-icon ffz-i-${data.icon || 'zreknarf'}`} />}
-															</div>
-														</button>);
-													})}
-													{no_tabs && <div class="tw-mg-y-1 tw-mg-x-05 tw-border-t" />}
-													{no_tabs && (<button
-														class="tw-mg-y-1 tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse"
-														data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
-														data-tooltip-side="left"
-														onClick={this.clickSettings}
-													>
-														<div class={`tw-align-items-center tw-flex tw-justify-content-center ${padding ? '' : 'tw-pd-x-05 '}tw-pd-y-05`}>
-															<figure class="ffz-emote-picker--nav-icon ffz-i-cog" />
-														</div>
-													</button>)}
+												return (<button
+													key={data.key}
+													class={`${active ? 'emote-picker-tab-item-wrapper__active ' : ''}${padding ? 'tw-mg-y-05' : 'tw-mg-y-1'} tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse`}
+													data-key={data.key}
+													data-title={`${data.i18n ? t.i18n.t(data.i18n, data.title) : data.title}\n${data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source}${data.channel_source ? ` (${data.channel_source})` : ''}`}
+													data-tooltip-side="left"
+													onClick={this.clickSideNav}
+												>
+													<div class={`tw-align-items-center tw-flex tw-justify-content-center ${padding ? '' : 'tw-pd-x-05 '}tw-pd-y-05${active ? ' emote-picker-tab-item-avatar__active tw-c-text-link' : ''}`}>
+														{data.image ? <figure class="ffz-avatar ffz-avatar--size-20">
+															<img
+																class="tw-block tw-border-radius-rounded tw-img tw-image-avatar"
+																src={data.image}
+																srcSet={data.image_set}
+															/>
+														</figure> : <figure class={`ffz-emote-picker--nav-icon ffz-i-${data.icon || 'zreknarf'}`} />}
+													</div>
+												</button>);
+											})}
+											{no_tabs && <div class="tw-mg-y-1 tw-mg-x-05 tw-border-t" />}
+											{no_tabs && (<button
+												class="tw-mg-y-1 tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse"
+												data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
+												data-tooltip-side="left"
+												onClick={this.clickSettings}
+											>
+												<div class={`tw-align-items-center tw-flex tw-justify-content-center ${padding ? '' : 'tw-pd-x-05 '}tw-pd-y-05`}>
+													<figure class="ffz-emote-picker--nav-icon ffz-i-cog" />
 												</div>
-											</div>
+											</button>)}
 										</div>
 									</div>)}
 								</div>

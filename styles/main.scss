@@ -180,3 +180,7 @@
 .ffz-aspect--align-bottom > :not(.ffz-aspect__spacer) {
 	bottom: 0;
 }
+
+.ffz-scrollable {
+	scrollbar-width: thin;
+}
