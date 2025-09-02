@@ -19,8 +19,9 @@ import * as CLEARABLES from './clearables';
 
 import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys, ConcreteLocalStorageData } from './types';
 import type { FilterType } from 'utilities/filtering';
-import { AdvancedSettingsProvider, IndexedDBProvider, LocalStorageProvider, Providers, type SettingsProvider } from './providers';
+import { AdvancedSettingsProvider, IndexedDBProvider, LocalStorageProvider, Providers, SettingsProvider } from './providers';
 import type { AddonInfo, SettingsTypeMap } from 'utilities/types';
+import { FFZEvent } from '../utilities/events';
 
 export {parse as parse_path} from 'utilities/path-parser';
 
@@ -41,6 +42,21 @@ export const NO_SYNC_KEYS = ['session'];
 // ============================================================================
 // Registration
 // ============================================================================
+
+type FFZProviderConstructorEvent = {
+	settings: SettingsManager;
+	Provider: typeof SettingsProvider;
+	AdvancedProvider: typeof AdvancedSettingsProvider;
+	registerProvider: (key: string, provider: typeof SettingsProvider) => void;
+};
+
+type FFZProviderConstructor = (evt: FFZProviderConstructorEvent) => void;
+
+declare global {
+	interface Window {
+		ffz_providers?: FFZProviderConstructor[];
+	}
+}
 
 declare module 'utilities/types' {
 	interface ModuleEventMap {
@@ -147,8 +163,31 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 		this.providers = {};
 		for(const [key, provider] of Object.entries(Providers)) {
-			if ( provider.supported() )
+			if ( provider.supported(this) )
 				this.providers[key] = provider;
+		}
+
+		// Load any dynamic providers that have been registered.
+		// Now that we're here, no further providers can be registered, so seal them.
+		window.ffz_providers = window.ffz_providers || [];
+		Object.seal(window.ffz_providers);
+		if ( window.ffz_providers.length > 0 ) {
+			const evt = {
+				settings: this,
+				Provider: SettingsProvider,
+				AdvancedProvider: AdvancedSettingsProvider,
+				registerProvider: (key: string, provider: typeof SettingsProvider) => {
+					if ( ! this.providers[key] && provider.supported(this) )
+						this.providers[key] = provider;
+				}
+			};
+
+			for(const p of window.ffz_providers)
+				try {
+					p(evt);
+				} catch(err) {
+					this.log.error('Error while registering external settings provider:', err);
+				}
 		}
 
 		// This cannot be modified at a future time, as providers NEED
@@ -689,13 +728,35 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	 * @returns {SettingsProvider} The provider to store everything.
 	 */
 	async _createProvider() {
-		// If we should be using Cross-Origin Storage Bridge, do so.
-		//if ( this.providers.cosb && this.providers.cosb.supported() )
-		//	return new this.providers.cosb(this);
+		// There are a couple situations where we might want to ignore a
+		// pre-set provider and sniff anyways. These are situations where
+		// a user can't open the control center. So, the player embeds,
+		// clips pages, and embedded chat that's embedded within other sites.
+		let ignore_choice = false;
+		if ( (this.root as any).host === 'twitch' ) {
+			// Player or clips
+			if ( location.hostname.startsWith('player.') || location.hostname.startsWith('clips.') )
+				ignore_choice = true;
 
-		let wanted = localStorage.ffzProviderv2;
-		if ( wanted == null )
-			wanted = localStorage.ffzProviderv2 = await this.sniffProvider();
+			// Embedded stuff
+			else if ( location.pathname.startsWith('/embed/') && (
+				// ancestorOrigins > 0
+				( location.ancestorOrigins && location.ancestorOrigins.length )
+				||
+				// parent.location mismatch
+				( window.parent && window.parent.location !== location )
+			) )
+				ignore_choice = true;
+		}
+
+		let wanted;
+		if (ignore_choice)
+			wanted = await this.sniffProvider();
+		else {
+			wanted = localStorage.ffzProviderv2;
+			if ( wanted == null )
+				wanted = localStorage.ffzProviderv2 = await this.sniffProvider();
+		}
 
 		if ( this.providers[wanted] ) {
 			const provider = new (this.providers[wanted] as any)(this) as SettingsProvider;
@@ -726,7 +787,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		);
 
 		for(const [key, provider] of providers) {
-			if ( provider.supported() && await provider.hasContent() ) // eslint-disable-line no-await-in-loop
+			if ( provider.supported(this) && await provider.hasContent(this) ) // eslint-disable-line no-await-in-loop
 				return key;
 		}
 

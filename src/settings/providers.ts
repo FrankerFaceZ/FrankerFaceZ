@@ -51,7 +51,7 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 	static title: string;
 	static description: string;
 
-	static hasContent: () => OptionalPromise<boolean>;
+	static hasContent: (manager: SettingsManager) => OptionalPromise<boolean>;
 
 
 	manager: SettingsManager;
@@ -70,7 +70,7 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 		this.disabled = false;
 	}
 
-	static supported() {
+	static supported(manager: SettingsManager) {
 		return false;
 	}
 
@@ -103,14 +103,14 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 	): ProviderTypeMap[K];
 	abstract get<K extends keyof ProviderTypeMap>(
 		key: K
-	): ProviderTypeMap[K] | null;
+	): ProviderTypeMap[K] | undefined;
 	abstract get<T>(
 		key: Exclude<string, keyof ProviderTypeMap>,
 		default_value: T
 	): T;
 	abstract get<T>(
 		key: Exclude<string, keyof ProviderTypeMap>
-	): T | null;
+	): T | undefined;
 
 	abstract set<K extends keyof ProviderTypeMap>(key: K, value: ProviderTypeMap[K]): void;
 	abstract set<K extends string>(key: Exclude<K, keyof ProviderTypeMap>, value: unknown): void;
@@ -230,7 +230,12 @@ export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 
 	// Provider Methods
 
-	get<T>(key: string, default_value?: T): T {
+	get<T>(key: string): T | undefined;
+	get<T>(key: string, default_value: T): T;
+	get<T>(
+		key: string,
+		default_value?: T
+	): T | undefined {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;
@@ -412,9 +417,8 @@ export class LocalStorageProvider extends SettingsProvider {
 		return true;
 	}
 
-	static hasContent(prefix?: string) {
-		if ( ! prefix )
-			prefix = 'FFZ:setting:';
+	static hasContent() {
+		const prefix = 'FFZ:setting:';
 
 		for(const key in localStorage)
 			if ( key.startsWith(prefix) && has(localStorage, key) )
@@ -432,9 +436,9 @@ export class LocalStorageProvider extends SettingsProvider {
 	private _boundHandleMessage?: ((event: MessageEvent) => void) | null;
 	private _boundHandleStorage?: ((event: StorageEvent) => void) | null;
 
-	constructor(manager: SettingsManager, prefix?: string) {
+	constructor(manager: SettingsManager) {
 		super(manager);
-		this.prefix = prefix = prefix == null ? 'FFZ:setting:' : prefix;
+		const prefix = this.prefix = 'FFZ:setting:';
 
 		const cache = this._cached = new Map,
 			len = prefix.length;
@@ -564,10 +568,12 @@ export class LocalStorageProvider extends SettingsProvider {
 		}
 	}
 
+	get<T>(key: string): T | undefined;
+	get<T>(key: string, default_value: T): T;
 	get<T>(
 		key: string,
 		default_value?: T
-	): T {
+	): T | undefined {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;
@@ -887,7 +893,12 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 
 	// Synchronous Methods
 
-	get<T>(key: string, default_value?: T): T {
+	get<T>(key: string): T | undefined;
+	get<T>(key: string, default_value: T): T;
+	get<T>(
+		key: string,
+		default_value?: T
+	): T | undefined {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;
@@ -1513,7 +1524,7 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 
 	static supported() { return EXTENSION }
 
-	static hasContent() {
+	static hasContent(manager: SettingsManager) {
 		if ( ! ExtensionProvider.supported() )
 			return false;
 
@@ -1523,19 +1534,11 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 			let responded = false,
 				timeout: ReturnType<typeof setTimeout> | null = null ;
 
-			const listener = (evt: MessageEvent<any>) => {
-				if (evt.source !== window)
-					return;
-
-				if (evt.data && evt.data.type === 'ffz_from_ext') {
-					const msg = evt.data.data,
-						type = msg?.ffz_type;
-
-					if (type === 'has-keys') {
-						responded = true;
-						resolve(msg.value);
-						cleanup();
-					}
+			const listener = (msg: any) => {
+				if ( msg.type === 'has-keys' ) {
+					responded = true;
+					resolve(msg.value);
+					cleanup();
 				}
 			};
 
@@ -1550,17 +1553,11 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 					timeout = null;
 				}
 
-				window.removeEventListener('message', listener);
+				manager.off('ext:message', listener);
 			}
 
-			window.addEventListener('message', listener);
-
-			window.postMessage({
-				type: 'ffz_to_ext',
-				data: {
-					ffz_type: 'check-has-keys'
-				}
-			}, '*');
+			manager.on('ext:message', listener);
+			manager.emit('ext:message', { type: 'check-has-keys' });
 
 			timeout = setTimeout(cleanup, 1000);
 		});
@@ -1578,8 +1575,8 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 	constructor(manager: SettingsManager) {
 		super(manager);
 
-		this.onExtMessage = this.onExtMessage.bind(this);
-		window.addEventListener('message', this.onExtMessage);
+		manager.on('ext:message', this.handleMessage, this);
+		this.send('ready');
 	}
 
 	// Stuff
@@ -1589,36 +1586,16 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 	}
 
 	disableEvents() {
-
+		this.manager.off('ext:message', this.handleMessage, this);
 	}
 
 	// Communication
-
-	onExtMessage(evt: MessageEvent<any>) {
-		if (evt.source !== window)
-			return;
-
-		if (evt.data?.type === 'ffz_from_ext' && evt.data.data?.ffz_type)
-			this.handleMessage(evt.data.data);
-	}
 
 	send(msg: string | CorsMessage, transfer?: OptionalArray<Transferable>) {
 		if ( typeof msg === 'string' )
 			msg = {ffz_type: msg} as any;
 
-		try {
-			window.postMessage(
-				{
-					type: 'ffz_to_ext',
-					data: msg
-				},
-				'*',
-				transfer ? (Array.isArray(transfer) ? transfer : [transfer]) : undefined
-			);
-
-		} catch(err) {
-			this.manager.log.error('Error sending message to extension.', err, msg, transfer);
-		}
+		this.manager.emit('ext:message', msg);
 	}
 
 }

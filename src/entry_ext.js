@@ -2,6 +2,7 @@
 'use strict';
 (() => {
 	const browser = globalThis.browser ?? globalThis.chrome;
+	const is_firefox = (typeof browser === 'object' && browser.runtime.getURL('').startsWith('moz'));
 
 	if (
 		// Don't run on certain sub-domains.
@@ -21,6 +22,7 @@
 	}
 
 	document.body.dataset.ffzSource = 'extension';
+	document.body.dataset.ffzExtension = browser.runtime.id;
 
 	// Make sure to wake the service worker up early.
 	browser.runtime.sendMessage({
@@ -29,75 +31,34 @@
 
 	// Set up a bridge for connections, since Firefox
 	// doesn't support externally_connectable.
-	const connections = new Map;
-
-	function handleConnect(id) {
-		if ( connections.has(id) )
-			return;
-
-		const port = browser.runtime.connect();
-		connections.set(id, port);
-
+	if (is_firefox) {
+		const port = browser.runtime.connect({ name: 'ffz-cs-bridge' });
 		port.onMessage.addListener(msg => {
 			window.postMessage({
-				type: 'ffz-con-message',
-				id,
-				payload: msg
-			})
+				ffz_from_worker: true,
+				...msg
+			}, window.location.origin);
 		});
 
-		port.onDisconnect.addListener(() => {
-			connections.delete(id);
-			window.postMessage({
-				type: 'ffz-con-disconnect',
-				id
-			});
+		window.addEventListener('message', evt => {
+			if (evt.source !== window || ! evt.data?.ffz_to_worker )
+				return;
+
+			port.postMessage(evt.data);
 		});
 	}
-
-	function handleDisconnect(id) {
-		const port = connections.get(id);
-		if ( port ) {
-			connections.delete(id);
-			port.disconnect();
-		}
-	}
-
-	function handleMessage(id, payload) {
-		const port = connection.get(id);
-		if ( port ) {
-			port.postMessage(payload);
-		}
-	}
-
-	window.addEventListener('message', evt => {
-		if (evt.source !== window || ! evt.data )
-			return;
-
-		const { type, id, payload } = evt.data;
-
-		if ( type === 'ffz-con-connect' )
-			handleConnect(id);
-
-		else if ( type === 'ffz-con-message' )
-			handleMessage(id, payload);
-
-		else if ( type === 'ffz-con-disconnect' )
-			handleDisconnect(id);
-	});
-
 
 	// Let the extension send messages to the page directly.
-	browser.runtime.onMessage.addListener((msg, sender) => {
-		if (msg?.type === 'ffz_to_page')
-			window.postMessage(msg.data, '*');
+	browser.runtime.onMessage.addListener(msg => {
+		if (msg?.ffz_from_worker)
+			window.postMessage(msg, window.location.origin);
 
 		return false;
 	});
 
 	// Now, inject our script into the page context.
 	const HOST = location.hostname,
-		SERVER = browser.runtime.getURL("web"),
+		SERVER = browser.runtime.getURL('web'),
 		script = document.createElement('script');
 
 	let FLAVOR =

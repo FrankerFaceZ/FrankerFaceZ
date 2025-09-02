@@ -60,7 +60,9 @@ export type ModuleEvents = {
 	':loaded': [module: GenericModule],
 	':unloaded': [module: GenericModule],
 	':enabled': [module: GenericModule],
-	':disabled': [module: GenericModule]
+	':disabled': [module: GenericModule],
+	'ext:message': [msg: any],
+	'ext:post-message': [msg: any]
 };
 
 export type GenericModule = Module<any, any, any, any>;
