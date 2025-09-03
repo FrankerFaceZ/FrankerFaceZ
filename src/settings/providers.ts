@@ -1,21 +1,28 @@
 'use strict';
 
 import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLike } from 'utilities/blobs';
+import { EXTENSION } from 'utilities/constants';
+import {EventEmitter} from 'utilities/events';
+import {TicketLock, has, once} from 'utilities/object';
+import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
 
 
 // ============================================================================
 // Settings Providers
 // ============================================================================
 
-import {EventEmitter} from 'utilities/events';
-import {TicketLock, has, once} from 'utilities/object';
 import type SettingsManager from '.';
-import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
-import { EXTENSION } from '../utilities/constants';
 
 const DB_VERSION = 1,
 	NOT_WWW_TWITCH = window.location.host !== 'www.twitch.tv',
 	NOT_WWW_YT = window.location.host !== 'www.youtube.com';
+
+
+export const IGNORE_CONTENT_KEYS = [
+	'client-id',
+	'cfg-seen',
+	'cfg-collapsed'
+];
 
 
 // ============================================================================
@@ -51,6 +58,9 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 	static title: string;
 	static description: string;
 
+	static crossOrigin(manager: SettingsManager) { return false; }
+	static canSupportBlobs(manager: SettingsManager) { return false; }
+
 	static hasContent: (manager: SettingsManager) => OptionalPromise<boolean>;
 
 
@@ -72,6 +82,10 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 
 	static supported(manager: SettingsManager) {
 		return false;
+	}
+
+	static allowAsDefault(manager: SettingsManager) {
+		return true;
 	}
 
 	static allowTransfer = true;
@@ -128,6 +142,8 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 
 
 export abstract class AdvancedSettingsProvider extends SettingsProvider {
+
+	static canSupportBlobs() { return true; }
 
 	get supportsBlobs() { return true; }
 
@@ -421,7 +437,7 @@ export class LocalStorageProvider extends SettingsProvider {
 		const prefix = 'FFZ:setting:';
 
 		for(const key in localStorage)
-			if ( key.startsWith(prefix) && has(localStorage, key) )
+			if ( key.startsWith(prefix) && ! IGNORE_CONTENT_KEYS.includes(key.slice(prefix.length)) && has(localStorage, key) )
 				return true;
 
 		return false;
@@ -695,7 +711,11 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 				}
 
 				r2.onsuccess = () => {
-					const success = Array.isArray(r2.result) && r2.result.length > 0;
+					let success = false;
+					if ( Array.isArray(r2.result) && r2.result.length > 0 ) {
+						success = r2.result.filter(key => !IGNORE_CONTENT_KEYS.includes(key as string)).length > 0;
+					}
+
 					db.close();
 					return resolve(success);
 				}
@@ -1446,6 +1466,7 @@ export class CrossOriginStorageBridge extends RemoteSettingsProvider {
 	static hasContent() {
 		return CrossOriginStorageBridge.supported();
 	}
+	static allowAsDefault() { return false; }
 
 	static priority = 100;
 	static title = 'Cross-Origin Storage Bridge';

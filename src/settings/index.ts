@@ -19,7 +19,7 @@ import * as CLEARABLES from './clearables';
 
 import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys, ConcreteLocalStorageData } from './types';
 import type { FilterType } from 'utilities/filtering';
-import { AdvancedSettingsProvider, IndexedDBProvider, LocalStorageProvider, Providers, SettingsProvider } from './providers';
+import { AdvancedSettingsProvider, IGNORE_CONTENT_KEYS, LocalStorageProvider, Providers, SettingsProvider } from './providers';
 import type { AddonInfo, SettingsTypeMap } from 'utilities/types';
 import { FFZEvent } from '../utilities/events';
 
@@ -170,12 +170,17 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		// Load any dynamic providers that have been registered.
 		// Now that we're here, no further providers can be registered, so seal them.
 		window.ffz_providers = window.ffz_providers || [];
-		Object.seal(window.ffz_providers);
+		try {
+			Object.seal(window.ffz_providers);
+		} catch(err) {
+			this.log.warn('Unable to seal window.ffz_providers:', err);
+		}
 		if ( window.ffz_providers.length > 0 ) {
 			const evt = {
 				settings: this,
 				Provider: SettingsProvider,
 				AdvancedProvider: AdvancedSettingsProvider,
+				IGNORE_CONTENT_KEYS: IGNORE_CONTENT_KEYS,
 				registerProvider: (key: string, provider: typeof SettingsProvider) => {
 					if ( ! this.providers[key] && provider.supported(this) )
 						this.providers[key] = provider;
@@ -786,8 +791,21 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			((a[1] as any).priority ?? 0)
 		);
 
+		// Remove unsupported providers.
+		for(let i = providers.length - 1; i >= 0; i--) {
+			if ( ! providers[i][1].supported(this) )
+				providers.splice(i, 1);
+		}
+
+		// If there's a provider that has content, then use it.
 		for(const [key, provider] of providers) {
-			if ( provider.supported(this) && await provider.hasContent(this) ) // eslint-disable-line no-await-in-loop
+			if ( await provider.hasContent(this) ) // eslint-disable-line no-await-in-loop
+				return key;
+		}
+
+		// Select the first provider that allows itself to be the default.
+		for(const [key, provider] of providers) {
+			if ( provider.allowAsDefault(this) )
 				return key;
 		}
 

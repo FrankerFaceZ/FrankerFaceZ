@@ -2,11 +2,11 @@ declare global {
 	let __extension__: string | undefined;
 }
 
-/** Whether or not FrankerFaceZ was loaded from a development server. */
-export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev');
-
 /** Whether or not FrankerFaceZ was loaded as a packed web extension. */
 export const EXTENSION = !!__extension__;
+
+/** Whether or not FrankerFaceZ was loaded from a development server. */
+export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev') && !EXTENSION;
 
 /** The base URL of the FrankerFaceZ CDN. */
 export const SERVER = DEBUG ? 'https://localhost:8000' : 'https://cdn2.frankerfacez.com';
