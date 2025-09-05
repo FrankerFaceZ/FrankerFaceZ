@@ -167,33 +167,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 				this.providers[key] = provider;
 		}
 
-		// Load any dynamic providers that have been registered.
-		// Now that we're here, no further providers can be registered, so seal them.
-		window.ffz_providers = window.ffz_providers || [];
-		try {
-			Object.seal(window.ffz_providers);
-		} catch(err) {
-			this.log.warn('Unable to seal window.ffz_providers:', err);
-		}
-		if ( window.ffz_providers.length > 0 ) {
-			const evt = {
-				settings: this,
-				Provider: SettingsProvider,
-				AdvancedProvider: AdvancedSettingsProvider,
-				IGNORE_CONTENT_KEYS: IGNORE_CONTENT_KEYS,
-				registerProvider: (key: string, provider: typeof SettingsProvider) => {
-					if ( ! this.providers[key] && provider.supported(this) )
-						this.providers[key] = provider;
-				}
-			};
-
-			for(const p of window.ffz_providers)
-				try {
-					p(evt);
-				} catch(err) {
-					this.log.error('Error while registering external settings provider:', err);
-				}
-		}
+		this.loadDynamicProviders();
 
 		// This cannot be modified at a future time, as providers NEED
 		// to be ready very early in FFZ intitialization. Seal it.
@@ -306,6 +280,38 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		// Don't wait around to be required.
 		this._start_time = performance.now();
 		this.enable();
+	}
+
+	loadDynamicProviders() {
+		// Load any dynamic providers that have been registered.
+		// Now that we're here, no further providers can be registered, so seal them.
+		try {
+			window.ffz_providers = window.ffz_providers || [];
+			Object.seal(window.ffz_providers);
+			if (window.ffz_providers.length === 0)
+				return;
+		} catch(err) {
+			this.log.warn('Unable to seal window.ffz_providers. Dynamic settings providers will be skipped. Details:', err);
+			return;
+		}
+
+		const evt = {
+			settings: this,
+			Provider: SettingsProvider,
+			AdvancedProvider: AdvancedSettingsProvider,
+			IGNORE_CONTENT_KEYS: IGNORE_CONTENT_KEYS,
+			registerProvider: (key: string, provider: typeof SettingsProvider) => {
+				if ( ! this.providers[key] && provider.supported(this) )
+					this.providers[key] = provider;
+			}
+		};
+
+		for(const p of window.ffz_providers)
+			try {
+				p(evt);
+			} catch(err) {
+				this.log.error('Error while registering dynamic settings provider:', err);
+			}
 	}
 
 	_updateContextProxies(proxy?: MessageEventSource) {

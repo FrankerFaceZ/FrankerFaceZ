@@ -6,6 +6,7 @@ type PortType = {
 
 export function installPort(module: Module) {
 	let port: PortType | null = null;
+	let count = 0;
 
 	function initialize() {
 		try {
@@ -15,21 +16,25 @@ export function installPort(module: Module) {
 			});
 
 			cp.onMessage.addListener(msg => {
+				count = 0;
 				module.emit('ext:message', msg);
 			});
 
 			cp.onDisconnect.addListener(p => {
 				module.log.warn('Extension port disconnected.', (p as any)?.error ?? chrome.runtime.lastError);
 				port = null;
+				count++;
+				if ( count < 10 )
+					initialize();
 			});
 
 			return;
 		} catch(err) {
-			module.log.info('Unable to connect using externally_connectable, falling back to bridge.');
+			module.log.warn('Unable to connect using externally_connectable, falling back to bridge.');
 		}
 
 		window.addEventListener('message', evt => {
-			if ( evt.source !== window || ! evt.data || evt.data.ffz_from_worker )
+			if ( evt.source !== window || ! evt.data?.ffz_from_worker )
 				return;
 
 			module.emit('ext:message', evt.data);
@@ -49,6 +54,20 @@ export function installPort(module: Module) {
 		if ( ! port )
 			initialize();
 
-		port!.postMessage(msg);
+		try {
+			port!.postMessage(msg);
+		} catch(err) {
+			// Try re-initializing once.
+			port = null;
+			initialize();
+
+			try {
+				port!.postMessage(msg);
+			} catch(err) {
+				module.log.error('Error posting message to extension port.', err);
+			}
+		}
 	});
+
+	initialize();
 }

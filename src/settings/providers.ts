@@ -1,7 +1,6 @@
 'use strict';
 
-import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLike } from 'utilities/blobs';
-import { EXTENSION } from 'utilities/constants';
+import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLike, JsonSerialized, jsonSerialize, jsonDeserialize } from 'utilities/blobs';
 import {EventEmitter} from 'utilities/events';
 import {TicketLock, has, once} from 'utilities/object';
 import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
@@ -163,6 +162,8 @@ export abstract class AdvancedSettingsProvider extends SettingsProvider {
 
 export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 
+	static needJsonBlobs = false;
+
 	// State and Storage
 	private _start_time: number;
 	private _cached: Map<string, any>;
@@ -300,15 +301,22 @@ export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 	// Provider Methods: Blobs
 
 	async getBlob(key: string) {
-		const msg = await this.rpc({ffz_type: 'get-blob', key});
-		return msg ? deserializeBlob(msg) : null;
+		let msg = await this.rpc({ffz_type: 'get-blob', key});
+		if (msg && typeof msg.buffer === 'string')
+			msg = jsonDeserialize(msg as JsonSerialized<SerializedBlobLike>);
+
+		return msg ? deserializeBlob(msg as SerializedBlobLike) : null;
 	}
 
 	async setBlob(key: string, value: BlobLike) {
+		let serialized: SerializedBlobLike | JsonSerialized<SerializedBlobLike> | null = await serializeBlob(value);
+		if (serialized && (this.constructor as typeof RemoteSettingsProvider).needJsonBlobs)
+			serialized = jsonSerialize(serialized);
+
 		await this.rpc({
 			ffz_type: 'set-blob',
 			key,
-			value: await serializeBlob(value)
+			value: serialized
 		});
 	}
 
@@ -1543,7 +1551,7 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 
 	// Static Stuff
 
-	static supported() { return EXTENSION }
+	static supported() { return !! document.body.dataset.ffzExtension; }
 
 	static hasContent(manager: SettingsManager) {
 		if ( ! ExtensionProvider.supported() )
@@ -1588,8 +1596,13 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 	static title = 'Browser Extension Storage';
 	static description = 'This provider uses a browser extension service worker to store settings in a location that should not suffer from issues due to storage partitioning or cache clearing.';
 
+	static crossOrigin() { return true; }
+	static canSupportBlobs() { return true; }
+
 	static allowTransfer = true;
 	static shouldUpdate = true;
+
+	static needJsonBlobs = true;
 
 	// State and Storage
 
@@ -1616,7 +1629,7 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 		if ( typeof msg === 'string' )
 			msg = {ffz_type: msg} as any;
 
-		this.manager.emit('ext:message', msg);
+		this.manager.emit('ext:post-message', msg);
 	}
 
 }
@@ -1676,13 +1689,13 @@ type CorsRpcTypes = {
 		input: {
 			key: string;
 		};
-		output: SerializedBlobLike | null;
+		output: JsonSerialized<SerializedBlobLike> | SerializedBlobLike | null;
 	};
 
 	'set-blob': {
 		input: {
 			key: string;
-			value: SerializedBlobLike | null;
+			value: JsonSerialized<SerializedBlobLike> | SerializedBlobLike | null;
 		};
 		output: void;
 	};
@@ -1760,6 +1773,6 @@ export const Providers: Record<string, typeof SettingsProvider> = {
 	local: LocalStorageProvider,
 	idb: IndexedDBProvider,
 	cosb: CrossOriginStorageBridge,
-	//ext: ExtensionProvider
+	ext: ExtensionProvider
 
 };

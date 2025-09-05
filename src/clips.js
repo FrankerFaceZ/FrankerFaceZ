@@ -9,6 +9,8 @@ import Module from 'utilities/module';
 import {DEBUG} from 'utilities/constants';
 import {timeout} from 'utilities/object';
 
+import { installPort } from './utilities/extension_port';
+
 import SettingsManager from './settings/index';
 import AddonManager from './addons';
 import ExperimentManager from './experiments';
@@ -54,6 +56,9 @@ class FrankerFaceZ extends Module {
 		// ========================================================================
 		// Core Systems
 		// ========================================================================
+
+		if (!! document.body.dataset.ffzExtension)
+			installPort(this);
 
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);

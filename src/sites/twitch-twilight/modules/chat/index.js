@@ -427,9 +427,9 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering > Block >> Message Types @{"description":"This filter allows you to remove all messages of a certain type from Twitch chat. It can be used to filter system messages, such as Hosts or Raids. Some types, such as moderation actions, cannot be blocked to prevent chat functionality from breaking."}',
 				component: 'blocked-types',
-				getExtraTerms: () => Object.keys(this.chat_types).filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key)),
+				getExtraTerms: () => Object.keys(this.chat_types ?? CHAT_TYPES).filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key)),
 				data: () => Object
-					.keys(this.chat_types)
+					.keys(this.chat_types ?? CHAT_TYPES)
 					.filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key))
 					.sort()
 			}

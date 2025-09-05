@@ -351,6 +351,10 @@ if ( DEV_SERVER )
 
 		setupMiddlewares: (middlewares, devServer) => {
 
+			devServer.app.get('/script/script.min.js', (req, res) => {
+				res.redirect('/script/script.js');
+			});
+
 			devServer.app.get('/update_font', (req, res) => {
 				const proc = exec('npm run font:save');
 
