@@ -251,7 +251,7 @@ export default class ChatHook extends Module {
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.parseOutgoingMessage && n.onRoomStateUpdated && n.renderNotifications,
+			n => n.parseOutgoingMessage && n.sendMessage && n.renderNotifications,
 			Twilight.CHAT_ROUTES
 		);
 
