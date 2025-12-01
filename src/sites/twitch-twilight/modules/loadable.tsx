@@ -117,6 +117,7 @@ export default class Loadable extends Module {
 		});
 
 		this.settings.getChanges('layout.combos', val => {
+			this.toggle("OneTapBreakpointAnimationPlayerOverlay", !val);
 			this.toggle('CombosIngressButton_Available', !val);
 		});
 

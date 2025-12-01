@@ -141,7 +141,7 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 
 		if ( ! instance ) { //} && ! instances ) {
 			if ( tries > 10 )
-				this.log.warn('Unable to find PubSub.');
+				this.log.info('Unable to find PubSub.');
 			else
 				new Promise(r => setTimeout(r, 50)).then(() => this.onEnable(tries + 1));
 
@@ -154,7 +154,7 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 				this.hookClient(instance);
 			} catch(err) {
 				this.instance = null;
-				this.log.error('Error hooking PubSub client.', err);
+				this.log.info('Error hooking PubSub client. This is expected.', err);
 			}
 		}
 
@@ -174,7 +174,7 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 		*/
 
 		if ( ! this.instance )
-			this.log.warn('Unable to find a PubSub instance.');
+			this.log.info('Unable to find a PubSub instance.');
 	}
 
 	handleMessage(msg: TwitchPubSubMessageEvent) {

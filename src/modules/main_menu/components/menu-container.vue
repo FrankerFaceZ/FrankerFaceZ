@@ -1,6 +1,6 @@
 <template lang="html">
 	<div v-if="item.contents" :class="classes">
-		<header v-if="! item.no_header" class="tw-font-size-5">
+		<header v-if="! item.no_header" class="tw-font-size-4">
 			{{ t(item.i18n_key, item.title) }}
 		</header>
 		<section

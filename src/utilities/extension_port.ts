@@ -30,7 +30,7 @@ export function installPort(module: Module) {
 
 			return;
 		} catch(err) {
-			module.log.warn('Unable to connect using externally_connectable, falling back to bridge.');
+			module.log.info('Unable to connect using externally_connectable, falling back to bridge.');
 		}
 
 		window.addEventListener('message', evt => {

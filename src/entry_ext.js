@@ -32,19 +32,38 @@
 	// Set up a bridge for connections, since Firefox
 	// doesn't support externally_connectable.
 	if (is_firefox) {
-		const port = browser.runtime.connect({ name: 'ffz-cs-bridge' });
-		port.onMessage.addListener(msg => {
-			window.postMessage({
-				ffz_from_worker: true,
-				...msg
-			}, window.location.origin);
-		});
+		let port;
+		const initialize = () => {
+			port = browser.runtime.connect({ name: 'ffz-cs-bridge' });
+			port.onMessage.addListener(msg => {
+				window.postMessage({
+					ffz_from_worker: true,
+					...msg
+				}, window.location.origin);
+			});
+			port.onDisconnect.addListener(() => {
+				// Try to re-establish the connection.
+				console.log('FFZ-CS-Bridge: Disconnected, attempting to reconnect.');
+				setTimeout(initialize, 0);
+			});
+		};
+
+		initialize();
 
 		window.addEventListener('message', evt => {
 			if (evt.source !== window || ! evt.data?.ffz_to_worker )
 				return;
 
-			port.postMessage(evt.data);
+			try {
+				port.postMessage(evt.data);
+			} catch(ignore) {
+				initialize();
+				try {
+					port.postMessage(evt.data);
+				} catch(err) {
+					console.log('FFZ-CS-Bridge: Error sending message to extension.', err);
+				}
+			}
 		});
 	}
 
