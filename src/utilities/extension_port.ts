@@ -6,6 +6,7 @@ type PortType = {
 
 export function installPort(module: Module) {
 	let port: PortType | null = null;
+	let pinger: ReturnType<typeof setInterval> | null = null;
 	let count = 0;
 
 	function initialize() {
@@ -27,6 +28,20 @@ export function installPort(module: Module) {
 				if ( count < 10 )
 					initialize();
 			});
+
+			// Set up a pinger to keep the connection alive.
+			if ( pinger )
+				clearInterval(pinger);
+
+			pinger = setInterval(() => {
+				try {
+					cp.postMessage({ type: 'ping' });
+				} catch(err) {
+					module.log.warn('Error pinging extension port, attempting to re-initialize.', err);
+					port = null;
+					initialize();
+				}
+			}, 10_000);
 
 			return;
 		} catch(err) {
