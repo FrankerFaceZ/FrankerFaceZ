@@ -2256,6 +2256,10 @@ export default class ChatHook extends Module {
 						if ( blocked_types.has(types[msg.type]) )
 							return;
 
+						// Hide messages related to Combos when they're hidden.
+						if ( (msg.type === types.OneTapBreakpointAchieved || msg.type === types.OneTapStreakExpired || msg.type === types.OneTapStreakStarted) && !t.chat.context.get('layout.combos') )
+							return;
+
 						if ( msg.type === types.ChannelPointsReward && ! isMessageEffect(msg.reward) )
 							return;
 
