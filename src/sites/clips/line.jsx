@@ -107,7 +107,7 @@ export default class Line extends Module {
 						user_class = user_class.join(' ');
 
 					const user_props = {
-						className: `clip-chat__message-author tw-font-size-5 ffz-link notranslate tw-strong${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
+						className: `clip-chat__message-author ffz-font-size-5 ffz-link notranslate tw-strong${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
 						href: `https://www.twitch.tv/${user.login}/clips`,
 						style: { color }
 					};

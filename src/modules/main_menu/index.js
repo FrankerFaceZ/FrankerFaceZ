@@ -737,8 +737,17 @@ export default class MainMenu extends Module {
 								terms.push(this.i18n.t(tok.desc_i18n_key, tok.description, null));
 						}
 
-						if ( tok.getExtraTerms )
-							terms = terms.concat(tok.getExtraTerms());
+						if ( tok.getExtraTerms ) {
+							let extras;
+							try {
+								extras = tok.getExtraTerms();
+							} catch(err) {
+								this.log.warn('Error getting extra terms for setting', setting_key, err);
+							}
+
+							if (extras)
+								terms = terms.concat(extras);
+						}
 
 						tok.search_terms = terms.map(format_term).join('\n');
 

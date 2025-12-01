@@ -1,6 +1,9 @@
 .ffz-main-menu {
 	z-index: 1998;
 
+	h2 { font-size: var(--ffz-font-size-2); }
+	h3 { font-size: var(--ffz-font-size-3); }
+
 	.scrollable-area {
 		overflow-anchor: none;
 	}

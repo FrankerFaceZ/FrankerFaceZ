@@ -7,7 +7,7 @@
 		@click="onFocus"
 	>
 		<header ref="header" class="tw-c-background-base tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="maybeResize($event)">
-			<h3 class="ffz-i-zreknarf ffz-i-pd-1">
+			<h3 class="ffz-i-zreknarf ffz-i-pd-1 ffz-font-size-3">
 				FrankerFaceZ
 			</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
@@ -22,7 +22,7 @@
 							v-model="query"
 							:placeholder="t('main-menu.search', 'Search Settings')"
 							type="search"
-							class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
+							class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
 							autocapitalize="off"
 							autocorrect="off"
 							autocomplete="off"

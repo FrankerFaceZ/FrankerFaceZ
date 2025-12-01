@@ -38,6 +38,7 @@ import * as Utility_Time from 'utilities/time';
 import * as Utility_Tooltip from 'utilities/tooltip';
 import * as Utility_I18n from 'utilities/translation-core';
 import * as Utility_Filtering from 'utilities/filtering';
+import { installPort } from './utilities/extension_port';
 
 class FrankerFaceZ extends Module {
 
@@ -127,6 +128,9 @@ class FrankerFaceZ extends Module {
 		// ========================================================================
 		// Core Systems
 		// ========================================================================
+
+		if (!! document.body.dataset.ffzExtension)
+			installPort(this);
 
 		this.inject('settings', SettingsManager);
 		this.inject('experiments', ExperimentManager);

@@ -1,21 +1,27 @@
 'use strict';
 
-import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLike } from 'utilities/blobs';
+import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLike, JsonSerialized, jsonSerialize, jsonDeserialize } from 'utilities/blobs';
+import {EventEmitter} from 'utilities/events';
+import {TicketLock, has, once} from 'utilities/object';
+import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
 
 
 // ============================================================================
 // Settings Providers
 // ============================================================================
 
-import {EventEmitter} from 'utilities/events';
-import {TicketLock, has, once} from 'utilities/object';
 import type SettingsManager from '.';
-import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';
-import { EXTENSION } from '../utilities/constants';
 
 const DB_VERSION = 1,
 	NOT_WWW_TWITCH = window.location.host !== 'www.twitch.tv',
 	NOT_WWW_YT = window.location.host !== 'www.youtube.com';
+
+
+export const IGNORE_CONTENT_KEYS = [
+	'client-id',
+	'cfg-seen',
+	'cfg-collapsed'
+];
 
 
 // ============================================================================
@@ -51,7 +57,10 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 	static title: string;
 	static description: string;
 
-	static hasContent: () => OptionalPromise<boolean>;
+	static crossOrigin(manager: SettingsManager) { return false; }
+	static canSupportBlobs(manager: SettingsManager) { return false; }
+
+	static hasContent: (manager: SettingsManager) => OptionalPromise<boolean>;
 
 
 	manager: SettingsManager;
@@ -70,8 +79,12 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 		this.disabled = false;
 	}
 
-	static supported() {
+	static supported(manager: SettingsManager) {
 		return false;
+	}
+
+	static allowAsDefault(manager: SettingsManager) {
+		return true;
 	}
 
 	static allowTransfer = true;
@@ -103,14 +116,14 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 	): ProviderTypeMap[K];
 	abstract get<K extends keyof ProviderTypeMap>(
 		key: K
-	): ProviderTypeMap[K] | null;
+	): ProviderTypeMap[K] | undefined;
 	abstract get<T>(
 		key: Exclude<string, keyof ProviderTypeMap>,
 		default_value: T
 	): T;
 	abstract get<T>(
 		key: Exclude<string, keyof ProviderTypeMap>
-	): T | null;
+	): T | undefined;
 
 	abstract set<K extends keyof ProviderTypeMap>(key: K, value: ProviderTypeMap[K]): void;
 	abstract set<K extends string>(key: Exclude<K, keyof ProviderTypeMap>, value: unknown): void;
@@ -129,6 +142,8 @@ export abstract class SettingsProvider extends EventEmitter<ProviderEvents> {
 
 export abstract class AdvancedSettingsProvider extends SettingsProvider {
 
+	static canSupportBlobs() { return true; }
+
 	get supportsBlobs() { return true; }
 
 	isValidBlob(blob: any): blob is BlobLike {
@@ -146,6 +161,8 @@ export abstract class AdvancedSettingsProvider extends SettingsProvider {
 
 
 export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
+
+	static needJsonBlobs = false;
 
 	// State and Storage
 	private _start_time: number;
@@ -230,7 +247,12 @@ export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 
 	// Provider Methods
 
-	get<T>(key: string, default_value?: T): T {
+	get<T>(key: string): T | undefined;
+	get<T>(key: string, default_value: T): T;
+	get<T>(
+		key: string,
+		default_value?: T
+	): T | undefined {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;
@@ -279,15 +301,22 @@ export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 	// Provider Methods: Blobs
 
 	async getBlob(key: string) {
-		const msg = await this.rpc({ffz_type: 'get-blob', key});
-		return msg ? deserializeBlob(msg) : null;
+		let msg = await this.rpc({ffz_type: 'get-blob', key});
+		if (msg && typeof msg.buffer === 'string')
+			msg = jsonDeserialize(msg as JsonSerialized<SerializedBlobLike>);
+
+		return msg ? deserializeBlob(msg as SerializedBlobLike) : null;
 	}
 
 	async setBlob(key: string, value: BlobLike) {
+		let serialized: SerializedBlobLike | JsonSerialized<SerializedBlobLike> | null = await serializeBlob(value);
+		if (serialized && (this.constructor as typeof RemoteSettingsProvider).needJsonBlobs)
+			serialized = jsonSerialize(serialized);
+
 		await this.rpc({
 			ffz_type: 'set-blob',
 			key,
-			value: await serializeBlob(value)
+			value: serialized
 		});
 	}
 
@@ -412,12 +441,11 @@ export class LocalStorageProvider extends SettingsProvider {
 		return true;
 	}
 
-	static hasContent(prefix?: string) {
-		if ( ! prefix )
-			prefix = 'FFZ:setting:';
+	static hasContent() {
+		const prefix = 'FFZ:setting:';
 
 		for(const key in localStorage)
-			if ( key.startsWith(prefix) && has(localStorage, key) )
+			if ( key.startsWith(prefix) && ! IGNORE_CONTENT_KEYS.includes(key.slice(prefix.length)) && has(localStorage, key) )
 				return true;
 
 		return false;
@@ -432,9 +460,9 @@ export class LocalStorageProvider extends SettingsProvider {
 	private _boundHandleMessage?: ((event: MessageEvent) => void) | null;
 	private _boundHandleStorage?: ((event: StorageEvent) => void) | null;
 
-	constructor(manager: SettingsManager, prefix?: string) {
+	constructor(manager: SettingsManager) {
 		super(manager);
-		this.prefix = prefix = prefix == null ? 'FFZ:setting:' : prefix;
+		const prefix = this.prefix = 'FFZ:setting:';
 
 		const cache = this._cached = new Map,
 			len = prefix.length;
@@ -564,10 +592,12 @@ export class LocalStorageProvider extends SettingsProvider {
 		}
 	}
 
+	get<T>(key: string): T | undefined;
+	get<T>(key: string, default_value: T): T;
 	get<T>(
 		key: string,
 		default_value?: T
-	): T {
+	): T | undefined {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;
@@ -689,7 +719,11 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 				}
 
 				r2.onsuccess = () => {
-					const success = Array.isArray(r2.result) && r2.result.length > 0;
+					let success = false;
+					if ( Array.isArray(r2.result) && r2.result.length > 0 ) {
+						success = r2.result.filter(key => !IGNORE_CONTENT_KEYS.includes(key as string)).length > 0;
+					}
+
 					db.close();
 					return resolve(success);
 				}
@@ -887,7 +921,12 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 
 	// Synchronous Methods
 
-	get<T>(key: string, default_value?: T): T {
+	get<T>(key: string): T | undefined;
+	get<T>(key: string, default_value: T): T;
+	get<T>(
+		key: string,
+		default_value?: T
+	): T | undefined {
 		return this._cached.has(key)
 			? this._cached.get(key)
 			: default_value;
@@ -1431,10 +1470,11 @@ export class CrossOriginStorageBridge extends RemoteSettingsProvider {
 
 	// Static Stuff
 
-	static supported() { return NOT_WWW_TWITCH && NOT_WWW_YT; }
+	static supported() { return false; return NOT_WWW_TWITCH && NOT_WWW_YT; }
 	static hasContent() {
 		return CrossOriginStorageBridge.supported();
 	}
+	static allowAsDefault() { return false; }
 
 	static priority = 100;
 	static title = 'Cross-Origin Storage Bridge';
@@ -1511,9 +1551,9 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 
 	// Static Stuff
 
-	static supported() { return EXTENSION }
+	static supported() { return !! document.body.dataset.ffzExtension; }
 
-	static hasContent() {
+	static hasContent(manager: SettingsManager) {
 		if ( ! ExtensionProvider.supported() )
 			return false;
 
@@ -1523,19 +1563,11 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 			let responded = false,
 				timeout: ReturnType<typeof setTimeout> | null = null ;
 
-			const listener = (evt: MessageEvent<any>) => {
-				if (evt.source !== window)
-					return;
-
-				if (evt.data && evt.data.type === 'ffz_from_ext') {
-					const msg = evt.data.data,
-						type = msg?.ffz_type;
-
-					if (type === 'has-keys') {
-						responded = true;
-						resolve(msg.value);
-						cleanup();
-					}
+			const listener = (msg: any) => {
+				if ( msg.type === 'has-keys' ) {
+					responded = true;
+					resolve(msg.value);
+					cleanup();
 				}
 			};
 
@@ -1550,17 +1582,11 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 					timeout = null;
 				}
 
-				window.removeEventListener('message', listener);
+				manager.off('ext:message', listener);
 			}
 
-			window.addEventListener('message', listener);
-
-			window.postMessage({
-				type: 'ffz_to_ext',
-				data: {
-					ffz_type: 'check-has-keys'
-				}
-			}, '*');
+			manager.on('ext:message', listener);
+			manager.emit('ext:message', { type: 'check-has-keys' });
 
 			timeout = setTimeout(cleanup, 1000);
 		});
@@ -1570,16 +1596,21 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 	static title = 'Browser Extension Storage';
 	static description = 'This provider uses a browser extension service worker to store settings in a location that should not suffer from issues due to storage partitioning or cache clearing.';
 
+	static crossOrigin() { return true; }
+	static canSupportBlobs() { return true; }
+
 	static allowTransfer = true;
 	static shouldUpdate = true;
+
+	static needJsonBlobs = true;
 
 	// State and Storage
 
 	constructor(manager: SettingsManager) {
 		super(manager);
 
-		this.onExtMessage = this.onExtMessage.bind(this);
-		window.addEventListener('message', this.onExtMessage);
+		manager.on('ext:message', this.handleMessage, this);
+		this.send('ready');
 	}
 
 	// Stuff
@@ -1589,36 +1620,16 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 	}
 
 	disableEvents() {
-
+		this.manager.off('ext:message', this.handleMessage, this);
 	}
 
 	// Communication
-
-	onExtMessage(evt: MessageEvent<any>) {
-		if (evt.source !== window)
-			return;
-
-		if (evt.data?.type === 'ffz_from_ext' && evt.data.data?.ffz_type)
-			this.handleMessage(evt.data.data);
-	}
 
 	send(msg: string | CorsMessage, transfer?: OptionalArray<Transferable>) {
 		if ( typeof msg === 'string' )
 			msg = {ffz_type: msg} as any;
 
-		try {
-			window.postMessage(
-				{
-					type: 'ffz_to_ext',
-					data: msg
-				},
-				'*',
-				transfer ? (Array.isArray(transfer) ? transfer : [transfer]) : undefined
-			);
-
-		} catch(err) {
-			this.manager.log.error('Error sending message to extension.', err, msg, transfer);
-		}
+		this.manager.emit('ext:post-message', msg);
 	}
 
 }
@@ -1678,13 +1689,13 @@ type CorsRpcTypes = {
 		input: {
 			key: string;
 		};
-		output: SerializedBlobLike | null;
+		output: JsonSerialized<SerializedBlobLike> | SerializedBlobLike | null;
 	};
 
 	'set-blob': {
 		input: {
 			key: string;
-			value: SerializedBlobLike | null;
+			value: JsonSerialized<SerializedBlobLike> | SerializedBlobLike | null;
 		};
 		output: void;
 	};
@@ -1762,6 +1773,6 @@ export const Providers: Record<string, typeof SettingsProvider> = {
 	local: LocalStorageProvider,
 	idb: IndexedDBProvider,
 	cosb: CrossOriginStorageBridge,
-	//ext: ExtensionProvider
+	ext: ExtensionProvider
 
 };

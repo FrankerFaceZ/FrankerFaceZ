@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--addons tw-border-t tw-pd-y-1">
 		<div v-if="reload" class="tw-mg-y-1 tw-c-background-accent tw-c-text-overlay tw-pd-1">
-			<h4 class="ffz-i-attention">
+			<h4 class="ffz-i-attention ffz-font-size-4">
 				{{ t('addon.refresh-needed', 'You must refresh your Twitch pages for some changes to take effect.') }}
 			</h4>
 
@@ -34,7 +34,7 @@
 			</div>
 			<select
 				v-model="sort_by"
-				class="tw-border-radius-medium tw-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+				class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
 			>
 				<option :value="0">
 					{{ t('addon.sort-name', 'Sort By: Name') }}
@@ -49,7 +49,7 @@
 		</div>
 
 		<div v-if="! ready" class="tw-align-center tw-pd-1">
-			<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+			<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 		</div>
 		<div v-else>
 			<addon
@@ -103,7 +103,7 @@
 							<input
 								ref="unlisted"
 								:placeholder="t('addon.unlisted.id', 'add-on id')"
-								class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+								class="tw-flex-grow-1 tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 								@keydown.enter="addUnlisted"
 							>
 							<button

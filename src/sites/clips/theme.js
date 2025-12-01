@@ -42,15 +42,15 @@ export default class ThemeEngine extends Module {
 		// Font
 
 		this.settings.add('theme.font.size', {
-			default: 13,
+			default: 14,
 			process(ctx, val) {
 				if ( typeof val !== 'number' )
 					try {
 						val = parseFloat(val);
 					} catch(err) { val = null; }
 
-				if ( ! val || val < 1 || isNaN(val) || ! isFinite(val) || val > 25 )
-					val = 13;
+				if ( ! val || val < 6 || isNaN(val) || ! isFinite(val) || val > 25 )
+					val = 14;
 
 				return val;
 			},
@@ -148,14 +148,25 @@ export default class ThemeEngine extends Module {
 		else if ( typeof size !== 'number' )
 			size = null;
 
-		if ( ! size || isNaN(size) || ! isFinite(size) || size < 1 || size === 13 ) {
+		if ( ! size || isNaN(size) || ! isFinite(size) || size < 1 || size === 14 ) {
 			this.css_tweaks.delete('font-size');
 			return;
 		}
 
 		size = size / 10;
 
-		this.css_tweaks.set('font-size', `html body {
+		// Old sizes:
+		// fs-1 = 5.4rem
+		// fs-2 = 3.6rem
+		// fs-3 = 2.4rem
+		// fs-4 = 1.8rem
+		// fs-5 = 1.4rem
+		// fs-6 = 1.3rem
+		// fs-7 = 1.2rem
+		// fs-8 = 1.2rem
+		// fs-base = 1.3rem
+
+		/*this.css_tweaks.set('font-size', `html body {
 	--font-size-1: ${(54/13) * size}rem;
 	--font-size-2: ${(36/13) * size}rem;
 	--font-size-3: ${(24/13) * size}rem;
@@ -166,7 +177,31 @@ export default class ThemeEngine extends Module {
 	--font-size-8: ${(12/13) * size}rem;
 	--font-size-base: ${size}rem;
 }
-`);
+`);*/
+
+		// New sizes:
+		// fs-1 = 6rem
+		// fs-2 = 2.4rem
+		// fs-3 = 1.8rem
+		// fs-4 = 1.4rem
+		// fs-5 = 1.2rem
+		// fs-6 = 1.4rem
+		// fs-7 = 1.2rem
+		// fs-8 = 1.2rem
+		// fs-base = 1.4rem
+
+		this.css_tweaks.set('font-size', `html body {
+	--font-size-1: ${(60/14) * size}rem;
+	--font-size-2: ${(24/14) * size}rem;
+	--font-size-3: ${(18/14) * size}rem;
+	--font-size-4: ${size}rem;
+	--font-size-5: ${(12/14) * size}rem;
+	--font-size-6: ${size}rem;
+	--font-size-7: ${(12/14) * size}rem;
+	--font-size-8: ${(12/14) * size}rem;
+	--font-size-base: ${size}rem;
+}`);
+
 	}
 
 	updateCSS() {

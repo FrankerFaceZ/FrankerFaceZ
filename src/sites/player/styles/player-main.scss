@@ -1,4 +1,4 @@
-@import 'styles/main.scss';
+@use '../../../../styles/main.scss';
 
 .video-player__inactive,
 .video-player__overlay[data-controls="false"] {

@@ -1,7 +1,7 @@
 <template>
 	<section class="ffz--filter-rule-editor tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-mg-y-05 tw-pd-r-1 tw-flex tw-flex-nowrap">
 		<div class="tw-flex tw-flex-shrink-0 tw-align-items-center handle tw-c-text-alt-2">
-			<h5 class="ffz-i-ellipsis-vert" />
+			<h5 class="ffz-i-ellipsis-vert ffz-font-size-5" />
 		</div>
 
 		<div v-if="! component" class="tw-flex tw-flex-grow-1 tw-align-self-center tw-align-items-center">

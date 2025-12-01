@@ -37,7 +37,7 @@ export default class ModView extends Module {
 		);
 
 		this.ModInfoBar = this.elemental.define(
-			'mod-info-bar', '.modview-player-widget__stream-info .simplebar-content',
+			'mod-info-bar', '.modview-player-widget__stream-info .scrollable-area',
 			['mod-view'],
 			{childNodes: true, subtree: true}, 1, 30000, false
 		);

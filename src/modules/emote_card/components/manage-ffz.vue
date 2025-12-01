@@ -9,7 +9,7 @@
 			@click="toggle"
 		>
 			<div class="tw-flex-grow-1">
-				<h4>{{ t('emote-card.manage', 'Manage My Collections') }}</h4>
+				<h4 class="ffz-font-size-4">{{ t('emote-card.manage', 'Manage My Collections') }}</h4>
 			</div>
 
 			<figure
@@ -24,7 +24,7 @@
 			classes="ffz-mh-30"
 		>
 			<div v-if="loading" class="tw-align-center tw-pd-1">
-				<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+				<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 			</div>
 			<div v-else-if="error" class="tw-align-center tw-pd-1">
 				<div class="tw-mg-t-1 tw-mg-b-2">

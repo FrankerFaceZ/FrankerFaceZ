@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--clear-settings tw-pd-t-05">
 		<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-2">
-			<h3 class="ffz-i-attention">
+			<h3 class="ffz-i-attention ffz-font-size-3">
 				{{ t('setting.clear.warning', 'Be careful! This is permanent.') }}
 			</h3>
 			<markdown :source="t('setting.clear.warning-explain', 'Deleting your data with this tool cannot be reversed. Make sure you have a backup!')" />
@@ -41,7 +41,7 @@
 				<input
 					v-model="entered"
 					type="text"
-					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium ffz-font-size-6 ffz-input tw-pd-x-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 				>

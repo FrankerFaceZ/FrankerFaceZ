@@ -1437,7 +1437,7 @@ TOKEN_TYPES.style = function(token, createElement, ctx) {
 	if ( token.size ) {
 		if ( typeof token.size === 'string' ) {
 			if ( VALID_SIZES.includes(token.size) )
-				classes.push(`tw-font-size-${token.size}`);
+				classes.push(`ffz-font-size-${token.size}`);
 			else
 				style.fontSize = token.size;
 		} else

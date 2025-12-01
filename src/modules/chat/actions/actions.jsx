@@ -553,12 +553,8 @@ export default class Actions extends Module {
 			{reason_text ? <div class="tw-pd-05 tw-border-b">
 				{reason_text}
 			</div> : null}
-			<div class="scrollable-area" data-simplebar>
-				<div class="simplebar-scroll-content">
-					<div class="simplebar-content">
-						<ul>{reason_elements}</ul>
-					</div>
-				</div>
+			<div class="ffz-scrollable scrollable-area simplebar-content">
+				<ul>{reason_elements}</ul>
 			</div>
 		</div>);
 	}

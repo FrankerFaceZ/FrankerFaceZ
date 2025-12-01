@@ -8,6 +8,10 @@
 	left: 0;
 }
 
+.chat-input__textarea .chat-wysiwyg-input-box > div[style] {
+	padding-left: 0 !important;
+}
+
 .chat-input__textarea {
 	.chat-wysiwyg-input__editor,
 	.chat-wysiwyg-input__placeholder,

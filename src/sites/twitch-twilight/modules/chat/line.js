@@ -386,7 +386,7 @@ export default class ChatLine extends Module {
 
 			getClass: () => 'ffz--subscribe-line',
 
-			renderNotice: (msg, user, room, inst, e) => {
+			renderNotice: (msg, user, room, inst, e, source) => {
 				const mystery = msg.mystery;
 				if ( mystery )
 					mystery.line = inst;
@@ -404,7 +404,7 @@ export default class ChatLine extends Module {
 						}, msg.user.displayName)),
 					count: msg.sub_count,
 					tier: SUB_TIERS[msg.sub_plan] || 1,
-					channel: msg.roomLogin
+					channel: source?.displayName || source?.login || msg.roomLogin
 				});
 
 				if ( msg.sub_total === 1 )
@@ -452,7 +452,7 @@ export default class ChatLine extends Module {
 
 				if ( mystery )
 					target.push(e('span', {
-						className: `tw-pd-l-05 tw-font-size-4 ffz-i-${expanded ? 'down' : 'right'}-dir`
+						className: `tw-pd-l-05 ffz-font-size-4 ffz-i-${expanded ? 'down' : 'right'}-dir`
 					}));
 
 				const out = [
@@ -989,13 +989,13 @@ other {# messages were deleted by a moderator.}
 
 				if ( type ) {
 					if ( type.render )
-						return type.render(msg, current_user, current_room, this, e);
+						return type.render(msg, current_user, current_room, this, e, source);
 
 					if ( type.renderNotice )
-						notice = type.renderNotice(msg, current_user, current_room, this, e);
+						notice = type.renderNotice(msg, current_user, current_room, this, e, source);
 
 					if ( type.getClass )
-						klass = type.getClass(msg, current_user, current_room, this, e);
+						klass = type.getClass(msg, current_user, current_room, this, e, source);
 				}
 
 				// Render the line.
@@ -1170,7 +1170,7 @@ other {# messages were deleted by a moderator.}
 									username,
 									want_source_tip
 										? e('div', {
-											className: 'tw-font-size-8 tw-mg-t-05'
+											className: 'ffz-font-size-8 tw-mg-t-05'
 										}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
 										: null
 									]
@@ -1201,7 +1201,7 @@ other {# messages were deleted by a moderator.}
 
 					// The reply element for Twitch style.
 					const twitch_reply = reply_mode === 1 && this.props.reply && this.props.repliesAppearancePreference && this.props.repliesAppearancePreference === 'expanded'
-						? this.renderReplyLine()
+						? e('div', {className: 'ffz--fix-reply-line'}, this.renderReplyLine())
 						: null;
 
 					// Now assemble the pieces.

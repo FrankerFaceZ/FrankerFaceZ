@@ -1,5 +1,5 @@
-@import 'styles/main.scss';
-@import '../../twitch-twilight/styles/mod_card.scss';
+@use '../../../../styles/main.scss';
+@use '../../twitch-twilight/styles/mod_card.scss';
 
 .tw-root--theme-dark, html {
 	body {

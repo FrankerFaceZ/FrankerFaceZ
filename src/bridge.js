@@ -6,6 +6,8 @@ import Module from 'utilities/module';
 import {DEBUG} from 'utilities/constants';
 import {serializeBlob, deserializeBlob} from 'utilities/blobs';
 
+import { installPort } from './utilities/extension_port';
+
 import SettingsManager from './settings/index';
 
 class FFZBridge extends Module {
@@ -37,6 +39,9 @@ class FFZBridge extends Module {
 		// ========================================================================
 		// Core Systems
 		// ========================================================================
+
+		if (!! document.body.dataset.ffzExtension)
+			installPort(this);
 
 		this.inject('settings', SettingsManager);
 

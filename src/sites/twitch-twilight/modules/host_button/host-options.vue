@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz-auto-host-options tw-c-background-base">
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
-			<h4>{{ t('metadata.host.title', 'Auto Host Management') }}</h4>
+			<h4 class="ffz-font-size-4">{{ t('metadata.host.title', 'Auto Host Management') }}</h4>
 		</header>
 		<div
 			v-show="activeTab === 'auto-host'"
@@ -32,7 +32,7 @@
 										<div class="ffz-channel-avatar">
 											<img :src="host.profileImageURL" :alt="host.displayName + '(' + host.login + ')'">
 										</div>
-										<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tw-font-size-5">
+										<p class="tw-ellipsis tw-flex-grow-1 tw-mg-l-1 tffz-font-size-5">
 											{{ host.login }}
 										</p>
 										<div class="tw-flex-grow-1 tw-pd-x-2" />

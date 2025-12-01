@@ -24,6 +24,8 @@ declare module 'utilities/types' {
 		'chat.hype.show-pinned': boolean;
 		'layout.turbo-cta': boolean;
 		'layout.combos': boolean;
+		'layout.subtember': boolean;
+		'layout.side-nav.hide-stories': boolean;
 	}
 }
 
@@ -43,6 +45,13 @@ type ErrorBoundaryNode = ReactStateNode<{
 	onErrorBoundaryTestEmit: any
 }
 
+type SettingToggleNode = ReactStateNode<{
+	name: string;
+	children: any;
+}> & {
+	render: AnyFunction;
+};
+
 
 export default class Loadable extends Module {
 
@@ -53,10 +62,12 @@ export default class Loadable extends Module {
 
 	// State
 	overrides: Map<string, boolean>;
+	setting_overrides: Map<string, boolean>;
 
 	// Fine
 	ErrorBoundaryComponent: FineWrapper<ErrorBoundaryNode>;
 	LoadableComponent: FineWrapper<LoadableNode>;
+	SettingsToggleComponent: FineWrapper<SettingToggleNode>;
 
 	constructor(name?: string, parent?: GenericModule) {
 		super(name, parent);
@@ -83,8 +94,17 @@ export default class Loadable extends Module {
 				(n as ErrorBoundaryNode).onErrorBoundaryTestEmit
 		);
 
-		this.overrides = new Map();
+		this.SettingsToggleComponent = this.fine.define(
+			'settings-toggle-component',
+			n =>
+				(n as SettingToggleNode).props?.name &&
+				(n as SettingToggleNode).props?.children &&
+				(n as SettingToggleNode).render &&
+				(n as SettingToggleNode).render.toString().includes('defaultThreshold')
+		);
 
+		this.overrides = new Map();
+		this.setting_overrides = new Map();
 	}
 
 	onEnable() {
@@ -99,6 +119,14 @@ export default class Loadable extends Module {
 		this.settings.getChanges('layout.combos', val => {
 			this.toggle('CombosIngressButton_Available', !val);
 		});
+
+		this.settings.getChanges('layout.subtember', val => {
+			this.toggle('TokenizedCommerceBanner', val);
+		});
+
+		this.settings.getChanges('layout.side-nav.hide-stories', val => {
+			this.toggleSetting('stories_web', !val);
+		})
 
 		this.ErrorBoundaryComponent.ready((cls, instances) => {
 			this.log.debug('Found Error Boundary component wrapper.');
@@ -122,6 +150,7 @@ export default class Loadable extends Module {
 			}
 
 			this.ErrorBoundaryComponent.updateInstances();
+			this.ErrorBoundaryComponent.forceUpdate();
 		});
 
 		this.LoadableComponent.ready((cls, instances) => {
@@ -167,6 +196,32 @@ export default class Loadable extends Module {
 			}
 
 			this.LoadableComponent.updateInstances();
+			this.LoadableComponent.forceUpdate();
+		});
+
+		this.SettingsToggleComponent.ready((cls, instances) => {
+			this.log.debug('Found Settings Toggle component wrapper.');
+
+			const t = this,
+				proto = cls.prototype as SettingToggleNode,
+				old_render = proto.render;
+
+			(proto as any)._ffz_wrapped_render = old_render;
+			proto.render = function() {
+				try {
+					const type = this.props.name;
+					if ( t.setting_overrides.has(type) && ! t.shouldRenderSetting(type) )
+						return null;
+				} catch(err) {
+					/* no-op */
+					console.error(err);
+				}
+
+				return old_render.call(this);
+			}
+
+			this.SettingsToggleComponent.updateInstances();
+			this.SettingsToggleComponent.forceUpdate();
 		});
 	}
 
@@ -181,6 +236,20 @@ export default class Loadable extends Module {
 		if ( state !== existing ) {
 			this.overrides.set(cmp, state);
 			this.update(cmp);
+		}
+	}
+
+	toggleSetting(cmp: string, state: boolean | null = null) {
+		const existing = this.setting_overrides.get(cmp) ?? true;
+
+		if ( state == null )
+			state = ! existing;
+		else
+			state = !! state;
+
+		if ( state !== existing ) {
+			this.setting_overrides.set(cmp, state);
+			this.updateSetting(cmp);
 		}
 	}
 
@@ -200,8 +269,21 @@ export default class Loadable extends Module {
 		}
 	}
 
+	updateSetting(cmp: string) {
+		for(const inst of this.SettingsToggleComponent.instances) {
+			const name = inst.props?.name;
+			if ( name && name === cmp ) {
+				inst.forceUpdate();
+			}
+		}
+	}
+
 	shouldRender(cmp: string) {
 		return this.overrides.get(cmp) ?? true;
+	}
+
+	shouldRenderSetting(cmp: string) {
+		return this.setting_overrides.get(cmp) ?? true;
 	}
 
 }

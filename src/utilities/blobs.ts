@@ -33,6 +33,11 @@ export type SerializedUint8Array = {
 	buffer: ArrayBuffer
 };
 
+export type JsonSerialized<T> = Omit<T, "buffer"> & {
+	buffer: string;
+}
+
+
 /**
  * Determine if the provided object is a valid Blob that can be serialized
  * for transmission via a messaging API.
@@ -101,4 +106,39 @@ export function deserializeBlob(data: SerializedBlobLike): BlobLike | null {
 		return new Uint8Array(data.buffer);
 
 	throw new TypeError('Invalid type');
+}
+
+
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+	let binary = '';
+	const bytes = new Uint8Array(buffer),
+		len = bytes.byteLength;
+	for (let i = 0; i < len; i++) {
+		binary += String.fromCharCode(bytes[i]);
+	}
+	return btoa(binary);
+}
+
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
+	const binary_string = atob(base64),
+		len = binary_string.length;
+	const bytes = new Uint8Array(len);
+	for (let i = 0; i < len; i++) {
+		bytes[i] = binary_string.charCodeAt(i);
+	}
+	return bytes.buffer;
+}
+
+export function jsonSerialize<T extends SerializedBlobLike>(data: T): JsonSerialized<T> {
+	return {
+		...data,
+		buffer: arrayBufferToBase64(data.buffer)
+	};
+}
+
+export function jsonDeserialize<T extends SerializedBlobLike>(data: JsonSerialized<T>): T {
+	return {
+		...data,
+		buffer: base64ToArrayBuffer(data.buffer)
+	} as T;
 }

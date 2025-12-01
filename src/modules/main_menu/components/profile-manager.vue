@@ -2,7 +2,7 @@
 	<div class="ffz--widget ffz--profile-manager tw-border-t tw-pd-y-1">
 		<section v-if="context.exclusive" class="tw-pd-b-2">
 			<div class="tw-c-background-accent tw-c-text-overlay tw-pd-1">
-				<h3 class="ffz-i-info">
+				<h3 class="ffz-i-info ffz-font-size-3">
 					{{ t('setting.context-difference', 'Your Profiles might not match.') }}
 				</h3>
 
@@ -78,7 +78,7 @@
 								<input
 									ref="paste"
 									:placeholder="t('setting.paste-url.url', '[url]')"
-									class="tw-flex-grow-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+									class="tw-flex-grow-1 tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 									@keydown.enter="doImportURL"
 								>
 								<button
@@ -120,7 +120,7 @@
 
 		<div v-if="import_error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
 			<section class="tw-flex-grow-1">
-				<h4 class="ffz-i-attention">
+				<h4 class="ffz-i-attention ffz-font-size-4">
 					{{ t('setting.backup-restore.error', 'There was an error processing this backup.') }}
 				</h4>
 				<div v-if="import_error_message">
@@ -156,7 +156,7 @@
 
 		<div v-if="import_profiles" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
 			<section class="tw-flex-grow-1">
-				<h4 class="ffz-i-upload">
+				<h4 class="ffz-i-upload ffz-font-size-4">
 					{{ t('setting.backup-restore.pick-profile', 'Please select a profile to import.') }}
 				</h4>
 
@@ -187,7 +187,7 @@
 
 		<div v-if="import_profile" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1 tw-flex tw-align-items-start">
 			<section class="tw-flex-grow-1">
-				<h4 class="ffz-i-help">
+				<h4 class="ffz-i-help ffz-font-size-4">
 					{{ t('setting.backup-restore.confirm-updates', 'The profile you are importing has an automatic update URL. Do you want the profile to keep itself up to date?') }}
 				</h4>
 
@@ -237,7 +237,7 @@
 
 					<div
 						v-if="p.ephemeral"
-						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container tw-font-size-4"
+						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container ffz-font-size-4"
 					>
 						<span class="ffz-i-user-secret" />
 						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-left">
@@ -247,7 +247,7 @@
 
 					<div
 						v-if="p.url"
-						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container tw-font-size-4"
+						class="tw-flex tw-flex-shrink-0 tw-align-items-center tw-mg-r-1 tw-relative ffz-il-tooltip__container ffz-font-size-4"
 					>
 						<span :class="`ffz-i-download-cloud${p.pause_updates ? ' ffz-unmatched-item' : ''}`" />
 						<div v-if="! p.pause_updates" class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-left">
@@ -259,7 +259,7 @@
 					</div>
 
 					<div class="tw-flex-grow-1">
-						<h4>{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
+						<h4 class="ffz-font-size-4">{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
 						<div v-if="p.description" class="description">
 							{{ p.desc_i18n_key ? t(p.desc_i18n_key, p.description, p) : p.description }}
 						</div>

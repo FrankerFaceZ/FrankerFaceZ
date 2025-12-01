@@ -12,7 +12,7 @@
 			<div class="tw-flex tw-flex-column tw-full-height tw-full-width viewer-card__overlay">
 				<div class="tw-align-center tw-border-radius-medium tw-align-items-center tw-c-background-alt tw-c-text-base tw-flex tw-flex-grow-1 tw-flex-row tw-full-width tw-justify-content-start tw-pd-05 tw-relative viewer-card__banner">
 					<div class="tw-mg-l-05 tw-mg-y-05 tw-inline-flex viewer-card-drag-cancel">
-						<figure v-if="! loaded" class="tw-mg-x-1 tw-font-size-2 ffz-i-zreknarf loading" />
+						<figure v-if="! loaded" class="tw-mg-x-1 ffz-font-size-2 ffz-i-zreknarf loading" />
 						<figure v-else class="ffz-avatar tw-flex tw-align-items-center" :style="imageStyle">
 							<img
 								v-if="emote.src"
@@ -23,7 +23,7 @@
 					</div>
 					<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-l-1 tw-mg-y-05 viewer-card__display-name">
 						<h4
-							class="tw-inline tw-ellipsis"
+							class="tw-inline tw-ellipsis ffz-font-size-4"
 							:class="{'tw-italic': hasOriginalName}"
 							:title="emote ? emote.name : raw_emote.name"
 						>
@@ -31,18 +31,18 @@
 						</h4>
 						<P
 							v-if="! loaded"
-							class="tw-c-text-alt-2 tw-font-size-6"
+							class="tw-c-text-alt-2 ffz-font-size-6"
 						>
 							{{ t('emote-card.loading', 'Loading...') }}
 						</P>
 						<p
 							v-if="loaded && emote.source"
-							class="tw-c-text-alt-2 tw-font-size-6 tw-ellipsis"
+							class="tw-c-text-alt-2 ffz-font-size-6 tw-ellipsis"
 							:title="emote.source_i18n ? t(emote.source_i18n, emote.source) : emote.source"
 						>
 							{{ emote.source_i18n ? t(emote.source_i18n, emote.source) : emote.source }}
 						</p>
-						<p v-if="hasOriginalName" class="tw-c-text-alt-2 tw-font-size-6 tw-ellipsis">
+						<p v-if="hasOriginalName" class="tw-c-text-alt-2 ffz-font-size-6 tw-ellipsis">
 							<t-list
 								phrase="emote.original-name"
 								default="Name: {name}"
@@ -52,7 +52,7 @@
 								</template>
 							</t-list>
 						</p>
-						<p v-if="loaded && emote.owner" class="tw-c-text-alt-2 tw-font-size-6 tw-ellipsis">
+						<p v-if="loaded && emote.owner" class="tw-c-text-alt-2 ffz-font-size-6 tw-ellipsis">
 							<t-list
 								phrase="emote-card.owner"
 								default="Owner: {owner}"
@@ -68,7 +68,7 @@
 								</template>
 							</t-list>
 						</p>
-						<p v-if="loaded && emote.artist" class="tw-c-text-alt-2 tw-font-size-6 tw-ellipsis">
+						<p v-if="loaded && emote.artist" class="tw-c-text-alt-2 ffz-font-size-6 tw-ellipsis">
 							<t-list
 								phrase="emote-card.artist"
 								default="Artist: {artist}"

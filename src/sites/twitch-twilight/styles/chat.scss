@@ -538,3 +538,9 @@
 		}
 	}
 }
+
+.ffz-emote-menu--scroll-area {
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: thin;;
+}

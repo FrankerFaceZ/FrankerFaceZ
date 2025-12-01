@@ -2,7 +2,7 @@
 	<div class="ffz--reason">
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
 			<div class="tw-flex-grow-1 tw-mg-r-05">
-				<h4 v-if="! editing" class="ffz-monospace">
+				<h4 v-if="! editing" class="ffz-monospace ffz-font-size-4">
 					{{ title }}
 				</h4>
 				<input
@@ -10,7 +10,7 @@
 					v-model="edit_data.text"
 					:placeholder="adding ? t('setting.reasons.add-placeholder', 'Add a new reason') : edit_data.text"
 					type="text"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 					autocapitalize="off"
 					autocorrect="off"
 				>

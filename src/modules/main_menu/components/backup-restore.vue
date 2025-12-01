@@ -4,7 +4,32 @@
 			{{ t('setting.backup-restore.about', 'This tool allows you to backup and restore your FrankerFaceZ settings, including all settings from the Control Center along with other data such as favorited emotes and blocked games.') }}
 		</div>
 
-		<div class="tw-flex tw-align-items-center tw-justify-content-center tw-mg-b-1">
+		<div
+			v-if="checking_allow_no_blobs"
+			class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1"
+		>
+			<h3 class="ffz-i-attention ffz-font-size-3">
+				{{ t('setting.backup-restore.blob-notice', 'This backup contains binary data not supported by the current storage provider.') }}
+			</h3>
+			<div>
+				{{ t('setting.backup-restore.blob-notice.desc', 'The binary data will be discarded and certain settings, notably ones with custom sound files, may not work correctly. Do you wish to continue? Alternatively, you will need to change your settings provider to one supporting binary data.') }}
+			</div>
+			<div class="tw-flex tw-align-items-center tw-justify-content-center tw-mg-b-1">
+				<button
+					class="tw-button tw-mg-x-1"
+					@click="continueBlob"
+				>
+					<span class="tw-button__icon tw-button__icon--left">
+						<figure class="ffz-i-download" />
+					</span>
+					<span class="tw-button__text">
+						{{ t('setting.backup-restore.blob-notice.continue', 'Continue Restoration') }}
+					</span>
+				</button>
+			</div>
+		</div>
+
+		<div v-else-if="! error" class="tw-flex tw-align-items-center tw-justify-content-center tw-mg-b-1">
 			<button
 				class="tw-button tw-mg-x-1"
 				@click="backup"
@@ -31,7 +56,7 @@
 		</div>
 
 		<div v-if="error" class="tw-c-background-accent-alt-2 tw-c-text-overlay tw-pd-1 tw-mg-b-1">
-			<h3 class="ffz-i-attention">
+			<h3 class="ffz-i-attention ffz-font-size-3">
 				{{ t('setting.backup-restore.error', 'There was an error processing this backup.') }}
 			</h3>
 			<div v-if="error_desc">
@@ -57,6 +82,8 @@ export default {
 		return {
 			error_desc: null,
 			error: false,
+			checking_allow_no_blobs: false,
+			confirmed_no_blobs: false,
 			message: null
 		}
 	},
@@ -153,6 +180,14 @@ export default {
 			});
 		},
 
+		continueBlob() {
+			this.checking_allow_no_blobs = false;
+			this.confirmed_no_blobs = true;
+			const file = this.file;
+			this.file = null;
+			return this.restoreZip(file);
+		},
+
 		async restoreZip(file) {
 			const JSZip = (await import(/* webpackChunkName: "zip" */ 'jszip')).default;
 			let input, blobs, data;
@@ -194,43 +229,54 @@ export default {
 			const provider = settings.provider;
 			await provider.awaitReady();
 
-			if ( Object.keys(blobs).length && ! provider.supportsBlobs ) {
-				this.error_desc = this.t('setting.backup-restore.blob-error', 'This backup contains binary data not supported by the current storage provider. Please change your storage provider in Data Management > Storage >> Provider.');
-				this.error = true;
-				return;
-			}
+			let b = 0;
 
-			// Attempt to load all the blobs, to make sure they're all valid.
-			const loaded_blobs = {};
-
-			for(const [safe_key, data] of Object.entries(blobs)) {
-				let blob;
-				if ( data.type === 'file' ) {
-					blob = await input.file(`blobs/${safe_key}`).async('blob'); // eslint-disable-line no-await-in-loop
-					blob = new File([blob], data.name, {lastModified: data.modified, type: data.mime});
-				} else if ( data.type === 'blob' )
-					blob = await input.file(`blobs/${safe_key}`).async('blob'); // eslint-disable-line no-await-in-loop
-				else if ( data.type === 'ab' )
-					blob = await input.file(`blobs/${safe_key}`).async('arraybuffer'); // eslint-disable-line no-await-in-loop
-				else if ( data.type === 'ui8' )
-					blob = await input.file(`blobs/${safe_key}`).async('uint8array'); // eslint-disable-line no-await-in-loop
-				else {
-					this.error_desc = this.t('setting.backup-restore.invalid-blob', 'This file contains a binary blob with an invalid type: {type}', data);
-					this.error = true;
+			// Blobs
+			if ( Object.keys(blobs).length ) {
+				if ( ! provider.supportsBlobs && ! this.confirmed_no_blobs ) {
+					this.checking_allow_no_blobs = true;
+					this.file = file;
+					return;
 				}
 
-				loaded_blobs[data.key] = blob;
-			}
+				this.confirmed_no_blobs = false;
 
-			// We've loaded all data, let's get this installed.
-			// Blobs first.
-			let b = 0;
-			await provider.clearBlobs();
+				if ( provider.supportsBlobs ) {
+					// Attempt to load all the blobs, to make sure they're all valid.
+					const loaded_blobs = {};
 
-			for(const [key, blob] of Object.entries(loaded_blobs)) {
-				await provider.setBlob(key, blob); // eslint-disable-line no-await-in-loop
-				b++;
-			}
+					for(const [safe_key, data] of Object.entries(blobs)) {
+						let blob;
+						if ( data.type === 'file' ) {
+							blob = await input.file(`blobs/${safe_key}`).async('blob'); // eslint-disable-line no-await-in-loop
+							blob = new File([blob], data.name, {lastModified: data.modified, type: data.mime});
+						} else if ( data.type === 'blob' )
+							blob = await input.file(`blobs/${safe_key}`).async('blob'); // eslint-disable-line no-await-in-loop
+						else if ( data.type === 'ab' )
+							blob = await input.file(`blobs/${safe_key}`).async('arraybuffer'); // eslint-disable-line no-await-in-loop
+						else if ( data.type === 'ui8' )
+							blob = await input.file(`blobs/${safe_key}`).async('uint8array'); // eslint-disable-line no-await-in-loop
+						else {
+							this.error_desc = this.t('setting.backup-restore.invalid-blob', 'This file contains a binary blob with an invalid type: {type}', data);
+							this.error = true;
+						}
+
+						loaded_blobs[data.key] = blob;
+					}
+
+					// We've loaded all data, let's get this installed.
+					// Blobs first.
+					await provider.clearBlobs();
+
+					for(const [key, blob] of Object.entries(loaded_blobs)) {
+						await provider.setBlob(key, blob); // eslint-disable-line no-await-in-loop
+						b++;
+					}
+				}
+
+			} else if ( provider.supportsBlobs )
+				// Make sure blobs are cleared either way.
+				await provider.clearBlobs();
 
 			// Settings second.
 			provider.clear();

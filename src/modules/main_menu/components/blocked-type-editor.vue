@@ -2,13 +2,13 @@
 	<div class="ffz--term ffz--blocked-type">
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
 			<div class="tw-flex-grow-1 tw-mg-r-05">
-				<h4 v-if="! editing">
+				<h4 v-if="! editing" class="ffz-font-size-4">
 					{{ display.v }}
 				</h4>
 				<select
 					v-if="editing"
 					v-model="edit_data.v"
-					class="tw-block tw-full-width tw-border-radius-medium tw-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
+					class="tw-block tw-full-width tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-x-1 tw-pd-y-05 tw-mg-y-05"
 				>
 					<option v-if="adding" value="">
 						{{ t('setting.terms.please-select', 'Please select an option.') }}

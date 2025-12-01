@@ -88,7 +88,7 @@
 								class="preview-image ffz-badge tw-mg-r-1 tw-flex-shrink-0"
 							/>
 							<div>
-								<h5>{{ i.name }}</h5>
+								<h5 class="ffz-font-size-5">{{ i.name }}</h5>
 								<section
 									v-if="i.versions && (i.always_versions || i.versions.length > 1)"
 									class="tw-mg-t-05"
@@ -116,7 +116,7 @@
 					</label>
 				</li>
 			</ul>
-			<div v-else class="tw-c-text-alt-2 tw-font-size-4 tw-align-center tw-pd-05">
+			<div v-else class="tw-c-text-alt-2 ffz-font-size-4 tw-align-center tw-pd-05">
 				{{ t('setting.badges.hidden', '{count,plural,one{# badge is} other{# badges are} } hidden in this set', {
 					count: sec.badges.length
 				}) }}

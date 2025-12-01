@@ -439,12 +439,12 @@ export default class MenuButton extends Module {
 				<div class="tw-flex tw-align-items-start">
 					{data.icon && (
 						typeof data.icon === 'string' ?
-							<figure class={`tw-font-size-3 tw-pd-r-1 ${data.icon}`} /> :
+							<figure class={`ffz-font-size-3 tw-pd-r-1 ${data.icon}`} /> :
 							data.icon
 					)}
 					{ data.render ? data.render.call(this, data) : null }
 					{ (data.title || data.text) ? (<div class="tw-flex-grow-1">
-						{ data.title ? (<header class="tw-semibold tw-font-size-3 tw-pd-b-05">
+						{ data.title ? (<header class="tw-semibold ffz-font-size-3 tw-pd-b-05">
 							{ data.title_i18n ? this.i18n.tList(data.title_i18n, data.title, data) : data.title}
 						</header>) : null }
 						{ data.text ? (<span class={`${data.lines ? 'ffz--line-clamp' : ''}`} style={{'--ffz-lines': data.lines}}>
@@ -724,7 +724,7 @@ export default class MenuButton extends Module {
 			profiles.push(<div class="tw-relative tw-border-b tw-pd-y-05 tw-pd-x-1 tw-flex">
 				{toggle}
 				<div>
-					<h4>{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }{profile.ephemeral && (<div
+					<h4 class="ffz-font-size-4">{ profile.i18n_key ? this.i18n.t(profile.i18n_key, profile.name, profile) : profile.name }{profile.ephemeral && (<div
 						class="tw-inline tw-mg-l-05 ffz-il-tooltip__container ffz--profile-row__icon ffz-i-user-secret tw-relative"
 					>
 						<div class="ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center">
@@ -759,7 +759,7 @@ export default class MenuButton extends Module {
 							</div>
 						</div>
 						<div class="tw-align-items-center tw-flex tw-flex-column tw-flex-grow-1 tw-justify-content-center">
-							<h5 class="tw-align-center tw-c-text-alt tw-semibold">
+							<h5 class="tw-align-center tw-c-text-alt tw-semibold ffz-font-size-5">
 								{ this.i18n.t('site.menu_button.profiles', 'Profiles') }
 							</h5>
 						</div>

@@ -174,7 +174,7 @@ export const Links = {
 					{content}
 					{url_notice ? <div class="tw-mg-t-05 tw-border-t tw-pd-t-05 tw-align-center">
 						{url_notice}
-						<div class=" tw-font-size-8">
+						<div class=" ffz-font-size-8">
 							{this.i18n.t('tooltip.shift-detail', '(Shift for Details)')}
 						</div>
 					</div> : null}

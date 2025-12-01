@@ -150,7 +150,12 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 
 		if ( instance ) {
 			this.instance = instance;
-			this.hookClient(instance);
+			try {
+				this.hookClient(instance);
+			} catch(err) {
+				this.instance = null;
+				this.log.error('Error hooking PubSub client.', err);
+			}
 		}
 
 		/*

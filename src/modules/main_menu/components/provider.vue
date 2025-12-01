@@ -1,7 +1,7 @@
 <template lang="html">
 	<div class="ffz--provider tw-pd-t-05">
 		<div v-if="not_www" class="ffz--notice tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
-			<h3 class="ffz-i-attention">
+			<h3 class="ffz-i-attention ffz-font-size-3">
 				{{ t('setting.provider.warn-domain.title', 'You\'re far from home!') }}
 			</h3>
 			<div>
@@ -10,7 +10,7 @@
 		</div>
 
 		<div class="ffz--notice tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-b-1">
-			<h3 class="ffz-i-attention">
+			<h3 class="ffz-i-attention ffz-font-size-3">
 				{{ t('setting.provider.warn.title', 'Be careful!') }}
 			</h3>
 			<div>
@@ -41,14 +41,29 @@
 							<span class="tw-strong">
 								{{ t(val.i18n_key, val.title) }}
 							</span>
-							<span v-if="val.key === current" class="tw-mg-l-1 tw-c-text-alt">
+							<span v-if="val.key === current" class="tw-mg-l-1 tw-c-text-alt tw-relative ffz-il-tooltip__container">
 								{{ t('setting.provider.selected', '(Current)') }}
+								<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up">
+									{{ t('setting.provider.selected.about', 'This is the currently active settings provider.') }}
+								</div>
 							</span>
-							<span v-if="val.has_data" class="tw-mg-l-1 tw-c-text-alt">
+							<span v-if="val.has_data" class="tw-mg-l-1 tw-c-text-alt tw-relative ffz-il-tooltip__container">
 								{{ t('setting.provider.has-data', '(Has Data)') }}
+								<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up">
+									{{ t('setting.provider.has-data.about', 'This provider has data saved in it.') }}
+								</div>
 							</span>
-							<span v-if="val.has_blobs" class="tw-mg-l-1 tw-c-text-alt">
+							<span v-if="val.has_crossorigin" class="tw-mg-l-1 tw-c-text-alt tw-relative ffz-il-tooltip__container">
+								{{ t('setting.provider.cross-origin', '(Cross-Origin Compatible)') }}
+								<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up">
+									{{ t('setting.provider.cross-origin.about', 'This means that your settings will work across different domains, subdomains, and embeds.') }}
+								</div>
+							</span>
+							<span v-if="val.has_blobs" class="tw-mg-l-1 tw-c-text-alt tw-relative ffz-il-tooltip__container">
 								{{ t('setting.provider.has-blobs', '(Supports Binary Data)') }}
+								<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up">
+									{{ t('setting.provider.has-blobs.about', 'This provider supports binary data such as custom sound files.') }}
+								</div>
 							</span>
 						</div>
 						<section v-if="val.description" class="tw-c-text-alt-2">
@@ -69,6 +84,17 @@
 				</label>
 			</div>
 			<section v-if="canTransfer" class="tw-c-text-alt-2 tw-pd-b-05" style="padding-left:2.5rem">
+				<div
+					v-if="selected !== current && prov_keys[selected].has_data"
+					class="ffz--notice tw-c-background-accent tw-c-text-overlay tw-pd-1 tw-mg-y-1"
+				>
+					<h3 class="ffz-i-attention ffz-font-size-3">
+						{{ t('setting.provider.warn.title', 'Be careful!') }}
+					</h3>
+					<div>
+						<markdown :source="t('setting.provider.transfer.warning', 'The provider you selected contains data, and that data will be lost if you transfer the data from your current provider to it. Make sure you have a backup of your settings in case anything goes wrong.')" />
+					</div>
+				</div>
 				<markdown :source="t('setting.provider.transfer.desc', '**Note:** It is recommended to leave this enabled unless you know what you\'re doing.')" />
 			</section>
 			<div v-else class="tw-flex tw-align-items-center" style="padding-left:2.5rem">
@@ -110,6 +136,7 @@ export default {
 		const ffz = this.context.getFFZ(),
 			settings = ffz.resolve('settings'),
 			providers = [],
+			prov_keys = {},
 			transfers = {};
 
 		for(const [key, val] of Object.entries(settings.getProviders())) {
@@ -117,7 +144,8 @@ export default {
 				key,
 				priority: val.priority || 0,
 				has_data: null,
-				has_blobs: val.supportsBlobs,
+				has_blobs: val.canSupportBlobs(settings),
+				has_crossorigin: val.crossOrigin(settings),
 				has_trans: val.allowTransfer,
 				i18n_key: `setting.provider.${key}.title`,
 				title: val.title || key,
@@ -125,10 +153,11 @@ export default {
 				description: val.description
 			};
 
+			prov_keys[key] = prov;
 			transfers[key] = val.allowTransfer;
 
-			if ( val.supported() )
-				Promise.resolve(val.hasContent()).then(v => {
+			if ( val.supported(settings) )
+				Promise.resolve(val.hasContent(settings)).then(v => {
 					prov.has_data = v;
 				});
 
@@ -143,6 +172,7 @@ export default {
 			backup: false,
 			not_www: window.location.host !== 'www.twitch.tv',
 			providers,
+			prov_keys,
 			transfers,
 			current,
 			selected: current

@@ -251,7 +251,7 @@ export default class ChatHook extends Module {
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.parseOutgoingMessage && n.onRoomStateUpdated && n.renderNotifications,
+			n => n.parseOutgoingMessage && n.sendMessage && n.renderNotifications,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -403,9 +403,9 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering > Block >> Callout Types @{"description":"This filter allows you to remove callouts of specific types from Twitch chat. Callouts are special messages that can be pinned to the bottom of chat and often have associated actions, like claiming a drop or sharing your resubscription."}',
 				component: 'blocked-types',
-				getExtraTerms: () => Object.keys(this.callout_types).filter(key => ! UNBLOCKABLE_CALLOUTS.includes(key)),
+				getExtraTerms: () => Object.keys(this.callout_types ?? CALLOUT_TYPES).filter(key => ! UNBLOCKABLE_CALLOUTS.includes(key)),
 				data: () => Object
-					.keys(this.callout_types)
+					.keys(this.callout_types ?? CALLOUT_TYPES)
 					.filter(key => ! UNBLOCKABLE_CALLOUTS.includes(key))
 					.sort()
 			}
@@ -427,9 +427,9 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Filtering > Block >> Message Types @{"description":"This filter allows you to remove all messages of a certain type from Twitch chat. It can be used to filter system messages, such as Hosts or Raids. Some types, such as moderation actions, cannot be blocked to prevent chat functionality from breaking."}',
 				component: 'blocked-types',
-				getExtraTerms: () => Object.keys(this.chat_types).filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key)),
+				getExtraTerms: () => Object.keys(this.chat_types ?? CHAT_TYPES).filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key)),
 				data: () => Object
-					.keys(this.chat_types)
+					.keys(this.chat_types ?? CHAT_TYPES)
 					.filter(key => ! UNBLOCKABLE_TYPES.includes(key) && ! /^\d+$/.test(key))
 					.sort()
 			}
@@ -1082,7 +1082,7 @@ export default class ChatHook extends Module {
 		this.css_tweaks.setVariable('chat-width', `${width/10}rem`);
 		this.css_tweaks.setVariable('negative-chat-width', `${-width/10}rem`);
 
-		this.css_tweaks.toggle('chat-font', size !== 13 || font !== 'inherit');
+		this.css_tweaks.toggle('chat-font', size !== 14 || font !== 'inherit');
 		this.css_tweaks.toggle('chat-width', this.settings.get('chat.use-width'));
 		this.css_tweaks.toggle('chat-fix--watch-party', this.settings.get('context.isWatchParty'));
 
@@ -3214,7 +3214,8 @@ export default class ChatHook extends Module {
 							mystery = mysteries[key] = {
 								recipients: [],
 								size: e.massGiftCount,
-								expires: Date.now() + 30000
+								expires: Date.now() + 30000,
+								toJSON: () => null
 							};
 						}
 
@@ -3253,7 +3254,8 @@ export default class ChatHook extends Module {
 							mystery = mysteries[key] = {
 								recipients: [],
 								size: e.massGiftCount,
-								expires: Date.now() + 30000
+								expires: Date.now() + 30000,
+								toJSON: () => null
 							};
 						}
 

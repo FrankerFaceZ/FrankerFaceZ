@@ -4,7 +4,7 @@
 		class="ffz-dialog tw-elevation-3 tw-c-background-alt tw-c-text-base tw-border tw-flex tw-flex-nowrap tw-flex-column"
 	>
 		<header class="tw-c-background-base tw-full-width tw-align-items-center tw-flex tw-flex-nowrap" @dblclick="resize">
-			<h3 class="ffz-i-zreknarf ffz-i-pd-1">{{ t('i18n.ui.title', 'Translation Tester') }}</h3>
+			<h3 class="ffz-i-zreknarf ffz-i-pd-1 ffz-font-size-3">{{ t('i18n.ui.title', 'Translation Tester') }}</h3>
 			<div class="tw-flex-grow-1 tw-pd-x-2">
 				<div class="tw-search-input">
 					<label for="ffz-main-menu.search" class="tw-hide-accessible">{{ t('i18n.ui.search', 'Search Strings') }}</label>
@@ -17,7 +17,7 @@
 							v-model="query"
 							:placeholder="t('i18n.ui.search', 'Search Strings')"
 							type="search"
-							class="tw-block tw-border-radius-medium tw-font-size-6 tw-full-width ffz-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
+							class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-l-3 tw-pd-r-1 tw-pd-y-05"
 							autocapitalize="off"
 							autocorrect="off"
 							autocomplete="off"
@@ -99,7 +99,7 @@
 					ref="pager"
 					:value="page"
 					:max="pages"
-					class="tw-block tw-border-radius-medium tw-font-size-6 ffz-input tw-pd-x-1 tw-pd-y-05"
+					class="tw-block tw-border-radius-medium ffz-font-size-6 ffz-input tw-pd-x-1 tw-pd-y-05"
 					type="number"
 					min="1"
 					@keydown.enter="closePage"

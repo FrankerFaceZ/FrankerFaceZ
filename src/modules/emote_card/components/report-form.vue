@@ -2,7 +2,7 @@
 	<section class="viewer-card__actions tw-bottom-0 tw-pd-1">
 		<template v-if="loading">
 			<div class="tw-align-center tw-pd-1">
-				<h1 class="tw-mg-5 ffz-i-zreknarf loading" />
+				<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 			</div>
 		</template>
 		<template v-else-if="errorNoUser">
@@ -54,7 +54,7 @@
 
 			<textarea
 				v-model="message"
-				class="tw-full-width tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
+				class="tw-full-width tw-border-radius-medium ffz-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-input"
 				:placeholder="t('emote-card.report.placeholder', 'Enter a report message here.')"
 			/>
 

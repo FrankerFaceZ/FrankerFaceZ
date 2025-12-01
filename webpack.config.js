@@ -140,6 +140,10 @@ const config = {
 		}
 	},
 
+	performance: {
+		hints: false,
+	},
+
 	plugins: [
 		new CycloneDxWebpackPlugin({
 			specVersion: '1.6',
@@ -317,7 +321,6 @@ if ( DEV_SERVER )
 	config.devServer = {
 		client: false,
 		webSocketServer: false,
-		magicHtml: false,
 		liveReload: false,
 		hot: false,
 
@@ -338,14 +341,19 @@ if ( DEV_SERVER )
 			publicPath: '/script/',
 		},
 
-		proxy: {
-			'**': {
+		proxy: [
+			{
+				context: ['**'],
 				target: 'https://cdn2.frankerfacez.com/',
 				changeOrigin: true
-			}
-		},
+			},
+		],
 
 		setupMiddlewares: (middlewares, devServer) => {
+
+			devServer.app.get('/script/script.min.js', (req, res) => {
+				res.redirect('/script/script.js');
+			});
 
 			devServer.app.get('/update_font', (req, res) => {
 				const proc = exec('npm run font:save');
@@ -380,7 +388,7 @@ if ( DEV_SERVER )
 				next();
 			});
 
-			return middlewares;
+			return middlewares.filter(middleware => middleware.name !== 'cross-origin-header-check');
 		}
 	};
 
