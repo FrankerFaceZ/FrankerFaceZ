@@ -1,6 +1,7 @@
 .chat-line__message:not(.chat-line--inline),
 .user-notice-line {
 	.chat-scrollable-area__message-container > div:nth-child(2n+0) > &,
+	.chat-scrollable-area__message-container > div:nth-child(2n+0) > div > &,
 	&:nth-child(2n+0) {
 		&.ffz-mentioned:not(.ffz-custom-color) {
 			background-color: rgba(255,127,127,.4) !important;

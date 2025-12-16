@@ -80,6 +80,7 @@ export default class ViewerCards extends Module {
 
 			this.css_tweaks.set('viewer-card-highlight', `
 body .chat-room .chat-scrollable-area__message-container > div:nth-child(1n+0) > .chat-line__message:not(.chat-line--inline):not(.something-nonexistent)[data-user="${login}"],
+body .chat-room .chat-scrollable-area__message-container > div:nth-child(1n+0) > div > .chat-line__message:not(.chat-line--inline):not(.something-nonexistent)[data-user="${login}"],
 body .chat-room .chat-line__message:not(.chat-line--inline):nth-child(1n+0)[data-user="${login}"] {
 	background-color: ${color} !important;
 }`);
