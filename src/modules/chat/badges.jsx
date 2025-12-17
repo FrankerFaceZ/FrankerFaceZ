@@ -59,6 +59,7 @@ export const BADGE_POSITIONS = {
 	broadcaster: 0,
 	mod: 1,
 	moderator: 1,
+	lead_moderator: 1,
 	twitchbot: 1,
 	vip: 2,
 	subscriber: 25
