@@ -222,7 +222,7 @@ export default class Scroller extends Module {
 					const out = old_render.call(this);
 
 					try {
-						const children = out?.props?.children?.props?.children,
+						const children = out?.props?.children?.props?.children?.props?.children,
 							child = children?.[2];
 
 						if ( child?.type?.displayName === 'ChatPausedFooter' )
