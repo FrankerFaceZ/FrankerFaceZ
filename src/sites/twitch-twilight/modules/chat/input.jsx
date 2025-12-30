@@ -837,7 +837,7 @@ export default class Input extends Module {
 					element: inst.renderCommandSuggestion(cmd, i),
 					group: cmd.ffz_group ?
 						(Array.isArray(cmd.ffz_group) ? t.i18n.t(...cmd.ffz_group) : cmd.ffz_group)
-						: inst.determineGroup(cmd),
+						: (inst.determineGroup(cmd) || 'twitch'),
 					selection
 				});
 			}
