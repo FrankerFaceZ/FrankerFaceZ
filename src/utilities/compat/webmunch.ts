@@ -459,7 +459,9 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 
 
 	private _detectRequirements(node: GraphNode, fn: WebpackModuleLoaderV4) {
-		const str = fn.toString(),
+		const str = fn.toString();
+		let name_match = /^\([^,)]+,[^,)]+,([^,)]+)\)=>/.exec(str);
+		if ( ! name_match )
 			name_match = /^function\([^,)]+,[^,)]+,([^,)]+)/.exec(str);
 
 		if ( name_match ) {

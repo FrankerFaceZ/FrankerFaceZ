@@ -17,6 +17,7 @@ const CSS_BADGES = {
 		staff: { 1: { color: '#200f33', svg: true, trans: { color: '#6441a5' } } },
 		admin: { 1: { color: '#faaf19', svg: true  } },
 		global_mod: { 1: { color: '#0c6f20', svg: true } },
+		lead_moderator: { 1: { color: '#34ae0a' } },
 		broadcaster: { 1: { color: '#e71818', svg: true } },
 		moderator: { 1: { color: '#34ae0a', svg: true } },
 		twitchbot: { 1: { color: '#34ae0a' } },
@@ -28,12 +29,14 @@ const CSS_BADGES = {
 		premium: { 1: { color: '#009cdc' } },
 
 		subscriber: { 0: { color: '#6441a5' }, 1: { color: '#6441a5' }},
+		//'bot-badge': { 1: { color: '#00A3A3' } }
 	},
 
 	2: {
 		staff: { 1: { color: '#000' } },
 		admin: { 1: { color: '#DB7600' } },
 		broadcaster: { 1: { color: '#E91916' } },
+		lead_moderator: { 1: { color: '#00AD03' } },
 		moderator: { 1: { color: '#00AD03' } },
 		global_mod: { 1: { color: '#006441' } },
 		twitchbot: { 1: { color: '#00AD03' } },
@@ -48,9 +51,28 @@ const CSS_BADGES = {
 		'clip-champ': { 1: { color: '#9146FF' } },
 		'artist-badge': { 1: { color: '#1e69ff' } },
 		'no_audio': { 1: { color: '#323239' } },
-		'no_video': { 1: { color: '#323239' } }
+		'no_video': { 1: { color: '#323239' } },
+		'bot-badge': { 1: { color: '#00A3A3' } }
 	}
 }
+
+const TWITCH_STYLE_BOT_BADGE = {
+	addon: false,
+	color: '#00a3a3',
+	css: null,
+	id: 2,
+	image: 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/1.png',
+	name: 'bot',
+	replaces: true,
+	replaces_type: 'moderator',
+	slot: 1,
+	title: 'Chat Bot',
+	urls: {
+		'1': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/1.png',
+		'2': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/2.png',
+		'4': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/3.png',
+	}
+};
 
 export const BADGE_POSITIONS = {
 	staff: -2,
@@ -60,8 +82,9 @@ export const BADGE_POSITIONS = {
 	mod: 1,
 	moderator: 1,
 	lead_moderator: 1,
-	twitchbot: 1,
-	vip: 2,
+	twitchbot: 2,
+	'bot-badge': 2,
+	vip: 3,
 	subscriber: 25
 };
 
@@ -212,6 +235,20 @@ export default class Badges extends Module {
 				}
 			});
 
+		this.settings.add('chat.badges.unify-bot-badge', {
+			default: 2,
+			ui: {
+				path: 'Chat > Badges > tabs ~> Appearance',
+				title: 'Unified Bot Badge',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'FFZ-Style Badge'},
+					{value: 2, title: 'Twitch-Style Badge'}
+				]
+			}
+		});
+
 		this.settings.add('chat.badges.version', {
 			default: 2,
 			ui: {
@@ -309,10 +346,10 @@ export default class Badges extends Module {
 
 	getSettingsBadges(include_addons, callback) {
 		const twitch = [],
-			other = [],
-			owl = [],
+			social = [],
 			tcon = [],
 			game = [],
+			other = [],
 			ffz = [],
 			specific_addons = {},
 			addon = [];
@@ -350,10 +387,10 @@ export default class Badges extends Module {
 
 				if ( v ) {
 					let cat;
-					if ( badge.__cat === 'm-other' )
+					if ( badge.__cat === 'm-social' )
+						cat = social;
+					else if ( badge.__cat === 'm-other' )
 						cat = other;
-					else if ( badge.__cat === 'm-owl' )
-						cat = owl;
 					else if ( badge.__cat === 'm-tcon' )
 						cat = tcon;
 					else if ( badge.__cat === 'm-game' )
@@ -465,10 +502,10 @@ export default class Badges extends Module {
 		}
 
 		const out = [
-			{title: 'Twitch', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: Core', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: Social', id: 'm-social', badges: social},
 			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
 			{title: 'Twitch: Other', id: 'm-other', badges: other},
-			{title: 'Twitch: Overwatch League', id: 'm-owl', badges: owl},
 			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game}
 		];
 
@@ -503,6 +540,7 @@ export default class Badges extends Module {
 		this.parent.context.on('changed:theme.tooltips-dark', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.version', this.rebuildAllCSS, this);
 		this.parent.context.on('changed:chat.badges.media-queries', this.rebuildAllCSS, this);
+		this.parent.context.on('changed:chat.badges.unify-bot-badge', this.rebuildColoredBadges, this);
 		this.parent.context.on('changed:chat.badges.fix-colors', this.rebuildColoredBadges, this);
 		this.parent.context.on('changed:chat.badges.clickable', this.rebuildAllCSS, this);
 
@@ -588,8 +626,11 @@ export default class Badges extends Module {
 					</div>);
 
 				} else if ( p === 'ffz' ) {
-					const full_badge = this.badges[d.id],
-						badge = d.badge,
+					let full_badge = this.badges[d.id];
+					if ( full_badge?.name === 'bot' && this.parent.context.get('chat.badges.unify-bot-badge') === 2 )
+						full_badge = TWITCH_STYLE_BOT_BADGE;
+
+					const badge = d.badge,
 						extra = maybe_call(badge?.tooltipExtra ?? full_badge?.tooltipExtra, this, ds, badge, target, tip);
 
 					if ( extra instanceof Promise ) {
@@ -658,7 +699,7 @@ export default class Badges extends Module {
 
 				const existing = this.badges[badge_id];
 				if ( existing && existing.addon !== addon_id )
-					module.log.warn('[DEV-CHECK] Removed un-owned badge with chat.badges.removeBadge():', key, ' owner:', existing.addon ?? 'ffz');
+					module.log.warn('[DEV-CHECK] Removed un-owned badge with chat.badges.removeBadge():', badge_id, ' owner:', existing.addon ?? 'ffz');
 
 				return this.removeBadge(badge_id, ...args);
 			};
@@ -844,9 +885,9 @@ export default class Badges extends Module {
 			room_id = msg.sourceRoomID ? msg.sourceRoomID : msg.roomID,
 			room_login = msg.sourceRoomID ? null : msg.roomLogin,
 
-			room = this.parent.getRoom(room_id, room_login, true),
-			badges = msg.ffz_badges; // this.getBadges(user_id, user_login, room_id, room_login);
+			room = this.parent.getRoom(room_id, room_login, true);
 
+		let ffz_badges = msg.ffz_badges; // this.getBadges(user_id, user_login, room_id, room_login);
 		let last_slot = 50, slot;
 
 		for(const badge_id in twitch_badges)
@@ -858,6 +899,17 @@ export default class Badges extends Module {
 
 				if ( ! badge_id || is_hidden || (is_hidden == null && hidden_badges[cat]) )
 					continue;
+
+				// Unify bot badge handling by converting this to the FFZ bot badge.
+				if ( badge_id === 'bot-badge' && this.parent.context.get('chat.badges.unify-bot-badge') > 0 ) {
+					if ( ! Array.isArray(ffz_badges) )
+						ffz_badges = [];
+
+					ffz_badges.push({
+						id: 2
+					});
+					continue;
+				}
 
 				if ( has(BADGE_POSITIONS, badge_id) )
 					slot = BADGE_POSITIONS[badge_id];
@@ -912,18 +964,21 @@ export default class Badges extends Module {
 				});
 			}
 
-		if ( Array.isArray(badges) ) {
+		if ( Array.isArray(ffz_badges) ) {
 			const handled_ids = new Set;
 
-			for(const badge of badges)
+			for(const badge of ffz_badges)
 				if ( badge && badge.id != null ) {
 					if ( handled_ids.has(badge.id) )
 						continue;
 
 					handled_ids.add(badge.id);
 
-					const full_badge = this.badges[badge.id] || {},
-						cat = typeof full_badge.addon === 'string'
+					let full_badge = this.badges[badge.id] || {};
+					if ( full_badge.name === 'bot' && this.parent.context.get('chat.badges.unify-bot-badge') === 2 )
+						full_badge = TWITCH_STYLE_BOT_BADGE;
+
+					const cat = typeof full_badge.addon === 'string'
 							? `m-addon-${full_badge.addon}`
 							: full_badge.addon
 								? 'm-addon'
@@ -953,7 +1008,7 @@ export default class Badges extends Module {
 						};
 
 					// Hacky nonsense.
-					if ( ! full_badge.addon ) {
+					if ( ! full_badge.addon && full_badge.name !== 'bot' ) {
 						bd.image = `//cdn.frankerfacez.com/badge/${badge.id}/4/rounded`;
 						bd.color = null;
 					}
@@ -1340,14 +1395,17 @@ export default class Badges extends Module {
 	buildBadgeCSS() {
 		const style = this.parent.context.get('chat.badges.style'),
 			is_dark = this.parent.context.get('theme.is-dark'),
+			unified_badge = this.parent.context.get('chat.badges.unify-bot-badge'),
 			can_click = this.parent.context.get('chat.badges.clickable'),
 			use_media = IS_FIREFOX && this.parent.context.get('chat.badges.media-queries');
 
 		const out = [];
 		for(const key in this.badges)
 			if ( has(this.badges, key) ) {
-				const data = this.badges[key],
-					selector = `.ffz-badge[data-badge="${key}"]`;
+				const selector = `.ffz-badge[data-badge="${key}"]`;
+				let data = this.badges[key];
+				if ( unified_badge === 2 && data.name === 'bot' )
+					data = TWITCH_STYLE_BOT_BADGE;
 
 				out.push(`.ffz-badge[data-replaced="${key}"]{${generateOverrideCSS(data, style, is_dark)}}`);
 
@@ -1515,28 +1573,57 @@ export default class Badges extends Module {
 	}
 }
 
-
-const OTHER_BADGES = [
-	'vga-champ-2017',
-	'warcraft',
-	'samusoffer_beta',
-	'power-rangers',
-	'bits-charity',
-	'glhf-pledge'
+const CORE_BADGES = [
+	'admin',
+	'ambassador',
+	'anonymous-cheerer',
+	'artist-badge',
+	'bot-badge',
+	'broadcaster',
+	'extension',
+	'founder',
+	'game-developer',
+	'global_mod',
+	'lead_moderator',
+	'moderator',
+	'no_audio',
+	'no_video',
+	'partner',
+	'premium',
+	'staff',
+	'subscriber',
+	'turbo',
+	'twitch-dj',
+	'twitchbot',
+	'user-anniversary',
+	'vip'
 ];
 
+const SOCIAL_BADGES = [
+	'bits',
+	'bits-leader',
+	'clip-champ',
+	'clip-the-halls',
+	'clips-leader',
+	'hype-train',
+	'moments',
+	'predictions',
+	'social-sharing',
+	'sub-gift-leader',
+	'sub-gifter',
+];
 
 export function getBadgeCategory(key) {
-	if ( OTHER_BADGES.includes(key) )
-		return 'm-other';
-	else if ( key.startsWith('overwatch-league') )
-		return 'm-owl';
+	if ( CORE_BADGES.includes(key) )
+		return 'm-twitch';
+	else if ( SOCIAL_BADGES.includes(key) )
+		return 'm-social';
 	else if ( key.startsWith('twitchcon') || key.startsWith('glitchcon') )
 		return 'm-tcon';
 	else if ( /_\d+$/.test(key) )
 		return 'm-game';
 
-	return 'm-twitch';
+	return 'm-other';
 }
 
 export function fixBadgeData(badge) {
