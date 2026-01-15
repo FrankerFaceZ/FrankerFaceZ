@@ -906,7 +906,7 @@ export default class Badges extends Module {
 						ffz_badges = [];
 
 					ffz_badges.push({
-						id: 2
+						id: '2'
 					});
 					continue;
 				}
@@ -1614,7 +1614,7 @@ const SOCIAL_BADGES = [
 ];
 
 export function getBadgeCategory(key) {
-	if ( CORE_BADGES.includes(key) )
+	if ( CORE_BADGES.includes(key) || key.endsWith('-twitch-staff') )
 		return 'm-twitch';
 	else if ( SOCIAL_BADGES.includes(key) )
 		return 'm-social';
