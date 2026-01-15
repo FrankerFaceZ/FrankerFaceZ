@@ -1017,10 +1017,13 @@ export default class Badges extends Module {
 
 					if ( old_badge ) {
 						old_badge.badges.push(bd);
+						let replacing_id = old_badge.id;
+						if (replacing_id === 'lead_moderator')
+							replacing_id = 'moderator';
 
 						const replaces = has(badge, 'replaces') ? badge.replaces : full_badge.replaces,
 							replaces_type = badge.replaces_type || full_badge.replaces_type;
-						if ( replaces && (!replaces_type || replaces_type === old_badge.id) ) {
+						if ( replaces && (!replaces_type || replaces_type === replacing_id) ) {
 							old_badge.replaced = badge.id;
 							old_badge.content = badge.content || full_badge.content || old_badge.content;
 						} else
