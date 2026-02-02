@@ -3,3 +3,7 @@
 		opacity: 0.5;
 	}
 }
+
+.vcml-message:not(:hover) .chat-line__message--deleted > * {
+	opacity: 0.5;
+}

@@ -1,0 +1,14 @@
+.vcml-message {
+	.chat-line__message--deleted-detailed,
+	.chat-line__message--censored-detailed {
+		text-decoration: none !important;
+		
+		.chat-line__message--emote-button span::before {
+			display: none !important;
+		}
+		
+		img {
+			opacity: 1 !important;
+		}
+	}
+}

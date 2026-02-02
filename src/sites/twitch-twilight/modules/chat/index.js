@@ -1301,6 +1301,7 @@ export default class ChatHook extends Module {
 		this.chat.context.getChanges('chat.filtering.deleted-style', val => {
 			this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
 			this.css_tweaks.toggle('chat-deleted-fade', val < 2);
+			this.css_tweaks.toggle('chat-deleted-no-strike', val === 0);
 		});
 
 		this.chat.context.getChanges('chat.filtering.clickable-mentions', val =>
