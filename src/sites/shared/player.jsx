@@ -2467,7 +2467,7 @@ export default class PlayerBase extends Module {
 
 	get current() {
 		for(const inst of this.Player.instances) {
-			const player = findPlayer(inst);
+			const player = findPlayer(inst?.props);
 			if ( player )
 				return player;
 		}
