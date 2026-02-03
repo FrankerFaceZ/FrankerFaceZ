@@ -741,15 +741,20 @@ export default class Directory extends Module {
 			}
 		}
 
+		let type = item.type ?? item.streamType;
+
 		let bad_tag = false,
+			rerun_tag = false,
 			blur_tag = false;
 
 		if ( Array.isArray(tags) ) {
 			const bad_tags = this.settings.get('directory.blocked-tags', []),
 				blur_tags = this.settings.get('directory.blur-tags', []);
 
-			if ( bad_tags.length || blur_tags.length ) {
+			if ( bad_tags.length || blur_tags.length || type == null ) {
 				for(const tag of tags) {
+					if ( tag?.id === 'fft:CHANNEL:54739364:0' )
+						rerun_tag = true;
 					if ( tag?.name ) {
 						const lname = tag.name.toLowerCase();
 						if ( bad_tags.includes(lname) )
@@ -757,11 +762,14 @@ export default class Directory extends Module {
 						if ( blur_tags.includes(lname) )
 							blur_tag = true;
 					}
-					if ( (bad_tag || ! bad_tags.length) && (blur_tag || ! blur_tags.length) )
+					if ( (bad_tag || ! bad_tags.length) && (blur_tag || ! blur_tags.length) && (rerun_tag || type != null) )
 						break;
 				}
 			}
 		}
+
+		if ( type == null )
+			type = rerun_tag ? 'rerun' : 'live';
 
 		let should_blur = blur_tag;
 		if ( need_flags && filter_flags && el._ffz_flags == null )
@@ -787,8 +795,6 @@ export default class Directory extends Module {
 					should_blur = true;
 			}
 		}
-
-		const type = item.type ?? item.streamType;
 
 		el.classList.toggle('ffz-hide-thumbnail', should_blur);
 		el.dataset.ffzType = type;

@@ -1911,7 +1911,7 @@ export default class ChatHook extends Module {
 			return true;
 
 		if ( type === 'megacheer_emote_recipient' &&
-			! t.chat.context.get('chat.bits.show-rewards')
+			! this.chat.context.get('chat.bits.show-rewards')
 		)
 			return true;
 
@@ -1968,8 +1968,11 @@ export default class ChatHook extends Module {
 			return;
 
 		const contextMenuProps = inst.props?.event?.callout?.contextMenuProps,
-			event = contextMenuProps?.event ?? inst.props?.event,
-			type = event?.type;
+			event = contextMenuProps?.event ?? inst.props?.event;
+
+		let type = event?.type;
+		if ( type === 'send-private-callout' && event.data?.type )
+			type = event.data.type;
 
 		//console.warn('inline-callout', type, event, inst);
 

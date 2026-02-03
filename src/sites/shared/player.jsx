@@ -40,6 +40,18 @@ function wantsRMB(setting) {
 	return setting === 2 || setting === 4 || setting === 6 || setting === 8;
 }
 
+function findPlayer(props) {
+	const player = props?.mediaPlayerInstance;
+	if ( player?.playerInstance )
+		return player.playerInstance;
+	return player;
+}
+
+function findPlayerCore(props) {
+	const player = findPlayer(props);
+	return player?.core ?? player;
+}
+
 function matchesEvent(setting, event, has_rmb) {
 	if ( wantsRMB(setting) && event.button !== 2 && ! has_rmb )
 		return false;
@@ -849,7 +861,7 @@ export default class PlayerBase extends Module {
 
 		cls.prototype.ffzStopAutoplay = function() {
 			if ( t.shouldStopAutoplay(this) )
-				t.stopPlayer(this.props.mediaPlayerInstance, this.props.playerEvents, this);
+				t.stopPlayer(findPlayer(this.props), this.props.playerEvents, this);
 		}
 
 		cls.prototype.ffzScheduleState = function() {
@@ -869,15 +881,12 @@ export default class PlayerBase extends Module {
 			const ds = cont.dataset;
 			ds.controls = this.state?.active || false;
 
-			let player = this.props.mediaPlayerInstance;
-			if ( ! player )
+			const core = findPlayerCore(this.props);
+			if ( ! core )
 				return;
 
-			if ( player.core )
-				player = player.core;
-
-			const state = player.state?.state,
-				video = player.mediaSinkManager?.video;
+			const state = core.state?.state,
+				video = core.mediaSinkManager?.video;
 
 			if ( state === 'Playing' ) {
 				if ( video?._ffz_maybe_compress ) {
@@ -950,10 +959,10 @@ export default class PlayerBase extends Module {
 			if ( this._ffz_pause_timer )
 				clearTimeout(this._ffz_pause_timer);
 
-			const player = this.props?.mediaPlayerInstance;
+			const player = findPlayer(this.props);
 			if (! player.isPaused())
 				this._ffz_pause_timer = setTimeout(() => {
-					const player = this.props?.mediaPlayerInstance;
+					const player = findPlayer(this.props);
 					if (!player.isPaused())
 						player.pause();
 				}, 500);
@@ -995,7 +1004,7 @@ export default class PlayerBase extends Module {
 			if ( ! t.settings.get('player.mute-click') || event.button !== 1 )
 				return;
 
-			const player = this.props?.mediaPlayerInstance;
+			const player = findPlayer(this.props);
 			if ( ! player?.isMuted )
 				return;
 
@@ -1026,7 +1035,7 @@ export default class PlayerBase extends Module {
 				return;
 
 			const delta = event.wheelDelta || -(event.deltaY || event.detail || 0),
-				player = this.props?.mediaPlayerInstance,
+				player = findPlayer(this.props),
 				video = player?.mediaSinkManager?.video || player?.core?.mediaSinkManager?.video,
 				has_gain = video?._ffz_compressed && video?._ffz_gain != null,
 				doing_gain = has_gain && matches_gain;
@@ -1158,8 +1167,9 @@ export default class PlayerBase extends Module {
 			events._ffz_stopping = true;
 
 			const immediatePause = () => {
-				if ( inst.props.mediaPlayerInstance?.pause ) {
-					inst.props.mediaPlayerInstance.pause();
+				const player = findPlayer(inst.props);
+				if ( player?.pause ) {
+					player.pause();
 					off(events, 'Playing', immediatePause);
 					events._ffz_stopping = false;
 				}
@@ -1311,7 +1321,7 @@ export default class PlayerBase extends Module {
 
 	addGainSlider(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
+			video = findPlayerCore(inst.props)?.mediaSinkManager?.video,
 			container = outer && outer.querySelector(LEFT_CONTROLS);
 		let gain = video != null && video._ffz_compressed && video._ffz_gain;
 
@@ -1356,8 +1366,9 @@ export default class PlayerBase extends Module {
 				if ( value == video._ffz_gain_value )
 					return;
 
-				const player = inst.props.mediaPlayerInstance,
-					core = player.core || player;
+				const core = findPlayerCore(inst.props);
+				if ( ! core )
+					return;
 
 				if ( ! this.areControlsDisabled(inst) && value > 0 && this.settings.get('player.gain.no-volume') && core?.isMuted?.() ) {
 					core.setMuted(false);
@@ -1442,7 +1453,7 @@ export default class PlayerBase extends Module {
 
 	addCompressorButton(inst, visible_only, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
+			video = findPlayerCore(inst.props)?.mediaSinkManager?.video,
 			container = outer && outer.querySelector(LEFT_CONTROLS),
 			has_comp = HAS_COMPRESSOR && video != null && this.settings.get('player.compressor.enable');
 
@@ -1550,7 +1561,7 @@ export default class PlayerBase extends Module {
 					this.replaceVideoElement(player, video);
 				}
 			} catch(err) {
-				t.log.error('Error while handling player load.', err);
+				this.log.error('Error while handling player load.', err);
 			}
 
 			return player._ffz_load(...args);
@@ -1558,7 +1569,7 @@ export default class PlayerBase extends Module {
 	}
 
 	compressPlayer(inst, e) {
-		const player = inst.props.mediaPlayerInstance,
+		const player = findPlayer(inst.props),
 			core = player.core || player,
 			video = core?.mediaSinkManager?.video;
 
@@ -1573,7 +1584,7 @@ export default class PlayerBase extends Module {
 			inst._ffz_setSrc = inst.setSrc;
 			inst.setSrc = async function(...args) {
 				console.log('setSrc', args);
-				const vid = inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+				const vid = findPlayerCore(inst.props)?.mediaSinkManager?.video;
 				if ( vid && vid._ffz_compressor )
 					await this.resetPlayer(inst);
 				return inst._ffz_setSrc(...args);
@@ -1697,8 +1708,7 @@ export default class PlayerBase extends Module {
 	}
 
 	updateGainVolume(inst) {
-		const player = inst.props.mediaPlayerInstance,
-			core = player.core || player,
+		const core = findPlayerCore(inst.props),
 			video = core?.mediaSinkManager?.video;
 
 		if ( ! video || ! video._ffz_compressed )
@@ -1722,11 +1732,11 @@ export default class PlayerBase extends Module {
 		if ( ! HAS_COMPRESSOR )
 			return false;
 
-		const player = inst.props?.mediaPlayerInstance;
-		if ( player == null )
+		const core = findPlayerCore(inst.props);
+		if ( core == null )
 			return false;
 
-		const video = player.mediaSinkManager?.video || player.core?.mediaSinkManager?.video;
+		const video = core.mediaSinkManager?.video;
 		if ( ! video )
 			return false;
 
@@ -1836,8 +1846,7 @@ export default class PlayerBase extends Module {
 
 	updateGain(inst, gain, video, update_gui = true) {
 		if ( ! video )
-			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
-				inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+			video = findPlayerCore(inst.props)?.mediaSinkManager?.video;
 
 		if ( gain == null )
 			gain = video?._ffz_gain;
@@ -1861,8 +1870,7 @@ export default class PlayerBase extends Module {
 
 	updateCompressor(inst, comp) {
 		if ( comp == null ) {
-			const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
-				inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+			const video = findPlayerCore(inst.props)?.mediaSinkManager?.video;
 			comp = video?._ffz_compressor;
 		}
 
@@ -1882,9 +1890,7 @@ export default class PlayerBase extends Module {
 	}
 
 	updatePlaybackRate(inst) {
-		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
-			inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
-
+		const video = findPlayerCore(inst.props)?.mediaSinkManager?.video;
 		if ( ! video.setFFZPlaybackRate )
 			this.installPlaybackRate(video);
 
@@ -1925,7 +1931,7 @@ export default class PlayerBase extends Module {
 
 	addPiPButton(inst, tries = 0) {
 		const outer = inst.props.containerRef || this.fine.getChildNode(inst),
-			video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video || inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video,
+			video = findPlayerCore(inst.props)?.mediaSinkManager?.video,
 			is_fs = video && document.fullscreenElement && document.fullscreenElement.contains(video),
 			container = outer && outer.querySelector(RIGHT_CONTROLS),
 			has_pip = document.pictureInPictureEnabled && this.settings.get('player.button.pip');
@@ -2002,8 +2008,7 @@ export default class PlayerBase extends Module {
 
 
 	pipPlayer(inst, e) {
-		const video = inst.props.mediaPlayerInstance?.mediaSinkManager?.video ||
-			inst.props.mediaPlayerInstance?.core?.mediaSinkManager?.video;
+		const video = findPlayerCore(inst.props)?.mediaSinkManager?.video;
 		if ( ! video || ! document.pictureInPictureEnabled )
 			return;
 
@@ -2256,7 +2261,9 @@ export default class PlayerBase extends Module {
 
 
 	async resetPlayer(inst, e) {
-		const player = inst ? ((inst.mediaSinkManager || inst.core?.mediaSinkManager) ? inst : inst?.props?.mediaPlayerInstance) : null;
+		const player = inst
+			? findPlayer(inst.props) ?? inst
+			: null;
 
 		if ( e ) {
 			e.preventDefault();
@@ -2297,7 +2304,7 @@ export default class PlayerBase extends Module {
 
 		this.PlayerSource.check();
 		for(const inst of this.PlayerSource.instances) {
-			if ( ! player || player === inst.props?.mediaPlayerInstance )
+			if ( ! player || player === findPlayer(inst.props) )
 				await inst.setSrc({isNewMediaPlayerInstance: false});
 		}
 
@@ -2459,9 +2466,11 @@ export default class PlayerBase extends Module {
 	}
 
 	get current() {
-		for(const inst of this.Player.instances)
-			if ( inst?.props?.mediaPlayerInstance )
-				return inst.props.mediaPlayerInstance;
+		for(const inst of this.Player.instances) {
+			const player = findPlayer(inst);
+			if ( player )
+				return player;
+		}
 
 		return null;
 	}
