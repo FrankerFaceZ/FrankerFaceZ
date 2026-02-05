@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"runtime"
 	"sync"
@@ -32,16 +34,14 @@ type StatsData struct {
 	LiveClientCount    uint64
 
 	PubSubChannelCount int
-
-	SysMemTotalKB uint64
-	SysMemFreeKB  uint64
-	MemoryInUseKB uint64
-	MemoryRSSKB   uint64
-
 	ResponseCacheItems int
-	MemPerClientBytes  uint64
 
-	CpuUsagePct float64
+	MemPerClientBytes uint64
+	SysMemTotalKB     uint64
+	SysMemFreeKB      uint64
+	MemoryInUseKB     uint64
+	MemoryRSSKB       uint64
+	CpuUsagePct       float64
 
 	ClientConnectsTotal    uint64
 	ClientDisconnectsTotal uint64
@@ -219,4 +219,81 @@ func HTTPShowStatistics(w http.ResponseWriter, _ *http.Request) {
 	json.Indent(outBuf, jsonBytes, "", "\t")
 
 	outBuf.WriteTo(w)
+}
+
+func HTTPShowStatisticsPrometheus(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+
+	updateStatsIfNeeded()
+
+	Statistics.RenderPrometheus(w)
+}
+
+const (
+	mGauge   = "gauge"
+	mCounter = "counter"
+)
+
+func writeManualMetric(w io.Writer, name string, value float64, help, typ string) {
+	fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s %s\n%s %v\n", name, help, name, typ, name, value)
+}
+
+func writeLabelledStart(w io.Writer, name string, help, typ string) {
+	fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s %s\n", name, help, name, typ)
+}
+
+func writeLabelledValue(w io.Writer, name string, value float64, labelKey, labelValue string) {
+	fmt.Fprintf(w, "%s{%s=%q} %v\n", name, labelKey, labelValue, value)
+}
+
+func boolToFloat64(v bool) float64 {
+	if v {
+		return 1
+	}
+	return 0
+}
+
+func (s *StatsData) RenderPrometheus(w io.Writer) {
+	writeManualMetric(w, "process_start_time_seconds", float64(s.StartTime.Unix()), "Start time of the process since unix epoch in seconds.", mGauge)
+
+	// build stamp
+	writeLabelledStart(w, "frankerfacez_build_hash", "Compilation git version hash of the socket server.", mGauge)
+	writeLabelledValue(w, "frankerfacez_build_hash", 1, "hash", s.BuildHash)
+	writeLabelledStart(w, "frankerfacez_build_time", "Compilation timestamp of the socket server as a string.", mGauge)
+	writeLabelledValue(w, "frankerfacez_build_time", 1, "time", s.BuildTime)
+
+	writeManualMetric(w, "frankerfacez_health_irc", boolToFloat64(s.Health.IRC), "State of the Twitch IRC health checks.", mGauge)
+	// todo: backend last seen
+
+	// connections
+	writeManualMetric(w, "frankerfacez_clients_current", float64(s.CurrentClientCount), "Number of current websocket connections to the socket server.", mGauge)
+	writeManualMetric(w, "frankerfacez_clients_live", float64(s.LiveClientCount), "Number of live (completed handshake) websocket connections to the socket server.", mGauge)
+	writeManualMetric(w, "frankerfacez_clients_connects_total", float64(s.ClientConnectsTotal), "Number of connections initiated to the socket server.", mCounter)
+	writeManualMetric(w, "frankerfacez_clients_disconnects_total", float64(s.ClientConnectsTotal), "Number of connections to the socket server that have ended.", mCounter)
+
+	writeManualMetric(w, "frankerfacez_pubsub_channels", float64(s.PubSubChannelCount), "Number of publish/subscribe channels the socket server knows about.", mGauge)
+	writeManualMetric(w, "frankerfacez_pubsub_response_cache_items", float64(s.ResponseCacheItems), "Number of entries in the command response cache.", mGauge)
+
+	// memory stats
+	writeManualMetric(w, "frankerfacez_memory_per_client_bytes", float64(s.MemPerClientBytes), "Average number of bytes needed to serve a connection.", mGauge)
+	writeManualMetric(w, "go_memstats_alloc_bytes", float64(s.MemoryInUseKB*1024), "Number of bytes allocated and still in use.", mGauge)
+	writeManualMetric(w, "process_resident_memory_bytes", float64(s.MemoryRSSKB*1024), "Resident memory size in bytes.", mGauge)
+	writeManualMetric(w, "system_total_memory_bytes", float64(s.SysMemTotalKB*1024), "Total amount of memory available on the system.", mGauge)
+	writeManualMetric(w, "system_free_memory_bytes", float64(s.SysMemFreeKB*1024), "Total amount of free memory on the system.", mGauge)
+	writeManualMetric(w, "process_cpu_recent_ratio", s.CpuUsagePct / 100, "Percentage of CPU time used since the last measurement.", mGauge)
+
+	writeLabelledStart(w, "frankerfacez_client_versions", "Reported version of connected clients.", mGauge)
+	for version, count := range s.ClientVersions {
+		writeLabelledValue(w, "frankerfacez_client_versions", float64(count), "version", version)
+	}
+
+	writeLabelledStart(w, "frankerfacez_commands_issued", "Number of times each command has been issued.", mCounter)
+	for command, count := range s.CommandsIssuedMap {
+		writeLabelledValue(w, "frankerfacez_commands_issued", float64(count), "command", string(command))
+	}
+	writeManualMetric(w, "frankerfacez_commands_issued_total", float64(s.CommandsIssuedTotal), "Number of times each command has been issued.", mCounter)
+	writeManualMetric(w, "frankerfacez_messages_sent_total", float64(s.MessagesSent), "Number of times the server has sent a message over the socket.", mCounter)
+
+	writeManualMetric(w, "frankerfacez_backend_verify_fail_total", float64(s.BackendVerifyFails), "Number of times the server has failed to securely receive a message from the backend.", mCounter)
+
 }
