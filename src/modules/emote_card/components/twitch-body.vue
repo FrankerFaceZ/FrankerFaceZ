@@ -72,8 +72,12 @@
 			<div
 				v-for="extra in extras"
 				:key="extra.id"
-				:data-title="extra.name"
 				class="ffz-tooltip"
+				data-tooltip-type="emote"
+				data-provider="twitch"
+				:data-id="extra.id"
+				:data-name="extra.name"
+				data-no-source="true"
 			>
 				<img :src="extra.src" :srcset="extra.srcSet" :alt="extra.name" />
 			</div>
