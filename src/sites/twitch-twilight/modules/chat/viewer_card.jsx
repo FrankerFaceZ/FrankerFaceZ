@@ -54,6 +54,11 @@ export default class ViewerCards extends Module {
 		this.chat.context.on('changed:chat.viewer-cards.color', this.refreshStyle, this);
 		this.on('..:update-colors', this.refreshStyle, this);
 
+		this.ViewerCard.ready((cls, instances) => {
+			for (const inst of instances) {
+				this.updateCard(inst);
+			}
+		});
 		this.ViewerCard.on('mount', this.updateCard, this);
 		this.ViewerCard.on('update', this.updateCard, this);
 		this.ViewerCard.on('unmount', this.unmountCard, this);
