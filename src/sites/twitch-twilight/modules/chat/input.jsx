@@ -176,6 +176,26 @@ export default class Input extends Module {
 			}
 		});
 
+		this.settings.add('chat.tab-complete.show-source', {
+			default: 0,
+
+			ui: {
+				path: 'Chat > Input >> Tab Completion',
+				title: 'Show Emote Source',
+				description: 'Displays the origin of third-party emotes in the autocomplete popup\n\n' +
+					'`Short` is (FFZ, BTTV, 7TV)\n\n' +
+					'`Long` is (FFZ Channel/Global Emotes, BetterTTV Channel/Global Emotes, 7TV Emotes, etc)',
+
+				component: 'setting-select-box',
+
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Short'},
+					{value: 2, title: 'Long'}
+				]
+			}
+		});
+
 
 		// Components
 
@@ -364,6 +384,7 @@ export default class Input extends Module {
 		this.chat.context.on('changed:chat.emotes.animated', this.uncacheTabCompletion, this);
 		this.chat.context.on('changed:chat.emotes.enabled', this.uncacheTabCompletion, this);
 		this.chat.context.on('changed:chat.tab-complete.matching', this.uncacheTabCompletion, this);
+		this.chat.context.on('changed:chat.tab-complete.show-source', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-set-hidden', this.uncacheTabCompletion, this);
 		this.on('chat.emotes:change-favorite', this.uncacheTabCompletion, this);
@@ -1001,7 +1022,19 @@ export default class Input extends Module {
 		const React = this.site.getReact(),
 			createElement = React?.createElement;
 
+		const SOURCE_LABELS = {
+			'ffz': 'FFZ',
+			'BetterTTV': 'BTTV'
+		};
+
 		inst.renderFFZEmojiSuggestion = function(data) {
+			const showSource = t.chat.context.get('chat.tab-complete.show-source');
+			const label = showSource === 1
+				? (SOURCE_LABELS[data.source] || data.source)
+				: showSource === 2
+					? data.extra
+					: null;
+
 			return (<React.Fragment>
 				<div class="tw-relative tw-flex-shrink-0 tw-pd-05" title={data.token} favorite={data.favorite}>
 					<img
@@ -1011,13 +1044,21 @@ export default class Input extends Module {
 					/>
 					{data.favorite && <figure class="ffz--favorite ffz-i-star" />}
 				</div>
-				<div class="tw-ellipsis" title={data.token}>
-					{data.token}
+				<div class="tw-ellipsis tw-flex tw-align-items-center" title={data.token}>
+					<span class="tw-flex-grow-1">{data.token}</span>
+					{label && <span class="ffz--tab-source tw-c-text-alt-2 ffz-font-size-6 tw-mg-l-1 tw-flex-shrink-0">({label})</span>}
 				</div>
 			</React.Fragment>);
 		}
 
 		inst.renderEmoteSuggestion = function(emote) {
+			const showSource = t.chat.context.get('chat.tab-complete.show-source');
+			const label = showSource === 1
+				? (SOURCE_LABELS[emote.source] || emote.source)
+				: showSource === 2
+					? emote.extra
+					: null;
+
 			return (<React.Fragment>
 				<div class="tw-relative tw-flex-shrink-0 tw-pd-05" title={emote.token} favorite={emote.favorite}>
 					<img
@@ -1026,8 +1067,9 @@ export default class Input extends Module {
 					/>
 					{emote.favorite && <figure class="ffz--favorite ffz-i-star" />}
 				</div>
-				<div class="tw-ellipsis" title={emote.token}>
-					{emote.token}
+				<div class="tw-ellipsis tw-flex tw-align-items-center" title={emote.token}>
+					<span class="tw-flex-grow-1">{emote.token}</span>
+					{label && !emote.source?.startsWith('twitch-') && <span class="ffz--tab-source tw-c-text-alt-2 ffz-font-size-6 tw-mg-l-1 tw-flex-shrink-0">({label})</span>}
 				</div>
 			</React.Fragment>);
 		}
