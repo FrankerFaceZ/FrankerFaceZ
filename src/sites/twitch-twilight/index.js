@@ -488,5 +488,5 @@ Twilight.ROUTES = {
 
 
 Twilight.DIALOG_EXCLUSIVE = '.moderation-root,.sunlight-root,.twilight-main,.twilight-minimal-root>div,#root>div>.tw-full-height,.clips-root,#root';
-Twilight.DIALOG_MAXIMIZED = '.moderation-view-page > div[data-highlight-selector="main-grid"],.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area,.teams-page-body__outer-container .scrollable-area';
+Twilight.DIALOG_MAXIMIZED = '.moderation-view-page div[data-highlight-selector="main-grid"],.sunlight-page,.twilight-main,.twilight-minimal-root,#root .dashboard-side-nav+.tw-full-height,.clips-root>.tw-full-height .scrollable-area,.teams-page-body__outer-container .scrollable-area';
 Twilight.DIALOG_SELECTOR = '.moderation-root,.sunlight-root,#root,.twilight-minimal-root>.tw-full-height,.clips-root>.tw-full-height .scrollable-area';
