@@ -21,6 +21,7 @@ declare module 'utilities/types' {
 		'site.loadable': Loadable
 	}
 	interface SettingsTypeMap {
+		'chat.bits.show-pinned': boolean;
 		'chat.hype.show-pinned': boolean;
 		'layout.turbo-cta': boolean;
 		'layout.combos': boolean;
@@ -108,6 +109,10 @@ export default class Loadable extends Module {
 	}
 
 	onEnable() {
+		this.settings.getChanges('chat.bits.show-pinned', val => {
+			this.toggle('ChannelLeaderboard', val);
+		});
+
 		this.settings.getChanges('chat.hype.show-pinned', val => {
 			this.toggle('PaidPinnedChatMessageList', val);
 		});

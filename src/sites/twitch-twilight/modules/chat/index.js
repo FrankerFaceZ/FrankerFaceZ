@@ -1295,8 +1295,8 @@ export default class ChatHook extends Module {
 		this.chat.context.getChanges('chat.bits.show', val =>
 			this.css_tweaks.toggle('hide-bits', !val));
 
-		this.chat.context.on('changed:chat.bits.show-pinned', () =>
-			this.ChatLeaderboard.forceUpdate());
+		// this.chat.context.on('changed:chat.bits.show-pinned', () =>
+		// 	this.ChatLeaderboard.forceUpdate());
 
 		this.chat.context.getChanges('chat.filtering.deleted-style', val => {
 			this.css_tweaks.toggle('chat-deleted-strike', val === 1 || val === 2);
@@ -1445,17 +1445,17 @@ export default class ChatHook extends Module {
 		this.PointsInfo.on('unmount', () => this.updatePointsInfo(null));
 		this.PointsInfo.ready(() => this.updatePointsInfo(this.PointsInfo.first));
 
-		this.ChatLeaderboard.ready(cls => {
-			const old_render = cls.prototype.render;
-			cls.prototype.render = function() {
-				if ( ! t.chat.context.get('chat.bits.show-pinned') )
-					return null;
+		// this.ChatLeaderboard.ready(cls => {
+		// 	const old_render = cls.prototype.render;
+		// 	cls.prototype.render = function() {
+		// 		if ( ! t.chat.context.get('chat.bits.show-pinned') )
+		// 			return null;
 
-				return old_render.call(this);
-			}
+		// 		return old_render.call(this);
+		// 	}
 
-			this.ChatLeaderboard.forceUpdate();
-		});
+		// 	this.ChatLeaderboard.forceUpdate();
+		// });
 
 		this.GiftBanner.ready(cls => {
 			const old_render = cls.prototype.render;
