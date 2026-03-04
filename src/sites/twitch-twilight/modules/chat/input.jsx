@@ -183,7 +183,7 @@ export default class Input extends Module {
 				path: 'Chat > Input >> Tab Completion',
 				title: 'Show Emote Source',
 				description: 'Displays the origin of third-party emotes in the autocomplete popup\n\n' +
-					'`Short` is (FFZ, BTTV, 7TV)\n\n' +
+					'`Short` is (FFZ, BetterTTV, 7TV)\n\n' +
 					'`Long` is (FFZ Channel/Global Emotes, BetterTTV Channel/Global Emotes, 7TV Emotes, etc)',
 
 				component: 'setting-select-box',
@@ -1022,15 +1022,10 @@ export default class Input extends Module {
 		const React = this.site.getReact(),
 			createElement = React?.createElement;
 
-		const SOURCE_LABELS = {
-			'ffz': 'FFZ',
-			'BetterTTV': 'BTTV'
-		};
-
 		inst.renderFFZEmojiSuggestion = function(data) {
 			const showSource = t.chat.context.get('chat.tab-complete.show-source');
 			const label = showSource === 1
-				? (SOURCE_LABELS[data.source] || data.source)
+				? data.source === 'ffz' ? 'FFZ' : data.source
 				: showSource === 2
 					? data.extra
 					: null;
@@ -1054,7 +1049,7 @@ export default class Input extends Module {
 		inst.renderEmoteSuggestion = function(emote) {
 			const showSource = t.chat.context.get('chat.tab-complete.show-source');
 			const label = showSource === 1
-				? (SOURCE_LABELS[emote.source] || emote.source)
+				? emote.source === 'ffz' ? 'FFZ' : emote.source
 				: showSource === 2
 					? emote.extra
 					: null;
@@ -1226,7 +1221,7 @@ export default class Input extends Module {
 		for(const emote of emotes) {
 			const match_type = inst.doesEmoteMatchTerm(emote, search);
 			if (match_type < emoteMatchingType)
-					continue;
+				continue;
 
 			const element = {
 				current: input,

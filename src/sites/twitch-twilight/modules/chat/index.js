@@ -251,7 +251,7 @@ export default class ChatHook extends Module {
 
 		this.ChatController = this.fine.define(
 			'chat-controller',
-			n => n.parseOutgoingMessage && n.sendMessage && n.renderNotifications,
+			n => n.parseOutgoingMessage && n.sendMessage && n.renderCommandHandlers,
 			Twilight.CHAT_ROUTES
 		);
 
@@ -2110,7 +2110,7 @@ export default class ChatHook extends Module {
 			return;
 
 		for(const entry of highlights) {
-			if ( ! entry || ! entry.event || ! entry.id )
+			if ( ! entry || ! entry.event || ! entry.id || entry.hidden )
 				continue;
 
 			const type = entry.event.type;
@@ -2119,9 +2119,12 @@ export default class ChatHook extends Module {
 				//if ( type === 'hype_train' && entry.event.typeDetails === '0' && this.chat.context.get('chat.banners.kappa-train') )
 				//	continue;
 
-				this.log.info('Removing community highlight: ', type, '#', entry.id);
+				this.log.info('Removing community highlight:', type, '#', entry.id);
 				this.community_dispatch({
-					type: 'remove-highlight',
+					// Predictions cannot be removed, only hidden.
+					type: type === 'prediction'
+						? 'hide-highlight'
+						: 'remove-highlight',
 					id: entry.id
 				});
 			}

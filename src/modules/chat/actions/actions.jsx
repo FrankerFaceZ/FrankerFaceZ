@@ -651,6 +651,9 @@ export default class Actions extends Module {
 		if ( room.id === user.id || room.login === user.login )
 			return 5;
 
+		else if ( user.lead_moderator || user.type === 'lead_moderator' || (user.badges && user.badges.lead_moderator))
+			return 4;
+
 		else if ( user.moderator || user.type === 'mod' || (user.badges && user.badges.moderator) )
 			return 3;
 

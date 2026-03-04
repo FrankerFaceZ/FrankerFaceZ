@@ -70,7 +70,7 @@ const TWITCH_STYLE_BOT_BADGE = {
 	urls: {
 		'1': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/1.png',
 		'2': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/2.png',
-		'4': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/3.png',
+		'4': 'https://cdn.frankerfacez.com/static/badges/twitch/2/bot-badge/1/4.png',
 	}
 };
 

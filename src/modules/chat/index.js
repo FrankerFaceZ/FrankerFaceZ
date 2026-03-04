@@ -1961,10 +1961,13 @@ export default class Chat extends Module {
 			return 0;
 
 		if ( msg.user.login === msg.roomLogin || (msg.badges && msg.badges.broadcaster) )
-			return 4;
+			return 5;
 
 		if ( ! msg.badges )
 			return 0;
+
+		if ( msg.badges.lead_moderator )
+			return 4;
 
 		if ( msg.badges.moderator )
 			return 3;
