@@ -49,7 +49,7 @@ const CLASSES = {
 	'dir-live-ind': `.live-channel-card[data-ffz-type="live"] .tw-channel-status-text-indicator,article[data-ffz-type="live"] .tw-channel-status-text-indicator,.switcher-hopper__scroll-container .tw-tower a[data-ffz-type="live"] .tw-channel-status-text-indicator`,
 	'profile-hover': '.preview-card .tw-relative:hover .ffz-channel-avatar',
 	'not-live-bar': 'div[data-test-selector="non-live-video-banner-layout"]',
-	'channel-live-ind': '.channel-header__user .tw-channel-status-text-indicator,.channel-info-content .tw-halo__indicator',
+	'channel-live-ind': '#live-channel-stream-information .tw-channel-status-text-indicator',
 	'channel-gift-sub-buttons': '.channel-info-content button[data-a-target="gift-button"]',
 	'celebration': 'body .celebration__overlay',
 
