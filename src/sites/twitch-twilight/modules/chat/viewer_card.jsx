@@ -45,7 +45,7 @@ export default class ViewerCards extends Module {
 
 		this.ViewerCard = this.fine.define(
 			'chat-viewer-card',
-			n => n.props?.targetLogin && n.props?.hideViewerCard
+			n => n.props?.targetLogin && (n.props?.hideViewerCard || n.props?.modUserMutationResult)
 		);
 	}
 
