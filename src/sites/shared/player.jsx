@@ -823,6 +823,11 @@ export default class PlayerBase extends Module {
 			if ( this._ffz_state_raf )
 				cancelAnimationFrame(this._ffz_state_raf);
 
+			if ( this._ffz_vol_tooltip_timer ) {
+				clearTimeout(this._ffz_vol_tooltip_timer);
+				this._ffz_vol_tooltip_timer = null;
+			}
+
 			const events = this.props.playerEvents;
 			if ( events && this._ffzUpdateState ) {
 				off(events, 'Playing', this._ffzUpdateState);
@@ -921,10 +926,14 @@ export default class PlayerBase extends Module {
 			if ( ! this._ffz_menu_handler )
 				this._ffz_menu_handler = this.ffzMenuHandler.bind(this);
 
+			if ( ! this._ffz_vol_mouseover_handler )
+				this._ffz_vol_mouseover_handler = this.ffzVolumeMouseOver.bind(this);
+
 			on(cont, 'wheel', this._ffz_scroll_handler);
 			on(cont, 'dblclick', this._ffz_dblclick_handler);
 			on(cont, 'mousedown', this._ffz_click_handler);
 			on(cont, 'contextmenu', this._ffz_menu_handler);
+			on(cont, 'mouseover', this._ffz_vol_mouseover_handler);
 		}
 
 		cls.prototype.ffzRemoveListeners = function() {
@@ -950,6 +959,11 @@ export default class PlayerBase extends Module {
 			if ( this._ffz_dblclick_handler ) {
 				off(cont, 'dblclick', this._ffz_dblclick_handler);
 				this._ffz_dblclick_handler = null;
+			}
+
+			if ( this._ffz_vol_mouseover_handler ) {
+				off(cont, 'mouseover', this._ffz_vol_mouseover_handler);
+				this._ffz_vol_mouseover_handler = null;
 			}
 
 			this._ffz_listeners = false;
@@ -1086,10 +1100,35 @@ export default class PlayerBase extends Module {
 					player.setMuted(false);
 					localStorage.setItem('video-muted', JSON.stringify({default: false}));
 				}
+
+				const cont = this.props.containerRef;
+				const input = cont?.querySelector('input[data-a-target="player-volume-slider"]');
+				if ( input ) {
+					input.dispatchEvent(new FocusEvent('focusout', {bubbles: true}));
+					input.dispatchEvent(new FocusEvent('focusin', {bubbles: true}));
+					if ( this._ffz_vol_tooltip_timer )
+						clearTimeout(this._ffz_vol_tooltip_timer);
+					this._ffz_vol_tooltip_timer = setTimeout(() => {
+						input.dispatchEvent(new FocusEvent('focusout', {bubbles: true}));
+						this._ffz_vol_tooltip_timer = null;
+					}, 1500);
+				}
 			}
 
 			event.preventDefault();
 			return false;
+		}
+
+		cls.prototype.ffzVolumeMouseOver = function (event) {
+			if (!event.target.matches('input[data-a-target="player-volume-slider"]'))
+				return;
+
+			if ( this._ffz_vol_tooltip_timer ) {
+				clearTimeout(this._ffz_vol_tooltip_timer);
+				this._ffz_vol_tooltip_timer = null;
+			}
+
+			event.target.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
 		}
 
 		cls.prototype.ffzMaybeRemoveNativeListeners = function() {
