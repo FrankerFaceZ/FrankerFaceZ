@@ -22,6 +22,7 @@ declare module 'utilities/types' {
 	}
 	interface SettingsTypeMap {
 		'chat.bits.show-pinned': boolean;
+		'chat.bits.show-pinned-progression': boolean;
 		'chat.hype.show-pinned': boolean;
 		'layout.turbo-cta': boolean;
 		'layout.combos': boolean;
@@ -111,6 +112,10 @@ export default class Loadable extends Module {
 	onEnable() {
 		this.settings.getChanges('chat.bits.show-pinned', val => {
 			this.toggle('ChannelLeaderboard', val);
+		});
+
+		this.settings.getChanges('chat.bits.show-pinned-progression', val => {
+			this.toggle('GiftBadgeProgression', val);
 		});
 
 		this.settings.getChanges('chat.hype.show-pinned', val => {

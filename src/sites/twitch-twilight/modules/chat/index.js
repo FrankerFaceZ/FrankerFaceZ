@@ -796,6 +796,16 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.bits.show-pinned-progression', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Display Gift Badge Progression',
+				description: 'Show the gift badge progression at the top of chat.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('chat.bits.show-rewards', {
 			requires: ['chat.bits.show'],
 			default: null,
