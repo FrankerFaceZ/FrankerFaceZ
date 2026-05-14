@@ -473,6 +473,153 @@ export default class ChatLine extends Module {
 			}
 		};
 
+		this.line_types.first_time_chatter = {
+			getClass: () => {
+				const style = this.chat.context.get('chat.lines.first-time-chatter');
+				return `ffz--ftc-line ffz-custom-color${style === 1 ? ' ffz--ftc-bg' : ''}`;
+			},
+
+			renderNotice: (msg, current_user, room, inst, e) => {
+				const notice = this.i18n.tList(
+					'chat.ftc-message',
+					'{label}',
+					{
+						label: e('span', { className: 'tw-c-text-base tw-strong' }, 'First Time Chatter')
+					}
+				);
+
+				notice.ffz_icon = e('span', {
+					className: 'ffz-i-first-time-chatter tw-c-text-base tw-mg-r-05'
+				});
+
+				return notice;
+			}
+		};
+
+		this.line_types.announcement = {
+			getClass: (msg) => {
+				const color = msg.announcement_color?.toLowerCase();
+				return `ffz--announcement-line ffz--announcement-${color}`;
+			},
+
+			renderNotice: (msg, current_user, room, inst, e) => {
+				const target = [
+					e('span', { className: 'ffz-i-shoutout tw-mg-r-05' }),
+					'Announcement'
+				];
+
+				const out = [e('div', { className: 'tw-c-text-base tw-strong' }, target)];
+				out.ffz_target = target;
+				return out;
+			}
+		};
+
+		this.line_types.watch_streak = {
+			getClass: () => 'ffz--watch-streak-line',
+
+			renderNotice: (msg, current_user, room, inst, e) => {
+				const user = msg.user;
+				const streak = msg.watch_streak;
+				const copo = msg.copo_reward;
+
+				const target = [
+					e('span', { className: 'ffz-i-watch-streak tw-mg-r-05' }),
+					'Watch Streak Reached ',
+					e('span', { className: 'ffz--points-icon' }),
+					`+${copo}`
+				];
+
+				const header = e('div', {
+					className: 'tw-c-text-base tw-strong'
+				}, target);
+
+				const body = e('div', {
+					className: 'tw-c-text-alt-2'
+				}, [
+					e('span', {
+						role: 'button',
+						className: 'chatter-name',
+						onClick: inst.ffz_user_click_handler
+					}, e('span', {
+						className: 'tw-c-text-base tw-strong'
+					}, user.displayName)),
+					` is currently on a ${streak}-stream streak!`
+				]);
+
+				const out = [header, body];
+				out.ffz_target = target;
+				return out;
+			}
+		};
+
+		this.line_types.raid_notice = {
+			getClass: () => 'ffz--raid-line',
+
+			renderNotice: (msg, current_user, room, inst, e) => {
+				const user = msg.user;
+				const count = msg.raid_viewer_count;
+
+				const target = [
+					e('span', {
+						role: 'button',
+						className: 'chatter-name',
+						onClick: inst.ffz_user_click_handler
+					}, e('span', {
+						className: 'tw-c-text-base tw-strong'
+					}, user.displayName)),
+					this.i18n.t('chat.raid.notice', ' is raiding with a party of '),
+					e('strong', {}, this.i18n.formatNumber(count)),
+					'.'
+				];
+
+				const out = [e('div', { className: 'tw-c-text-base' }, target)];
+				out.ffz_target = target;
+				return out;
+			}
+		};
+
+		this.line_types.shoutout = {
+			getClass: () => 'ffz--shoutout-line',
+
+			renderNotice: (msg, current_user, room, inst, e) => {
+				console.log("line_types.shoutout msg:", msg);
+
+				const login = msg.shoutout_login;
+				const display = msg.shoutout_display;
+
+				const target_user = JSON.stringify({
+					id: null,
+					login,
+					displayName: display
+				});
+
+				const target = [
+					e('span', { className: 'ffz-i-shoutout tw-mg-r-05' }),
+					'Shoutout!'
+				];
+
+				const header = e('div', {
+					className: 'tw-c-text-base tw-strong'
+				}, target);
+
+				const body = e('div', {}, [
+					'Was given to ',
+					e('span', {
+						role: 'button',
+						className: 'chatter-name',
+						'data-user': target_user,
+						onClick: inst.ffz_user_click_handler
+					}, e('span', {
+						className: 'tw-c-text-base tw-strong'
+					}, display))
+				]);
+
+				const out = [header, body];
+				out.ffz_target = target;
+				return out;
+			}
+		};
+
 		this.ChatLine = this.fine.define(
 			'chat-line',
 			n => n.renderMessageBody && n.props && ! n.onExtensionNameClick && !has(n.props, 'hasModPermissions'),
@@ -983,6 +1130,9 @@ other {# messages were deleted by a moderator.}
 				let type = msg.ffz_type && t.line_types[msg.ffz_type];
 				if ( ! type && msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') )
 					type = t.line_types.cheer;
+
+				if ( ! type && ( msg.ffz_first_msg || msg.isFirstMsg ) && t.chat.context.get('chat.lines.first-time-chatter') !== 0 )
+					type = t.line_types.first_time_chatter;
 
 				if ( ! type && msg.ffz_type )
 					type = t.line_types.unknown;
