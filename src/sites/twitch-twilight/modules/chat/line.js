@@ -582,8 +582,6 @@ export default class ChatLine extends Module {
 			getClass: () => 'ffz--shoutout-line',
 
 			renderNotice: (msg, current_user, room, inst, e) => {
-				console.log("line_types.shoutout msg:", msg);
-
 				const login = msg.shoutout_login;
 				const display = msg.shoutout_display;
 
