@@ -2,21 +2,21 @@ query FFZ_GetDrops {
 	currentUser {
 		inventory {
 			dropCampaignsInProgress {
-                id
-                name
-                status
-                timeBasedDrops {
-                    id
-                    name
-                    requiredMinutesWatched
-                    self {
-                        dropInstanceID
-                        hasPreconditionsMet
-                        isClaimed
-                        currentMinutesWatched
-                    }
-                }
-            }
+				id
+				name
+				status
+				timeBasedDrops {
+					id
+					name
+					requiredMinutesWatched
+					self {
+						dropInstanceID
+						hasPreconditionsMet
+						isClaimed
+						currentMinutesWatched
+					}
+				}
+			}
 		}
 	}
 }
