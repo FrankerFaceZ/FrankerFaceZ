@@ -1286,9 +1286,6 @@ export default class ChatHook extends Module {
 		this.chat.context.getChanges('chat.input.show-highlight', val =>
 			this.css_tweaks.toggleHide('ci-highlight-settings', !val));
 
-		this.chat.context.getChanges('chat.input.show-shield', val =>
-			this.css_tweaks.toggleHide('ci-shield-mode', ! val));
-
 		this.chat.context.getChanges('chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));
 
