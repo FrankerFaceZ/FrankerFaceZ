@@ -22,9 +22,10 @@ declare module 'utilities/types' {
 	}
 	interface SettingsTypeMap {
 		'chat.bits.show-pinned': boolean;
+		'chat.bits.show-pinned-progression': boolean;
 		'chat.hype.show-pinned': boolean;
+		'chat.input.show-shield': boolean;
 		'layout.turbo-cta': boolean;
-		'layout.combos': boolean;
 		'layout.subtember': boolean;
 		'layout.side-nav.hide-stories': boolean;
 	}
@@ -113,19 +114,20 @@ export default class Loadable extends Module {
 			this.toggle('ChannelLeaderboard', val);
 		});
 
+		this.settings.getChanges('chat.bits.show-pinned-progression', val => {
+			this.toggle('GiftBadgeProgression', val);
+		});
+
 		this.settings.getChanges('chat.hype.show-pinned', val => {
 			this.toggle('PaidPinnedChatMessageList', val);
 		});
 
-		this.settings.getChanges('layout.turbo-cta', val => {
-			this.toggle('TopNav__TurboButton_Available', val);
+		this.settings.getChanges('chat.input.show-shield', val => {
+			this.toggle('ShieldModeShortcut', val);
 		});
 
-		this.settings.getChanges('layout.combos', val => {
-			this.toggle('OneTapBreakpointAnimationPlayerOverlay', !val);
-			this.toggle('CombosIngressButton_Available', !val);
-			this.toggle('OneTapStore', !val);
-			this.toggle('OneTapStreakPills', !val);
+		this.settings.getChanges('layout.turbo-cta', val => {
+			this.toggle('TopNav__TurboButton_Available', val);
 		});
 
 		this.settings.getChanges('layout.subtember', val => {

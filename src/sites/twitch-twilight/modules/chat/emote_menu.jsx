@@ -3007,7 +3007,7 @@ export default class EmoteMenu extends Module {
 	async getFFZSubData() {
 		const me = this.resolve('site').getUser();
 		if ( ! me )
-			return null;
+			return {error: true};
 
 		const token = await this.resolve('socket').getBareAPIToken();
 		if ( ! token )

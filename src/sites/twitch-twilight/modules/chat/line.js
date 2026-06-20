@@ -996,7 +996,9 @@ export default class ChatLine extends Module {
 				if ( style === 2 )
 					return e('figure', {
 						className: `ffz-tooltip ffz-tooltip--no-mouse ffz-shared-chat-badge ffz-avatar tw-border-radius-rounded ${in_source ? 'ffz-shared-chat-badge--active' : ''} tw-mg-r-05`,
-						'data-title': t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName}),
+						'data-tooltip-type': 'shared-chat',
+						'data-title': title,
+						'data-avatar': source.profileImageURL?.replace('28x28', '70x70')
 					}, e('img', {
 						className: 'tw-block tw-border-radius-rounded tw-image',
 						src: source.profileImageURL,
@@ -1076,6 +1078,7 @@ other {# messages were deleted by a moderator.}
 				if ( current_user ) {
 					current_user.moderator = this.props.isCurrentUserModerator;
 					current_user.staff = this.props.isCurrentUserStaff;
+					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
 					current_user.reply_mode = reply_mode;
 					current_user.can_reply = can_reply;
 				}

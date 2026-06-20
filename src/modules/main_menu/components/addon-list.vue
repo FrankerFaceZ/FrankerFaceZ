@@ -19,32 +19,51 @@
 		</div>
 
 		<div v-if="ready" class="tw-mg-b-1 tw-flex tw-align-items-center">
-			<div class="ffz-checkbox tw-relative tw-flex-grow-1">
-				<input
-					id="filter_enabled"
-					v-model="filter_enabled"
-					type="checkbox"
-					class="ffz-checkbox__input"
+			<span class="tw-mg-l-05 tw-mg-r-05 tw-c-text-alt-2 ffz-font-size-6" style="font-weight: var(--font-weight-bold);">
+				{{ t('addon.filter-label', 'Filter by') }}
+			</span>
+			<div class="tw-flex tw-align-items-center">
+				<button
+					class="tw-button tw-button--small ffz-tooltip ffz-tooltip--no-mouse"
+					:class="filter_state !== 0 && 'tw-button--secondary'"
+					:data-title="t('addon.filter-all.tooltip', 'Display all add-ons')"
+					@click="filter_state = 0"
+					style="border-radius: .4rem 0 0 .4rem"
 				>
-				<label for="filter_enabled" class="ffz-checkbox__label">
-					<span class="tw-mg-l-1">
-						{{ t('addon.filter-enabled', 'Only display enabled add-ons.') }}
-					</span>
-				</label>
+					<span class="tw-button__text">{{ t('addon.filter-all', 'All') }}</span>
+				</button>
+				<button
+					class="tw-button tw-button--small ffz-tooltip ffz-tooltip--no-mouse"
+					:class="filter_state !== 1 && 'tw-button--secondary'"
+					:data-title="t('addon.filter-enabled.tooltip', 'Display only enabled add-ons')"
+					@click="filter_state = 1"
+					style="border-radius: 0; border-left: 1px solid rgba(255,255,255,.15); border-right: 1px solid rgba(255,255,255,.15)"
+				>
+					<span class="tw-button__text">{{ t('addon.filter-enabled', 'Enabled') }}</span>
+				</button>
+				<button
+					class="tw-button tw-button--small ffz-tooltip ffz-tooltip--no-mouse"
+					:class="filter_state !== 2 && 'tw-button--secondary'"
+					:data-title="t('addon.filter-disabled.tooltip', 'Display only disabled add-ons')"
+					@click="filter_state = 2"
+					style="border-radius: 0 .4rem .4rem 0"
+				>
+					<span class="tw-button__text">{{ t('addon.filter-disabled', 'Disabled') }}</span>
+				</button>
 			</div>
+			<span class="tw-mg-l-1 tw-mg-r-05 tw-c-text-alt-2 ffz-font-size-6" style="font-weight: var(--font-weight-bold);">
+				{{ t('addon.sort-label', 'Sort by') }}
+			</span>
 			<select
 				v-model="sort_by"
-				class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-x-05"
+				class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 			>
-				<option :value="0">
-					{{ t('addon.sort-name', 'Sort By: Name') }}
-				</option>
-				<option :value="1">
-					{{ t('addon.sort-update', 'Sort By: Updated') }}
-				</option>
-				<option :value="2">
-					{{ t('addon.sort-create', 'Sort By: Created') }}
-				</option>
+				<option :value="0">{{ t('addon.sort-name-asc', 'Name (A–Z)') }}</option>
+				<option :value="1">{{ t('addon.sort-name-desc', 'Name (Z–A)') }}</option>
+				<option :value="2">{{ t('addon.sort-update-desc', 'Updated (Newest)') }}</option>
+				<option :value="3">{{ t('addon.sort-update-asc', 'Updated (Oldest)') }}</option>
+				<option :value="4">{{ t('addon.sort-create-desc', 'Created (Newest)') }}</option>
+				<option :value="5">{{ t('addon.sort-create-asc', 'Created (Oldest)') }}</option>
 			</select>
 		</div>
 
@@ -132,7 +151,7 @@ export default {
 			ready: this.item.isReady(),
 			reload: this.item.isReloadRequired(),
 			unlisted: [],
-			filter_enabled: false,
+			filter_state: 0,
 			sort_by: 0,
 			unlisted_open: false
 		}
@@ -155,13 +174,18 @@ export default {
 			const addons = this.item.getAddons();
 
 			addons.sort((a, b) => {
-				if ( this.sort_by === 1 ) {
-					if ( a.updated > b.updated ) return -1;
-					if ( b.updated > a.updated ) return 1;
+				if ( this.sort_by >= 2 ) {
+					const field = this.sort_by <= 3 ? 'updated' : 'created';
+					const desc = this.sort_by === 2 || this.sort_by === 4;
+					const a_val = a[field], b_val = b[field];
 
-				} else if ( this.sort_by === 2 ) {
-					if ( a.created > b.created ) return -1;
-					if ( b.created > a.created ) return 1;
+					// Addons missing the date field always fall to the bottom
+					if ( a_val || b_val ) {
+						if ( ! a_val ) return 1;
+						if ( ! b_val ) return -1;
+						if ( a_val > b_val ) return desc ? -1 : 1;
+						if ( b_val > a_val ) return desc ? 1 : -1;
+					}
 				}
 
 				if ( a.sort < b.sort ) return -1;
@@ -170,8 +194,8 @@ export default {
 				const a_n = (a.name ?? a.id).toLowerCase(),
 					b_n = (b.name ?? b.id).toLowerCase();
 
-				if ( a_n < b_n ) return -1;
-				if ( b_n < a_n ) return 1;
+				if ( a_n < b_n ) return this.sort_by === 1 ? 1 : -1;
+				if ( b_n < a_n ) return this.sort_by === 1 ? -1 : 1;
 				return 0;
 			});
 
@@ -220,8 +244,8 @@ export default {
 			if ( addon.unlisted && ! enabled && ! this.unlisted.includes(addon.id) )
 				return false;
 
-			if ( this.filter_enabled && ! enabled )
-				return false;
+			if ( this.filter_state === 1 && ! enabled ) return false;
+			if ( this.filter_state === 2 && enabled ) return false;
 
 			if ( this.filter ) {
 				if ( this.filter.query ) {

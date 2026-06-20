@@ -38,7 +38,6 @@ const CLASSES = {
 	'player-ext': '.video-player .extension-taskbar,.video-player .extension-container,.video-player .extensions-dock__layout,.video-player .extensions-notifications,.video-player .extensions-video-overlay-size-container,.video-player .extensions-dock__layout',
 	'player-ext-hover': '.video-player__container[data-controls="false"] .extension-taskbar,.video-player__container[data-controls="false"] .extension-container,.video-player__container[data-controls="false"] .extensions-dock__layout,.video-player__container[data-controls="false"] .extensions-notifications,.video-player__container[data-controls="false"] .extensions-video-overlay-size-container',
 	'player-cast': '.video-player button:has(.tw-chromecast-button__icon)',
-	'combos': '[class*="oneTapStreakPill--"], div#one-tap-store-id, .video-player__overlay video[class*="breakpointAnimationVideoOverlay--"]',
 
 	'player-event-bar': '.channel-root .live-event-banner-ui__header',
 	'player-rerun-bar': '.channel-root__player-container div.tw-c-text-overlay:not([data-a-target="hosting-ui-header"])',
@@ -60,8 +59,7 @@ const CLASSES = {
 	'side-stories': '.side-nav__title + div[class*=storiesLeftNavSection]',
 
 	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
-	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]',
-	'ci-shield-mode': '.chat-input__buttons-container > div:last-child button[class|="ScCoreButton"]:not([data-highlight-selector]):not([data-a-target])'
+	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]'
 };
 
 
@@ -345,16 +343,6 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
-		this.settings.add('layout.combos', {
-			default: false,
-			ui: {
-				path: 'Appearance > Layout >> Channel',
-				title: 'Hide Combos.',
-				component: 'setting-check-box'
-			},
-			changed: val => this.toggleHide('combos', val)
-		});
-
 		/*this.settings.add('layout.discover', {
 			default: true,
 			ui: {
@@ -533,7 +521,6 @@ export default class CSSTweaks extends Module {
 		this.toggleHide('discover-luna', this.settings.get('layout.hide-discover-luna'));
 		this.toggleHide('prime-offers', !this.settings.get('layout.prime-offers'));
 		//this.toggleHide('top-discover', !this.settings.get('layout.discover'));
-		this.toggleHide('combos', this.settings.get('layout.combos'));
 		this.toggle('hide-unfollow-button', this.settings.get('channel.hide-unfollow'));
 
 		this.toggleHide('pinned-hype-chat', ! this.settings.get('chat.hype.show-pinned'));

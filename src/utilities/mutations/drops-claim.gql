@@ -1,0 +1,6 @@
+mutation FFZ_ClaimDrop($input: ClaimDropRewardsInput!) {
+	claimDropRewards(input: $input) {
+		dropInstanceID
+		status
+	}
+}

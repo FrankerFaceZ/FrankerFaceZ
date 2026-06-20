@@ -664,6 +664,19 @@ export default class Badges extends Module {
 				return Promise.all(out);
 			return out;
 		}
+
+		this.tooltips.types['shared-chat'] = (target, tip) => {
+			tip.add_class = 'ffz__tooltip--badges';
+			const avatar = target.dataset.avatar;
+			const title = target.dataset.title;
+			return (<div class="ffz-badge-tip">
+				{avatar && <img
+					class="preview-image ffz-badge"
+					src={avatar}
+				/>}
+				{title}
+			</div>);
+		};
 	}
 
 	// ========================================================================
