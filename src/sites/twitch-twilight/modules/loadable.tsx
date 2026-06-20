@@ -24,7 +24,6 @@ declare module 'utilities/types' {
 		'chat.bits.show-pinned': boolean;
 		'chat.hype.show-pinned': boolean;
 		'layout.turbo-cta': boolean;
-		'layout.combos': boolean;
 		'layout.subtember': boolean;
 		'layout.side-nav.hide-stories': boolean;
 	}
@@ -119,13 +118,6 @@ export default class Loadable extends Module {
 
 		this.settings.getChanges('layout.turbo-cta', val => {
 			this.toggle('TopNav__TurboButton_Available', val);
-		});
-
-		this.settings.getChanges('layout.combos', val => {
-			this.toggle('OneTapBreakpointAnimationPlayerOverlay', !val);
-			this.toggle('CombosIngressButton_Available', !val);
-			this.toggle('OneTapStore', !val);
-			this.toggle('OneTapStreakPills', !val);
 		});
 
 		this.settings.getChanges('layout.subtember', val => {
