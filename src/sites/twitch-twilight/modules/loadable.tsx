@@ -23,6 +23,7 @@ declare module 'utilities/types' {
 	interface SettingsTypeMap {
 		'chat.bits.show-pinned': boolean;
 		'chat.hype.show-pinned': boolean;
+		'chat.input.show-shield': boolean;
 		'layout.turbo-cta': boolean;
 		'layout.subtember': boolean;
 		'layout.side-nav.hide-stories': boolean;
@@ -114,6 +115,10 @@ export default class Loadable extends Module {
 
 		this.settings.getChanges('chat.hype.show-pinned', val => {
 			this.toggle('PaidPinnedChatMessageList', val);
+		});
+
+		this.settings.getChanges('chat.input.show-shield', val => {
+			this.toggle('ShieldModeShortcut', val);
 		});
 
 		this.settings.getChanges('layout.turbo-cta', val => {

@@ -59,8 +59,7 @@ const CLASSES = {
 	'side-stories': '.side-nav__title + div[class*=storiesLeftNavSection]',
 
 	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
-	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]',
-	'ci-shield-mode': '.chat-input__buttons-container > div:last-child button[class|="ScCoreButton"]:not([data-highlight-selector]):not([data-a-target])'
+	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]'
 };
 
 
