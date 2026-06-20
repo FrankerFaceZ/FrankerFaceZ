@@ -851,7 +851,9 @@ export default class ChatLine extends Module {
 				if ( style === 2 )
 					return e('figure', {
 						className: `ffz-tooltip ffz-tooltip--no-mouse ffz-shared-chat-badge ffz-avatar tw-border-radius-rounded ${in_source ? 'ffz-shared-chat-badge--active' : ''} tw-mg-r-05`,
-						'data-title': t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName}),
+						'data-tooltip-type': 'shared-chat',
+						'data-title': title,
+						'data-avatar': source.profileImageURL?.replace('28x28', '70x70')
 					}, e('img', {
 						className: 'tw-block tw-border-radius-rounded tw-image',
 						src: source.profileImageURL,
