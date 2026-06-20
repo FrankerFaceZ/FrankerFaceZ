@@ -931,6 +931,7 @@ other {# messages were deleted by a moderator.}
 				if ( current_user ) {
 					current_user.moderator = this.props.isCurrentUserModerator;
 					current_user.staff = this.props.isCurrentUserStaff;
+					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
 					current_user.reply_mode = reply_mode;
 					current_user.can_reply = can_reply;
 				}

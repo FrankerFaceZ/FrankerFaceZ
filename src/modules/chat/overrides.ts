@@ -176,6 +176,112 @@ export default class Overrides extends Module<'chat.overrides'> {
 	}
 
 
+	renderWarnEditor(data: any, target: HTMLElement) {
+		let outside: ClickOutside | null,
+			popup: Tooltip | null,
+			ve: any;
+
+		const destroy = () => {
+			const o = outside, p = popup, v = ve;
+			outside = popup = ve = null;
+
+			if ( o )
+				o.destroy();
+
+			if ( p )
+				p.destroy();
+
+			if ( v )
+				v.$destroy();
+		}
+
+		const parent =
+			document.fullscreenElement as HTMLElement
+			?? document.body.querySelector<HTMLElement>('#root>div')
+			?? document.body;
+
+		popup = new Tooltip(parent, [], {
+			logger: this.log,
+			manual: true,
+			live: false,
+			html: true,
+			hover_events: true,
+			no_update: true,
+			no_auto_remove: true,
+
+			tooltipClass: 'ffz-action-balloon ffz-balloon tw-block tw-border tw-elevation-1 tw-border-radius-small tw-c-background-base',
+			arrowClass: '',
+			arrowInner: '',
+			innerClass: '',
+
+			popper: {
+				placement: 'bottom',
+				modifiers: {
+					preventOverflow: {
+						boundariesElement: parent
+					},
+					flip: {
+						behavior: ['bottom', 'top', 'left', 'right']
+					}
+				}
+			},
+
+			content: async (t, tip) => {
+				const vue = this.resolve('vue'),
+					_editor = import(/* webpackChunkName: "overrides" */ './warn-editor.vue');
+
+				if ( ! vue )
+					throw new Error('unable to load vue');
+
+				const [, editor] = await Promise.all([vue.enable(), _editor]);
+				vue.component('warn-editor', editor.default);
+
+				const actions = this.resolve('chat.actions') as any;
+
+				ve = new vue.Vue({
+					el: createElement('div'),
+					render: h => h('warn-editor', {
+						user: data.user,
+
+						warn: async (reason: string) => {
+							const td = this.resolve('site.twitch_data') as any;
+							await td.warnUser(data.room.id, data.user.login, reason)
+								.catch((err: any) => {
+									actions.addNotice(data.room.login, err?.message ?? String(err));
+									throw err;
+								});
+						},
+
+						close: () => tip.hide()
+					})
+				});
+
+				return ve.$el;
+			},
+
+			onShow: async (t, tip) => {
+				await tip.waitForDom();
+				requestAnimationFrame(() => {
+					if ( tip.outer )
+						outside = new ClickOutside(tip.outer, destroy);
+				});
+			},
+
+			onMove: (t, tip, event) => {
+				this.emit('tooltips:hover', t, tip, event);
+			},
+
+			onLeave: (t, tip, event) => {
+				this.emit('tooltips:leave', t, tip, event);
+			},
+
+			onHide: destroy
+		});
+
+		popup._enter(target);
+	}
+
+
 	onProviderChange(key: string) {
 		if ( key === 'overrides.colors' && this.color_cache )
 			this.loadColors();
