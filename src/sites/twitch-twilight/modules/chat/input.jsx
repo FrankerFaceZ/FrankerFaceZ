@@ -810,7 +810,8 @@ export default class Input extends Module {
 
 		inst.getCommands = function(input) { try {
 			const commands = inst.props.getCommands(inst.props.permissionLevel, {
-				isEditor: inst.props.isCurrentUserEditor
+				isEditor: inst.props.isCurrentUserEditor,
+				hasPermissions: inst.props.chatCommandPermissions
 			});
 
 			// Get the parent-input so we can do stuff.

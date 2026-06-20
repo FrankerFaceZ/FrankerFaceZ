@@ -364,6 +364,8 @@ export const msg_delete = {
 
 	title: 'Delete Message',
 
+	can_self: true,
+
 	tooltip(data) {
 		return this.i18n.t('chat.actions.delete.tooltip', "Delete {user.login}'s message", {user: data.user});
 	},
@@ -376,6 +378,50 @@ export const msg_delete = {
 		});
 	}
 }
+
+
+export const warn = {
+	presets: [{
+		appearance: {
+			type: 'icon',
+			icon: 'ffz-i-attention'
+		},
+
+		display: {
+			mod: true,
+			mod_icons: true
+		}
+	}],
+
+	defaults: {},
+
+	required_context: ['room', 'user'],
+
+	title: 'Warn User',
+
+	tooltip(data) {
+		return this.i18n.t('chat.actions.warn.tooltip', 'Warn {user.login}', {user: data.user});
+	},
+
+	hidden(data, message, current_room, current_user) {
+		if ( message.user.id === current_room.id || message.user.login === current_room.login )
+			return true;
+
+		const msg_level = this.getUserLevel(current_room, message.user);
+		if ( msg_level >= 3 )
+			return true;
+
+		const current_level = this.getUserLevel(current_room, current_user);
+		if ( current_level < 3 )
+			return true;
+
+		return false;
+	},
+
+	click(event, data) {
+		this.resolve('chat.overrides').renderWarnEditor(data, event.target);
+	}
+};
 
 
 

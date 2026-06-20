@@ -373,6 +373,67 @@ export default class TwitchData extends Module {
 	}
 
 
+	/**
+	 * Warn a user in a chat room.
+	 *
+	 * @param channel_id The channel to warn the user in.
+	 * @param target_login The login of the user to warn.
+	 * @param reason The reason for the warning.
+	 */
+	async warnUser(
+		channel_id: ID,
+		target_login: string,
+		reason: string
+	) {
+		channel_id = String(channel_id);
+
+		const data = await this.mutate<{
+			warnUserInChatRoom: {
+				warnedUser: { id: string; login: string; displayName: string } | null;
+				error: { code: string } | null;
+			}
+		}>({
+			mutation: await import(/* webpackChunkName: 'queries' */ './mutations/warn-user.gql'),
+			variables: {
+				input: {
+					channelID: channel_id,
+					targetUserLogin: target_login,
+					reason,
+					chatRulesCited: ['']
+				}
+			}
+		});
+
+		const error = data?.data?.warnUserInChatRoom?.error;
+
+		if (error?.code === 'TARGET_IS_SELF')
+			throw new TranslatableError(
+				"You cannot warn yourself.",
+				"chat.warn.forbidden.self"
+			);
+
+		if (error?.code === 'TARGET_IS_MOD')
+			throw new TranslatableError(
+				"You cannot warn a moderator.",
+				"chat.warn.forbidden.mod"
+			);
+
+		if (error?.code === 'TARGET_IS_BOT')
+			throw new TranslatableError(
+				"You cannot warn a bot.",
+				"chat.warn.forbidden.bot"
+			);
+
+		if (error)
+			throw new TranslatableError(
+				"You don't have permission to warn this user.",
+				"chat.warn.forbidden"
+			);
+
+		return true;
+	}
+
+
 	// ========================================================================
 	// Users
 	// ========================================================================

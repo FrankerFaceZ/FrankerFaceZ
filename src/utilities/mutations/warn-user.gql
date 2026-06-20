@@ -1,0 +1,12 @@
+mutation FFZ_WarnUser($input: WarnUserInChatRoomInput!) {
+	warnUserInChatRoom(input: $input) {
+		warnedUser {
+			id
+			login
+			displayName
+		}
+		error {
+			code
+		}
+	}
+}

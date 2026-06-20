@@ -644,6 +644,19 @@ export default class Actions extends Module {
 	}
 
 
+	isCurrentUserLeadMod() { // eslint-disable-line class-methods-use-this
+		try {
+			const input = this.resolve('site.chat.input');
+			const perms = input?.CommandSuggestions?.first?.props?.chatCommandPermissions;
+			// Lead mods have a non-empty chatCommandPermissions Set;
+			// regular mods and viewers have an empty one or none at all.
+			return perms instanceof Set && perms.size > 0;
+		} catch (err) {
+			return false;
+		}
+	}
+
+
 	getUserLevel(room, user) { // eslint-disable-line class-methods-use-this
 		if ( ! room || ! user  )
 			return 0;
@@ -801,6 +814,7 @@ export default class Actions extends Module {
 		if ( u ) {
 			u.moderator = line.props.isCurrentUserModerator;
 			u.staff = line.props.isCurrentUserStaff;
+			u.lead_moderator = this.isCurrentUserLeadMod();
 			u.reply_mode = this.parent.context.get('chat.replies.style'),
 			u.can_reply = can_reply;
 		}

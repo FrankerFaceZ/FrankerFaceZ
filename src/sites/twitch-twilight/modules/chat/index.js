@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {Color, ColorAdjuster} from 'utilities/color';
-import {get, has, make_enum, shallow_object_equals, set_equals, deep_equals, glob_to_regex, escape_regex, generateUUID} from 'utilities/object';
+import {get, has, sleep, make_enum, shallow_object_equals, set_equals, deep_equals, glob_to_regex, escape_regex, generateUUID} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 
 import {useFont} from 'utilities/fonts';
@@ -705,6 +705,7 @@ export default class ChatHook extends Module {
 			ui: {
 				path: 'Chat > Drops >> Behavior',
 				title: 'Automatically claim drops.',
+				description: 'When enabled, drops will be automatically claimed the next time you complete one. Drops that are already available will not be claimed until a new one is earned.',
 				component: 'setting-check-box',
 			}
 		});
@@ -792,6 +793,16 @@ export default class ChatHook extends Module {
 				path: 'Chat > Appearance >> Community',
 				title: 'Display Leaderboard',
 				description: 'The leaderboard shows the top cheerers and sub gifters in a channel.\n\nBy default due to a previous implementation, this inherits its value from [Chat > Bits and Cheering > Display Bits](~chat.bits_and_cheering).',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.bits.show-pinned-progression', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Display Gift Badge Progression',
+				description: 'Show the gift badge progression at the top of chat.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1301,9 +1312,6 @@ export default class ChatHook extends Module {
 
 		this.chat.context.getChanges('chat.input.show-highlight', val =>
 			this.css_tweaks.toggleHide('ci-highlight-settings', !val));
-
-		this.chat.context.getChanges('chat.input.show-shield', val =>
-			this.css_tweaks.toggleHide('ci-shield-mode', ! val));
 
 		this.chat.context.getChanges('chat.lines.padding', val =>
 			this.css_tweaks.toggle('chat-padding', val));
@@ -1849,6 +1857,18 @@ export default class ChatHook extends Module {
 
 			this.insertChannelPointMessage(message);
 		});
+
+		this.dropClaimHandler = e => {
+			let message;
+			try { message = JSON.parse(e.detail); } catch (_) { return; }
+
+			if ( message?.type !== 'create-notification' ) return;
+			if ( message?.data?.notification?.type !== 'user_drop_reward_reminder_notification' ) return;
+
+			this.autoClaimDrop();
+		};
+
+		window.__twitch_pubsub_events?.addEventListener('notification', this.dropClaimHandler);
 	}
 
 	insertChannelPointMessage(msg) {
@@ -1967,10 +1987,6 @@ export default class ChatHook extends Module {
 			inst._ffz_pinned = true;
 			inst.pin();
 		}
-
-		// Auto-claim drops
-		if ( type === 'drop' )
-			this.autoClickDrop(inst);
 	}
 
 	updateInlineCallouts() {
@@ -2010,45 +2026,62 @@ export default class ChatHook extends Module {
 					onPin();
 			}
 		}
-
-		// Auto-claim drops
-		if ( type === 'drop' )
-			this.autoClickDrop(inst);
 	}
 
 
-	autoClickDrop(inst) {
-		const event = inst.props?.event?.callout?.contextMenuProps?.event ?? inst.props?.event,
-			type = event?.type;
-
-		if ( type !== 'drop' || inst._ffz_clicking || ! this.chat.context.get("chat.drops.auto-rewards") )
+	async autoClaimDrop() {
+		if ( ! this.chat.context.get('chat.drops.auto-rewards') )
 			return;
 
-		//console.warn('autoClickDrop', event, inst);
-		inst._ffz_clicking = true;
+		const apollo = this.resolve('site.apollo');
+		if ( ! apollo )
+			return;
 
-		// Wait for the button to be added to the DOM.
-		const waiter = this.resolve('site').awaitElement(
-			'button[data-a-target="chat-private-callout__primary-button"]',
-			this.fine.getHostNode(inst),
-			10000
-		);
+		let result;
+		try {
+			result = await apollo.client.query({
+				query: await import(/* webpackChunkName: 'queries' */ '../../../../utilities/data/drops-get.gql'),
+				fetchPolicy: 'network-only'
+			});
+		} catch (err) {
+			this.log.error('Error fetching drops inventory:', err);
+			return;
+		}
 
-		waiter.then(btn => {
-			inst._ffz_clicking = false;
+		const campaigns = result?.data?.currentUser?.inventory?.dropCampaignsInProgress;
+		if ( ! campaigns?.length )
+			return;
 
-			// Check AGAIN because time has passed.
-			const event = inst.props?.event?.callout?.contextMenuProps?.event ?? inst.props?.event,
-				type = event?.type;
+		for ( const campaign of campaigns ) {
+			if ( campaign.status === 'EXPIRED' || !campaign.timeBasedDrops )
+				continue;
 
-			if ( type !== 'drop' || ! this.chat.context.get("chat.drops.auto-rewards") )
-				return;
+			for ( const drop of campaign.timeBasedDrops ) {
+				const self = drop.self;
+				if ( ! self || self.isClaimed || self.dropInstanceID == null || !self.hasPreconditionsMet )
+					continue;
 
-			btn.click();
+				this.log.info(`Claiming: "${drop.name}" from "${campaign.name}"`);
 
-		}).catch(() => {
-			inst._ffz_clicking = false;
-		});
+				try {
+					const claimResult = await apollo.client.mutate({
+						mutation: await import(/* webpackChunkName: 'queries' */ '../../../../utilities/mutations/drops-claim.gql'),
+						variables: { input: { dropInstanceID: self.dropInstanceID } }
+					});
+
+					const status = claimResult?.data?.claimDropRewards?.status;
+					if ( status === 'ELIGIBLE_FOR_ALL' || status === 'DROP_INSTANCE_ALREADY_CLAIMED' )
+						this.log.info(`Successfully claimed: "${drop.name}"`);
+					else
+						this.log.warn(`Unexpected claim status for "${drop.name}":`, status);
+
+				} catch (err) {
+					this.log.error(`Error claiming "${drop.name}":`, err);
+				}
+
+				await sleep(3000);
+			}
+		}
 	}
 
 
