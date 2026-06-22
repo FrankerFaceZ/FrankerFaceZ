@@ -480,13 +480,11 @@ export default class ChatLine extends Module {
 			},
 
 			renderNotice: (msg, current_user, room, inst, e) => {
-				const notice = this.i18n.tList(
-					'chat.ftc-message',
-					'{label}',
-					{
-						label: e('span', { className: 'tw-c-text-base tw-strong' }, 'First Time Chatter')
-					}
-				);
+				const notice = [
+					e('span', { className: 'tw-c-text-base tw-strong' },
+						this.i18n.t('chat.ftc-message', 'First Time Chatter')
+					)
+				];
 
 				notice.ffz_icon = e('span', {
 					className: 'ffz-i-first-time-chatter tw-c-text-base tw-mg-r-05'
@@ -505,7 +503,7 @@ export default class ChatLine extends Module {
 			renderNotice: (msg, current_user, room, inst, e) => {
 				const target = [
 					e('span', { className: 'ffz-i-shoutout tw-mg-r-05' }),
-					'Announcement'
+					this.i18n.t('chat.announcement', 'Announcement')
 				];
 
 				const out = [e('div', { className: 'tw-c-text-base tw-strong' }, target)];
@@ -522,12 +520,15 @@ export default class ChatLine extends Module {
 				const streak = msg.watch_streak;
 				const copo = msg.copo_reward;
 
-				const target = [
-					e('span', { className: 'ffz-i-watch-streak tw-mg-r-05' }),
-					'Watch Streak Reached ',
-					e('span', { className: 'ffz--points-icon' }),
-					`+${copo}`
-				];
+				const target = this.i18n.tList(
+					'chat.watch-streak.header',
+					'{icon}Watch Streak Reached {points_icon}+{copo}',
+					{
+						icon: e('span', { className: 'ffz-i-watch-streak tw-mg-r-05' }),
+						points_icon: e('span', { className: 'ffz--points-icon' }),
+						copo
+					}
+				);
 
 				const header = e('div', {
 					className: 'tw-c-text-base tw-strong'
@@ -535,16 +536,20 @@ export default class ChatLine extends Module {
 
 				const body = e('div', {
 					className: 'tw-c-text-alt-2'
-				}, [
-					e('span', {
-						role: 'button',
-						className: 'chatter-name',
-						onClick: inst.ffz_user_click_handler
-					}, e('span', {
-						className: 'tw-c-text-base tw-strong'
-					}, user.displayName)),
-					` is currently on a ${streak}-stream streak!`
-				]);
+				}, this.i18n.tList(
+					'chat.watch-streak.body',
+					'{user} is currently on a {streak,number}-stream streak!',
+					{
+						streak,
+						user: e('span', {
+							role: 'button',
+							className: 'chatter-name',
+							onClick: inst.ffz_user_click_handler
+						}, e('span', {
+							className: 'tw-c-text-base tw-strong'
+						}, user.displayName))
+					}
+				));
 
 				const out = [header, body];
 				out.ffz_target = target;
@@ -559,18 +564,20 @@ export default class ChatLine extends Module {
 				const user = msg.user;
 				const count = msg.raid_viewer_count;
 
-				const target = [
-					e('span', {
-						role: 'button',
-						className: 'chatter-name',
-						onClick: inst.ffz_user_click_handler
-					}, e('span', {
-						className: 'tw-c-text-base tw-strong'
-					}, user.displayName)),
-					this.i18n.t('chat.raid.notice', ' is raiding with a party of '),
-					e('strong', {}, this.i18n.formatNumber(count)),
-					'.'
-				];
+				const target = this.i18n.tList(
+					'chat.raid.notice',
+					'{user} is raiding with a party of {count}.',
+					{
+						user: e('span', {
+							role: 'button',
+							className: 'chatter-name',
+							onClick: inst.ffz_user_click_handler
+						}, e('span', {
+							className: 'tw-c-text-base tw-strong'
+						}, user.displayName)),
+						count: e('strong', {}, this.i18n.formatNumber(count))
+					}
+				);
 
 				const out = [e('div', { className: 'tw-c-text-base' }, target)];
 				out.ffz_target = target;
@@ -593,24 +600,27 @@ export default class ChatLine extends Module {
 
 				const target = [
 					e('span', { className: 'ffz-i-shoutout tw-mg-r-05' }),
-					'Shoutout!'
+					this.i18n.t('chat.shoutout', 'Shoutout!')
 				];
 
 				const header = e('div', {
 					className: 'tw-c-text-base tw-strong'
 				}, target);
 
-				const body = e('div', {}, [
-					'Was given to ',
-					e('span', {
-						role: 'button',
-						className: 'chatter-name',
-						'data-user': target_user,
-						onClick: inst.ffz_user_click_handler
-					}, e('span', {
-						className: 'tw-c-text-base tw-strong'
-					}, display))
-				]);
+				const body = e('div', {}, this.i18n.tList(
+					'chat.shoutout.body',
+					'Was given to {user}',
+					{
+						user: e('span', {
+							role: 'button',
+							className: 'chatter-name',
+							'data-user': target_user,
+							onClick: inst.ffz_user_click_handler
+						}, e('span', {
+							className: 'tw-c-text-base tw-strong'
+						}, display))
+					}
+				));
 
 				const out = [header, body];
 				out.ffz_target = target;
