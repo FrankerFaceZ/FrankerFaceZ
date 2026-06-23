@@ -164,14 +164,14 @@ export default class Input extends Module {
 				title: 'Emote Matching Type',
 				description: '1: `ppa` would match `Kappa`\n\n' +
 					'2: `sip` would match `cohhSip` but not `Gossip`\n\n' +
-					'3: `pasta` would match `pastaThat` but not `HoldThat`',
+					'3: `hol` would match `HolidayTree` but not `WholeWheat`',
 
 				component: 'setting-select-box',
 
 				data: [
 					{value: 1, title: '1: Anything (Twitch style)'},
 					{value: 2, title: '2: Non-Prefix (Old FFZ style)'},
-					{value: 3, title: '3: Exact (Case-Insensitive)'}
+					{value: 3, title: '3: Prefix-Only (Case-Insensitive)'}
 				]
 			}
 		});
