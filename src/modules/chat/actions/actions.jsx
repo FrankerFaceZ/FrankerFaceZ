@@ -820,7 +820,8 @@ export default class Actions extends Module {
 		}
 
 		const current_level = this.getUserLevel(r, u),
-			msg_level = this.getUserLevel(r, msg.user);
+			msg_level = this.getUserLevel(r, msg.user),
+			is_self = msg.user && u && u.login === msg.user.login;
 
 		let mod_icons = line.props.showModerationIcons;
 		if ( current_level < 3 )
@@ -870,9 +871,12 @@ export default class Actions extends Module {
 
 				if ( ! act || disp.disabled ||
 					(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
-					(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
+					(disp.mod != null && !(is_self && current_level >= 3) && disp.mod !== (current_level > msg_level)) ||
 					(disp.staff != null && disp.staff !== (u ? !!u.staff : false)) ||
 					(disp.deleted != null && disp.deleted !== !!msg.deleted) )
+					continue;
+
+				if ( is_self && ! act.can_self )
 					continue;
 
 				if ( maybe_call(act.hidden, this, data, msg, r, u, mod_icons, chat_line) )
@@ -970,7 +974,7 @@ export default class Actions extends Module {
 
 			if ( ! act || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
-				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
+				(disp.mod != null && !(is_self && current_level >= 3) && disp.mod !== (current_level > msg_level)) ||
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
 				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 				continue;
@@ -1060,7 +1064,7 @@ export default class Actions extends Module {
 
 			if ( ! act || disp.disabled ||
 				(disp.mod_icons != null && disp.mod_icons !== !!mod_icons) ||
-				(disp.mod != null && disp.mod !== (current_level > msg_level)) ||
+				(disp.mod != null && !(is_self && current_level >= 3) && disp.mod !== (current_level > msg_level)) ||
 				(disp.staff != null && disp.staff !== (current_user ? !!current_user.staff : false)) ||
 				(disp.deleted != null && disp.deleted !== !!msg.deleted) )
 				continue;
