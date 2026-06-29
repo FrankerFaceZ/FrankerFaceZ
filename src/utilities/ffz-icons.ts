@@ -125,5 +125,8 @@ export default [
 	"tiktok",
 	"bluesky",
 	"bits",
-	"hype-train"
+	"hype-train",
+	"shoutout",
+	"first-time-chatter",
+	"watch-streak"
 ] as const;
