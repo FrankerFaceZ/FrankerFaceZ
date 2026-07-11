@@ -56,7 +56,7 @@ const CLASSES = {
 
 	'pinned-hype-chat': '.paid-pinned-chat-message-list',
 
-	'side-stories': '.side-nav__title + div[class*=storiesLeftNavSection]',
+	'side-stories': '#side-nav [class*="storiesLeftNavSection"],#side-nav [style*="margin-top"]:has(button [class*="storiesLeftNavSectionCollapsedButton"]),.common-centered-column div:has(> .scrollable-area .sr-only)',
 
 	'ci-mod-view': '.chat-input__buttons-container a[href*="/moderator"]',
 	'ci-highlight-settings': '.chat-input__buttons-container button[data-highlight-selector="chat-highlights-shortcut"]'

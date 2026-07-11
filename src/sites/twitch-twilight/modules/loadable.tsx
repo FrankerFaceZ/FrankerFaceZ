@@ -27,7 +27,6 @@ declare module 'utilities/types' {
 		'chat.input.show-shield': boolean;
 		'layout.turbo-cta': boolean;
 		'layout.subtember': boolean;
-		'layout.side-nav.hide-stories': boolean;
 	}
 }
 
@@ -133,10 +132,6 @@ export default class Loadable extends Module {
 		this.settings.getChanges('layout.subtember', val => {
 			this.toggle('TokenizedCommerceBanner', val);
 		});
-
-		this.settings.getChanges('layout.side-nav.hide-stories', val => {
-			this.toggleSetting('stories_web', !val);
-		})
 
 		this.ErrorBoundaryComponent.ready((cls, instances) => {
 			this.log.debug('Found Error Boundary component wrapper.');
