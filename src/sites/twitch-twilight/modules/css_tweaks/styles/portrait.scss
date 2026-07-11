@@ -165,8 +165,8 @@
 
 [data-popper-reference-hidden="true"] {
 	&:has([data-test-selector="chat-rules-ok-button"]),
-	&:has([data-a-target="chat-settings-balloon"]) {
+	&:has([data-a-target="chat-settings-balloon"]),
+	&:has(.tw-tooltip-wrapper) {
 		opacity: 1 !important;
-		pointer-events: auto !important;
 	}
 }
