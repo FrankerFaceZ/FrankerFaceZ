@@ -1909,6 +1909,8 @@ export default class ChatHook extends Module {
 			ffz_reward: reward,
 			ffz_reward_highlight: isHighlightedReward(reward),
 			messageParts: [],
+			badges: {},
+			badgeDynamicData: {},
 			user: {
 				id: data.user.id,
 				login: data.user.login,
@@ -2859,6 +2861,8 @@ export default class ChatHook extends Module {
 						ffz_data: message,
 						message: null,
 						messageParts: [],
+						badges: {},
+						badgeDynamicData: {},
 						timestamp: Date.now(),
 						user: {
 							userID: id,
