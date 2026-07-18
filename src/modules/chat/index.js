@@ -2072,6 +2072,19 @@ export default class Chat extends Module {
 		if ( this.color_cache && user.color )
 			this.color_cache.set(user.login, user.color);
 
+		// gif support
+		if ( Array.isArray(msg.messageParts) && msg.messageParts.length === 1 ) {
+			const part = msg.messageParts[0],
+				content = part && (part.ffz_content ?? part.content);
+
+			if ( content && content.id && content.url && content.title != null )
+				msg.ffz_gif = {
+					id: content.id,
+					url: content.url,
+					title: content.title
+				};
+		}
+
 		// Standardize Message Content
 		if ( ! msg.message && msg.messageParts )
 			this.detokenizeMessage(msg);
