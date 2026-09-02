@@ -148,6 +148,45 @@ export default class Badges extends Module {
 				});
 		}
 
+		this.collectTwitchSettingsBadges({twitch, social, tcon, game, other});
+
+		if ( include_addons )
+			this.collectAddonSettingsBadges({ffz, addon, specific_addons});
+
+		const out = [
+			{title: 'Twitch: Core', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: Social', id: 'm-social', badges: social},
+			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
+			{title: 'Twitch: Other', id: 'm-other', badges: other},
+			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game}
+		];
+
+		if ( ffz.length )
+			out.push({title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz});
+
+		const addons = this.resolve('addons'),
+			addon_chunks = [];
+
+		for(const [key, val] of Object.entries(specific_addons)) {
+			const addon = addons?.getAddon?.(key),
+				title = addon?.short_name ?? addon?.name ?? key;
+
+			addon_chunks.push({title: `Add-On: ${title}`, id: `m-addon-${key}`, badges: val});
+		}
+
+		addon_chunks.sort((a,b) => a.title.localeCompare(b.title));
+		out.push(...addon_chunks);
+
+		if ( addon.length )
+			out.push({title: 'Add-on', id: 'm-addon', badges: addon});
+
+		return out;
+	}
+
+	/** Sort the known Twitch badges into the settings menu's Twitch categories. */
+	collectTwitchSettingsBadges(buckets) {
+		const {twitch, social, tcon, game, other} = buckets;
+
 		for(const key in this.twitch_badges)
 			if ( has(this.twitch_badges, key) ) {
 				const badge = this.twitch_badges[key],
@@ -193,126 +232,100 @@ export default class Badges extends Module {
 					});
 				}
 			}
+	}
 
-		if ( include_addons ) {
-			const addon_badges_by_id = {};
+	/** Collect FFZ and add-on badges for the settings menu, grouping versions of the same badge. */
+	collectAddonSettingsBadges(buckets) {
+		const {ffz, addon, specific_addons} = buckets;
 
-			for(const [key, badge] of Object.entries(this.badges)) {
-				if ( badge.no_visibility )
-					continue;
+		const addon_badges_by_id = {};
 
-				let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
-					image1x = badge.urls?.[1] || badge.image,
-					color = badge.color || 'transparent';
+		for(const [key, badge] of Object.entries(this.badges)) {
+			if ( badge.no_visibility )
+				continue;
 
-				if ( ! badge.addon ) {
-					image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
-					image1x = `//cdn.frankerfacez.com/badge/${badge.id}/1/rounded`;
-					color = 'transparent';
+			let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
+				image1x = badge.urls?.[1] || badge.image,
+				color = badge.color || 'transparent';
+
+			if ( ! badge.addon ) {
+				image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
+				image1x = `//cdn.frankerfacez.com/badge/${badge.id}/1/rounded`;
+				color = 'transparent';
+			}
+
+			let store;
+			if ( typeof badge.addon === 'string' )
+				store = specific_addons[badge.addon] = specific_addons[badge.addon] || [];
+			else
+				store = badge.addon ? addon : ffz;
+
+			let name = badge.title;
+			let extra;
+			try {
+				extra = maybe_call(badge.tooltipExtra, this, null, badge);
+			} catch(err) { extra = null; }
+			if ( extra && !(extra instanceof Promise) )
+				name = name + extra;
+
+			const id = badge.base_id ?? key,
+				is_this = id === key;
+			let existing = addon_badges_by_id[id];
+
+			if ( existing ) {
+				if ( ! existing.versions )
+					existing.versions = [{
+						version: existing.key,
+						name: existing.tipname,
+						color: existing.color,
+						image: existing.image1x,
+						styleImage: `url("${existing.image1x}")`
+					}];
+
+				existing.versions.push({
+					version: key,
+					name,
+					color,
+					image: image1x,
+					styleImage: `url("${image1x}")`
+				});
+
+				if ( is_this ) {
+					existing.name = badge.title;
+					existing.tipname = name;
+					existing.color = color;
+					existing.image = image;
+					existing.styleImage = `url("${image}")`;
 				}
 
-				let store;
-				if ( typeof badge.addon === 'string' )
-					store = specific_addons[badge.addon] = specific_addons[badge.addon] || [];
-				else
-					store = badge.addon ? addon : ffz;
+			} else {
+				existing = {
+					id,
+					key,
+					provider: 'ffz',
+					name: badge.title,
+					tipname: name,
+					color,
+					image,
+					image1x,
+					styleImage: `url("${image}")`
+				};
 
-				let name = badge.title;
-				let extra;
-				try {
-					extra = maybe_call(badge.tooltipExtra, this, null, badge);
-				} catch(err) { extra = null; }
-				if ( extra && !(extra instanceof Promise) )
-					name = name + extra;
-
-				const id = badge.base_id ?? key,
-					is_this = id === key;
-				let existing = addon_badges_by_id[id];
-
-				if ( existing ) {
-					if ( ! existing.versions )
-						existing.versions = [{
-							version: existing.key,
-							name: existing.tipname,
-							color: existing.color,
-							image: existing.image1x,
-							styleImage: `url("${existing.image1x}")`
-						}];
-
-					existing.versions.push({
-						version: key,
-						name,
-						color,
-						image: image1x,
-						styleImage: `url("${image1x}")`
-					});
-
-					if ( is_this ) {
-						existing.name = badge.title;
-						existing.tipname = name;
-						existing.color = color;
-						existing.image = image;
-						existing.styleImage = `url("${image}")`;
-					}
-
-				} else {
-					existing = {
-						id,
-						key,
-						provider: 'ffz',
-						name: badge.title,
-						tipname: name,
-						color,
-						image,
-						image1x,
-						styleImage: `url("${image}")`
-					};
-
-					if ( badge.base_id ) {
-						existing.always_versions = true;
-						existing.versions = [{
-							version: existing.key,
-							name: existing.tipname,
-							color: existing.color,
-							image: existing.image1x,
-							styleImage: `url("${existing.image1x}")`
-						}];
-					}
-
-					addon_badges_by_id[id] = existing;
-					store.push(existing);
+				if ( badge.base_id ) {
+					existing.always_versions = true;
+					existing.versions = [{
+						version: existing.key,
+						name: existing.tipname,
+						color: existing.color,
+						image: existing.image1x,
+						styleImage: `url("${existing.image1x}")`
+					}];
 				}
+
+				addon_badges_by_id[id] = existing;
+				store.push(existing);
 			}
 		}
-
-		const out = [
-			{title: 'Twitch: Core', id: 'm-twitch', badges: twitch},
-			{title: 'Twitch: Social', id: 'm-social', badges: social},
-			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
-			{title: 'Twitch: Other', id: 'm-other', badges: other},
-			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game}
-		];
-
-		if ( ffz.length )
-			out.push({title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz});
-
-		const addons = this.resolve('addons'),
-			addon_chunks = [];
-
-		for(const [key, val] of Object.entries(specific_addons)) {
-			const addon = addons?.getAddon?.(key),
-				title = addon?.short_name ?? addon?.name ?? key;
-
-			addon_chunks.push({title: `Add-On: ${title}`, id: `m-addon-${key}`, badges: val});
-		}
-
-		addon_chunks.sort((a,b) => a.title.localeCompare(b.title));
-		out.push(...addon_chunks);
-
-		if ( addon.length )
-			out.push({title: 'Add-on', id: 'm-addon', badges: addon});
-
-		return out;
 	}
 
 
