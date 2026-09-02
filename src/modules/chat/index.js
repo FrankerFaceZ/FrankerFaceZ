@@ -1231,7 +1231,7 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Appearance >> GIFs',
 				title: 'Display GIFs in chat.',
-				description: 'When this is disabled, the message is shown as a link instead.'
+				description: 'Twitch subscribers (Tier 2 and 3) can post [animated GIFs](https://help.twitch.tv/s/article/gif-keyboard). When this is disabled, those messages are shown as a link instead.',
 				component: 'setting-check-box'
 			}
 		});
@@ -1245,8 +1245,7 @@ export default class Chat extends Module {
 				component: 'setting-text-box',
 				process: 'to_int',
 				bounds: [1]
-			},
-			changed: () => this.updateGifSize()
+			}
 		});
 
 		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
