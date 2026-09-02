@@ -441,80 +441,9 @@ export default class ChatLine extends Module {
 				return null;
 			}
 
-			cls.prototype.ffzNewRender = function() { try {
-				this._ffz_no_scan = true;
-
-				const msg = t.chat.standardizeMessage(this.props.message),
-					override_mode = t.chat.context.get('chat.filtering.display-deleted');
-
-				// Before anything else, check to see if the deleted message view is set
-				// to BRIEF and the message is deleted. In that case we can exit very
-				// early.
-				let mod_mode = this.props.deletedMessageDisplay;
-				if ( override_mode )
-					mod_mode = override_mode;
-				else if ( ! this.props.isCurrentUserModerator && mod_mode === 'DETAILED' )
-					mod_mode = 'LEGACY';
-
-				if ( mod_mode === 'BRIEF' && msg.deleted ) {
-					const deleted_count = this.props.deletedCount;
-					if ( deleted_count == null )
-						return null;
-
-					return e(
-						'div', {
-							className: 'chat-line__status'
-						},
-						t.i18n.t('chat.deleted-messages', `{count,plural,
-one {One message was deleted by a moderator.}
-other {# messages were deleted by a moderator.}
-}`, {
-							count: deleted_count
-						})
-					);
-				}
-
-				// First, we need to handle Shared Chat.
-				const source_id = msg.sourceRoomID,
-					source = source_id && this.props.sharedChatDataByChannelID?.get(source_id);
-
-				// Get the current room id and login. We might need to look these up.
-				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
-					room_id = msg.roomId ? msg.roomId : this.props.channelID;
-
-				if ( ! room && room_id ) {
-					const r = t.chat.getRoom(room_id, null, true);
-					if ( r && r.login )
-						room = msg.roomLogin = r.login;
-				}
-
-				if ( ! room_id && room ) {
-					const r = t.chat.getRoom(null, room, true);
-					if ( r && r.id )
-						room_id = msg.roomId = r.id;
-				}
-
-				// Construct the current room and current user objects.
-				const current_user = t.site.getUser(),
-					current_room = {id: room_id, login: room};
-
-				const is_in_source = ! source || source_id === room_id,
-					source_room = is_in_source
-						? current_room
-						: {id: source_id, login: source.login};
-
-				const reply_mode = t.chat.context.get('chat.replies.style'),
-					has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
-					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
-					can_reply = can_replies && (has_replies || (current_user && current_user.login !== msg.user?.login));
-
-				if ( current_user ) {
-					current_user.moderator = this.props.isCurrentUserModerator;
-					current_user.staff = this.props.isCurrentUserStaff;
-					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
-					current_user.reply_mode = reply_mode;
-					current_user.can_reply = can_reply;
-				}
+			// Installs the reply and username click handlers on this line instance.
+			cls.prototype.ffzSetupClickHandlers = function(ctx) {
+				const {msg, current_room, source_room} = ctx;
 
 				// Set up our click handlers as necessary.
 				if ( ! this.ffz_open_reply )
@@ -555,32 +484,12 @@ other {# messages were deleted by a moderator.}
 					else
 						this.ffz_user_click_handler = this.openViewerCard || this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 				}
+			};
 
-				let notice;
-				let klass;
-				let bg_css = null;
-
-				// Do we have a special renderer?
-				let type = msg.ffz_type && t.line_types[msg.ffz_type];
-				if ( ! type && msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') )
-					type = t.line_types.cheer;
-
-				if ( ! type && ( msg.ffz_first_msg || msg.isFirstMsg ) && t.chat.context.get('chat.lines.first-time-chatter') !== 0 )
-					type = t.line_types.first_time_chatter;
-
-				if ( ! type && msg.ffz_type )
-					type = t.line_types.unknown;
-
-				if ( type ) {
-					if ( type.render )
-						return type.render(msg, current_user, current_room, this, e, source);
-
-					if ( type.renderNotice )
-						notice = type.renderNotice(msg, current_user, current_room, this, e, source);
-
-					if ( type.getClass )
-						klass = type.getClass(msg, current_user, current_room, this, e, source);
-				}
+			// Works out how a deleted or moderated message should display and which classes apply.
+			cls.prototype.ffzRenderDeletedState = function(ctx) {
+				const {msg, mod_mode} = ctx;
+				let {klass} = ctx;
 
 				// Render the line.
 				const user = msg.user,
@@ -643,6 +552,13 @@ other {# messages were deleted by a moderator.}
 					}
 				}
 
+				return {klass, user, anim_hover, show, deleted, mod_action};
+			};
+
+			// Renders the highlight-reason tags shown beside a highlighted message.
+			cls.prototype.ffzRenderHighlightTags = function(ctx) {
+				const {msg} = ctx;
+
 				// Are we listing highlight reasons?
 				let highlight_tags = null;
 				const hl_position = t.chat.context.get('chat.filtering.show-reasons');
@@ -688,6 +604,13 @@ other {# messages were deleted by a moderator.}
 					else
 						highlight_tags = null;
 				}
+
+				return {highlight_tags, hl_position};
+			};
+
+			// Renders the message body: timestamp, badges, name, tokens and rich content.
+			cls.prototype.ffzRenderMessageContent = function(ctx) {
+				const {msg, source, current_user, current_room, reply_mode, has_replies, notice, user, show, mod_action, highlight_tags, hl_position} = ctx;
 
 				// Check to see if we have message content to render.
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, current_user),
@@ -852,6 +775,14 @@ other {# messages were deleted by a moderator.}
 					];
 				}
 
+				return {message};
+			};
+
+			// Wraps the message in its notice container, if any, producing the line body.
+			cls.prototype.ffzRenderNotice = function(ctx) {
+				const {msg, source, current_user, current_room, source_room, user, highlight_tags, hl_position} = ctx;
+				let {notice, klass, message} = ctx;
+
 				// Is there a notice?
 				let out;
 
@@ -930,6 +861,133 @@ other {# messages were deleted by a moderator.}
 					else
 						out = message;
 				}
+
+				return {notice, klass, message, out};
+			};
+
+			cls.prototype.ffzNewRender = function() { try {
+				this._ffz_no_scan = true;
+
+				const msg = t.chat.standardizeMessage(this.props.message),
+					override_mode = t.chat.context.get('chat.filtering.display-deleted');
+
+				// Before anything else, check to see if the deleted message view is set
+				// to BRIEF and the message is deleted. In that case we can exit very
+				// early.
+				let mod_mode = this.props.deletedMessageDisplay;
+				if ( override_mode )
+					mod_mode = override_mode;
+				else if ( ! this.props.isCurrentUserModerator && mod_mode === 'DETAILED' )
+					mod_mode = 'LEGACY';
+
+				if ( mod_mode === 'BRIEF' && msg.deleted ) {
+					const deleted_count = this.props.deletedCount;
+					if ( deleted_count == null )
+						return null;
+
+					return e(
+						'div', {
+							className: 'chat-line__status'
+						},
+						t.i18n.t('chat.deleted-messages', `{count,plural,
+one {One message was deleted by a moderator.}
+other {# messages were deleted by a moderator.}
+}`, {
+							count: deleted_count
+						})
+					);
+				}
+
+				// First, we need to handle Shared Chat.
+				const source_id = msg.sourceRoomID,
+					source = source_id && this.props.sharedChatDataByChannelID?.get(source_id);
+
+				// Get the current room id and login. We might need to look these up.
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
+					room_id = msg.roomId ? msg.roomId : this.props.channelID;
+
+				if ( ! room && room_id ) {
+					const r = t.chat.getRoom(room_id, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
+
+				if ( ! room_id && room ) {
+					const r = t.chat.getRoom(null, room, true);
+					if ( r && r.id )
+						room_id = msg.roomId = r.id;
+				}
+
+				// Construct the current room and current user objects.
+				const current_user = t.site.getUser(),
+					current_room = {id: room_id, login: room};
+
+				const is_in_source = ! source || source_id === room_id,
+					source_room = is_in_source
+						? current_room
+						: {id: source_id, login: source.login};
+
+				const reply_mode = t.chat.context.get('chat.replies.style'),
+					has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
+					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
+					can_reply = can_replies && (has_replies || (current_user && current_user.login !== msg.user?.login));
+
+				if ( current_user ) {
+					current_user.moderator = this.props.isCurrentUserModerator;
+					current_user.staff = this.props.isCurrentUserStaff;
+					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
+					current_user.reply_mode = reply_mode;
+					current_user.can_reply = can_reply;
+				}
+
+				// Set up our click handlers as necessary.
+				this.ffzSetupClickHandlers({msg, current_room, source_room});
+
+				let notice;
+				let klass;
+				let bg_css = null;
+
+				// Do we have a special renderer?
+				let type = msg.ffz_type && t.line_types[msg.ffz_type];
+				if ( ! type && msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') )
+					type = t.line_types.cheer;
+
+				if ( ! type && ( msg.ffz_first_msg || msg.isFirstMsg ) && t.chat.context.get('chat.lines.first-time-chatter') !== 0 )
+					type = t.line_types.first_time_chatter;
+
+				if ( ! type && msg.ffz_type )
+					type = t.line_types.unknown;
+
+				if ( type ) {
+					if ( type.render )
+						return type.render(msg, current_user, current_room, this, e, source);
+
+					if ( type.renderNotice )
+						notice = type.renderNotice(msg, current_user, current_room, this, e, source);
+
+					if ( type.getClass )
+						klass = type.getClass(msg, current_user, current_room, this, e, source);
+				}
+
+				// Render the line.
+				const deleted_state = this.ffzRenderDeletedState({msg, mod_mode, klass});
+				klass = deleted_state.klass;
+				const {user, anim_hover, show, deleted, mod_action} = deleted_state;
+
+				// Are we listing highlight reasons?
+				const highlight_result = this.ffzRenderHighlightTags({msg});
+				const {highlight_tags, hl_position} = highlight_result;
+
+				// Check to see if we have message content to render.
+				const message_content = this.ffzRenderMessageContent({msg, source, current_user, current_room, reply_mode, has_replies, notice, user, show, mod_action, highlight_tags, hl_position});
+				let {message} = message_content;
+
+				// Is there a notice?
+				const notice_result = this.ffzRenderNotice({msg, source, current_user, current_room, source_room, notice, klass, user, highlight_tags, hl_position, message});
+				notice = notice_result.notice;
+				klass = notice_result.klass;
+				message = notice_result.message;
+				let {out} = notice_result;
 
 				// Check for hover actions, as those require we wrap the output in a few extra elements.
 				const hover_actions = (user && msg.id && ! msg.ffz_no_actions)

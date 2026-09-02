@@ -684,8 +684,18 @@ export default class Badges extends Module {
 
 			room = this.parent.getRoom(room_id, room_login, true);
 
-		let ffz_badges = msg.ffz_badges; // this.getBadges(user_id, user_login, room_id, room_login);
-		let last_slot = 50, slot;
+		const ctx = {hidden_badges, badge_style, custom_mod, custom_vip, is_mask, is_colored, has_image, tb, slotted, twitch_badges, dynamic_data, room_id, room_login, room, msg, skip_hide, ffz_badges: msg.ffz_badges, last_slot: 50, slot: undefined};
+
+		this.cacheTwitchBadges(ctx);
+		this.cacheFFZBadges(ctx);
+
+		return msg.ffz_badge_cache = Array.from(slotted).sort((a,b) => a[0] - b[0]);
+	}
+
+	/** Slots the message's Twitch badges, applying overrides and hidden-badge settings. */
+	cacheTwitchBadges(ctx) {
+		const {hidden_badges, custom_mod, custom_vip, tb, slotted, twitch_badges, dynamic_data, room_id, room_login, room} = ctx;
+		let {ffz_badges, last_slot, slot} = ctx;
 
 		for(const badge_id in twitch_badges)
 			if ( has(twitch_badges, badge_id) ) {
@@ -760,6 +770,13 @@ export default class Badges extends Module {
 					badges
 				});
 			}
+
+		Object.assign(ctx, {ffz_badges, last_slot, slot});
+	}
+
+	/** Slots the message's FFZ and add-on badges around the Twitch ones. */
+	cacheFFZBadges(ctx) {
+		const {hidden_badges, is_mask, is_colored, has_image, slotted, ffz_badges} = ctx;
 
 		if ( Array.isArray(ffz_badges) ) {
 			const handled_ids = new Set;
@@ -879,7 +896,6 @@ export default class Badges extends Module {
 				}
 		}
 
-		return msg.ffz_badge_cache = Array.from(slotted).sort((a,b) => a[0] - b[0]);
 	}
 
 
