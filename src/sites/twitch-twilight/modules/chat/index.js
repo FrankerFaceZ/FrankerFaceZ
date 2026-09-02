@@ -421,6 +421,57 @@ export default class ChatHook extends Module {
 		this.grabTypes();
 		this.defineClasses();
 
+		this.bindSettingListeners();
+
+		this.updateDisableHandling();
+		this.updateChatCSS();
+		this.updateColors();
+		this.updateLineBorders();
+		//this.updateMentionCSS();
+
+		this.bindChatEvents();
+
+		/*this.loadable.ErrorBoundaryComponent.ready(cls => {
+			const t = this,
+				proto = cls.prototype,
+				old_render = proto.render;
+
+			proto.render = function() {
+				try {
+					const type = this.props.name;
+					if ( type === 'ChatLive' && t.chat_portal ) {
+						const ReactDOM = t.site.getReactDom(),
+							createPortal = ReactDOM?.createPortal;
+
+						if ( createPortal ) {
+							const out = old_render.call(this);
+							console.log('creating portal', out);
+							return createPortal(out, t.chat_portal, 'ffz-chat-portal');
+						}
+					}
+
+				} catch(err) {
+					/* no-op * /
+				}
+
+				return old_render.call(this);
+			}
+		});*/
+
+		this.hookRaidsAndCallouts();
+		this.hookPointsInfo();
+		this.hookBanners();
+		this.hookPointsButtons();
+		this.hookChatCore();
+		this.hookRewardsAndConnector();
+		this.hookControllerAndRenderer();
+		this.hookChatContainer();
+		this.hookPubSub();
+	}
+
+
+	/** Settings listeners that keep chat CSS, colors and callouts in sync. */
+	bindSettingListeners() {
 		this.chat.context.on('changed:chat.callouts.clip', this.updateCallouts, this);
 		this.chat.context.on('changed:chat.filtering.blocked-callouts', this.updateCallouts, this);
 		this.chat.context.on('changed:chat.points.show-callouts', this.updateCallouts, this);
@@ -528,12 +579,11 @@ export default class ChatHook extends Module {
 
 		this.chat.context.getChanges('chat.input.show-elevate-your-message', val =>
 			this.css_tweaks.toggleHide('elevate-your-message', ! val));
+	}
 
-		this.updateDisableHandling();
-		this.updateChatCSS();
-		this.updateColors();
-		this.updateLineBorders();
-		//this.updateMentionCSS();
+	/** Handlers for events raised by the core chat module. */
+	bindChatEvents() {
+		const t = this;
 
 		this.on('chat:get-messages-late', (include_chat, include_whisper, include_video, messages) => {
 			if ( ! include_chat )
@@ -603,34 +653,10 @@ export default class ChatHook extends Module {
 				inst.client.reconnect();
 			}
 		});
+	}
 
-		/*this.loadable.ErrorBoundaryComponent.ready(cls => {
-			const t = this,
-				proto = cls.prototype,
-				old_render = proto.render;
-
-			proto.render = function() {
-				try {
-					const type = this.props.name;
-					if ( type === 'ChatLive' && t.chat_portal ) {
-						const ReactDOM = t.site.getReactDom(),
-							createPortal = ReactDOM?.createPortal;
-
-						if ( createPortal ) {
-							const out = old_render.call(this);
-							console.log('creating portal', out);
-							return createPortal(out, t.chat_portal, 'ffz-chat-portal');
-						}
-					}
-
-				} catch(err) {
-					/* no-op * /
-				}
-
-				return old_render.call(this);
-			}
-		});*/
-
+	/** Raid controller and inline / pinned callout hooks. */
+	hookRaidsAndCallouts() {
 		this.RaidController.on('mount', this.wrapRaidController, this);
 		this.RaidController.on('update', this.noAutoRaids, this);
 		this.RaidController.ready((cls, instances) => {
@@ -645,9 +671,10 @@ export default class ChatHook extends Module {
 		this.PinnedCallout.on('mount', this.onPinnedCallout, this);
 		this.PinnedCallout.on('update', this.onPinnedCallout, this);
 		this.PinnedCallout.ready(() => this.updatePinnedCallouts());
+	}
 
-		const t = this;
-
+	/** Channel points info hooks. */
+	hookPointsInfo() {
 		this.PointsInfo.on('mount', this.updatePointsInfo, this);
 		this.PointsInfo.on('update', this.updatePointsInfo, this);
 		this.PointsInfo.on('unmount', () => this.updatePointsInfo(null));
@@ -664,6 +691,11 @@ export default class ChatHook extends Module {
 
 		// 	this.ChatLeaderboard.forceUpdate();
 		// });
+	}
+
+	/** Gift and community chest banner hooks. */
+	hookBanners() {
+		const t = this;
 
 		this.GiftBanner.ready(cls => {
 			const old_render = cls.prototype.render;
@@ -693,6 +725,11 @@ export default class ChatHook extends Module {
 
 			this.CommunityChestBanner.forceUpdate();
 		});
+	}
+
+	/** Channel points button hooks. */
+	hookPointsButtons() {
+		const t = this;
 
 		this.PointsButton.ready(cls => {
 			const old_render = cls.prototype.render;
@@ -756,7 +793,10 @@ export default class ChatHook extends Module {
 
 			this.PointsClaimButton.forceUpdate();
 		});
+	}
 
+	/** Chat controller events, chat service and chat buffer hooks. */
+	hookChatCore() {
 		this.ChatController.on('mount', this.chatMounted, this);
 		this.ChatController.on('unmount', this.chatUnmounted, this);
 		//this.ChatController.on('receive-props', this.chatUpdated, this);
@@ -828,7 +868,10 @@ export default class ChatHook extends Module {
 				});
 			}
 		});
+	}
 
+	/** Reward event handler and chat buffer connector hooks. */
+	hookRewardsAndConnector() {
 		this.ChatRewardEventHandler.ready((cls, instances) => {
 			const t = this,
 				old_subscribe = cls.prototype.subscribe;
@@ -880,7 +923,10 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.connectorMounted(inst);
 		});
+	}
 
+	/** Chat controller readiness and chat renderer hooks. */
+	hookControllerAndRenderer() {
 		this.ChatController.ready((cls, instances) => {
 			const t = this,
 				old_catch = cls.prototype.componentDidCatch,
@@ -929,7 +975,10 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.rendererMounted(inst);
 		})
+	}
 
+	/** Chat container and callout selector hooks. */
+	hookChatContainer() {
 		this.ChatContainer.on('mount', this.containerMounted, this);
 		this.ChatContainer.on('unmount', this.containerUnmounted, this); //removeRoom, this);
 		this.ChatContainer.on('update', this.containerUpdated, this);
@@ -1023,7 +1072,10 @@ export default class ChatHook extends Module {
 			for(const inst of instances)
 				this.containerMounted(inst);
 		});
+	}
 
+	/** PubSub and drop-claim notification hooks. */
+	hookPubSub() {
 		this.subpump.on(':pubsub-message', event => {
 			if ( event.prefix !== 'community-points-channel-v1' || this.disable_handling )
 				return;
