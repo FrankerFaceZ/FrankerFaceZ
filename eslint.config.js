@@ -1,4 +1,3 @@
-/* globals module require */
 'use strict';
 
 const js = require('@eslint/js');
@@ -34,6 +33,17 @@ module.exports = [
 	},
 
 	js.configs.recommended,
+
+	// Build tooling runs under Node, not in the browser.
+	{
+		files: ['*.config.js', 'bin/**/*.js', 'tools/**/*.js'],
+		languageOptions: {
+			sourceType: 'commonjs',
+			globals: {
+				...globals.node
+			}
+		}
+	},
 
 	// This project is on Vue 2.7, so use the Vue 2 rule set.
 	...vue.configs['flat/vue2-recommended'],

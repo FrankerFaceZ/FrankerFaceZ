@@ -22,14 +22,14 @@ you need:
 
 
 From there, you can build FrankerFaceZ from source simply by running
-`bun run build`. For development, you can instruct webpack to watch the source
+`bun run build`. For development, you can instruct Rspack to watch the source
 files for changes and re-build automatically with `bun run start`
 
 FrankerFaceZ comes with a local development server that listens on port 8000
 and it serves up local development copies of files, falling back to the CDN
 when a local copy of a file isn't present.
 
-> **Note:** The local development server uses `webpack-dev-server` internally,
+> **Note:** The local development server uses Rspack's dev server internally,
 > which self-signs a certificate for hosting content via HTTPS. You will need
 > to ensure your browser accepts a self-signed certificate for localhost.
 

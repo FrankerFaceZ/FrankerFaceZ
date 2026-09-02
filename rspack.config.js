@@ -1,21 +1,18 @@
-/* global module __dirname */
 
 const path = require('path');
 const semver = require('semver');
 const {exec, execSync} = require('child_process');
 
-const { CycloneDxWebpackPlugin } = require('@cyclonedx/webpack-plugin');
+const { rspack } = require('@rspack/core');
 const { VueLoaderPlugin } = require('vue-loader');
-const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
-const { EsbuildPlugin } = require('esbuild-loader');
-const CopyPlugin = require('copy-webpack-plugin');
+const { RspackManifestPlugin } = require('rspack-manifest-plugin');
 
 
 if ( process.env.NODE_ENV == null )
 	process.env.NODE_ENV = 'production';
 
 // Are we in development?
-const DEV_SERVER = process.env.WEBPACK_SERVE == 'true';
+const DEV_SERVER = process.env.RSPACK_SERVE == 'true' || process.env.WEBPACK_SERVE == 'true';
 const DEV_BUILD = process.env.NODE_ENV !== 'production';
 
 // Is this for an extension?
@@ -71,7 +68,41 @@ const COPY_PATTERNS = [
 
 const TARGET = 'es2020';
 
-/** @type {import('webpack').Configuration} */
+// Hashed filenames in production, stable names for dev and extension builds.
+const HASHED = ! (FOR_EXTENSION || DEV_BUILD);
+
+const CSS_ASSET_LOADER = path.resolve(__dirname, 'tools/css-asset-loader.js');
+
+// Loaders shared by both stylesheet rules. css-loader resolves url()
+// references to emitted font assets; sass-loader compiles SCSS.
+const STYLE_LOADERS = [
+	{
+		loader: 'css-loader',
+		options: {
+			exportType: 'string',
+			esModule: true,
+			sourceMap: false
+		}
+	},
+	{
+		loader: 'sass-loader',
+		options: {
+			sourceMap: false
+		}
+	}
+];
+
+// JSX in this project compiles to createElement from utilities/dom, not
+// React. The same pragma applies to .js/.jsx and .ts/.tsx files.
+const SWC_REACT = {
+	pragma: 'createElement',
+	pragmaFrag: 'Fragment',
+	throwIfNamespace: true,
+	development: false,
+	runtime: 'classic'
+};
+
+/** @type {import('@rspack/core').Configuration} */
 const config = {
 	mode: DEV_BUILD
 		? 'development'
@@ -123,11 +154,28 @@ const config = {
 		crossOriginLoading: 'anonymous'
 	},
 
+	// vue-loader 15 (Vue 2) needs the JS-based CSS pipeline, and so does
+	// our css-asset-loader, so Rspack's native CSS handling is off.
+	experiments: {
+		css: false
+	},
+
 	optimization: {
 		minimizer: [
-			new EsbuildPlugin({
-				target: TARGET,
-				keepNames: true
+			new rspack.SwcJsMinimizerRspackPlugin({
+				minimizerOptions: {
+					// Equivalent of esbuild's keepNames. The module system
+					// derives module names from constructor.name, so class
+					// names must survive minification.
+					compress: {
+						keep_classnames: true,
+						keep_fnames: true
+					},
+					mangle: {
+						keep_classnames: true,
+						keep_fnames: true
+					}
+				}
 			})
 		],
 		splitChunks: {
@@ -145,29 +193,22 @@ const config = {
 	},
 
 	plugins: [
-		new CycloneDxWebpackPlugin({
-			specVersion: '1.6',
-			outputLocation: './bom',
-			includeWellknown: false
-		}),
-		new CopyPlugin({
+		new rspack.CopyRspackPlugin({
 			patterns: COPY_PATTERNS
 		}),
 		new VueLoaderPlugin(),
-		new EsbuildPlugin({
-			define: {
-				__version_major__: JSON.stringify(VERSION.major),
-				__version_minor__: JSON.stringify(VERSION.minor),
-				__version_patch__: JSON.stringify(VERSION.patch),
-				__version_prerelease__: JSON.stringify(VERSION.prerelease),
-				__version_build__: JSON.stringify(process.env.FFZ_BUILD || null),
-				__git_commit__: JSON.stringify(commit_hash),
-				__extension__: FOR_EXTENSION
-					? JSON.stringify(process.env.FFZ_EXTENSION)
-					: JSON.stringify(false)
-			}
+		new rspack.DefinePlugin({
+			__version_major__: JSON.stringify(VERSION.major),
+			__version_minor__: JSON.stringify(VERSION.minor),
+			__version_patch__: JSON.stringify(VERSION.patch),
+			__version_prerelease__: JSON.stringify(VERSION.prerelease),
+			__version_build__: JSON.stringify(process.env.FFZ_BUILD || null),
+			__git_commit__: JSON.stringify(commit_hash),
+			__extension__: FOR_EXTENSION
+				? JSON.stringify(process.env.FFZ_EXTENSION)
+				: JSON.stringify(false)
 		}),
-		new WebpackManifestPlugin({
+		new RspackManifestPlugin({
 			publicPath: ''
 		})
 	],
@@ -177,21 +218,35 @@ const config = {
 			{
 				test: /\.jsx?$/,
 				exclude: /node_modules/,
-				loader: 'esbuild-loader',
+				loader: 'builtin:swc-loader',
 				options: {
-					loader: 'jsx',
-					jsxFactory: 'createElement',
-					target: TARGET
+					jsc: {
+						parser: {
+							syntax: 'ecmascript',
+							jsx: true
+						},
+						transform: {
+							react: SWC_REACT
+						},
+						target: TARGET
+					}
 				}
 			},
 			{
 				test: /\.tsx?$/,
 				exclude: /node_modules/,
-				loader: 'esbuild-loader',
+				loader: 'builtin:swc-loader',
 				options: {
-					loader: 'tsx',
-					jsxFactory: 'createElement',
-					target: TARGET
+					jsc: {
+						parser: {
+							syntax: 'typescript',
+							tsx: true
+						},
+						transform: {
+							react: SWC_REACT
+						},
+						target: TARGET
+					}
 				}
 			},
 			{
@@ -207,9 +262,9 @@ const config = {
 				include: /src/,
 				type: 'asset/resource',
 				generator: {
-					filename: (FOR_EXTENSION || DEV_BUILD)
-						? '[name].json'
-						: '[name].[contenthash:8].json'
+					filename: HASHED
+						? '[name].[contenthash:8].json'
+						: '[name].json'
 				}
 			},
 			{
@@ -222,21 +277,19 @@ const config = {
 				include: /node_modules/,
 				type: 'asset/resource',
 				generator: {
-					filename: (FOR_EXTENSION || DEV_BUILD)
-						? '[name].json'
-						: '[name].[contenthash:8].json'
+					filename: HASHED
+						? '[name].[contenthash:8].json'
+						: '[name].json'
 				}
 			},
 			{
 				test: /\.(?:otf|eot|ttf|woff|woff2)$/,
-				use: [{
-					loader: 'file-loader',
-					options: {
-						name: (FOR_EXTENSION || DEV_BUILD)
-							? '[name].[ext]'
-							: '[name].[contenthash:8].[ext]'
-					}
-				}]
+				type: 'asset/resource',
+				generator: {
+					filename: HASHED
+						? '[name].[contenthash:8][ext]'
+						: '[name][ext]'
+				}
 			},
 			{
 				test: /\.md$/,
@@ -251,65 +304,40 @@ const config = {
 				loader: 'vue-loader'
 			},
 			{
+				// Stylesheets loaded at runtime by URL.
 				test: /\.(?:sa|sc|c)ss$/,
 				resourceQuery: {
 					not: [
 						/css_tweaks/
 					]
 				},
+				type: 'javascript/auto',
 				use: [
 					{
-						loader: 'file-loader',
+						loader: CSS_ASSET_LOADER,
 						options: {
-							name: (FOR_EXTENSION || DEV_BUILD)
-								? '[name].css'
-								: '[name].[contenthash:8].css'
+							mode: 'file',
+							filename: HASHED
+								? '[name].[contenthash:8].css'
+								: '[name].css'
 						}
 					},
-					{
-						loader: 'extract-loader',
-						options: {
-							publicPath: ''
-						}
-					},
-					{
-						loader: 'css-loader',
-						options: {
-							esModule: false,
-							sourceMap: DEV_BUILD ? true : false
-						}
-					},
-					{
-						loader: 'sass-loader',
-						options: {
-							sourceMap: true
-						}
-					}
+					...STYLE_LOADERS
 				]
 			},
 			{
+				// CSS tweaks are bundled as strings and toggled at runtime.
 				test: /\.(?:sa|sc|c)ss$/,
 				resourceQuery: /css_tweaks/,
+				type: 'javascript/auto',
 				use: [
 					{
-						loader: 'raw-loader'
-					},
-					{
-						loader: 'extract-loader'
-					},
-					{
-						loader: 'css-loader',
+						loader: CSS_ASSET_LOADER,
 						options: {
-							esModule: false,
-							sourceMap: DEV_BUILD ? true : false
+							mode: 'string'
 						}
 					},
-					{
-						loader: 'sass-loader',
-						options: {
-							sourceMap: false
-						}
-					}
+					...STYLE_LOADERS
 				]
 			}
 		]
@@ -349,44 +377,59 @@ if ( DEV_SERVER )
 			},
 		],
 
-		setupMiddlewares: (middlewares, devServer) => {
+		setupMiddlewares: middlewares => {
+			// Rspack's dev server does not expose an Express app, so these
+			// are written as plain middleware using only node:http APIs.
+			const redirect = (res, location) => {
+				res.writeHead(302, {Location: location});
+				res.end();
+			};
 
-			devServer.app.get('/script/script.min.js', (req, res) => {
-				res.redirect('/script/script.js');
-			});
+			const routes = (req, res, next) => {
+				const url = new URL(req.url, 'https://localhost');
 
-			devServer.app.get('/update_font', (req, res) => {
-				const proc = exec('bun run font:save');
+				if ( url.pathname === '/script/script.min.js' )
+					return redirect(res, '/script/script.js');
 
-				proc.stdout.on('data', data => {
-					console.log('FONT>>', data);
-				});
+				if ( url.pathname === '/update_font' ) {
+					const proc = exec('bun run font:save');
 
-				proc.stderr.on('data', data => {
-					console.error('FONT>>', data);
-				});
+					proc.stdout.on('data', data => {
+						console.log('FONT>>', data);
+					});
 
-				proc.on('close', code => {
-					console.log('FONT>> Exited with code', code);
-					res.redirect(req.headers.referer);
-				});
-			});
+					proc.stderr.on('data', data => {
+						console.error('FONT>>', data);
+					});
 
-			devServer.app.get('/dev_server', (req, res) => {
-				res.setHeader('Access-Control-Allow-Origin', '*');
-				res.setHeader('Access-Control-Allow-Private-Network', 'true');
+					proc.on('close', code => {
+						console.log('FONT>> Exited with code', code);
+						redirect(res, req.headers.referer || '/');
+					});
+					return;
+				}
 
-				res.json({
-					path: process.cwd(),
-					version: 2
-				})
-			});
+				if ( url.pathname === '/dev_server' ) {
+					res.setHeader('Access-Control-Allow-Origin', '*');
+					res.setHeader('Access-Control-Allow-Private-Network', 'true');
+					res.setHeader('Content-Type', 'application/json');
+					res.end(JSON.stringify({
+						path: process.cwd(),
+						version: 2
+					}));
+					return;
+				}
 
-			middlewares.unshift((req, res, next) => {
+				next();
+			};
+
+			const cors = (req, res, next) => {
 				res.setHeader('Access-Control-Allow-Origin', '*');
 				res.setHeader('Access-Control-Allow-Private-Network', 'true');
 				next();
-			});
+			};
+
+			middlewares.unshift(cors, routes);
 
 			return middlewares.filter(middleware => middleware.name !== 'cross-origin-header-check');
 		}
