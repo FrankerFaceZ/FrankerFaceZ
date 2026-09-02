@@ -1241,7 +1241,7 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Appearance >> GIFs',
 				title: 'GIF Size',
-				description: 'How large GIFs should be, in pixels, as their maximum height.'
+				description: 'How large GIFs should be, in pixels, as their maximum height.',
 				component: 'setting-text-box',
 				process: 'to_int',
 				bounds: [1]
