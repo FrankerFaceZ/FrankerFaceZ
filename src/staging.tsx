@@ -4,7 +4,7 @@
 // Staging Selector
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { API_SERVER, SERVER, STAGING_API, STAGING_CDN } from './utilities/constants';
 import type SettingsManager from './settings';
 

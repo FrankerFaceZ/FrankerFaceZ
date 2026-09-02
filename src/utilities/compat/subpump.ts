@@ -5,7 +5,7 @@
 // It controls Twitch PubSub.
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { FFZEvent } from 'utilities/events';
 
 declare global {

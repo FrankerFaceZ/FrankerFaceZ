@@ -5,7 +5,7 @@
 // It consumes webpack.
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {has, generateUUID, makeAddonIdChecker} from 'utilities/object';
 import { DEBUG } from 'utilities/constants';
 

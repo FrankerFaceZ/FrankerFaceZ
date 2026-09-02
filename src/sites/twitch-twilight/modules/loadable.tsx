@@ -9,7 +9,7 @@ import type { ReactStateNode } from 'root/src/utilities/compat/react-types';
 // Loadable Stuff
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import type { AnyFunction } from 'utilities/types';
 import type Twilight from '..';
 

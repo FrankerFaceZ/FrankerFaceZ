@@ -4,7 +4,7 @@
 // PubSub Client
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { PubSubClient } from './client';
 import type ExperimentManager from '../experiments';
 import type SettingsManager from '../settings';

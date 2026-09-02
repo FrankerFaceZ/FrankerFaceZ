@@ -1,4 +1,4 @@
-import Module, { GenericModule, ModuleEvents } from 'utilities/module';
+import Module, { type GenericModule, type ModuleEvents } from 'utilities/module';
 import type { AddonInfo } from './types';
 import type Logger from './logging';
 import type TranslationManager from '../i18n';

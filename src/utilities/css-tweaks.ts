@@ -5,7 +5,7 @@
 // Tweak some CSS
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has, once} from 'utilities/object';
 

@@ -11,7 +11,7 @@
 import {createElement, setChildren} from 'utilities/dom';
 import {maybe_call, debounce, has} from 'utilities/object';
 
-import {Instance, createPopper} from '@popperjs/core';
+import {type Instance, createPopper} from '@popperjs/core';
 import type Logger from './logging';
 import type { OptionallyCallable } from './types';
 

@@ -10,7 +10,7 @@ import RelativeTime from 'dayjs/plugin/relativeTime';
 import {get} from 'utilities/object';
 import {duration_to_string} from 'utilities/time';
 
-import Parser, { MessageAST, MessageNode, MessageVariable, ParserOptions } from '@ffz/icu-msgparser';
+import Parser, { type MessageAST, type MessageNode, type MessageVariable, type ParserOptions } from '@ffz/icu-msgparser';
 
 dayjs.extend(RelativeTime);
 

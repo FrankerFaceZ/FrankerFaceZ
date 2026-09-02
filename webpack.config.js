@@ -356,7 +356,7 @@ if ( DEV_SERVER )
 			});
 
 			devServer.app.get('/update_font', (req, res) => {
-				const proc = exec('npm run font:save');
+				const proc = exec('bun run font:save');
 
 				proc.stdout.on('data', data => {
 					console.log('FONT>>', data);

@@ -4,7 +4,7 @@
 // Sub Button
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {createElement} from 'utilities/dom';
 import type SettingsManager from 'src/settings';
 import type TranslationManager from 'src/i18n';

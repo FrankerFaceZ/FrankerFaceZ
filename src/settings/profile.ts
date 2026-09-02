@@ -6,7 +6,7 @@
 
 import {EventEmitter} from 'utilities/events';
 import {isValidShortcut, fetchJSON} from 'utilities/object';
-import {FilterData, createTester} from 'utilities/filtering';
+import {type FilterData, createTester} from 'utilities/filtering';
 import type SettingsManager from '.';
 import type { SettingsProvider } from './providers';
 import type { ContextData, ExportedSettingsProfile, SettingsProfileMetadata } from './types';

@@ -5,7 +5,7 @@
 // Loads Vue + Translation Shim
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {has} from 'utilities/object';
 import type TranslationManager from '../i18n';
 import type { VueConstructor } from 'vue';

@@ -6,28 +6,31 @@
 	"private": true,
 	"license": "Apache-2.0",
 	"scripts": {
-		"start": "pnpm dev",
+		"start": "bun run dev",
 		"eslint": "eslint \"src/**/*.{js,jsx,vue}\"",
+		"typecheck": "tsc --noEmit",
 		"clean": "rimraf dist",
-		"dev": "cross-env NODE_ENV=development webpack serve",
-		"dev:prod": "cross-env NODE_ENV=production webpack serve",
-		"dev:ext": "cross-env NODE_ENV=development FFZ_EXTENSION=true webpack serve",
-		"build": "pnpm build:prod",
-		"build:ext": "cross-env NODE_ENV=production FFZ_EXTENSION=true webpack build",
-		"build:stats": "cross-env NODE_ENV=production webpack build --json > stats.json",
-		"build:prod": "cross-env NODE_ENV=production webpack build",
-		"build:dev": "cross-env NODE_ENV=development webpack build",
-		"build:types": "cross-env tsc --declaration --emitDeclarationOnly --outDir typedist && node bin/build_types",
-		"abuild:types": "node bin/build_types",
-		"build:docs": "cross-env typedoc --options typedoc.json",
-		"font": "pnpm font:edit",
+		"dev": "NODE_ENV=development webpack serve",
+		"dev:prod": "NODE_ENV=production webpack serve",
+		"dev:ext": "NODE_ENV=development FFZ_EXTENSION=true webpack serve",
+		"build": "bun run build:prod",
+		"build:ext": "NODE_ENV=production FFZ_EXTENSION=true webpack build",
+		"build:stats": "NODE_ENV=production webpack build --json > stats.json",
+		"build:prod": "NODE_ENV=production webpack build",
+		"build:dev": "NODE_ENV=development webpack build",
+		"build:types": "tsc --declaration --emitDeclarationOnly --outDir typedist && bun bin/build_types",
+		"abuild:types": "bun bin/build_types",
+		"build:docs": "typedoc --options typedoc.json",
+		"font": "bun run font:edit",
 		"font:edit": "fontello-cli --cli-config fontello.client.json edit",
-		"font:save": "fontello-cli --cli-config fontello.client.json save && pnpm font:update",
-		"font:update": "node bin/update_fonts"
+		"font:save": "fontello-cli --cli-config fontello.client.json save && bun run font:update",
+		"font:update": "bun bin/update_fonts"
 	},
 	"devDependencies": {
 		"@cyclonedx/webpack-plugin": "^5.0.1",
+		"@eslint/js": "^10.0.1",
 		"@ffz/fontello-cli": "^1.0.4",
+		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/chrome": "^0.0.277",
 		"@types/crypto-js": "^4.2.2",
 		"@types/js-cookie": "^3.0.6",
@@ -36,16 +39,15 @@
 		"@types/webpack-env": "^1.18.8",
 		"browserslist": "^4.25.0",
 		"copy-webpack-plugin": "^11.0.0",
-		"cross-env": "^7.0.3",
 		"css-loader": "^6.11.0",
 		"esbuild-loader": "^4.3.0",
-		"eslint": "^8.57.1",
-		"eslint-plugin-import": "^2.31.0",
+		"eslint": "^10.9.1",
 		"eslint-plugin-react": "^7.37.5",
-		"eslint-plugin-vue": "^9.33.0",
+		"eslint-plugin-vue": "^10.10.0",
 		"extract-loader": "^5.1.0",
 		"file-loader": "^6.2.0",
 		"glob": "^10.4.5",
+		"globals": "^17.12.0",
 		"json-loader": "^0.5.7",
 		"minify-graphql-loader": "^1.0.2",
 		"raw-loader": "^4.0.2",
@@ -59,6 +61,7 @@
 		"typedoc-plugin-no-inherit": "^1.6.1",
 		"typedoc-plugin-rename-defaults": "^0.7.3",
 		"typescript": "^5.8.3",
+		"vue-eslint-parser": "^10.4.1",
 		"vue-loader": "^15.11.1",
 		"vue-template-compiler": "^2.7.16",
 		"webpack": "^5.99.9",
@@ -66,6 +69,9 @@
 		"webpack-dev-server": "^5.2.2",
 		"webpack-manifest-plugin": "^5.0.1"
 	},
+	"trustedDependencies": [
+		"esbuild"
+	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/FrankerFaceZ/FrankerFaceZ.git"
@@ -98,21 +104,5 @@
 		"vue-color": "^2.8.2",
 		"vue-observe-visibility": "^1.0.0",
 		"vuedraggable": "^2.24.3"
-	},
-	"pnpm": {
-		"overrides": {
-			"ansi-regex@>2.1.1 <5.0.1": ">=5.0.1",
-			"chalk@<4": ">=4 <5",
-			"set-value@<4.0.1": ">=4.0.1",
-			"glob-parent@<5.1.2": ">=5.1.2"
-		},
-		"onlyBuiltDependencies": [
-			"esbuild",
-			"libxmljs2"
-		],
-		"ignoredBuiltDependencies": [
-			"@parcel/watcher",
-			"core-js"
-		]
 	}
 }

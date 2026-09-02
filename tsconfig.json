@@ -18,7 +18,7 @@
 		"noImplicitThis": true,
 		"noImplicitReturns": false,
 		"moduleResolution": "Bundler",
-		"importsNotUsedAsValues": "error",
+		"verbatimModuleSyntax": true,
 		"allowSyntheticDefaultImports": true,
 		"noImplicitAny": true,
 		"paths": {

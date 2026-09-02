@@ -7,8 +7,8 @@
 import {createElement, sanitize} from 'utilities/dom';
 import {has, maybe_call} from 'utilities/object';
 
-import Tooltip, { TooltipInstance } from 'utilities/tooltip';
-import Module, { GenericModule, buildAddonProxy } from 'utilities/module';
+import Tooltip, { type TooltipInstance } from 'utilities/tooltip';
+import Module, { type GenericModule, buildAddonProxy } from 'utilities/module';
 import awaitMD, {getMD} from 'utilities/markdown';
 import { DEBUG } from 'src/utilities/constants';
 import type { AddonInfo, DomFragment, OptionallyCallable } from '../utilities/types';

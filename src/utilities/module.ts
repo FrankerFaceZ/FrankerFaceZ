@@ -5,7 +5,7 @@
 // Modules are cool.
 // ============================================================================
 
-import EventEmitter, { EventListener, EventMap, NamespacedEventArgs, NamespacedEventKey, NamespacedEvents } from 'utilities/events';
+import EventEmitter, { type EventListener, type EventMap, type NamespacedEventArgs, type NamespacedEventKey, type NamespacedEvents } from 'utilities/events';
 import {has} from 'utilities/object';
 import type Logger from './logging';
 import type { AddonInfo, KnownEvents, ModuleKeys, ModuleMap, OptionalPromise } from './types';

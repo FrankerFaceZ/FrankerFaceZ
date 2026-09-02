@@ -5,9 +5,9 @@
 // ============================================================================
 
 import { DEBUG } from 'utilities/constants';
-import Module, { GenericModule, buildAddonProxy } from 'utilities/module';
+import Module, { type GenericModule, buildAddonProxy } from 'utilities/module';
 import {deep_equals, has, debounce, deep_copy, generateUUID} from 'utilities/object';
-import {PathNode, parse as parse_path} from 'utilities/path-parser';
+import {type PathNode, parse as parse_path} from 'utilities/path-parser';
 
 import SettingsProfile from './profile';
 import SettingsContext from './context';

@@ -4,8 +4,8 @@
 // Profile Filters for Settings
 // ============================================================================
 
-import {glob_to_regex, escape_regex, matchScreen, ScreenOptions} from 'utilities/object';
-import {FilterData, FilterType, createTester} from 'utilities/filtering';
+import {glob_to_regex, escape_regex, matchScreen, type ScreenOptions} from 'utilities/object';
+import {type FilterData, type FilterType, createTester} from 'utilities/filtering';
 import { DEBUG } from 'utilities/constants';
 import type { ContextData } from './types';
 import type { ScreenDetails } from 'root/types/getScreenDetails';

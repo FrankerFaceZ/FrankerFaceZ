@@ -5,8 +5,8 @@
 // It controls React.
 // ============================================================================
 
-import {EventEmitter, EventListener, NamespacedEventArgs, NamespacedEventKey} from 'utilities/events';
-import Module, { GenericModule } from 'utilities/module';
+import {EventEmitter, type EventListener, type NamespacedEventArgs, type NamespacedEventKey} from 'utilities/events';
+import Module, { type GenericModule } from 'utilities/module';
 import type { ReactAccessor, ReactNode, ReactRoot, ReactStateNode } from './react-types';
 import type { ClassType, ExtractFunctions, MaybeParameters, OptionalArray, RecursivePartial } from 'utilities/types';
 

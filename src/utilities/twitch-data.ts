@@ -5,7 +5,7 @@
 // Get data, from Twitch.
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {get, debounce, TranslatableError} from 'utilities/object';
 import type Apollo from './compat/apollo';
 import type { DocumentNode } from 'graphql';

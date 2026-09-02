@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {DEBUG, SERVER, SERVER_OR_EXT} from 'utilities/constants';
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {has, deep_copy, fetchJSON} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 

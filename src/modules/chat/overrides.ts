@@ -4,7 +4,7 @@
 // Name and Color Overrides
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { createElement, ClickOutside } from 'utilities/dom';
 import Tooltip from 'utilities/tooltip';
 import type SettingsManager from 'root/src/settings';

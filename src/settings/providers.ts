@@ -1,6 +1,6 @@
 'use strict';
 
-import { isValidBlob, deserializeBlob, serializeBlob, BlobLike, SerializedBlobLike, JsonSerialized, jsonSerialize, jsonDeserialize } from 'utilities/blobs';
+import { isValidBlob, deserializeBlob, serializeBlob, type BlobLike, type SerializedBlobLike, type JsonSerialized, jsonSerialize, jsonDeserialize } from 'utilities/blobs';
 import {EventEmitter} from 'utilities/events';
 import {TicketLock, has, once} from 'utilities/object';
 import type { OptionalArray, OptionalPromise, ProviderTypeMap } from '../utilities/types';

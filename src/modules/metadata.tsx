@@ -8,9 +8,9 @@ import { DEBUG } from 'utilities/constants';
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 import {maybe_call} from 'utilities/object';
 
-import Module, { buildAddonProxy, GenericModule } from 'utilities/module';
+import Module, { buildAddonProxy, type GenericModule } from 'utilities/module';
 import {duration_to_string, durationForURL} from 'utilities/time';
-import Tooltip, { TooltipInstance } from 'utilities/tooltip';
+import Tooltip, { type TooltipInstance } from 'utilities/tooltip';
 import type { AddonInfo, DomFragment, OptionallyThisCallable, OptionalPromise } from 'utilities/types';
 
 import type SettingsManager from '../settings';
