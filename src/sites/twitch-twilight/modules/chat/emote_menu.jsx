@@ -3030,7 +3030,7 @@ export default class EmoteMenu extends Module {
 												class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 												placeholder={
 													is_gif ?
-														t.i18n.t('emote-menu.search-gifs', 'Search for GIFs') :
+														t.i18n.t('emote-menu.search-gifs', 'Search GIPHY') :
 													is_emoji ?
 														t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
 														t.i18n.t('emote-menu.search', 'Search for Emotes')
@@ -3150,7 +3150,7 @@ export default class EmoteMenu extends Module {
 												onClick={this.clickTab}
 											>
 												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
-													<figure class="ffz-fa fa-picture-o" />
+													<figure class="ffz-i-keyboard" />
 												</div>
 											</button>
 										</div>}
