@@ -936,102 +936,12 @@ export default class Emotes extends Module {
 			click_emote = this.parent.context.get('chat.click-emotes'),
 			click_sub = this.parent.context.get('chat.sub-emotes');
 
-		if ( event.shiftKey && (click_emote || click_sub) ) {
-			let url;
+		if ( event.shiftKey && (click_emote || click_sub) )
+			return this.handleShiftClick(ds, provider, click_emote, click_sub);
 
-			if ( provider === 'twitch' ) {
-				url = null; // = `https://twitchemotes.com/emotes/${ds.id}`;
+		if ( event[MOD_KEY] )
+			return this.handleFavoriteClick(target, ds, provider);
 
-				if ( click_sub ) {
-					const apollo = this.resolve('site.apollo');
-					if ( apollo ) {
-						apollo.client.query({
-							query: GET_EMOTE,
-							variables: {
-								id: ds.id
-							}
-						}).then(result => {
-							const prod = get('data.emote.subscriptionProduct', result);
-							if ( prod && prod.state === 'ACTIVE' && prod.owner && prod.owner.login )
-								url = `https://www.twitch.tv/subs/${prod.owner.login}`;
-							else if ( ! click_emote )
-								return false;
-
-							if ( url ) {
-								const win = window.open();
-								if ( win ) {
-									win.opener = null;
-									win.location = url;
-								}
-							}
-						});
-
-						return true;
-					}
-				}
-
-			} else if ( provider === 'ffz' ) {
-				const emote_set = this.emote_sets[ds.set],
-					emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
-
-				if ( ! emote )
-					return;
-
-				if ( emote.click_url )
-					url = emote.click_url;
-
-				else if ( ! emote_set.source )
-					url = `https://www.frankerfacez.com/emoticons/${emote.id}`;
-			}
-
-			if ( ! click_emote )
-				return false;
-
-			if ( url ) {
-				const win = window.open();
-				if ( win ) {
-					win.opener = null;
-					win.location = url;
-				}
-			}
-
-			return true;
-		}
-
-		if ( event[MOD_KEY] ) {
-			// Favoriting Emotes
-			let source, id;
-
-			if ( provider === 'twitch' ) {
-				source = 'twitch';
-				id = ds.id;
-
-			} else if ( provider === 'ffz' ) {
-				const emote_set = this.emote_sets[ds.set],
-					emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
-
-				if ( ! emote )
-					return;
-
-				source = emote_set.source || 'ffz';
-				id = emote.id;
-
-			} else if ( provider === 'emoji' ) {
-				source = 'emoji';
-				id = ds.code;
-
-			} else
-				return;
-
-			this.toggleFavorite(source, id);
-			const tt = target._ffz_tooltip;
-			if ( tt && tt.visible ) {
-				tt.hide();
-				setTimeout(() => document.contains(target) && tt.show(), 0);
-			}
-
-			return true;
-		}
 
 		if ( favorite_only )
 			return false;
@@ -1058,32 +968,135 @@ export default class Emotes extends Module {
 		if ( evt.defaultPrevented )
 			return true;
 
-		if ( provider === 'twitch' && this.parent.context.get('chat.emote-dialogs') ) {
-			const fine = this.resolve('site.fine');
-			if ( ! fine )
+		if ( provider === 'twitch' && this.parent.context.get('chat.emote-dialogs') )
+			return this.openTwitchEmoteCard(target, ds);
+	}
+
+	/** Shift-click: open the emote or its subscription page in a new tab. */
+	handleShiftClick(ds, provider, click_emote, click_sub) {
+		let url;
+
+		if ( provider === 'twitch' ) {
+			url = null; // = `https://twitchemotes.com/emotes/${ds.id}`;
+
+			if ( click_sub ) {
+				const apollo = this.resolve('site.apollo');
+				if ( apollo ) {
+					apollo.client.query({
+						query: GET_EMOTE,
+						variables: {
+							id: ds.id
+						}
+					}).then(result => {
+						const prod = get('data.emote.subscriptionProduct', result);
+						if ( prod && prod.state === 'ACTIVE' && prod.owner && prod.owner.login )
+							url = `https://www.twitch.tv/subs/${prod.owner.login}`;
+						else if ( ! click_emote )
+							return false;
+
+						if ( url ) {
+							const win = window.open();
+							if ( win ) {
+								win.opener = null;
+								win.location = url;
+							}
+						}
+					});
+
+					return true;
+				}
+			}
+
+		} else if ( provider === 'ffz' ) {
+			const emote_set = this.emote_sets[ds.set],
+				emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
+
+			if ( ! emote )
 				return;
 
-			const line = fine.searchParent(target, n => n.props && n.props.message),
-				opener = fine.searchParent(target, n => n.onShowEmoteCard, 500);
+			if ( emote.click_url )
+				url = emote.click_url;
 
-			if ( ! line || ! opener )
-				return;
-
-			const rect = target.getBoundingClientRect();
-
-			opener.onShowEmoteCard({
-				channelID: line.props.channelID || '',
-				channelLogin: line.props.channelLogin || '',
-				emoteID: ds.id,
-				emoteCode: target.alt,
-				sourceID: 'chat',
-				referrerID: '',
-				initialTopOffset: rect.bottom,
-				initialBottomOffset: rect.top
-			});
-
-			return true;
+			else if ( ! emote_set.source )
+				url = `https://www.frankerfacez.com/emoticons/${emote.id}`;
 		}
+
+		if ( ! click_emote )
+			return false;
+
+		if ( url ) {
+			const win = window.open();
+			if ( win ) {
+				win.opener = null;
+				win.location = url;
+			}
+		}
+
+		return true;
+	}
+
+	/** Modifier-click: toggle the emote as a favorite and refresh its tooltip. */
+	handleFavoriteClick(target, ds, provider) {
+		// Favoriting Emotes
+		let source, id;
+
+		if ( provider === 'twitch' ) {
+			source = 'twitch';
+			id = ds.id;
+
+		} else if ( provider === 'ffz' ) {
+			const emote_set = this.emote_sets[ds.set],
+				emote = emote_set && (emote_set.emotes[ds.id] || emote_set.disabled_emotes?.[ds.id]);
+
+			if ( ! emote )
+				return;
+
+			source = emote_set.source || 'ffz';
+			id = emote.id;
+
+		} else if ( provider === 'emoji' ) {
+			source = 'emoji';
+			id = ds.code;
+
+		} else
+			return;
+
+		this.toggleFavorite(source, id);
+		const tt = target._ffz_tooltip;
+		if ( tt && tt.visible ) {
+			tt.hide();
+			setTimeout(() => document.contains(target) && tt.show(), 0);
+		}
+
+		return true;
+	}
+
+	/** Plain click on a Twitch emote: open Twitch's own emote card for it. */
+	openTwitchEmoteCard(target, ds) {
+		const fine = this.resolve('site.fine');
+		if ( ! fine )
+			return;
+
+		const line = fine.searchParent(target, n => n.props && n.props.message),
+			opener = fine.searchParent(target, n => n.onShowEmoteCard, 500);
+
+		if ( ! line || ! opener )
+			return;
+
+		const rect = target.getBoundingClientRect();
+
+		opener.onShowEmoteCard({
+			channelID: line.props.channelID || '',
+			channelLogin: line.props.channelLogin || '',
+			emoteID: ds.id,
+			emoteCode: target.alt,
+			sourceID: 'chat',
+			referrerID: '',
+			initialTopOffset: rect.bottom,
+			initialBottomOffset: rect.top
+		});
+
+		return true;
 	}
 
 
@@ -1754,7 +1767,27 @@ export default class Emotes extends Module {
 		const old_emote = set.emotes[processed.id],
 			old_css = old_emote && this.generateEmoteCSS(old_emote);
 
-		// Store the emote.
+		// Store the emote. If nothing visible changed, we can stop here.
+		if ( ! this.storeEmoteInSet(set, processed, is_disabled, old_emote) )
+			return processed;
+
+		// Now we need to update the CSS. If we had old emote CSS, then we
+		// will need to totally rebuild the CSS.
+		this.updateSetCSS(set_id, set, processed, is_disabled, old_css);
+
+		// Send a loaded event because this emote set changed.
+		this.emit(':loaded', set_id, set);
+
+		// Return the processed emote object.
+		return processed;
+	}
+
+	/**
+	 * Place a processed emote into a set's live or disabled list, replacing
+	 * any previous version. Returns false when nothing visible changed and
+	 * the CSS does not need updating.
+	 */
+	storeEmoteInSet(set, processed, is_disabled, old_emote) { // eslint-disable-line class-methods-use-this
 		if ( is_disabled ) {
 			set.disabled_emotes[processed.id] = processed;
 			set.disabled_count++;
@@ -1778,7 +1811,7 @@ export default class Emotes extends Module {
 
 			} else {
 				// If there was no old emote, then we can stop now.
-				return processed;
+				return false;
 			}
 
 		} else {
@@ -1790,8 +1823,11 @@ export default class Emotes extends Module {
 				set.count++;
 		}
 
-		// Now we need to update the CSS. If we had old emote CSS, then we
-		// will need to totally rebuild the CSS.
+		return true;
+	}
+
+	/** Update a set's CSS after an emote was stored, rebuilding it fully if an old emote was replaced. */
+	updateSetCSS(set_id, set, processed, is_disabled, old_css) {
 		const style_key = `es--${set_id}`;
 
 		// Rebuild the full CSS if we have an old emote.
@@ -1819,12 +1855,6 @@ export default class Emotes extends Module {
 					set.pending_css = (set.pending_css || '') + emote_css;
 			}
 		}
-
-		// Send a loaded event because this emote set changed.
-		this.emit(':loaded', set_id, set);
-
-		// Return the processed emote object.
-		return processed;
 	}
 
 
