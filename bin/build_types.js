@@ -38,9 +38,9 @@ for(const filename of glob.sync('typedist/**/*.d.ts')) {
 	let content = fs.readFileSync(filename, 'utf8');
 	let changed = false;
 
-	content = content.replace(MATCHER, (match, package, index) => {
-		if ( shouldReplace(package) ) {
-			//const modpath = pospath.dirname(`typedist/${package}`);
+	content = content.replace(MATCHER, (match, spec, index) => {
+		if ( shouldReplace(spec) ) {
+			//const modpath = pospath.dirname(`typedist/${spec}`);
 			let relative = pospath.relative(folder, 'typedist');
 
 				if ( relative === '' )
@@ -49,18 +49,18 @@ for(const filename of glob.sync('typedist/**/*.d.ts')) {
 				if ( ! relative.endsWith('/') )
 					relative += '/';
 
-			console.log('  to', package, '->', JSON.stringify(relative));
+			console.log('  to', spec, '->', JSON.stringify(relative));
 
 			changed = true;
-			return `from '${relative}${package}';`;
+			return `from '${relative}${spec}';`;
 		}
 
 		return match;
 	});
 
-	content = content.replace(MATCH_TWO, (match, package, index) => {
-		if ( shouldReplace(package) ) {
-			//const modpath = pospath.dirname(`typedist/${package}`);
+	content = content.replace(MATCH_TWO, (match, spec, index) => {
+		if ( shouldReplace(spec) ) {
+			//const modpath = pospath.dirname(`typedist/${spec}`);
 			let relative = pospath.relative(folder, 'typedist');
 
 			if ( relative === '' )
@@ -70,7 +70,7 @@ for(const filename of glob.sync('typedist/**/*.d.ts')) {
 				relative += '/';
 
 			changed = true;
-			return `import("${relative}${package}")`;
+			return `import("${relative}${spec}")`;
 		}
 
 		return match;
