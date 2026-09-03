@@ -233,7 +233,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			this.provider = provider;
 			this.log.info(`Using Provider: ${provider.constructor.name}`);
 			provider.on('changed', this._onProviderChange, this);
-			provider.on('quota-exceeded', (err) => {
+			provider.on('quota-exceeded', err => {
 				this.emit(':quota-exceeded');
 			});
 			provider.on('change-provider', () => {
@@ -299,7 +299,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			settings: this,
 			Provider: SettingsProvider,
 			AdvancedProvider: AdvancedSettingsProvider,
-			IGNORE_CONTENT_KEYS: IGNORE_CONTENT_KEYS,
+			IGNORE_CONTENT_KEYS,
 			registerProvider: (key: string, provider: typeof SettingsProvider) => {
 				if ( ! this.providers[key] && provider.supported(this) )
 					this.providers[key] = provider;
@@ -1286,21 +1286,15 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		overrides.add = <
 			K extends SettingsKeys,
 			TValue = SettingType<K>,
-		>(key: K, definition: SettingDefinition<TValue>) => {
-			return this.add(key, definition, addon_id);
-		};
+		>(key: K, definition: SettingDefinition<TValue>) => this.add(key, definition, addon_id);
 
 		// TODO: Update addUI here too
 		overrides.addUI = <
 			K extends string,
 			TValue = K extends SettingsKeys ? SettingType<K> : unknown,
-		>(key: K, definition: SettingUiDefinition<TValue>) => {
-			return this.addUI(key, definition, addon_id);
-		};
+		>(key: K, definition: SettingUiDefinition<TValue>) => this.addUI(key, definition, addon_id);
 
-		overrides.addClearable = (key: string, definition: SettingsClearable) => {
-			return this.addClearable(key, definition, addon_id);
-		}
+		overrides.addClearable = (key: string, definition: SettingsClearable) => this.addClearable(key, definition, addon_id)
 
 		return buildAddonProxy(module, this, 'settings', overrides);
 	}

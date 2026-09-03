@@ -33,7 +33,7 @@ export type SerializedUint8Array = {
 	buffer: ArrayBuffer
 };
 
-export type JsonSerialized<T> = Omit<T, "buffer"> & {
+export type JsonSerialized<T> = Omit<T, 'buffer'> & {
 	buffer: string;
 }
 

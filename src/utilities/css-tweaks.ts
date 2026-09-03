@@ -9,7 +9,7 @@ import Module, { type GenericModule } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has, once} from 'utilities/object';
 
-declare module "utilities/types" {
+declare module 'utilities/types' {
 	interface ModuleMap {
 		'site.css_tweaks': CSSTweaks;
 	}

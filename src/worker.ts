@@ -66,7 +66,7 @@ function newPort(port: chrome.runtime.Port) {
 		if ( type === 'ready' ) {
 			// Echo back that we're ready.
 			port.postMessage({ffz_type: 'ready'});
-			return;
+			
 
 		} else if ( type === 'init-load' ) {
 			initializeCache().then(() => {
@@ -153,7 +153,7 @@ const DB_VERSION = 1,
 	_db_waiters = new Map<string, Promise<IDBDatabase>>;
 
 function openDatabase(name: string = 'FFZ', attempt = 0) {
-	let db = _db_handle.get(name);
+	const db = _db_handle.get(name);
 	if ( db )
 		return Promise.resolve(db);
 
@@ -161,7 +161,7 @@ function openDatabase(name: string = 'FFZ', attempt = 0) {
 	if ( waiter )
 		return waiter;
 
-	let start = performance.now();
+	const start = performance.now();
 
 	waiter = new Promise<IDBDatabase>((resolve, reject) => {
 

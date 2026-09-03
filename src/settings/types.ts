@@ -1,11 +1,11 @@
-import type SettingsManager from ".";
-import type { FilterData } from "../utilities/filtering";
-import type Logger from "../utilities/logging";
-import type { PathNode } from "../utilities/path-parser";
-import type { ExtractKey, ExtractSegments, ExtractType, JoinKeyPaths, ObjectKeyPaths, OptionalPromise, OptionallyCallable, PartialPartial, RecursivePartial, SettingsTypeMap } from "../utilities/types";
-import type SettingsContext from "./context";
-import type SettingsProfile from "./profile";
-import type { SettingsProvider } from "./providers";
+import type SettingsManager from '.';
+import type { FilterData } from '../utilities/filtering';
+import type Logger from '../utilities/logging';
+import type { PathNode } from '../utilities/path-parser';
+import type { ExtractKey, ExtractSegments, ExtractType, JoinKeyPaths, ObjectKeyPaths, OptionalPromise, OptionallyCallable, PartialPartial, RecursivePartial, SettingsTypeMap } from '../utilities/types';
+import type SettingsContext from './context';
+import type SettingsProfile from './profile';
+import type { SettingsProvider } from './providers';
 
 
 // Clearables
@@ -84,18 +84,18 @@ export type SettingType<K extends AllSettingsKeys> =
 	K extends `context.${infer Rest}`
 		? ExtractType<ConcreteContextData, ExtractSegments<Rest>> | undefined
 		:
-	K extends `ls.raw.${infer _}`
-		? string | undefined
-		:
-	K extends `ls.${infer Rest}`
-		? Rest extends keyof LocalStorageData
-			? LocalStorageData[Rest]
-			: unknown
-		:
-	K extends keyof SettingsTypeMap
-		? SettingsTypeMap[K]
-		:
-	unknown;
+		K extends `ls.raw.${infer _}`
+			? string | undefined
+			:
+			K extends `ls.${infer Rest}`
+				? Rest extends keyof LocalStorageData
+					? LocalStorageData[Rest]
+					: unknown
+				:
+				K extends keyof SettingsTypeMap
+					? SettingsTypeMap[K]
+					:
+					unknown;
 
 export type SettingMetadata = {
 	uses: number[];

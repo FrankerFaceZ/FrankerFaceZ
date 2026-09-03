@@ -313,7 +313,7 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 		this.log.verbose(`Twitch Chunk Loaded: ${chunk_ids} (${names?.join(', ')})`);
 		this.log.verbose(`Modules: ${Object.keys(modules)}`);
 
-		const res = this._original_loader!.call(this._original_store, data, ...args); // eslint-disable-line prefer-rest-params
+		const res = this._original_loader!.call(this._original_store, data, ...args);  
 
 		//this.emit(':chunk-loaded', chunk_ids, names, modules);
 

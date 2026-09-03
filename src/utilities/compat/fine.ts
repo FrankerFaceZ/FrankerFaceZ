@@ -76,7 +76,7 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		}
 
 		if ( this.root_element && ! root ) {
-			let key = Fine.findAccessor(this.root_element, '__reactContainer');
+			const key = Fine.findAccessor(this.root_element, '__reactContainer');
 			if ( key ) {
 				this.react_root = null;
 				this.react = this.root_element[key];
@@ -85,12 +85,12 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		}
 
 		//if ( ! this.root_element || ! this.root_element._reactRootContainer ) {
-			if ( tries > 500 )
-				throw new Error('Unable to find React after 25 seconds');
+		if ( tries > 500 )
+			throw new Error('Unable to find React after 25 seconds');
 
-			this.root_element = null;
-			return new Promise<void>(r =>
-				setTimeout(r, 50)).then(() => this.onEnable(tries+1));
+		this.root_element = null;
+		return new Promise<void>(r =>
+			setTimeout(r, 50)).then(() => this.onEnable(tries+1));
 		//}
 
 		/*this.react_root = this.root_element._reactRootContainer;
@@ -684,7 +684,7 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		if ( ! Array.isArray(nodes) )
 			nodes = [nodes];
 
-		for(let input of nodes) {
+		for(const input of nodes) {
 			if ( ! this._live_waiting.length || ! this._waiting_crit )
 				break;
 

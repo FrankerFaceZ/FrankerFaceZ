@@ -352,7 +352,7 @@ export default class Metadata extends Module {
 			setup(data) {
 				let created = data?.channel?.live_since;
 				if ( ! created )
-						return null;
+					return null;
 
 				if ( !(created instanceof Date) )
 					created = new Date(created);
@@ -497,7 +497,7 @@ export default class Metadata extends Module {
 
 			click(src) {
 				const title = this.settings.get('context.title') || 'Untitled';
-				const name = title.replace(/[\\/:"*?<>|]+/, '_') + '.mp4';
+				const name = `${title.replace(/[\\/:"*?<>|]+/, '_')  }.mp4`;
 
 				const link = createElement('a', {
 					target: '_blank',
@@ -727,14 +727,14 @@ export default class Metadata extends Module {
 						:*/ null;
 
 				const buffer = stats.bufferSize > 0
-						? (<div>{this.i18n.t(
-							'metadata.player-stats.buffered',
-							'Buffered: {buffered} seconds',
-							{
-								buffered: stats.bufferSize.toFixed(2)
-							}
-						)}</div>)
-						: null;
+					? (<div>{this.i18n.t(
+						'metadata.player-stats.buffered',
+						'Buffered: {buffered} seconds',
+						{
+							buffered: stats.bufferSize.toFixed(2)
+						}
+					)}</div>)
+					: null;
 
 				if ( data.old )
 					return [

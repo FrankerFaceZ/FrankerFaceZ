@@ -342,7 +342,7 @@ export class TranslationCore {
 		return thing;
 	}
 
-	formatRelativeTime(value: string | number | Date, format?: string) { // eslint-disable-line class-methods-use-this
+	formatRelativeTime(value: string | number | Date, format?: string) {  
 		const d = dayjs(value),
 			without_suffix = format === 'plain';
 

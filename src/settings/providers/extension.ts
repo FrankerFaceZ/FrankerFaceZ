@@ -22,7 +22,7 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 
 		// We need a promise since we need to message the extension and
 		// request to know if it has keys or not.
-		return new Promise<boolean>((resolve) => {
+		return new Promise<boolean>(resolve => {
 			let responded = false,
 				timeout: ReturnType<typeof setTimeout> | null = null ;
 

@@ -158,7 +158,7 @@ export type ScreenOptions = {
  * @param options The options to choose with.
  */
 export function matchScreen(screens: ScreenDimensions[], options: ScreenOptions) {
-	let match = undefined;
+	let match;
 	let mscore = 0;
 
 	for(let i = 0; i < screens.length; i++) {
@@ -798,7 +798,7 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
 
 	// Wrap the function, just in case.
 	if ( typeof object === 'function' )
-		return function(this: ThisParameterType<T>, ...args: any[]) { return object.apply(this, args); } as T // eslint-disable-line no-invalid-this
+		return function(this: ThisParameterType<T>, ...args: any[]) { return object.apply(this, args); } as T  
 
 	if ( object instanceof RegExp )
 		return new RegExp(object.source, object.flags) as T;
@@ -835,7 +835,7 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
 	if ( object instanceof Map ) {
 		const out = new Map<any, any>();
 		for(const [key, val] of object.entries()) {
-			let k = typeof key === 'object' ? deep_copy(key) : key,
+			const k = typeof key === 'object' ? deep_copy(key) : key,
 				v = typeof val === 'object' ? deep_copy(val) : val;
 
 			out.set(k, v);
@@ -885,7 +885,7 @@ export function makeAddonIdChecker(input: string) {
 	// Special: pronouns (badges)
 	input = input.replace(/\bpronouns\b/g, '(?:pronouns|addon-pn)');
 
-	return new RegExp('\\b' + input + '\\b', 'i');
+	return new RegExp(`\\b${  input  }\\b`, 'i');
 }
 
 
@@ -1452,8 +1452,8 @@ export function importRsaKey(pem: string, uses: KeyUsage[] = ['verify']) {
 		is_private ? 'pkcs8' : 'spki',
 		buffer,
 		{
-			name: "RSA-PSS",
-			hash: "SHA-256"
+			name: 'RSA-PSS',
+			hash: 'SHA-256'
 		},
 		true,
 		uses

@@ -174,7 +174,7 @@ export default class Loadable extends Module {
 				try {
 					const type = this.props.component;
 					if ( t.overrides.has(type) && this.state ) {
-						let cmp = this.state.Component;
+						const cmp = this.state.Component;
 						if ( typeof cmp === 'function' && ! (cmp as any).ffzWrapped ) {
 							const React = t.site.getReact(),
 								createElement = React && React.createElement;

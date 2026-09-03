@@ -539,7 +539,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		this._rebuildTwitchKey(key, false, old_val);
 	}
 
-	hasTwitchOverride(key: string) { // eslint-disable-line class-methods-use-this
+	hasTwitchOverride(key: string) {  
 		const overrides = this._getOverrideCookie(),
 			experiments = overrides.experiments;
 

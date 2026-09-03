@@ -421,9 +421,9 @@ export class Tooltip {
 
 		// Build the DOM.
 		const arrow = createElement('div', {
-			className: opts.arrowClass,
-			'x-arrow': true
-		}),
+				className: opts.arrowClass,
+				'x-arrow': true
+			}),
 			inner = tip.element = createElement('div', opts.innerClass),
 
 			el = tip.outer = createElement('div', {

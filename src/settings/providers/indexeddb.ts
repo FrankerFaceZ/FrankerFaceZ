@@ -23,7 +23,7 @@ export class IndexedDBProvider extends AdvancedSettingsProvider {
 	}
 
 	static hasContent() {
-		return new Promise<boolean>((resolve) => {
+		return new Promise<boolean>(resolve => {
 			const request = window.indexedDB.open('FFZ', DB_VERSION);
 			request.onerror = () => resolve(false);
 

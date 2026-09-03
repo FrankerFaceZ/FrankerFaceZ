@@ -198,7 +198,7 @@ export class EventEmitter<
 			if ( ! val || ! val.length )
 				continue;
 
-			let other_val = other.__listeners[key];
+			const other_val = other.__listeners[key];
 			if ( Array.isArray(other_val) ) {
 				other_val.push(...val);
 				other.__sortListeners(key);
@@ -477,7 +477,7 @@ export class EventEmitter<
 	 */
 	listeners<K extends NamespacedEventKey<TNamespace, TEventMap>>(
 		event: K)
-	: ListenerInfo<NamespacedEventArgs<K, TNamespace, TEventMap>> {
+		: ListenerInfo<NamespacedEventArgs<K, TNamespace, TEventMap>> {
 		const list = this.__listeners[event];
 		return list ? Array.from(list) as any : [];
 	}
@@ -529,7 +529,7 @@ export class EventEmitter<
 
 		for(const item of list) {
 			const [fn, ctx, ttl] = item;
-			let ret: ListenerReturnType = undefined;
+			let ret: ListenerReturnType = undefined; // eslint-disable-line no-undef-init -- definite assignment for the type checker
 			try {
 				ret = fn.apply(ctx, data);
 			} catch(err) {

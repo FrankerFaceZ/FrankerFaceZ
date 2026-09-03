@@ -1,6 +1,6 @@
 'use strict';
 
-import type { SettingUiDefinition, SettingValidator } from "./types";
+import type { SettingUiDefinition, SettingValidator } from './types';
 
 
 function do_number(value: any, definition: SettingUiDefinition<number>) {

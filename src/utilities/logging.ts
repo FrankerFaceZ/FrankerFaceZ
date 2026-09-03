@@ -1,4 +1,4 @@
-import type { ClientVersion } from "./types";
+import type { ClientVersion } from './types';
 import { forwardLog, installDevLogForwarder } from './dev-log';
 
 const RAVEN_LEVELS: Record<number, string> = {
@@ -302,7 +302,7 @@ export class Logger {
 		let strings = '';
 		if ( default_style !== '' ) {
 			while(result.length > 0 && typeof result[0] === 'string') {
-				strings += ' ' + result.shift();
+				strings += ` ${  result.shift()}`;
 			}
 		}
 

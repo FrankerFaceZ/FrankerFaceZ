@@ -1,9 +1,9 @@
 'use strict';
 
-import type Logger from "utilities/logging";
-import type SettingsProfile from "./profile";
-import type { SettingDefinition, SettingsTypeHandler } from "./types";
-import type SettingsContext from "./context";
+import type Logger from 'utilities/logging';
+import type SettingsProfile from './profile';
+import type { SettingDefinition, SettingsTypeHandler } from './types';
+import type SettingsContext from './context';
 
 // ============================================================================
 // Settings Types

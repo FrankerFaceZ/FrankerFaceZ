@@ -5,6 +5,7 @@ const globals = require('globals');
 const vue = require('eslint-plugin-vue');
 const react = require('eslint-plugin-react');
 const stylistic = require('@stylistic/eslint-plugin');
+const tseslint = require('typescript-eslint');
 
 // Globals injected by webpack's EsbuildPlugin define step (see webpack.config.js).
 const BUILD_GLOBALS = {
@@ -50,7 +51,7 @@ module.exports = [
 	...vue.configs['flat/vue2-recommended'],
 
 	{
-		files: ['**/*.{js,jsx,vue}'],
+		files: ['**/*.{js,jsx,vue,ts,tsx}'],
 
 		plugins: {
 			react,
@@ -202,6 +203,34 @@ module.exports = [
 			// Dropped: react/jsx-filename-extension (crashes on ESLint 10),
 			// valid-jsdoc (removed in ESLint 9), no-catch-shadow and
 			// no-return-await (deprecated as obsolete).
+		}
+	},
+
+	// TypeScript files share the rules above, parsed by typescript-eslint.
+	// Rules the type checker already covers, or that misfire on TypeScript
+	// syntax (overloads, declaration merging, parameter properties), are
+	// swapped for their TypeScript-aware versions or turned off.
+	{
+		files: ['**/*.{ts,tsx}'],
+
+		languageOptions: {
+			parser: tseslint.parser
+		},
+
+		plugins: {
+			'@typescript-eslint': tseslint.plugin
+		},
+
+		rules: {
+			'no-undef': 'off',
+			'no-redeclare': 'off',
+			'no-dupe-class-members': 'off',
+			'no-useless-constructor': 'off',
+			'no-unused-vars': 'off',
+			'@typescript-eslint/no-unused-vars': ['error', {
+				'caughtErrors': 'none',
+				'args': 'none'
+			}]
 		}
 	}
 ];

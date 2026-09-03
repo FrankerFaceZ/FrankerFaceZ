@@ -566,12 +566,12 @@ export function highlightJson(object: any, pretty = false, depth = 1, max_depth 
 		return `<span class=ffz-ct--string depth="${depth}">${sanitize(JSON.stringify(object))}</span>`;
 
 	if ( Array.isArray(object) )
-		return `<span class="ffz-ct--obj-open" depth="${depth}">[</span>`
-			+ (object.length > 0 ? (
+		return `<span class="ffz-ct--obj-open" depth="${depth}">[</span>${
+			object.length > 0 ? (
 				object.map(x => (pretty ? `\n${indent_inner}` : '') + highlightJson(x, pretty, depth + 1, max_depth)).join(`<span class="ffz-ct--obj-sep" depth="${depth}">, </span>`)
 				+ (pretty ? `\n${indent}` : '')
-			) : '')
-			+ `<span class="ffz-ct--obj-close" depth="${depth}">]</span>`;
+			) : ''
+		}<span class="ffz-ct--obj-close" depth="${depth}">]</span>`;
 
 	const out = [];
 

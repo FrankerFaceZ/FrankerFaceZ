@@ -129,7 +129,7 @@ class FrankerFaceZ extends Module {
 		// Core Systems
 		// ========================================================================
 
-		if (!! document.body.dataset.ffzExtension)
+		if (document.body.dataset.ffzExtension)
 			installPort(this);
 
 		this.inject('settings', SettingsManager);

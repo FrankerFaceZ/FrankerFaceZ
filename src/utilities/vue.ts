@@ -179,7 +179,7 @@ export class VueModule extends Module<'vue'> {
 			vue.prototype.$i18n = this._vue_i18n;
 		}
 
-		vue.component('t-list', {
+		vue.component('TList', {
 			props: {
 				tag: {
 					required: false
