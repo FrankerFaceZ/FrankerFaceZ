@@ -6,7 +6,7 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 
 declare module 'utilities/types' {
 	interface ModuleMap {

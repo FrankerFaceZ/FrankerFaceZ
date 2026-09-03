@@ -1,5 +1,5 @@
-import { EventEmitter } from "../utilities/events";
-import { set_equals, shallow_object_equals } from "../utilities/object";
+import { EventEmitter } from '../utilities/events';
+import {set_equals} from '../utilities/object';
 
 export type PubSubClientEvents = {
 	connect: [event: Event];
@@ -56,7 +56,7 @@ export class PubSubClient extends EventEmitter<PubSubClientEvents> {
 		if ( this._reconnectTimer )
 			return;
 
-		let delay = 250 + (wantDelay
+		const delay = 250 + (wantDelay
 			? Math.floor(this._failedConnections * (Math.random() * 5000) + 5000)
 			: 0);
 		this._reconnectTimer = setTimeout(this._performReconnect, delay);

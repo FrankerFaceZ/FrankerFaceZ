@@ -4,7 +4,7 @@
 // Loading Tracker
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import type SettingsManager from './settings';
 
 

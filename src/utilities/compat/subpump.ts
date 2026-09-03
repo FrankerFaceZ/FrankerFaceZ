@@ -5,7 +5,7 @@
 // It controls Twitch PubSub.
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { FFZEvent } from 'utilities/events';
 
 declare global {
@@ -137,7 +137,7 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 
 	onEnable(tries = 0) {
 		const instance = window.__twitch_pubsub_client;
-			//instances = window.__Twitch__pubsubInstances;
+		//instances = window.__Twitch__pubsubInstances;
 
 		if ( ! instance ) { //} && ! instances ) {
 			if ( tries > 10 )

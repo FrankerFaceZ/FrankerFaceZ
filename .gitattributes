@@ -1,0 +1,9 @@
+# Keep line endings LF on every platform; .editorconfig and the lint
+# linebreak-style rule both expect it.
+* text=auto eol=lf
+*.png binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary

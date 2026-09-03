@@ -5,8 +5,8 @@
 // It consumes webpack.
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
-import {has, generateUUID, makeAddonIdChecker} from 'utilities/object';
+import Module, { type GenericModule } from 'utilities/module';
+import {has, generateUUID} from 'utilities/object';
 import { DEBUG } from 'utilities/constants';
 
 declare module 'utilities/types' {
@@ -93,11 +93,6 @@ const NAMES = [
 	'webpackChunktwitch_twilight',
 	'webpackChunktwitch_sunlight',
 	'webpackJsonp_N_E'
-];
-
-const HARD_MODULES = [
-	[0, 'vendor'],
-	[1, 'core']
 ];
 
 
@@ -313,7 +308,7 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 		this.log.verbose(`Twitch Chunk Loaded: ${chunk_ids} (${names?.join(', ')})`);
 		this.log.verbose(`Modules: ${Object.keys(modules)}`);
 
-		const res = this._original_loader!.call(this._original_store, data, ...args); // eslint-disable-line prefer-rest-params
+		const res = this._original_loader!.call(this._original_store, data, ...args);  
 
 		//this.emit(':chunk-loaded', chunk_ids, names, modules);
 
@@ -333,27 +328,31 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 			return Promise.resolve(this._require);
 
 		if ( ! this._require_waiter )
-			this._require_waiter = new Promise<WebpackRequireV4>(async (resolve, reject) => {
-				let fn = await this.waitForLoader();
-				fn = fn.bind(this._original_store);
+			this._require_waiter = new Promise<WebpackRequireV4>((resolve, reject) => {
+				this.waitForLoader().then(loader => {
+					const fn = loader.bind(this._original_store);
 
-				// Inject a fake module and use that to grab require.
-				const id = `ffz-loader$${generateUUID()}`;
-				fn([
-					[id],
-					{
-						[id]: (module, exports, __webpack_require__) => {
-							this._require = __webpack_require__;
-							this._loadChunkNames();
-							resolve(this._require);
-							const end = performance.now();
-							this.log.info(`Hooked webpack require after ${Math.round(100*(end - this.start_time))/100}ms`);
-							this._processAllModules();
-							this._require_waiter = null;
-						}
-					},
-					(req: WebpackRequireV4) => req(id)
-				]);
+					// Inject a fake module and use that to grab require.
+					const id = `ffz-loader$${generateUUID()}`;
+					fn([
+						[id],
+						{
+							[id]: (module, exports, __webpack_require__) => {
+								this._require = __webpack_require__;
+								this._loadChunkNames();
+								resolve(this._require);
+								const end = performance.now();
+								this.log.info(`Hooked webpack require after ${Math.round(100*(end - this.start_time))/100}ms`);
+								this._processAllModules();
+								this._require_waiter = null;
+							}
+						},
+						(req: WebpackRequireV4) => req(id)
+					]);
+				}).catch(err => {
+					this._require_waiter = null;
+					reject(err);
+				});
 			});
 
 		return this._require_waiter;
@@ -609,17 +608,17 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 	}
 
 
+	// `chunks` is accepted for compatibility; the chunk filter below is
+	// currently disabled, so it has no effect.
 	findDeep(chunks: string | string[] | null, predicate: DeepPredicate, multi = true) {
-		if ( chunks && ! Array.isArray(chunks) )
-			chunks = [chunks];
-
 		if ( ! this._require || ! this._original_store )
 			throw new Error('We do not have webpack');
 
-		const out: unknown[] = [],
-			names = this._chunk_names;
-		for(const [cs, modules] of this._original_store) {
-			/*if ( chunks ) {
+		const out: unknown[] = [];
+		for(const modules of this._original_store.values()) {
+			/* Disabled chunk filter. It needs `[cs, modules]` from the store
+			entries and `names = this._chunk_names`.
+			if ( chunks ) {
 				let matched = false;
 				for(const c of cs) {
 					if ( chunks.includes(c) || chunks.includes(`${c}`) || (names[c] && chunks.includes(names[c])) ) {

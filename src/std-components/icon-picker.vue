@@ -78,6 +78,7 @@ import {escape_regex, deep_copy, debounce} from 'utilities/object';
 import {load, maybeLoad, ICONS as FA_ICONS, ALIASES as FA_ALIASES} from 'utilities/font-awesome';
 
 import FFZ_ICONS from 'utilities/ffz-icons';
+import {TWITCH_ICONS} from 'utilities/twitch-icons';
 
 const FFZ_ALIASES = {
 	'block': ['ban', 'block'],
@@ -86,8 +87,9 @@ const FFZ_ALIASES = {
 };
 
 
-const ICONS = FFZ_ICONS
-	.map(x => [`ffz-i-${x}`, FFZ_ALIASES[x] ? FFZ_ALIASES[x].join(' ') : x])
+const ICONS = TWITCH_ICONS
+	.map(([name, aliases]) => [`ffz-i-tw-${name}`, aliases])
+	.concat(FFZ_ICONS.map(x => [`ffz-i-${x}`, FFZ_ALIASES[x] ? FFZ_ALIASES[x].join(' ') : x]))
 	.concat(FA_ICONS.filter(x => ! FFZ_ICONS.includes(x)).map(x => [`ffz-fa fa-${x}`, FA_ALIASES[x] ? FA_ALIASES[x].join(' ') : x]));
 
 export default {

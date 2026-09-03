@@ -3,7 +3,6 @@
 import dayjs from 'dayjs';
 //import RavenLogger from './raven';
 
-import Logger from 'utilities/logging';
 import Module, { State } from 'utilities/module';
 import { timeout } from 'utilities/object';
 
@@ -31,7 +30,7 @@ import * as Utility_DOM from 'utilities/dom';
 import * as Utility_Events from 'utilities/events';
 import * as Utility_FontAwesome from 'utilities/font-awesome';
 import * as Utility_GraphQL from 'utilities/graphql';
-import * as Utility_Logging from 'utilities/logging';
+import Logger, * as Utility_Logging from 'utilities/logging';
 import * as Utility_Module from 'utilities/module';
 import * as Utility_Object from 'utilities/object';
 import * as Utility_Time from 'utilities/time';
@@ -129,7 +128,7 @@ class FrankerFaceZ extends Module {
 		// Core Systems
 		// ========================================================================
 
-		if (!! document.body.dataset.ffzExtension)
+		if (document.body.dataset.ffzExtension)
 			installPort(this);
 
 		this.inject('settings', SettingsManager);
@@ -221,13 +220,13 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 			/*, 'lazy-once' */
 		);
 
-		const modules = this.loadFromContext(ctx, this.core_log);
+		const modules = await this.loadFromContext(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
 	}
 
 
-	async enableInitialModules() {
+	enableInitialModules() {
 		const promises = [];
 		for(const module of Object.values((this as any).__modules)) {
 			if ( module instanceof Module && module.should_enable )

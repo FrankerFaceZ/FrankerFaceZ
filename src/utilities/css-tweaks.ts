@@ -5,11 +5,11 @@
 // Tweak some CSS
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {ManagedStyle} from 'utilities/dom';
 import {has, once} from 'utilities/object';
 
-declare module "utilities/types" {
+declare module 'utilities/types' {
 	interface ModuleMap {
 		'site.css_tweaks': CSSTweaks;
 	}
@@ -139,7 +139,7 @@ export default class CSSTweaks<TPath extends string = 'site.css_tweaks'> extends
 		if ( this.style.has(key) )
 			return;
 
-		else if ( ! this._chunks_loaded ) {
+		if ( ! this._chunks_loaded ) {
 			this._loadChunks().then(() => this._apply(key));
 
 		} else if ( ! has(this.chunks, key) ) {

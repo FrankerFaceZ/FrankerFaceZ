@@ -10,7 +10,7 @@ import RelativeTime from 'dayjs/plugin/relativeTime';
 import {get} from 'utilities/object';
 import {duration_to_string} from 'utilities/time';
 
-import Parser, { MessageAST, MessageNode, MessageVariable, ParserOptions } from '@ffz/icu-msgparser';
+import Parser, { type MessageAST, type MessageNode, type MessageVariable, type ParserOptions } from '@ffz/icu-msgparser';
 
 dayjs.extend(RelativeTime);
 
@@ -342,7 +342,7 @@ export class TranslationCore {
 		return thing;
 	}
 
-	formatRelativeTime(value: string | number | Date, format?: string) { // eslint-disable-line class-methods-use-this
+	formatRelativeTime(value: string | number | Date, format?: string) {  
 		const d = dayjs(value),
 			without_suffix = format === 'plain';
 
@@ -538,7 +538,8 @@ export class TranslationCore {
 			locale = this.defaultLocale;
 
 		} else {
-			let parsed: MessageAST | null = null;
+			let parsed: MessageAST | null = null,
+				failed = false;
 			try {
 				parsed = this.parser.parse(phrase);
 			} catch(err) {
@@ -548,11 +549,14 @@ export class TranslationCore {
 				if ( ! settings.noWarn && this.warn )
 					this.warn(`Error parsing i18n phrase for key "${key}": ${phrase}`, err);
 
-				ast = ['parsing error'];
-				locale = this.defaultLocale;
+				failed = true;
 			}
 
-			if ( parsed ) {
+			if ( failed ) {
+				ast = ['parsing error'];
+				locale = this.defaultLocale;
+
+			} else if ( parsed ) {
 				ast = parsed;
 				locale = this.locale;
 

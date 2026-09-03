@@ -1,7 +1,7 @@
 'use strict';
 
-import { AdvancedSettingsProvider } from "./providers";
-import type { SettingsClearable } from "./types";
+import { AdvancedSettingsProvider } from './providers';
+import type { SettingsClearable } from './types';
 
 // ============================================================================
 // Clearable Settings

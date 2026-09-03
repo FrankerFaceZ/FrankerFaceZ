@@ -5,11 +5,11 @@
 // ============================================================================
 
 import {parse, tokensToRegExp, tokensToFunction} from 'path-to-regexp';
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {has, deep_equals, sleep} from 'utilities/object';
 import type Fine from './fine';
 import type { OptionalPromise } from 'utilities/types';
-import { ReactNode, ReactStateNode } from './react-types';
+import type { ReactStateNode } from './react-types';
 
 declare module 'utilities/types' {
 	interface ModuleEventMap {
@@ -152,6 +152,7 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 			return this.history.location;
 		else if (this.router)
 			return this.router.router.state.location;
+		return undefined;
 	}
 
 	push(url: string, state: unknown) {

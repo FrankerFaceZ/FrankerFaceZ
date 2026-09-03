@@ -158,7 +158,7 @@ export type ScreenOptions = {
  * @param options The options to choose with.
  */
 export function matchScreen(screens: ScreenDimensions[], options: ScreenOptions) {
-	let match = undefined;
+	let match;
 	let mscore = 0;
 
 	for(let i = 0; i < screens.length; i++) {
@@ -798,7 +798,7 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
 
 	// Wrap the function, just in case.
 	if ( typeof object === 'function' )
-		return function(this: ThisParameterType<T>, ...args: any[]) { return object.apply(this, args); } as T // eslint-disable-line no-invalid-this
+		return function(this: ThisParameterType<T>, ...args: any[]) { return object.apply(this, args); } as T  
 
 	if ( object instanceof RegExp )
 		return new RegExp(object.source, object.flags) as T;
@@ -835,7 +835,7 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
 	if ( object instanceof Map ) {
 		const out = new Map<any, any>();
 		for(const [key, val] of object.entries()) {
-			let k = typeof key === 'object' ? deep_copy(key) : key,
+			const k = typeof key === 'object' ? deep_copy(key) : key,
 				v = typeof val === 'object' ? deep_copy(val) : val;
 
 			out.set(k, v);
@@ -862,7 +862,7 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
  * an example.
  */
 export function normalizeAddonIdForComparison(input: string) {
-	return input.toLowerCase().replace(/[\.\_\-]+/, '-');
+	return input.toLowerCase().replace(/[._-]+/g, '-');
 }
 
 /**
@@ -874,7 +874,7 @@ export function normalizeAddonIdForComparison(input: string) {
  */
 export function makeAddonIdChecker(input: string) {
 	input = escape_regex(normalizeAddonIdForComparison(input));
-	input = input.replace(/-+/g, '[\.\_\-]+');
+	input = input.replace(/-+/g, '[._-]+');
 
 	// Special: ffzap-bttv
 	input = input.replace(/\bbttv\b/g, '(?:bttv|betterttv)');
@@ -885,7 +885,7 @@ export function makeAddonIdChecker(input: string) {
 	// Special: pronouns (badges)
 	input = input.replace(/\bpronouns\b/g, '(?:pronouns|addon-pn)');
 
-	return new RegExp('\\b' + input + '\\b', 'i');
+	return new RegExp(`\\b${  input  }\\b`, 'i');
 }
 
 
@@ -955,11 +955,11 @@ export function pick_random(obj: any) {
 /**
  * Escape a string for inclusion in a regular expression.
  */
-export const escape_regex: (str: string) => string = /*(RegExp as any).escape
-	? (str: string) => ((RegExp as any).escape(` ${str}`) as string).slice(1)
-	:*/ function escape_regex(str: string) {
-		return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	};
+// RegExp.escape could replace this once it is available everywhere:
+// (str) => RegExp.escape(` ${str}`).slice(1)
+export function escape_regex(str: string) {
+	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 
 export function addWordSeparators(str: string) {
@@ -1208,7 +1208,7 @@ export class SourcedSet<T> {
 			return;
 		}
 
-		const sources = [...this._sources?.entries()];
+		const sources = [...this._sources.entries()];
 		sources.sort((a, b) => this._sourceSortFn!(a[0], b[0]));
 
 		this._sorted_sources = sources.map(entry => entry[1]);
@@ -1452,8 +1452,8 @@ export function importRsaKey(pem: string, uses: KeyUsage[] = ['verify']) {
 		is_private ? 'pkcs8' : 'spki',
 		buffer,
 		{
-			name: "RSA-PSS",
-			hash: "SHA-256"
+			name: 'RSA-PSS',
+			hash: 'SHA-256'
 		},
 		true,
 		uses

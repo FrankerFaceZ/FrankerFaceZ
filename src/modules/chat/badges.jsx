@@ -4,13 +4,20 @@
 // Badge Handling
 // ============================================================================
 
-import {NEW_API, SERVER, IS_WEBKIT, IS_FIREFOX, WEBKIT_CSS as WEBKIT, DEBUG} from 'utilities/constants';
+import {NEW_API, IS_FIREFOX, WEBKIT_CSS as WEBKIT, DEBUG} from 'utilities/constants';
 
 import {createElement, ManagedStyle} from 'utilities/dom';
 import {has, makeAddonIdChecker, maybe_call, SourcedSet} from 'utilities/object';
 import Module, { buildAddonProxy } from 'utilities/module';
 import { ColorAdjuster } from 'utilities/color';
 import { NoContent } from 'utilities/tooltip';
+import { defineSettings } from './badge_settings';
+import { CSS_MASK_IMAGE, generateOverrideCSS, generateBadgeCSS } from './badge_css';
+import { getBadgeCategory, fixBadgeData } from './badge_data';
+
+// Re-exported for compatibility with existing importers.
+export { generateOverrideCSS, generateBadgeCSS } from './badge_css';
+export { getBadgeCategory, fixBadgeData } from './badge_data';
 
 const CSS_BADGES = {
 	1: {
@@ -89,118 +96,6 @@ export const BADGE_POSITIONS = {
 };
 
 
-const NO_REPEAT = 'background-repeat:no-repeat;background-position:center;',
-	BASE_IMAGE = `${SERVER}/static/badges/twitch/`,
-	CSS_MASK_IMAGE = IS_WEBKIT ? 'webkitMaskImage' : 'maskImage',
-
-	CSS_TEMPLATES = {
-		0: data => `${data.fore ? `color:${data.fore};` : ''}background:${data.image||''} ${data.color};background-size:${data.scale*1.8}rem;${data.svg ? '' : `background-image:${data.image_set};`}${NO_REPEAT}`,
-		1: data => `${CSS_TEMPLATES[0](data)}border-radius:${data.scale*.2}rem;`,
-		2: data => `${CSS_TEMPLATES[0](data)}border-radius:${data.scale*.9}rem;background-size:${data.scale*1.6}rem;`,
-		3: data => `${data.fore ? `color:${data.fore};` : ''}background:${data.color};border-radius:${data.scale*.9}rem;`,
-		4: data => `${CSS_TEMPLATES[3](data)}height:${data.scale}rem;min-width:${data.scale}rem;`,
-		5: data => `background:${data.image};background-size:${data.scale*1.8}rem;${data.svg ? `` : `background-image:${data.image_set};`}${NO_REPEAT}`,
-		6: data => `background:linear-gradient(${data.color},${data.color});${WEBKIT}mask-image:${data.image};${WEBKIT}mask-size:${data.scale*1.8}rem ${data.scale*1.8}rem;${data.svg ? `` : `${WEBKIT}mask-image:${data.image_set};`}`
-	};
-
-
-export function generateOverrideCSS(data, style) {
-	const urls = data.urls || {1: data.image},
-		image = `url("${urls[1]}")`,
-		image_set = `${WEBKIT}image-set(${image} 1x${urls[2] ? `, url("${urls[2]}") 2x` : ''}${urls[4] ? `, url("${urls[4]}") 4x` : ''})`;
-
-	if ( style === 3 || style === 4 )
-		return '';
-
-	if ( style === 6 )
-		return `${WEBKIT}mask-image:${image} !important;${WEBKIT}mask-image:${image_set} !important;`;
-	else
-		return `background-image:${image} !important;background-image:${image_set} !important;`;
-}
-
-
-export function generateBadgeCSS(badge, version, data, style, is_dark, badge_version = 2, color_fixer, fg_fixer, scale = 1, clickable = false) {
-	let color = data.color || 'transparent',
-		fore = data.fore || is_dark ? '#fff' : '#000',
-		base_image = data.image || (data.addon ? null : `${BASE_IMAGE}${badge_version}/${badge}${data.svg ? '.svg' : `/${version}/`}`),
-		trans = false,
-		invert = false,
-		svg, image, image_set;
-
-	if ( base_image && style > 4 ) {
-		const td = data.trans || {};
-		color = td.color || color;
-
-		if ( td.image ) {
-			trans = true;
-			if ( td.image !== true )
-				base_image = td.image;
-		}
-
-		if ( has(td, 'invert') )
-			invert = td.invert && ! is_dark;
-		else
-			invert = style === 5 && ! is_dark;
-	}
-
-	if ( style === 3 || style === 4 ) {
-		if ( color === 'transparent' && data.trans )
-			color = data.trans.color || color;
-	}
-
-	if ( color === 'transparent' )
-		style = 0;
-
-	if ( base_image && style !== 3 && style !== 4 ) {
-		svg = base_image.endsWith('.svg');
-		if ( data.urls )
-			image = `url("${data.urls[scale]}")`;
-		else
-			image = `url("${svg ? base_image : `${base_image}${scale}${trans ? '_trans' : ''}.png`}")`;
-
-		if ( data.urls && scale === 1 ) {
-			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[2] ? `, url("${data.urls[2]}") 2x` : ''}${data.urls[4] ? `, url("${data.urls[4]}") 4x` : ''})`
-
-		} else if ( data.urls && scale === 2 ) {
-			image_set = `${WEBKIT}image-set(${image} 1x${data.urls[4] ? `, url("${data.urls[4]}") 2x` : ''})`;
-
-		} else if ( ! svg && scale < 4 ) {
-			if ( scale === 1 )
-				image_set = `${WEBKIT}image-set(${image} 1x, url("${base_image}2${trans ? '_trans' : ''}.png") 2x, url("${base_image}4${trans ? '_trans' : ''}.png") 4x)`;
-
-			else if ( scale === 2 )
-				image_set = `${WEBKIT}image-set(${image} 1x, url("${base_image}4${trans ? '_trans' : ''}.png") 2x)`;
-
-		} else
-			image_set = image;
-	}
-
-	if ( color_fixer && color && color !== 'transparent' )
-		color = color_fixer.process(color) || color;
-
-	if ( fg_fixer && fore && fore !== 'transparent' && color !== 'transparent' ) {
-		fg_fixer.base = color;
-		fore = fg_fixer.process(fore) || fore;
-	}
-
-	if ( ! base_image ) {
-		if ( style > 4 )
-			style = 1;
-		else if ( style > 3 )
-			style = 2;
-	}
-
-	return `${clickable && (data.click_handler || data.click_url || data.click_action) ? 'cursor:pointer;' : ''}${invert ? 'filter:invert(100%);' : ''}${CSS_TEMPLATES[style]({
-		scale: 1,
-		color,
-		fore,
-		image,
-		image_set,
-		svg
-	})}${data.css || ''}`;
-}
-
-
 export default class Badges extends Module {
 	constructor(...args) {
 		super(...args);
@@ -224,122 +119,11 @@ export default class Badges extends Module {
 		this.badges = {};
 		this.twitch_badges = {};
 
-		if ( IS_FIREFOX )
-			this.settings.add('chat.badges.media-queries', {
-				default: true,
-				ui: {
-					path: 'Chat > Badges >> tabs ~> Appearance',
-					title: 'Use @media queries to support High-DPI Badge images in Mozilla Firefox.',
-					description: 'This is required to see high-DPI badges on Firefox because Firefox still has yet to support `image-set()` after more than five years. It may be less reliable.',
-					component: 'setting-check-box'
-				}
-			});
+		// ========================================================================
+		// Settings
+		// ========================================================================
 
-		this.settings.add('chat.badges.unify-bot-badge', {
-			default: 2,
-			ui: {
-				path: 'Chat > Badges > tabs ~> Appearance',
-				title: 'Unified Bot Badge',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'FFZ-Style Badge'},
-					{value: 2, title: 'Twitch-Style Badge'}
-				]
-			}
-		});
-
-		this.settings.add('chat.badges.version', {
-			default: 2,
-			ui: {
-				path: 'Chat > Badges >> tabs ~> Appearance',
-				title: 'Version',
-				component: 'setting-select-box',
-				data: [
-					{value: 1, title: '1 (Pre December 2019)'},
-					{value: 2, title: '2 (Current)'}
-				]
-			}
-		});
-
-		this.settings.add('chat.badges.clickable', {
-			default: 2,
-			process(ctx, val) {
-				if (val === true)
-					return 2;
-				else if (val === false)
-					return 0;
-				return val;
-			},
-			ui: {
-				path: 'Chat > Badges >> Behavior',
-				title: 'Allow clicking badges.',
-				description: 'Certain badges, such as Prime Gaming, act as links when this is enabled.',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Disabled'},
-					{value: 1, title: 'Legacy (Open URLs)'},
-					{value: 2, title: 'Open Badge Card'}
-				]
-			}
-		});
-
-		this.settings.add('chat.badges.fix-colors', {
-			default: true,
-			ui: {
-				path: 'Chat > Badges >> tabs ~> Appearance',
-				title: 'Adjust badge colors for visibility.',
-				description: 'Ensures that badges are visible against the current background.\n\n**Note:** Only affects badges with custom rendering. Subscriber badges, bit badges, etc. are not affected.',
-				component: 'setting-check-box'
-			}
-		});
-
-		this.settings.add('chat.badges.hidden', {
-			default: {},
-			type: 'object_merge',
-			ui: {
-				path: 'Chat > Badges >> tabs ~> Visibility',
-				title: 'Visibility',
-				component: 'badge-visibility',
-				getBadges: cb => this.getSettingsBadges(true, cb)
-			}
-		});
-
-		this.settings.add('chat.badges.custom-mod', {
-			default: true,
-			ui: {
-				path: 'Chat > Badges >> tabs ~> Appearance',
-				title: 'Use custom moderator badges where available.',
-				component: 'setting-check-box'
-			}
-		});
-
-		this.settings.add('chat.badges.custom-vip', {
-			default: true,
-			ui: {
-				path: 'Chat > Badges >> tabs ~> Appearance',
-				title: 'Use custom VIP badges where available.',
-				component: 'setting-check-box'
-			}
-		});
-
-		this.settings.add('chat.badges.style', {
-			default: 1,
-			ui: {
-				path: 'Chat > Badges >> tabs ~> Appearance',
-				title: 'Style',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Square'},
-					{value: 1, title: 'Rounded'},
-					{value: 2, title: 'Circular'},
-					{value: 3, title: 'Circular (Color Only)'},
-					{value: 4, title: 'Circular (Color Only, Small)'},
-					{value: 5, title: 'Transparent'},
-					{value: 6, title: 'Transparent (Colored)'}
-				]
-			}
-		});
+		defineSettings(this);
 
 		this.handleClick = this.handleClick.bind(this);
 	}
@@ -363,6 +147,45 @@ export default class Badges extends Module {
 					callback();
 				});
 		}
+
+		this.collectTwitchSettingsBadges({twitch, social, tcon, game, other});
+
+		if ( include_addons )
+			this.collectAddonSettingsBadges({ffz, addon, specific_addons});
+
+		const out = [
+			{title: 'Twitch: Core', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: Social', id: 'm-social', badges: social},
+			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
+			{title: 'Twitch: Other', id: 'm-other', badges: other},
+			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game}
+		];
+
+		if ( ffz.length )
+			out.push({title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz});
+
+		const addons = this.resolve('addons'),
+			addon_chunks = [];
+
+		for(const [key, val] of Object.entries(specific_addons)) {
+			const addon = addons?.getAddon?.(key),
+				title = addon?.short_name ?? addon?.name ?? key;
+
+			addon_chunks.push({title: `Add-On: ${title}`, id: `m-addon-${key}`, badges: val});
+		}
+
+		addon_chunks.sort((a,b) => a.title.localeCompare(b.title));
+		out.push(...addon_chunks);
+
+		if ( addon.length )
+			out.push({title: 'Add-on', id: 'm-addon', badges: addon});
+
+		return out;
+	}
+
+	/** Sort the known Twitch badges into the settings menu's Twitch categories. */
+	collectTwitchSettingsBadges(buckets) {
+		const {twitch, social, tcon, game, other} = buckets;
 
 		for(const key in this.twitch_badges)
 			if ( has(this.twitch_badges, key) ) {
@@ -409,126 +232,100 @@ export default class Badges extends Module {
 					});
 				}
 			}
+	}
 
-		if ( include_addons ) {
-			const addon_badges_by_id = {};
+	/** Collect FFZ and add-on badges for the settings menu, grouping versions of the same badge. */
+	collectAddonSettingsBadges(buckets) {
+		const {ffz, addon, specific_addons} = buckets;
 
-			for(const [key, badge] of Object.entries(this.badges)) {
-				if ( badge.no_visibility )
-					continue;
+		const addon_badges_by_id = {};
 
-				let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
-					image1x = badge.urls?.[1] || badge.image,
-					color = badge.color || 'transparent';
+		for(const [key, badge] of Object.entries(this.badges)) {
+			if ( badge.no_visibility )
+				continue;
 
-				if ( ! badge.addon ) {
-					image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
-					image1x = `//cdn.frankerfacez.com/badge/${badge.id}/1/rounded`;
-					color = 'transparent';
+			let image = badge.urls ? (badge.urls[2] || badge.urls[1]) : badge.image,
+				image1x = badge.urls?.[1] || badge.image,
+				color = badge.color || 'transparent';
+
+			if ( ! badge.addon ) {
+				image = `//cdn.frankerfacez.com/badge/${badge.id}/2/rounded`;
+				image1x = `//cdn.frankerfacez.com/badge/${badge.id}/1/rounded`;
+				color = 'transparent';
+			}
+
+			let store;
+			if ( typeof badge.addon === 'string' )
+				store = specific_addons[badge.addon] = specific_addons[badge.addon] || [];
+			else
+				store = badge.addon ? addon : ffz;
+
+			let name = badge.title;
+			let extra;
+			try {
+				extra = maybe_call(badge.tooltipExtra, this, null, badge);
+			} catch(err) { extra = null; }
+			if ( extra && !(extra instanceof Promise) )
+				name = name + extra;
+
+			const id = badge.base_id ?? key,
+				is_this = id === key;
+			let existing = addon_badges_by_id[id];
+
+			if ( existing ) {
+				if ( ! existing.versions )
+					existing.versions = [{
+						version: existing.key,
+						name: existing.tipname,
+						color: existing.color,
+						image: existing.image1x,
+						styleImage: `url("${existing.image1x}")`
+					}];
+
+				existing.versions.push({
+					version: key,
+					name,
+					color,
+					image: image1x,
+					styleImage: `url("${image1x}")`
+				});
+
+				if ( is_this ) {
+					existing.name = badge.title;
+					existing.tipname = name;
+					existing.color = color;
+					existing.image = image;
+					existing.styleImage = `url("${image}")`;
 				}
 
-				let store;
-				if ( typeof badge.addon === 'string' )
-					store = specific_addons[badge.addon] = specific_addons[badge.addon] || [];
-				else
-					store = badge.addon ? addon : ffz;
+			} else {
+				existing = {
+					id,
+					key,
+					provider: 'ffz',
+					name: badge.title,
+					tipname: name,
+					color,
+					image,
+					image1x,
+					styleImage: `url("${image}")`
+				};
 
-				let name = badge.title;
-				let extra;
-				try {
-					extra = maybe_call(badge.tooltipExtra, this, null, badge);
-				} catch(err) { extra = null; }
-				if ( extra && !(extra instanceof Promise) )
-					name = name + extra;
-
-				const id = badge.base_id ?? key,
-					is_this = id === key;
-				let existing = addon_badges_by_id[id];
-
-				if ( existing ) {
-					if ( ! existing.versions )
-						existing.versions = [{
-							version: existing.key,
-							name: existing.tipname,
-							color: existing.color,
-							image: existing.image1x,
-							styleImage: `url("${existing.image1x}")`
-						}];
-
-					existing.versions.push({
-						version: key,
-						name,
-						color,
-						image: image1x,
-						styleImage: `url("${image1x}")`
-					});
-
-					if ( is_this ) {
-						existing.name = badge.title;
-						existing.tipname = name;
-						existing.color = color;
-						existing.image = image;
-						existing.styleImage = `url("${image}")`;
-					}
-
-				} else {
-					existing = {
-						id,
-						key,
-						provider: 'ffz',
-						name: badge.title,
-						tipname: name,
-						color,
-						image,
-						image1x,
-						styleImage: `url("${image}")`
-					};
-
-					if ( badge.base_id ) {
-						existing.always_versions = true;
-						existing.versions = [{
-							version: existing.key,
-							name: existing.tipname,
-							color: existing.color,
-							image: existing.image1x,
-							styleImage: `url("${existing.image1x}")`
-						}];
-					}
-
-					addon_badges_by_id[id] = existing;
-					store.push(existing);
+				if ( badge.base_id ) {
+					existing.always_versions = true;
+					existing.versions = [{
+						version: existing.key,
+						name: existing.tipname,
+						color: existing.color,
+						image: existing.image1x,
+						styleImage: `url("${existing.image1x}")`
+					}];
 				}
+
+				addon_badges_by_id[id] = existing;
+				store.push(existing);
 			}
 		}
-
-		const out = [
-			{title: 'Twitch: Core', id: 'm-twitch', badges: twitch},
-			{title: 'Twitch: Social', id: 'm-social', badges: social},
-			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
-			{title: 'Twitch: Other', id: 'm-other', badges: other},
-			{title: 'Twitch: Game', id: 'm-game', key: 'game', badges: game}
-		];
-
-		if ( ffz.length )
-			out.push({title: 'FrankerFaceZ', id: 'm-ffz', badges: ffz});
-
-		const addons = this.resolve('addons'),
-			addon_chunks = [];
-
-		for(const [key, val] of Object.entries(specific_addons)) {
-			const addon = addons?.getAddon?.(key),
-				title = addon?.short_name ?? addon?.name ?? key;
-
-			addon_chunks.push({title: `Add-On: ${title}`, id: `m-addon-${key}`, badges: val});
-		}
-
-		addon_chunks.sort((a,b) => a.title.localeCompare(b.title));
-		out.push(...addon_chunks);
-
-		if ( addon.length )
-			out.push({title: 'Add-on', id: 'm-addon', badges: addon});
-
-		return out;
 	}
 
 
@@ -900,8 +697,18 @@ export default class Badges extends Module {
 
 			room = this.parent.getRoom(room_id, room_login, true);
 
-		let ffz_badges = msg.ffz_badges; // this.getBadges(user_id, user_login, room_id, room_login);
-		let last_slot = 50, slot;
+		const ctx = {hidden_badges, badge_style, custom_mod, custom_vip, is_mask, is_colored, has_image, tb, slotted, twitch_badges, dynamic_data, room_id, room_login, room, msg, skip_hide, ffz_badges: msg.ffz_badges, last_slot: 50, slot: undefined};
+
+		this.cacheTwitchBadges(ctx);
+		this.cacheFFZBadges(ctx);
+
+		return msg.ffz_badge_cache = Array.from(slotted).sort((a,b) => a[0] - b[0]);
+	}
+
+	/** Slots the message's Twitch badges, applying overrides and hidden-badge settings. */
+	cacheTwitchBadges(ctx) {
+		const {hidden_badges, custom_mod, custom_vip, tb, slotted, twitch_badges, dynamic_data, room_id, room_login, room} = ctx;
+		let {ffz_badges, last_slot, slot} = ctx;
 
 		for(const badge_id in twitch_badges)
 			if ( has(twitch_badges, badge_id) ) {
@@ -976,6 +783,13 @@ export default class Badges extends Module {
 					badges
 				});
 			}
+
+		Object.assign(ctx, {ffz_badges, last_slot, slot});
+	}
+
+	/** Slots the message's FFZ and add-on badges around the Twitch ones. */
+	cacheFFZBadges(ctx) {
+		const {hidden_badges, is_mask, is_colored, has_image, slotted, ffz_badges} = ctx;
 
 		if ( Array.isArray(ffz_badges) ) {
 			const handled_ids = new Set;
@@ -1095,7 +909,6 @@ export default class Badges extends Module {
 				}
 		}
 
-		return msg.ffz_badge_cache = Array.from(slotted).sort((a,b) => a[0] - b[0]);
 	}
 
 
@@ -1587,94 +1400,4 @@ export default class Badges extends Module {
 		else
 			this.style.delete('twitch-badges');
 	}
-}
-
-const CORE_BADGES = [
-	'admin',
-	'ambassador',
-	'anonymous-cheerer',
-	'artist-badge',
-	'bot-badge',
-	'broadcaster',
-	'extension',
-	'founder',
-	'game-developer',
-	'global_mod',
-	'lead_moderator',
-	'moderator',
-	'no_audio',
-	'no_video',
-	'partner',
-	'premium',
-	'staff',
-	'subscriber',
-	'turbo',
-	'twitch-dj',
-	'twitchbot',
-	'user-anniversary',
-	'vip'
-];
-
-const SOCIAL_BADGES = [
-	'bits',
-	'bits-leader',
-	'clip-champ',
-	'clip-the-halls',
-	'clips-leader',
-	'hype-train',
-	'moments',
-	'predictions',
-	'social-sharing',
-	'sub-gift-leader',
-	'sub-gifter',
-];
-
-export function getBadgeCategory(key) {
-	if ( CORE_BADGES.includes(key) || key.endsWith('-twitch-staff') )
-		return 'm-twitch';
-	else if ( SOCIAL_BADGES.includes(key) )
-		return 'm-social';
-	else if ( key.startsWith('twitchcon') || key.startsWith('glitchcon') )
-		return 'm-tcon';
-	else if ( /_\d+$/.test(key) )
-		return 'm-game';
-
-	return 'm-other';
-}
-
-export function fixBadgeData(badge) {
-	if ( ! badge )
-		return badge;
-
-	// Duplicate the badge object, because
-	// Apollo results are frozen.
-	badge = {...badge};
-
-	// Click Behavior
-	if ( ! badge.clickAction && badge.onClickAction )
-		badge.clickAction = badge.onClickAction;
-
-	if ( badge.clickAction === 'VISIT_URL' && badge.clickURL )
-		badge.click_url = badge.clickURL;
-
-	if ( badge.clickAction === 'TURBO' )
-		badge.click_url = 'https://www.twitch.tv/products/turbo?ref=chat_badge';
-
-	if ( badge.clickAction === 'SUBSCRIBE' && badge.channelName )
-		badge.click_url = `https://www.twitch.tv/subs/${badge.channelName}`;
-	else if ( badge.clickAction )
-		badge.click_action = 'sub';
-
-	// Subscriber Tier
-	if ( badge.setID === 'subscriber' ) {
-		const id = parseInt(badge.version, 10);
-		if ( ! isNaN(id) && isFinite(id) ) {
-			badge.tier = (id - (id % 1000)) / 1000;
-			if ( badge.tier < 0 )
-				badge.tier = 0;
-		} else
-			badge.tier = 0;
-	}
-
-	return badge;
 }

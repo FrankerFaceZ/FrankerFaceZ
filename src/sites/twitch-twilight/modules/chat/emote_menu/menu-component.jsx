@@ -1,0 +1,1730 @@
+'use strict';
+
+// ============================================================================
+// Emote Menu: MenuComponent
+// The emote menu itself: search, navigation and all sections. Built at runtime because React comes from Twitch; `t` is the EmoteMenu module.
+// ============================================================================
+
+import {maybe_call, set_equals, getTwitchEmoteURL, getTwitchEmoteSrcSet, deep_equals} from 'utilities/object';
+import {TWITCH_GLOBAL_SETS, EmoteTypes, TWITCH_POINTS_SETS, TWITCH_PRIME_SETS, IS_OSX, KNOWN_CODES, REPLACEMENT_BASE, REPLACEMENTS, KEYS} from 'utilities/constants';
+
+import {FFZEvent} from 'src/utilities/events';
+import {TIERS, scrollIntoView, COLLATOR, sort_sets} from './utils';
+import { buildEmoji, checkNewEffects, filterState, getSorter } from './menu-data';
+
+export function createMenuComponent(t, React) {
+	const createElement = React && React.createElement;
+	const storage = t.settings.provider;
+
+	let timer;
+	const doClear = () => requestAnimationFrame(() => t.emit('tooltips:cleanup')),
+		clearTooltips = () => {
+			clearTimeout(timer);
+			setTimeout(doClear, 100);
+		};
+
+	return class FFZEmoteMenuComponent extends React.Component {
+		constructor(props) {
+			super(props);
+
+			this.nav_ref = null;
+			this.saveNavRef = ref => {
+				this.nav_ref = ref;
+			}
+
+			this.ref = null;
+			this.saveScrollRef = ref => {
+				this.ref = ref;
+				this.createObserver();
+			}
+
+			this.sections = [];
+			this.activeSection = -1;
+
+			this.state = {
+				tab: null,
+				active_nav: null,
+				stayLoaded: t.chat.context.get('chat.emote-menu.stay-loaded'),
+				quickNav: t.chat.context.get('chat.emote-menu.show-quick-nav'),
+				animated: t.chat.context.get('chat.emotes.animated'),
+				showHeading: t.chat.context.get('chat.emote-menu.show-heading'),
+				tall: t.chat.context.get('chat.emote-menu.tall'),
+				reducedPadding: t.chat.context.get('chat.emote-menu.reduced-padding'),
+				combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
+				showSearch: t.chat.context.get('chat.emote-menu.show-search'),
+				clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
+				hasNewEffects: false,
+				unlockedEffects: t.settings.provider.get('unlocked-effects', []),
+				tone: t.settings.provider.get('emoji-tone', null)
+			}
+
+			if ( props.visible ) {
+				this.loadData();
+				if ( this.state.wants_plan_info )
+					this.loadFFZPlanData();
+				if ( this.state.wants_resub_info )
+					this.loadFFZSubData();
+			}
+
+			this.rebuildData();
+
+			this.observing = new Map;
+
+			this.addSection = inst => {
+				if ( ! this.sections.includes(inst) )
+					this.sections.push(inst);
+			}
+
+			this.removeSection = inst => {
+				const idx = this.sections.indexOf(inst);
+				if ( idx !== -1 ) {
+					this.sections.splice(idx);
+					if ( idx === this.activeSection )
+						this.activeSection = -1;
+					else if ( idx < this.activeSection )
+						this.activeSection--;
+				}
+			}
+
+			this.startObserving = this.startObserving.bind(this);
+			this.stopObserving = this.stopObserving.bind(this);
+			this.handleObserve = this.handleObserve.bind(this);
+			this.pickTone = this.pickTone.bind(this);
+			this.clickTab = this.clickTab.bind(this);
+			this.clickSideNav = this.clickSideNav.bind(this);
+			//this.clickRefresh = this.clickRefresh.bind(this);
+			this.handleFilterChange = this.handleFilterChange.bind(this);
+			this.handleKeyDown = this.handleKeyDown.bind(this);
+			this.toggleVisibilityControl = this.toggleVisibilityControl.bind(this);
+		}
+
+		createObserver() {
+			if ( this.observer ) {
+				if ( this._observed === this.ref )
+					return;
+
+				this.observer.disconnect();
+				this.observer = this._observed = null;
+			}
+
+			if ( ! this.ref || ! window.IntersectionObserver )
+				return;
+
+			this._observed = this.ref;
+			this.observer = new IntersectionObserver(this.handleObserve, {
+				root: this.ref,
+				rootMargin: '50px 0px',
+				threshold: 0.01
+			});
+
+			for(const element of this.observing.keys())
+				this.observer.observe(element);
+
+			this.observeSoon();
+		}
+
+		observeSoon() {
+			requestAnimationFrame(() => {
+				if ( this.observer )
+					this.handleObserve(this.observer.takeRecords());
+			});
+		}
+
+		destroyObserver() {
+			if ( ! this.observer )
+				return;
+
+			this.observer.disconnect();
+			this.observer = this._observed = null;
+		}
+
+		scrollNavIntoView() {
+			requestAnimationFrame(() => {
+				const el = this.nav_ref?.querySelector?.(`button[data-key="${this.state.active_nav}"]`);
+				if ( el )
+					scrollIntoView(el);
+					//el.scrollIntoView({block: 'nearest', inline: 'start'});
+			});
+		}
+
+		handleObserve(event) {
+			let changed = false,
+				active = this.state.active_nav;
+
+			for(const entry of event) {
+				const inst = this.observing.get(entry.target),
+					intersecting = entry.isIntersecting;
+				if ( ! inst || inst.state.intersecting === intersecting )
+					continue;
+
+				changed = true;
+				inst.setState({intersecting});
+
+				if ( intersecting )
+					active = inst.props?.data?.key;
+			}
+
+			if ( changed ) {
+				requestAnimationFrame(clearTooltips);
+
+				if ( ! this.lock_active && active !== this.state.active_nav )
+					this.setState({
+						active_nav: active
+					}, () => this.scrollNavIntoView());
+			}
+		}
+
+		startObserving(element, inst) {
+			const old_inst = this.observing.get(element);
+			if ( inst === old_inst )
+				return;
+
+			if ( old_inst )
+				this.stopObserving(element);
+
+			this.observing.set(element, inst);
+			if ( this.observer )
+				this.observer.observe(element);
+
+			this.observeSoon();
+		}
+
+		stopObserving(element) {
+			if ( ! this.observing.has(element) )
+				return;
+
+			this.observing.delete(element);
+			if ( this.observer )
+				this.observer.unobserve(element);
+		}
+
+		componentDidMount() {
+			if ( this.ref )
+				this.createObserver();
+
+			t.chat.context.on('changed:chat.emotes.animated', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.stay-loaded', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.show-quick-nav', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.reduced-padding', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.show-heading', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.combine-tabs', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.show-search', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.clear-search', this.updateSettingState, this);
+			t.chat.context.on('changed:chat.emote-menu.tall', this.updateSettingState, this);
+
+			window.ffz_menu = this;
+		}
+
+		componentWillUnmount() {
+			this.destroyObserver();
+
+			t.chat.context.off('changed:chat.emotes.animated', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.stay-loaded', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.show-quick-nav', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.show-heading', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.reduced-padding', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.combine-tabs', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.show-search', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.clear-search', this.updateSettingState, this);
+			t.chat.context.off('changed:chat.emote-menu.tall', this.updateSettingState, this);
+
+			if ( window.ffz_menu === this )
+				window.ffz_menu = null;
+		}
+
+		updateSettingState() {
+			this.setState({
+				stayLoaded: t.chat.context.get('chat.emote-menu.stay-loaded'),
+				quickNav: t.chat.context.get('chat.emote-menu.show-quick-nav'),
+				animated: t.chat.context.get('chat.emotes.animated'),
+				showHeading: t.chat.context.get('chat.emote-menu.show-heading'),
+				reducedPadding: t.chat.context.get('chat.emote-menu.reduced-padding'),
+				combineTabs: t.chat.context.get('chat.emote-menu.combine-tabs'),
+				showSearch: t.chat.context.get('chat.emote-menu.show-search'),
+				clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
+				tall: t.chat.context.get('chat.emote-menu.tall')
+			});
+		}
+
+		seeEffects() {
+			if ( this.state.hasNewEffects ) {
+				t.settings.provider.set('unlocked-effects', this.state.unlockedEffects);
+
+				this.setState({
+					hasNewEffects: false
+				});
+			}
+		}
+
+		pickTone(tone) {
+			tone = tone || null;
+			t.settings.provider.set('emoji-tone', tone);
+
+			this.setState(filterState(storage, 
+				this.state.filter,
+				buildEmoji(t, 
+					Object.assign({}, this.state, {tone})
+				)
+			));
+		}
+
+		clickSideNav(event) {
+			const key = event.currentTarget.dataset.key;
+			const el = this.ref?.querySelector?.(`section[data-key="${key}"]`);
+			if ( el ) {
+				this.lock_active = true;
+				scrollIntoView(el);
+				//el.scrollIntoView({block: 'nearest', inline: 'start'});
+				this.setState({
+					active_nav: key
+				});
+				setTimeout(() => this.lock_active = false, 250);
+			}
+		}
+
+		clickTab(event) {
+			const tab = event.currentTarget.dataset.tab;
+
+			// The GIF tab is a mode of its own, even when tabs are combined.
+			if ( tab === 'gifs' ) {
+				this.setState({tab});
+				return;
+			}
+
+			if ( this.state.combineTabs && this.state.tab === 'gifs' )
+				this.setState({tab: null});
+
+			if ( tab === 'effect' )
+				this.seeEffects();
+
+			if ( this.state.combineTabs ) {
+				let sets;
+				switch(tab) {
+					case 'fav':
+						sets = this.state.filtered_fav_sets;
+						break;
+					case 'channel':
+						sets = this.state.filtered_channel_sets;
+						break;
+					case 'effect':
+						sets = this.state.filtered_effect_sets;
+						break;
+					case 'emoji':
+						sets = this.state.filtered_emoji_sets;
+						break;
+					case 'all':
+					default:
+						sets = this.state.filtered_all_sets;
+						break;
+				}
+
+				const set = sets && sets[0],
+					el = set && this.ref?.querySelector?.(`section[data-key="${set.key}"]`);
+
+				if ( el )
+					scrollIntoView(el);
+					//el.scrollIntoView({block: 'nearest', inline: 'start'});
+
+				return;
+			}
+
+			this.setState({
+				tab
+			});
+		}
+
+		clickSettings(event) { // eslint-disable-line class-methods-use-this
+			const evt = new FFZEvent({
+				item: 'chat.emote_menu',
+				event,
+				errored: false
+			});
+
+			t.emit('main_menu:open', evt);
+
+			/*const layout = t.resolve('site.layout');
+			if ( (layout && layout.is_minimal) || (event && (event.ctrlKey || event.shiftKey)) ) {
+				const win = window.open(
+					'https://twitch.tv/popout/frankerfacez/chat?ffz-settings',
+					'_blank',
+					'resizable=yes,scrollbars=yes,width=850,height=600'
+				);
+
+				if ( win )
+					win.focus();
+
+			} else {
+				const menu = t.resolve('main_menu');
+
+				if ( menu ) {
+					menu.requestPage('chat.emote_menu');
+					if ( menu.showing )
+						return;
+				}
+
+				t.emit('site.menu_button:clicked');
+			}*/
+		}
+
+		/*clickRefresh(event) {
+			const target = event.currentTarget,
+				tt = target && target._ffz_tooltip;
+
+			if ( tt && tt.hide )
+				tt.hide();
+
+			this.setState({
+				loading: true
+			}, async () => {
+				const props = this.props,
+					promises = [],
+					emote_data = props.emote_data,
+					channel_data = props.channel_data;
+
+				if ( emote_data )
+					promises.push(emote_data.refetch())
+
+				if ( channel_data )
+					promises.push(channel_data.refetch());
+
+				await Promise.all(promises);
+
+				const es = props.emote_data && props.emote_data.emoteSets,
+					sets = es && es.length ? new Set(es.map(x => parseInt(x.id, 10))) : new Set;
+
+				const data = await t.getData(sets, true);
+				this.setState(filterState(storage, this.state.filter, this.buildState(
+					this.props,
+					Object.assign({}, this.state, {set_sets: sets, set_data: data, loading: false})
+				)));
+			});
+		}*/
+
+		toggleVisibilityControl() {
+			this.setState(filterState(storage, this.state.filter, this.state, ! this.state.visibility_control));
+		}
+
+		handleFilterChange(event) {
+			this.setState(filterState(storage, event.target.value, this.state));
+		}
+
+		handleKeyDown(event) {
+			const code = event.keyCode;
+			if ( code === KEYS.Escape )
+				this.props.toggleVisibility();
+			else
+				return;
+
+			event.preventDefault();
+		}
+
+		loadData(force = false, props, state) {
+			state = state || this.state;
+			if ( ! state )
+				return false;
+
+			props = props || this.props;
+
+			const emote_sets = props.emote_data && props.emote_data.emoteSets,
+				sets = Array.isArray(emote_sets) ? new Set(emote_sets.map(x => x.id)) : new Set;
+
+			force = force || (state.set_data && ! set_equals(state.set_sets, sets));
+
+			if ( state.set_data && ! force )
+				return false;
+
+			this.setState({loading: true}, () => {
+				t.getData(sets, force).then(d => {
+					this.setState(filterState(storage, this.state.filter, this.buildState(
+						this.props,
+						Object.assign({}, this.state, {set_sets: sets, set_data: d, loading: false})
+					)));
+				});
+			});
+
+			return true;
+		}
+
+		loadFFZPlanData(force = false, props, state) {
+			state = state || this.state;
+			if ( ! state || state.ffz_plan_loading )
+				return false;
+
+			if ( state.ffz_sub_data && ! force )
+				return false;
+
+			this.setState({ffz_plan_loading: true}, () => {
+				t.getFFZSubPrices().then(d => {
+					this.setState(filterState(storage, this.state.filter, this.buildState(
+						this.props,
+						Object.assign({}, this.state, {ffz_plan_data: d, ffz_plan_loading: false})
+					)));
+				})
+			});
+
+			return true;
+		}
+
+		loadFFZSubData(force = false, props, state) {
+			state = state || this.state;
+			if ( ! state || state.ffz_loading )
+				return false;
+
+			if ( state.ffz_sub_data && ! force )
+				return false;
+
+			this.setState({ffz_loading: true}, () => {
+				t.getFFZSubData().then(d => {
+					this.setState(filterState(storage, this.state.filter, this.buildState(
+						this.props,
+						Object.assign({}, this.state, {ffz_sub_data: d, ffz_loading: false})
+					)));
+				})
+			});
+
+			return true;
+		}
+
+		getAllSets() {
+			return [
+				...(this.state.channel_sets || []),
+				...(this.state.effect_sets || []),
+				...(this.state.all_sets || [])
+			];
+		}
+
+		buildState(props, old_state) {
+			const state = Object.assign({}, old_state),
+
+				data = state.set_data || {},
+				modifiers = state.emote_modifiers = {},
+				channel = state.channel_sets = [],
+				all = state.all_sets = [],
+				effects = state.effect_sets = [],
+				favorites = state.favorites = [];
+
+			// If we're still loading, don't set any data.
+			if ( props.loading || props.error || state.loading )
+				return state;
+
+			// If we start loading because the sets we have
+			// don't match, don't set any data either.
+			if ( state.set_data && this.loadData(false, props, state) )
+				return state;
+
+			// Sorters
+			const sorter = getSorter(t),
+				sort_tiers = t.chat.context.get('chat.emote-menu.sort-tiers-last'),
+				sort_emotes = (a,b) => {
+					if ( a.misc || b.misc )
+						return sorter(a,b);
+
+					if ( ! a.locked && b.locked ) return -1;
+					if ( a.locked && ! b.locked ) return 1;
+
+					if ( sort_tiers || a.locked || b.locked ) {
+						if ( a.bits || b.bits ) {
+							if ( ! b.bits )
+								return 1;
+							else if ( ! a.bits )
+								return -1;
+
+							const a_val = a.bit_value || 0,
+								b_val = b.bit_value || 0;
+
+							if ( COLLATOR ) {
+								const result = COLLATOR.compare(a_val, b_val);
+								if ( result != 0 )
+									return result;
+							} else {
+								if ( a_val < b_val ) return -1;
+								if ( a_val > b_val ) return 1;
+							}
+						} else {
+							if ( COLLATOR ) {
+								const result = COLLATOR.compare(a.set_id, b.set_id);
+								if ( result != 0 )
+									return result;
+							} else {
+								if ( a.set_id < b.set_id ) return -1;
+								if ( a.set_id > b.set_id ) return 1;
+							}
+						}
+					}
+
+					return sorter(a,b);
+				}
+
+
+			// Before anything, identify the follower sets.
+			const user = props.channel_data && props.channel_data.user,
+				products = user && user.subscriptionProducts,
+				local_sets = user && props.channel_data?.channel?.localEmoteSets,
+				is_following = user && user.self?.follower != null,
+				follower_locked = ! is_following && (props.user_id && user?.id != props.user_id),
+				bits = user?.cheer?.badgeTierEmotes;
+
+			const follower_sets = new Set();
+			if ( Array.isArray(local_sets) )
+				for(const local of local_sets)
+					if ( local?.id )
+						follower_sets.add(local.id);
+
+			// Start with the All tab. Some data calculated for
+			// all is re-used for the Channel tab.
+
+			const emote_sets = props.emote_data && props.emote_data.emoteSets,
+				emote_map = props.emote_data && props.emote_data.emoteMap,
+				twitch_favorites = t.emotes.getFavorites('twitch'),
+				twitch_hidden = t.emotes.getHidden('twitch'),
+				twitch_seen = new Set,
+
+				bits_unlocked = [],
+
+				//twitch_seen_favorites = new Set,
+
+				grouped_sets = {},
+				set_ids = new Set;
+
+
+			const ctx = {all, bits, bits_unlocked, channel, data, effects, emote_map, emote_sets, favorites, follower_locked, follower_sets, grouped_sets, is_following, local_sets, modifiers, products, set_ids, sort_emotes, sort_tiers, sorter, state, twitch_favorites, twitch_hidden, twitch_seen, user, props};
+
+			this.buildTwitchSets(ctx);
+
+			// Now we handle the current Channel's emotes.
+			this.buildChannelSets(ctx);
+
+			const ffz = this.buildFFZSets(ctx),
+				wants_resub_info = ffz.wants_resub_info,
+				wants_plan_info = ffz.wants_plan_info,
+				unlocked_effects = ffz.unlocked_effects;
+
+			let has_new_effects = ffz.has_new_effects;
+
+			// Load FFZ sub data.
+			state.wants_resub_info = wants_resub_info;
+			state.wants_plan_info = wants_plan_info;
+
+			if ( this.props.visible ) {
+				if ( state.tab === 'effects' )
+					has_new_effects = false;
+
+				if ( wants_plan_info )
+					this.loadFFZPlanData();
+				if ( wants_resub_info )
+					this.loadFFZSubData();
+			}
+
+			// Sort Sets
+			channel.sort(sort_sets);
+			effects.sort(sort_sets);
+			all.sort(sort_sets);
+
+			state.has_channel_tab = channel.length > 0;
+			state.has_effect_tab = effects.length > 0;
+			state.hasNewEffects = effects.length > 0 && has_new_effects;
+			state.unlockedEffects = unlocked_effects;
+			state.has_gif_tab = t.canSendGifs(props, state);
+
+			return buildEmoji(t, state);
+		}
+
+		/** Builds the All tab from the Twitch emote sets in the emote data. */
+		buildTwitchSets(ctx) { // eslint-disable-line class-methods-use-this
+			const {all, bits_unlocked, data, emote_map, emote_sets, favorites, follower_sets, grouped_sets, set_ids, sort_emotes, twitch_favorites, twitch_hidden, twitch_seen, user} = ctx;
+
+			if ( Array.isArray(emote_sets) )
+				for(const emote_set of emote_sets) {
+					if ( ! emote_set || ! Array.isArray(emote_set.emotes) )
+						continue;
+
+					const set_id = emote_set.id,
+						int_id = parseInt(set_id, 10),
+						owner = emote_set.owner,
+						is_follower = follower_sets.has(set_id),
+						is_bits = ! is_follower && int_id > 5e8,
+						is_points = TWITCH_POINTS_SETS.includes(int_id) || owner?.login === 'channel_points',
+						chan = is_follower ? user : is_points ? null : owner,
+						set_data = data[set_id],
+						is_current_bits = is_bits && owner && owner.id == user?.id;
+
+					/*if ( chan )
+						t.emotes.setTwitchSetChannel(set_id, {
+							s_id: set_id,
+							c_id: chan.id,
+							c_name: chan.login,
+							c_title: chan.displayName
+						});*/
+
+					set_ids.add(set_id);
+
+					let key = `twitch-set-${set_id}`,
+						sort_key = 0,
+						icon = 'twitch',
+						title = chan && (chan.displayName || chan.login);
+
+					if ( title ) {
+						key = `twitch-${chan?.id}`;
+
+						if ( is_follower )
+							t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.Follower,
+								owner: {
+									id: chan.id,
+									login: chan.login,
+									displayName: chan.displayName
+								}
+							});
+						else if ( is_bits )
+							t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.BitsTier,
+								owner: {
+									id: chan.id,
+									login: chan.login,
+									displayName: chan.displayName
+								}
+							});
+						else
+							t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.Subscription,
+								owner: {
+									id: chan.id,
+									login: chan.login,
+									displayName: chan.displayName
+								}
+							});
+
+					} else if ( ! chan ) {
+						if ( is_points ) {
+							title = t.i18n.t('emote-menu.points', 'Unlocked with Points');
+							key = 'twitch-points';
+							icon = 'channel-points';
+							sort_key = 45;
+
+							/*t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.ChannelPoints,
+								owner: null
+							});*/
+
+						} else if ( TWITCH_GLOBAL_SETS.includes(int_id) ) {
+							title = t.i18n.t('emote-menu.global', 'Global Emotes');
+							key = 'twitch-global';
+							sort_key = 100;
+
+							t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.Global,
+								owner: null
+							});
+
+						} else if ( TWITCH_PRIME_SETS.includes(int_id) ) {
+							title = t.i18n.t('emote_menu.prime', 'Prime');
+							key = 'twitch-prime';
+							icon = 'crown';
+							sort_key = 75;
+
+							t.emotes.setTwitchSetChannel(set_id, {
+								id: set_id,
+								type: EmoteTypes.Prime,
+								owner: null
+							});
+
+						} else {
+							title = t.i18n.t('emote-menu.misc', 'Miscellaneous');
+							key = 'twitch-misc';
+							icon = 'inventory';
+							sort_key = 50;
+						}
+
+					} else
+						title = t.i18n.t('emote-menu.unknown-set', 'Set #{set_id}', {set_id})
+
+					// Do not display follower emotes the user does not have.
+					if ( is_follower )
+						continue;
+
+					let section, emotes;
+
+					if ( grouped_sets[key] ) {
+						section = grouped_sets[key];
+						emotes = section.emotes;
+
+						if ( set_data && section.bad ) {
+							section.bad = false;
+							section.renews = set_data.renews;
+							section.ends = set_data.ends;
+							section.prime = set_data.prime;
+							section.gift = set_data.gift;
+						}
+
+					} else {
+						emotes = [];
+						section = grouped_sets[key] = {
+							sort_key,
+							key,
+							image: chan?.profileImageURL,
+							image_large: true,
+							icon,
+							title,
+							source: t.i18n.t('emote-menu.twitch', 'Twitch'),
+							emotes,
+							renews: set_data?.renews,
+							ends: set_data?.ends,
+							prime: set_data?.prime,
+							gift: set_data?.gift
+						}
+
+						if ( ! set_data )
+							section.bad = true;
+					}
+
+					let order = 0;
+
+					for(const emote of emote_set.emotes) {
+						// Validate emotes, because apparently Twitch is handing
+						// out bad emote data.
+						if ( ! emote || ! emote.id || ! emote.token )
+							continue;
+
+						const id = emote.id,
+							name = KNOWN_CODES[emote.token] || emote.token,
+							mapped = emote_map && emote_map[name];
+
+						if ( ! is_points )
+							t.emotes.setTwitchEmoteSet(id, set_id);
+
+						//if ( Array.isArray(emote.modifiers) && emote.modifiers.length )
+						//	modifiers[id] = emote.modifiers.map(x => x.code);
+
+						const modes = [''];
+						if ( Array.isArray(emote.modifiers) && emote.modifiers.length ) {
+							if ( t.chat.context.get('chat.emote-menu.modifiers') === 1 )
+								for(const mod of emote.modifiers)
+									modes.push(`_${mod.code}`);
+						}
+
+						for(const mode of modes) {
+							const new_id = `${id}${mode}`,
+								new_name = `${name}${mode}`,
+								is_fav = twitch_favorites.includes(new_id),
+								overridden = mapped && mapped.id != new_id,
+								replacement = REPLACEMENTS[new_id];
+
+							let src, srcSet, animSrc, animSrcSet;
+
+							if ( replacement && t.chat.context.get('chat.fix-bad-emotes') )
+								src = `${REPLACEMENT_BASE}${replacement}`;
+							else {
+								src = getTwitchEmoteURL(new_id, 1, false);
+								srcSet = getTwitchEmoteSrcSet(new_id, false);
+
+								animSrc = getTwitchEmoteURL(new_id, 1, true);
+								animSrcSet = getTwitchEmoteSrcSet(new_id, true);
+							}
+
+							const em = {
+								provider: 'twitch',
+								id: new_id,
+								set_id,
+								name: new_name,
+								src,
+								srcSet,
+								animSrc,
+								animSrcSet,
+								order: order++,
+								overridden: overridden ? mapped.id : null,
+								misc: ! chan,
+								bits: is_bits,
+								hidden: twitch_hidden.includes(new_id),
+								favorite: is_fav
+							};
+
+							emotes.push(em);
+
+							if ( is_current_bits )
+								bits_unlocked.push(em);
+
+							if ( is_fav && ! twitch_seen.has(new_id) )
+								favorites.push(em);
+
+							twitch_seen.add(new_id);
+						}
+					}
+
+					if ( emotes.length ) {
+						emotes.sort(sort_emotes);
+
+						if ( ! all.includes(section) )
+							all.push(section);
+					}
+				}
+
+
+		}
+
+		/** Builds the Channel tab from the current channel's subscription, follower and bits emotes. */
+		buildChannelSets(ctx) { // eslint-disable-line class-methods-use-this
+			const {bits, bits_unlocked, channel, data, favorites, follower_locked, local_sets, products, set_ids, sort_emotes, twitch_favorites, twitch_hidden, twitch_seen, user} = ctx;
+
+			if ( Array.isArray(local_sets) || Array.isArray(products) || Array.isArray(bits) ) {
+				const badge = t.badges.getTwitchBadge('subscriber', '0', user.id, user.login),
+					emotes = [],
+					unlockable_emotes = new Set,
+					locks = {},
+					section = {
+						sort_key: -10,
+						key: `twitch-current-channel`,
+						hide_key: `twitch-${user.id}`,
+						image: badge && badge.image1x,
+						image_set: badge && `${badge.image1x} 1x, ${badge.image2x} 2x, ${badge.image4x} 4x`,
+						icon: 'twitch',
+						title: t.i18n.t('emote-menu.main-set', 'Channel Emotes'),
+						source: t.i18n.t('emote-menu.twitch', 'Twitch'),
+						emotes,
+						locks,
+						all_locked: true
+					};
+
+				if ( Array.isArray(local_sets) ) {
+					for(const local of local_sets) {
+						if ( ! local || ! Array.isArray(local.emotes) )
+							continue;
+
+						const set_id = local.id;
+
+						let lock_set;
+
+						// If we're not following, we can't use the emote
+						// so lock it.
+						if ( follower_locked )
+							locks[set_id] = {
+								set_id,
+								id: 'follower',
+								user: user?.displayName || user?.login,
+								hide_button: true,
+								emotes: lock_set = new Set()
+							}
+						/*else
+							section.all_locked = false;*/
+
+						let order = 0;
+						for(const emote of local.emotes) {
+							if ( ! emote || ! emote.id || ! emote.token )
+								continue;
+
+							const id = emote.id,
+								name = KNOWN_CODES[emote.token] || emote.token,
+								seen = twitch_seen.has(id),
+								is_fav = twitch_favorites.includes(id);
+
+							const em = {
+								provider: 'twitch',
+								id,
+								set_id,
+								name,
+								order: order++,
+								src: getTwitchEmoteURL(id, 1, false),
+								srcSet: getTwitchEmoteSrcSet(id, false),
+								animSrc: getTwitchEmoteURL(id, 1, true),
+								animSrcSet: getTwitchEmoteSrcSet(id, true),
+								favorite: is_fav,
+								hidden: twitch_hidden.includes(id),
+								locked: follower_locked,
+								lock_icon: 'heart'
+							};
+
+							emotes.push(em);
+
+							if ( is_fav && ! seen )
+								favorites.push(em);
+
+							twitch_seen.add(id);
+
+							if ( lock_set )
+								lock_set.add(id);
+						}
+					}
+				}
+
+				if ( Array.isArray(products) ) {
+					for(const product of products) {
+						if ( ! product || ! Array.isArray(product.emotes) )
+							continue;
+
+						const set_id = product.emoteSetID,
+							set_data = data[set_id],
+							locked = ! set_ids.has(set_id);
+
+						let lock_set;
+
+						if ( set_data ) {
+							section.renews = set_data.renews;
+							section.ends = set_data.ends;
+							section.prime = set_data.prime;
+							section.gift = set_data.gift && set_data.gift.isGift;
+						}
+
+						// If the channel is locked, store data about that in the
+						// section so we can show appropriate UI to let people
+						// subscribe. Also include all the already known emotes
+						// in the list of emotes this product unlocks.
+						if ( locked )
+							locks[set_id] = {
+								set_id,
+								id: product.id,
+								price: product.price || TIERS[product.tier],
+								url: product.url,
+								emotes: lock_set = new Set(unlockable_emotes)
+							}
+						else
+							section.all_locked = false;
+
+						let order = 0;
+
+						for(const emote of product.emotes) {
+							// Validate emotes, because apparently Twitch is handing
+							// out bad emote data.
+							if ( ! emote || ! emote.id || ! emote.token )
+								continue;
+
+							const id = emote.id,
+								name = KNOWN_CODES[emote.token] || emote.token,
+								seen = twitch_seen.has(id),
+								is_fav = twitch_favorites.includes(id);
+
+							const em = {
+								provider: 'twitch',
+								id,
+								set_id,
+								name,
+								order: order++,
+								locked: locked && ! seen,
+								src: getTwitchEmoteURL(id, 1, false),
+								srcSet: getTwitchEmoteSrcSet(id, false),
+								animSrc: getTwitchEmoteURL(id, 1, true),
+								animSrcSet: getTwitchEmoteSrcSet(id, true),
+								favorite: is_fav,
+								hidden: twitch_hidden.includes(id)
+							};
+
+							emotes.push(em);
+
+							if ( ! locked && is_fav && ! seen )
+								favorites.push(em);
+
+							twitch_seen.add(id);
+
+							if ( lock_set ) {
+								unlockable_emotes.add(id);
+								lock_set.add(id);
+							}
+						}
+					}
+				}
+
+				const seen_bits = new Set;
+
+				if ( Array.isArray(bits) ) {
+					let order;
+					for(const emote of bits) {
+						if ( ! emote || ! emote.id || ! emote.bitsBadgeTierSummary )
+							continue;
+
+						const id = emote.id,
+							set_id = emote.setID,
+							summary = emote.bitsBadgeTierSummary,
+							locked = ! twitch_seen.has(id) && ! summary.self?.isUnlocked;
+
+						// If the emote isn't unlocked, store data about that in the
+						// section so we can show appropriate UI to let people know
+						// that the emote isn't unlocked.
+						if ( locked )
+							locks[set_id] = {
+								set_id,
+								id: 'cheer',
+								price: null,
+								bits: summary.threshold,
+								bits_remaining: summary.self?.numberOfBitsUntilUnlock ?? summary.threshold,
+								emotes: new Set([emote.id])
+							}
+
+						const is_fav = twitch_favorites.includes(id);
+
+						/*if ( Array.isArray(emote.modifiers) && emote.modifiers.length )
+							modifiers[id] = emote.modifiers;*/
+
+						const em = {
+							provider: 'twitch',
+							id,
+							set_id,
+							name: emote.token,
+							locked,
+							order: order++,
+							src: getTwitchEmoteURL(id, 1, false),
+							srcSet: getTwitchEmoteSrcSet(id, false),
+							animSrc: getTwitchEmoteURL(id, 1, true),
+							animSrcSet: getTwitchEmoteSrcSet(id, true),
+							bits: true,
+							bit_value: summary.threshold,
+							favorite: is_fav,
+							hidden: twitch_hidden.includes(id)
+						};
+
+						emotes.push(em);
+
+						if ( ! locked && is_fav && ! twitch_seen.has(id) )
+							favorites.push(em);
+
+						seen_bits.add(id);
+						twitch_seen.add(id);
+					}
+				}
+
+				if ( bits_unlocked.length ) {
+					for(const emote of bits_unlocked) {
+						if ( seen_bits.has(emote.id) )
+							continue;
+
+						emotes.push(emote);
+					}
+				}
+
+				if ( emotes.length ) {
+					emotes.sort(sort_emotes);
+					channel.push(section);
+				}
+			}
+
+		}
+
+		/** Adds the sets provided by FrankerFaceZ and add-ons. Returns the sub / plan / effect flags the caller records on the state. */
+		buildFFZSets(ctx) {
+			const {all, channel, effects, favorites, sort_emotes, state, props} = ctx;
+
+			let wants_resub_info = false,
+				wants_plan_info = false,
+				has_new_effects = false;
+
+			const unlocked_effects = [...t.settings.provider.get('unlocked-effects', [])];
+
+			// Finally, emotes added by FrankerFaceZ.
+			if ( t.chat.context.get('chat.emotes.enabled') > 1 ) {
+				const me = t.site.getUser();
+
+				const use_effect_tab = t.chat.context.get('chat.emote-menu.effect-tab');
+
+				const ffz_room = t.emotes.getRoomSetsWithSources(me?.id, me?.login, props.channel_id, null),
+					ffz_subs = t.emotes.getSubSetsWithSources(),
+					ffz_global = t.emotes.getGlobalSetsWithSources(me?.id, me?.login),
+					seen_sets = new Set(),
+					seen_favorites = {};
+
+				let grouped_sets = {};
+
+				for(const [emote_set, provider, source_id] of ffz_room) {
+					if ( seen_sets.has(emote_set) )
+						continue;
+					seen_sets.add(emote_set);
+
+					const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, false, undefined, source_id, props.channel_id);
+					if ( section ) {
+						section.emotes.sort(sort_emotes);
+
+						if ( ! channel.includes(section) )
+							channel.push(section);
+					}
+				}
+
+				grouped_sets = {};
+
+				const global_set_ids = ffz_global.map(x => x?.[0]?.id);
+
+				for(const [emote_set, provider] of ffz_subs) {
+					if ( seen_sets.has(emote_set) )
+						continue;
+					seen_sets.add(emote_set);
+
+					const locked = ! global_set_ids.includes(emote_set.id);
+
+					wants_resub_info = true;
+
+					const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked, state);
+					if ( section ) {
+						section.emotes.sort(sort_emotes);
+
+						if ( use_effect_tab && ! effects.includes(section) && section.has_effects ) {
+							has_new_effects = checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
+							effects.push(section);
+						} else if ( ! all.includes(section) )
+							all.push(section);
+					}
+				}
+
+				grouped_sets = {};
+
+				for(const [emote_set, provider] of ffz_global) {
+					if ( seen_sets.has(emote_set) )
+						continue;
+					seen_sets.add(emote_set);
+
+					const section = this.processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets);
+					if ( section ) {
+						section.emotes.sort(sort_emotes);
+
+						if ( use_effect_tab && ! effects.includes(section) && section.has_effects ) {
+							has_new_effects = checkNewEffects(section.emotes, unlocked_effects) || has_new_effects;
+							effects.push(section);
+
+						} else if ( ! all.includes(section) )
+							all.push(section);
+
+						if ( ! channel.includes(section) && maybe_call(section.force_global, this, emote_set, props.channel_data && props.channel_data.user, me) )
+							channel.push(section);
+					}
+				}
+			}
+
+			return {wants_resub_info, wants_plan_info, has_new_effects, unlocked_effects};
+		}
+
+		processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state, source_id, host_id = null) { // eslint-disable-line class-methods-use-this
+			if ( ! emote_set || ! emote_set.emotes )
+				return null;
+
+			let source_name;
+			if ( source_id ) {
+				const room = t.parent.shared_room_data?.get(source_id);
+				source_name = room?.displayName ?? room?.login;
+			}
+
+			const fav_key = emote_set.source || 'ffz',
+				known_favs = t.emotes.getFavorites(fav_key),
+				known_hidden = t.emotes.getHidden(fav_key),
+				seen_favs = seen_favorites[fav_key] = seen_favorites[fav_key] || new Set;
+
+			const key = `${emote_set.merge_source || fav_key}-${emote_set.merge_id || emote_set.id}`,
+				pdata = t.emotes.providers.get(provider),
+				source = pdata && pdata.menu_name ?
+					(pdata.menu_i18n_key ?
+						t.i18n.t(pdata.menu_i18n_key, pdata.menu_name, pdata) :
+						pdata.menu_name) :
+					emote_set.source || 'FFZ',
+
+				title = (provider === 'ffz-main' || emote_set.title_is_channel)
+					? source_name
+							? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
+							: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
+					: (emote_set.title || t.i18n.t('emote-menu.unknown-set', `Set #{set_id}`, {set_id: emote_set.id}));
+
+			let sort_key = pdata && pdata.sort_key || emote_set.sort;
+			if ( sort_key == null )
+				sort_key = emote_set.title.toLowerCase().includes('global')
+					? 100
+					: 0;
+
+			// Shared Chat emote sets always come after.
+			if (source_id && source_id !== host_id)
+				sort_key += 50;
+
+			let section, emotes, locks;
+
+			if ( grouped_sets[key] ) {
+				section = grouped_sets[key];
+				emotes = section.emotes;
+
+				if ( key === `${fav_key}-${emote_set.id}` )
+					Object.assign(section, {
+						sort_key,
+						image: emote_set.icon,
+						title,
+						source,
+						channel_source: source_name,
+						force_global: emote_set.force_global
+					});
+
+			} else {
+				emotes = [];
+				section = grouped_sets[key] = {
+					sort_key,
+					key,
+					image: emote_set.icon,
+					icon: 'zreknarf',
+					title,
+					source,
+					channel_source: source_name,
+					emotes,
+					force_global: emote_set.force_global,
+					all_locked: true
+				}
+			}
+
+			// Try to get resub info.
+			const resub = (state || this.state)?.ffz_sub_data?.sets?.[emote_set.id];
+			if ( resub ) {
+				section.renews = resub.next_bill_date;
+				section.ends = resub.expires_at;
+			}
+
+			if ( locked ) {
+				section.locks = section.locks || {};
+				section.locks[emote_set.id] = {
+					set_id: emote_set.id,
+					id: 'subwoofer',
+					is_ffz: true,
+					price: 'More Info',
+					url: 'https://www.frankerfacez.com/subscribe',
+					emotes: locks = new Set()
+				}
+			} else
+				section.all_locked = false;
+
+			for(const emote of Object.values(emote_set.emotes))
+				if ( ! emote.hidden ) {
+					const is_fav = known_favs.includes(emote.id),
+						em = {
+							provider: 'ffz',
+							id: emote.id,
+							set_id: emote_set.id,
+							src: emote.src,
+							srcSet: emote.srcSet,
+							animSrc: emote.animSrc,
+							animSrcSet: emote.animSrcSet,
+							effects: emote.modifier ? emote.modifier_flags : 0,
+							effect_prefix: emote.modifier ? emote.modifier_prefix : false,
+							name: emote.name,
+							favorite: is_fav,
+							locked: locked,
+							hidden: known_hidden.includes(emote.id),
+							height: emote.height,
+							width: emote.width
+						};
+
+					emotes.push(em);
+
+					if ( ! locked && is_fav && ! seen_favs.has(emote.id) ) {
+						favorites.push(em);
+						seen_favs.add(emote.id);
+					}
+
+					if ( locked )
+						locks.add(emote.id);
+
+					if ( emote.modifier && emote.modifier_flags )
+						section.has_effects = true;
+				}
+
+			if ( emotes.length )
+				return section;
+		}
+
+
+		rebuildData() {
+			const state = this.buildState(this.props, this.state);
+			this.setState(filterState(storage, state.filter, state));
+		}
+
+
+		componentDidUpdate(old_props) {
+			if ( this.props.visible && ! old_props.visible ) {
+				this.loadData();
+
+				if ( this.state.wants_plan_info )
+					this.loadFFZPlanData();
+				if ( this.state.wants_resub_info )
+					this.loadFFZSubData();
+			}
+
+			if ( ! this.props.visible && old_props.visible ) {
+				if ( this.state.clearSearch ) {
+					this.setState(filterState(storage, '', this.state));
+					return;
+				}
+			}
+
+			const cd = this.props.channel_data,
+				old_cd = old_props.channel_data,
+				cd_diff = cd?.user !== old_cd?.user || cd?.channel !== old_cd?.channel,
+
+				// emote_data is rebuilt by Twitch a lot so we can't
+				// rely on object equality. Use a deep equality check. It's
+				// going to be slower, but it's still faster than rebuilding
+				// our entire data structure when nothing actually changed.
+				ed = this.props.emote_data,
+				old_ed = old_props.emote_data,
+				ed_diff = ! deep_equals(ed?.emoteSets, old_ed?.emoteSets) ||
+					! deep_equals(ed?.emoteMap, old_ed?.emoteMap);
+
+			if ( cd_diff || ed_diff ||
+					this.props.user_id !== old_props.user_id ||
+					this.props.channel_id !== old_props.channel_id ||
+					this.props.loading !== old_props.loading ||
+					this.props.error !== old_props.error ) {
+				t.log.debug('Updating emote menu data. cd', cd_diff, ', ed', ed_diff);
+				this.rebuildData();
+			}
+		}
+
+		renderError() {
+			return (<div class="tw-align-center tw-pd-1">
+				<div class="tw-mg-b-1">
+					<div class="tw-mg-2">
+						<img
+							src="//cdn.frankerfacez.com/emoticon/26608/2"
+							srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
+						/>
+					</div>
+					{t.i18n.t('emote-menu.error', 'There was an error rendering this menu.')}
+				</div>
+				<button class="tw-button" onClick={this.forceUpdate}>
+					<span class="tw-button__text">
+						{t.i18n.t('error.try-again', 'Try Again')}
+					</span>
+				</button>
+			</div>)
+		}
+
+		renderEmpty() { // eslint-disable-line class-methods-use-this
+			return (<div class="tw-align-center tw-pd-1">
+				<div class="tw-mg-2">
+					<img
+						src="//cdn.frankerfacez.com/emoticon/26608/2"
+						srcSet="//cdn.frankerfacez.com/emoticon/26608/2 1x, //cdn.frankerfacez.com/emoticon/26608/4 2x"
+					/>
+				</div>
+				{this.state.filtered ?
+					t.i18n.t('emote-menu.empty-search', 'There are no matching emotes.') :
+					this.state.tab === 'fav' ?
+						t.i18n.t('emote-menu.empty-favs', "You don't have any favorite emotes. To favorite an emote, find it and {hotkey}-Click it.", {hotkey: IS_OSX ? '⌘' : 'Ctrl'}) :
+						t.i18n.t('emote-menu.empty', "There's nothing here.")}
+			</div>)
+		}
+
+		renderLoading() { // eslint-disable-line class-methods-use-this
+			return (<div class="tw-align-center tw-pd-1">
+				<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
+				{t.i18n.t('emote-menu.loading', 'Loading...')}
+			</div>)
+		}
+
+		/** The scrolling emote area and the side navigation listing every visible set. */
+		renderNav(view) {
+			const {loading, padding, no_tabs, sets, is_favs, is_gifs, visibility, whisper} = view;
+
+			return (
+				<div class="tw-flex">
+					<div
+						ref={this.saveScrollRef}
+						class={`emote-picker__tab-content${whisper ? '-whisper' : ''} tw-full-width ffz-emote-menu--scroll-area`}
+					>
+						{is_gifs && <t.GifPanel
+							channel_id={this.props.channel_id}
+							search={this.state.filter}
+							api_key={t.getGiphyApiKey()}
+							rating={t.chat.context.get('chat.emote-menu.gifs.rating')}
+							toggleVisibility={this.props.toggleVisibility}
+						/>}
+						{! is_gifs && loading && this.renderLoading()}
+						{! is_gifs && !loading && sets && sets.map((data,idx) => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
+							data.emoji ? t.EmojiSection : t.MenuSection,
+							{
+								key: data.key,
+								idx,
+								data,
+								ffz_sub_data: this.state.ffz_sub_data,
+								emote_modifiers: this.state.emote_modifiers,
+								animated: this.state.animated,
+								combineTabs: this.state.combineTabs,
+								showHeading: this.state.showHeading,
+								filtered: this.state.filtered,
+								visibility_control: visibility,
+								onClickToken: this.props.onClickToken,
+								addSection: this.addSection,
+								removeSection: this.removeSection,
+								startObserving: this.startObserving,
+								stopObserving: this.stopObserving
+							}
+						))}
+						{! is_gifs && ! loading && (! sets || ! sets.length) && this.renderEmpty()}
+					</div>
+					{(! loading && this.state.quickNav && ! is_favs && ! is_gifs) && (<div class={`emote-picker__nav_content${whisper ? '-whisper' : ''} tw-block tw-border-radius-none tw-c-background-alt-2`}>
+						<div
+							ref={this.saveNavRef}
+							class={`emote-picker__nav-content-overflow${whisper ? '-whisper' : ''} ffz-emote-menu--scroll-area tw-pd-x-05`}
+						>
+							{!loading && sets && sets.map(data => {
+								if ( ! data || (visibility && (data.is_favorites || data.emoji)) )
+									return null;
+
+								const active = this.state.active_nav === data.key;
+
+								return (<button
+									key={data.key}
+									class={`${active ? 'emote-picker-tab-item-wrapper__active ' : ''}${padding ? 'tw-mg-y-05' : 'tw-mg-y-1'} tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse`}
+									data-key={data.key}
+									data-title={`${data.i18n ? t.i18n.t(data.i18n, data.title) : data.title}\n${data.source_i18n ? t.i18n.t(data.source_i18n, data.source) : data.source}${data.channel_source ? ` (${data.channel_source})` : ''}`}
+									data-tooltip-side="left"
+									onClick={this.clickSideNav}
+								>
+									<div class={`tw-align-items-center tw-flex tw-justify-content-center ${padding ? '' : 'tw-pd-x-05 '}tw-pd-y-05${active ? ' emote-picker-tab-item-avatar__active tw-c-text-link' : ''}`}>
+										{data.image ? <figure class="ffz-avatar ffz-avatar--size-20">
+											<img
+												class="tw-block tw-border-radius-rounded tw-img tw-image-avatar"
+												src={data.image}
+												srcSet={data.image_set}
+											/>
+										</figure> : <figure class={`ffz-emote-picker--nav-icon ffz-i-${data.icon || 'zreknarf'}`} />}
+									</div>
+								</button>);
+							})}
+							{no_tabs && <div class="tw-mg-y-1 tw-mg-x-05 tw-border-t" />}
+							{no_tabs && (<button
+								class="tw-mg-y-1 tw-c-text-inherit tw-interactable ffz-interactive ffz-interactable--hover-enabled ffz-interactable--default tw-block tw-full-width ffz-tooltip ffz-tooltip--no-mouse"
+								data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
+								data-tooltip-side="left"
+								onClick={this.clickSettings}
+							>
+								<div class={`tw-align-items-center tw-flex tw-justify-content-center ${padding ? '' : 'tw-pd-x-05 '}tw-pd-y-05`}>
+									<figure class="ffz-emote-picker--nav-icon ffz-i-cog" />
+								</div>
+							</button>)}
+						</div>
+					</div>)}
+				</div>
+			);
+		}
+
+		/** The search box, visibility toggle and tab buttons. */
+		renderControls(view) {
+			const {no_tabs, tab, is_emoji, visibility} = view;
+
+			return (
+				<div class="emote-picker__controls-container tw-relative">
+					{(is_emoji || this.state.showSearch) && (<div class="tw-border-t tw-pd-1">
+						<div class="tw-flex">
+							<input
+								type="text"
+								class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
+								placeholder={
+									is_emoji ?
+										t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
+										t.i18n.t('emote-menu.search', 'Search for Emotes')
+								}
+								value={this.state.filter}
+								autoFocus
+								autoCapitalize="off"
+								autoCorrect="off"
+								onChange={this.handleFilterChange}
+								onKeyDown={this.handleKeyDown}
+							/>
+							{(no_tabs || is_emoji) && ! visibility && this.state.has_emoji_tab && <t.EmojiTonePicker
+								tone={this.state.tone}
+								choices={this.state.tone_emoji}
+								pickTone={this.pickTone}
+							/>}
+							{(no_tabs || ! is_emoji) && <div class="tw-relative ffz-il-tooltip__container tw-mg-l-1">
+								<button
+									class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon--primary ffz-core-button tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.state.visibility_control ? ' ffz-core-button--primary' : ' tw-button-icon'}`}
+									onClick={this.toggleVisibilityControl}
+								>
+									<span class="tw-button-icon__icon tw-mg-x-05">
+										<figure class={this.state.visibility_control ? 'ffz-i-eye-off' : 'ffz-i-eye'} />
+									</span>
+								</button>
+								<div class="ffz-il-tooltip ffz-il-tooltip--up ffz-il-tooltip--align-right">
+									{this.state.visibility_control ?
+										t.i18n.t('emote-menu.toggle-hide.on', 'Exit Emote Visibility Control') :
+										t.i18n.t('emote-menu.toggle-hide.off', 'Emote Visibility Control')
+									}
+									<div class="tw-mg-t-1 ffz--tooltip-explain">
+										{t.i18n.t('emote-menu.toggle-hide.info', 'Emote Visibility Control allows you to hide emotes from your emote menu, either individually or by set. With Emote Visibility Control enabled, just click an emote to hide or unhide it. Please note that you will still see the emotes in chat if someone uses them, but they won\'t appear in your emote menu.')}
+									</div>
+								</div>
+							</div>}
+						</div>
+					</div>)}
+					{(no_tabs && this.state.quickNav) ? null : (<div class="emote-picker__tab-nav-container tw-flex tw-border-t tw-c-background-alt">
+						{! visibility && <div class={`emote-picker-tab-item${tab === 'fav' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'fav' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__fav"
+								data-tab="fav"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.favorites', 'Favorites')}
+								onClick={this.clickTab}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<figure class="ffz-i-star" />
+								</div>
+							</button>
+						</div>}
+						{this.state.has_channel_tab && <div class={`emote-picker-tab-item${tab === 'channel' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'channel' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__channel"
+								data-tab="channel"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.channel', 'Channel')}
+								onClick={this.clickTab}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<figure class="ffz-i-camera" />
+								</div>
+							</button>
+						</div>}
+						{this.state.has_effect_tab && <div class={`emote-picker-tab-item${tab === 'effect' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'effect' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__effect"
+								data-tab="effect"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.effects', 'Emote Effects')}
+								onClick={this.clickTab}
+							>
+								{this.state.hasNewEffects && (<div class="ffz-new-indicator" />)}
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<figure class="ffz-i-fx" />
+								</div>
+							</button>
+						</div>}
+						<div class={`emote-picker-tab-item${tab === 'all' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'all' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__all"
+								data-tab="all"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.my-emotes', 'My Emotes')}
+								onClick={this.clickTab}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<figure class="ffz-i-channels" />
+								</div>
+							</button>
+						</div>
+						{! visibility && this.state.has_emoji_tab && <div class={`emote-picker-tab-item${tab === 'emoji' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'emoji' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__emoji"
+								data-tab="emoji"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.emoji', 'Emoji')}
+								onClick={this.clickTab}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<figure class="ffz-i-smile" />
+								</div>
+							</button>
+						</div>}
+						{this.state.has_gif_tab && <div class={`emote-picker-tab-item${tab === 'gifs' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'gifs' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__gifs"
+								data-tab="gifs"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.gifs', 'GIFs')}
+								onClick={this.clickTab}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<span class="ffz--gif-tab-label">GIF</span>
+								</div>
+							</button>
+						</div>}
+						<div class="tw-flex-grow-1" />
+						<div class="emote-picker-tab-item tw-relative">
+							<button
+								class="ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.settings', 'Open Settings')}
+								onClick={this.clickSettings}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<figure class="ffz-i-cog" />
+								</div>
+							</button>
+						</div>
+					</div>)}
+				</div>
+			);
+		}
+
+		render() {
+			if ( ! this.props.visible && (! this.state.stayLoaded || ! this.loadedOnce) )
+				return null;
+
+			const loading = this.state.loading || this.props.loading,
+				padding = this.state.reducedPadding, //t.chat.context.get('chat.emote-menu.reduced-padding'),
+				no_tabs = this.state.combineTabs; //t.chat.context.get('chat.emote-menu.combine-tabs');
+
+			if ( ! loading )
+				this.loadedOnce = true;
+
+			let tab, sets, is_emoji, is_favs, is_effect;
+			const is_gifs = this.state.has_gif_tab && this.state.tab === 'gifs';
+
+			if ( is_gifs ) {
+				tab = 'gifs';
+
+			} else if ( no_tabs ) {
+				sets = [
+					this.state.filtered_fav_sets,
+					this.state.filtered_channel_sets,
+					this.state.filtered_effect_sets,
+					this.state.filtered_all_sets,
+					this.state.filtered_emoji_sets
+				].flat();
+
+			} else {
+				tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab');
+				if ( (tab === 'effect' && ! this.state.has_effect_tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'gifs' && ! this.state.has_gif_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
+					tab = 'all';
+
+				is_emoji = tab === 'emoji';
+				is_favs = tab === 'fav';
+				is_effect = tab === 'effect';
+
+				switch(tab) {
+					case 'fav':
+						sets = this.state.filtered_fav_sets;
+						break;
+					case 'channel':
+						sets = this.state.filtered_channel_sets;
+						break;
+					case 'effect':
+						sets = this.state.filtered_effect_sets;
+						break;
+					case 'emoji':
+						sets = this.state.filtered_emoji_sets;
+						break;
+					case 'all':
+					default:
+						sets = this.state.filtered_all_sets;
+						break;
+				}
+			}
+
+			const visibility = this.state.visibility_control,
+				whisper = this.props.source === 'whisper';
+
+
+			const view = {loading, padding, no_tabs, tab, sets, is_emoji, is_favs, is_effect, is_gifs, visibility, whisper};
+
+			return (<div class={`tw-block${this.props.visible ? '' : ' tw-hide'}`} style={{display: this.props.visible ? null : 'none !important'}}>
+				<div class="tw-absolute ffz-attached ffz-attached--right ffz-attached--up">
+					<div
+						class={`ffz-balloon ffz-balloon--auto tw-inline-block tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 ffz--emote-picker${this.state.tall ? ' ffz--emote-picker__tall' : ''}${padding ? ' reduced-padding' : ''}`}
+						data-a-target="emote-picker"
+						role="dialog"
+					>
+						<div class={`emote-picker${whisper ? '__whisper' : ''}`}>
+							{this.renderNav(view)}
+							{this.renderControls(view)}
+						</div>
+					</div>
+				</div>
+			</div>);
+		}
+	};
+}

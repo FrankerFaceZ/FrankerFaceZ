@@ -8,7 +8,19 @@ export const EXTENSION = !!__extension__;
 /** Whether or not FrankerFaceZ was loaded from a development server. */
 export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.classList.contains('ffz-dev') && !EXTENSION;
 
-/** The base URL of the FrankerFaceZ CDN. */
+/**
+ * The base URL this build of the client is served from: the entry scripts,
+ * lazily loaded chunks, stylesheets and the data files emitted by the build.
+ * Set at build time with the FFZ_CLIENT_HOST environment variable; defaults
+ * to the FrankerFaceZ CDN.
+ */
+export const CLIENT_SERVER = DEBUG ? 'https://localhost:8000' : __client_host__;
+
+/**
+ * The base URL of the FrankerFaceZ CDN, for assets that are not part of this
+ * build: emoji images, Twitch badge art, emote replacements, translations
+ * and add-ons.
+ */
 export const SERVER = DEBUG ? 'https://localhost:8000' : 'https://cdn2.frankerfacez.com';
 
 let path = `${SERVER}/script`;

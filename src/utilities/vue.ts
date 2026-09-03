@@ -5,7 +5,7 @@
 // Loads Vue + Translation Shim
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {has} from 'utilities/object';
 import type TranslationManager from '../i18n';
 import type { VueConstructor } from 'vue';
@@ -179,7 +179,7 @@ export class VueModule extends Module<'vue'> {
 			vue.prototype.$i18n = this._vue_i18n;
 		}
 
-		vue.component('t-list', {
+		vue.component('TList', {
 			props: {
 				tag: {
 					required: false

@@ -12,14 +12,8 @@ import { has } from 'utilities/object';
 import { KEYS, RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS } from 'utilities/constants';
 import { print_duration } from 'utilities/time';
 
-import { getRewardTitle, getRewardCost, isGiantEmoteReward, doesRewardCostBits, isMessageEffect } from './points';
-import awaitMD, {getMD} from 'utilities/markdown';
-
-const SUB_TIERS = {
-	1000: 1,
-	2000: 2,
-	3000: 3
-};
+import {isGiantEmoteReward} from './points';
+import { defineLineTypes } from './line_types';
 
 
 export default class ChatLine extends Module {
@@ -38,595 +32,11 @@ export default class ChatLine extends Module {
 		this.inject('chat.overrides');
 		this.inject('chat.emotes');
 
-		this.line_types = {};
-
-		this.line_types.unknown = {
-			renderNotice: (msg, current_user, room, inst, e) => {
-				return `Unknown message type: ${msg.ffz_type}`
-			}
-		};
-
-		this.line_types.notice = {
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const data = msg.ffz_data;
-				let content = this.line_types.notice.renderContent(msg, current_user, room, inst, e);
-
-				if ( ! data.icon )
-					return content;
-
-				if ( typeof content === 'string' )
-					content = e('span', {}, content);
-
-				if ( typeof data.icon === 'function' ) {
-					try {
-						content.ffz_icon = data.icon(data, inst, e);
-					} catch(err) {
-						this.log.capture(err);
-						this.log.error('Error using custom renderer for notice:', err);
-					}
-
-				} else if ( data.icon instanceof URL )
-					content.ffz_icon = e('img', {
-						className: 'ffz-notice-icon tw-mg-r-05',
-						src: data.icon.toString()
-					});
-
-				else
-					content.ffz_icon = e('span', {
-						className: `${data.icon} tw-mg-r-05`
-					});
-
-				return content;
-			},
-
-			renderContent: (msg, current_user, room, inst, e) => {
-				const data = msg.ffz_data;
-				if ( data.renderer )
-					try {
-						return data.renderer(data, inst, e);
-					} catch(err) {
-						this.log.capture(err);
-						this.log.error('Error using custom renderer for notice:', err);
-						return `Error rendering notice.`
-					}
-
-				const text = data.i18n ? this.i18n.t(data.i18n, data.messgae, data) : data.message;
-
-				if ( data.markdown ) {
-					const md = getMD();
-					if ( ! md ) {
-						awaitMD().then(() => inst.forceUpdate());
-						return 'Loading...';
-					}
-
-					return e('span', {
-						dangerouslySetInnerHTML: {
-							__html: getMD().renderInline(text)
-						}
-					});
-				}
-
-				if ( data.tokenize ) {
-					const tokens = data.ffz_tokens = data.ffz_tokens || this.chat.tokenizeMessage({
-						badges: {},
-						message: text,
-						id: msg.id,
-						user: msg.user,
-						roomLogin: msg.roomLogin,
-						roomID: msg.roomID
-					});
-
-					return this.chat.renderTokens(tokens, e);
-				}
-
-				return text;
-			}
-		};
-
-		this.line_types.hype = {
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const setting = this.chat.context.get('chat.hype.message-style');
-				if ( setting === 0 )
-					return null;
-
-				// We need to get the message's tokens to see if it has a message or not.
-				const user = msg.user,
-					tokens = msg.ffz_tokens = msg.ffz_tokens || this.chat.tokenizeMessage(msg, current_user),
-					has_message = tokens.length > 0;
-
-				let amount = msg.hype_amount;
-				const digits = msg.hype_exponent ?? 0;
-				if ( digits > 0 )
-					amount /= Math.pow(10, digits);
-
-				try {
-					// TODO: Cache formatter?
-					const fmt = new Intl.NumberFormat(navigator.languages, {
-						style: 'currency',
-						currency: msg.hype_currency,
-						compactDisplay: 'short',
-						minimumFractionDigits: digits,
-						maximumFractionDigits: digits
-					});
-
-					amount = fmt.format(amount);
-
-				} catch(err) {
-					amount = `${msg.hype_currency} ${amount}`;
-				}
-
-				if (! has_message)
-					return this.i18n.tList('chat.hype-chat.user', '{user} sent a Hype Chat for {amount}!', {
-						amount,
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler,
-							onContextMenu: this.actions.handleUserContext
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName))
-					});
-
-				return this.i18n.tList(
-					'chat.hype-chat',
-					'Sent a Hype Chat for {amount}!',
-					{
-						amount
-					}
-				)
-			}
-		};
-
-		this.line_types.cheer = {
-			renderNotice: (msg, current_user, room, inst, e) => {
-				return this.i18n.tList(
-					'chat.bits-message',
-					'Cheered {count, plural, one {# Bit} other {# Bits}}',
-					{
-						count: msg.bits || 0
-					}
-				);
-			}
-		};
-
-		this.line_types.points = {
-			getClass: (msg) => {
-				const highlight = msg.ffz_reward_highlight && this.chat.context.get('chat.points.allow-highlight') === 2;
-
-				return `ffz--points-line tw-pd-l-1 tw-pd-r-2 ${highlight ? 'ffz-custom-color ffz--points-highlight' : ''}`;
-			},
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				if ( ! msg.ffz_reward )
-					return null;
-
-				// We need to get the message's tokens to see if it has a message or not.
-				const user = msg.user,
-					is_bits = doesRewardCostBits(msg.ffz_reward),
-					tokens = msg.ffz_tokens = msg.ffz_tokens || this.chat.tokenizeMessage(msg, current_user),
-					has_message = tokens.length > 0;
-
-				// Elements for the reward and cost with nice formatting.
-				const reward = e('span', {className: 'ffz--points-reward'}, getRewardTitle(msg.ffz_reward, this.i18n)),
-					cost = e('span', {className: 'ffz--points-cost'}, [
-						e('span', {className: is_bits ? 'ffz-i-bits' : 'ffz--points-icon'}),
-						this.i18n.formatNumber(getRewardCost(msg.ffz_reward))
-					]);
-
-				if (! has_message)
-					return this.i18n.tList('chat.points.user-redeemed', '{user} redeemed {reward} {cost}', {
-						reward, cost,
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler,
-							onContextMenu: this.actions.handleUserContext
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName))
-					});
-
-				return this.i18n.tList('chat.points.redeemed', 'Redeemed {reward} {cost}', {reward, cost});
-			}
-		};
-
-		this.line_types.resub = {
-			getClass: () => `ffz--subscribe-line tw-pd-r-2`,
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const months = msg.sub_cumulative || msg.sub_months,
-					setting = this.chat.context.get('chat.subs.show');
-
-				let has_message;
-				if (setting === 1 && months > 1) {
-					const tokens = msg.ffz_tokens = msg.ffz_tokens || this.chat.tokenizeMessage(msg, current_user);
-					has_message = tokens.length > 0;
-				}
-
-				if ( !(setting === 3 || (setting === 1 && has_message && months > 1) || (setting === 2 && months > 1)) )
-					return null;
-
-				const user = msg.user,
-					plan = msg.sub_plan || {},
-					tier = SUB_TIERS[plan.plan] || 1,
-					multi = msg.sub_multi,
-
-					has_multi = (multi?.count ?? 0) > 1 && multi.tenure === 0;
-
-				const sub_msg = this.i18n.tList(
-					`chat.sub.main${has_multi ? '-multi' : ''}`,
-					`{user} subscribed {plan}${has_multi ? ' for {multi, plural, one {# month} other {# months}} in advance' : ''}. `,
-					{
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler,
-							onContextMenu: this.actions.handleUserContext
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName)),
-						plan: plan.prime ?
-							this.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
-							this.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier}),
-						multi: has_multi
-							? multi.count
-							: 1
-					}
-				);
-
-				if ( msg.sub_share_streak && msg.sub_streak > 1 ) {
-					sub_msg.push(this.i18n.t(
-						'chat.sub.cumulative-months',
-						"They've subscribed for {cumulative,number} months, currently on a {streak,number} month streak!",
-						{
-							cumulative: msg.sub_cumulative,
-							streak: msg.sub_streak
-						}
-					));
-
-				} else if ( months > 1 ) {
-					sub_msg.push(this.i18n.t(
-						'chat.sub.months',
-						"They've subscribed for {count,number} months!",
-						{
-							count: months
-						}
-					));
-				}
-
-				if ( ! this.chat.context.get('chat.subs.compact') )
-					sub_msg.ffz_icon = e('span', {
-						className: `ffz-i-${plan.prime ? 'crown' : 'star'} tw-mg-r-05`
-					});
-
-				return sub_msg;
-			}
-		};
-
-		this.line_types.ritual = {
-			getClass: () => `ffz--ritual-line tw-pd-r-2`,
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const user = msg.user;
-
-				if ( msg.ritual === 'new_chatter' ) {
-					return this.i18n.tList('chat.ritual', '{user} is new here. Say hello!', {
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler,
-							onContextMenu: this.actions.handleUserContext
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName))
-					});
-				}
-			}
-		};
-
-		this.line_types.sub_gift = {
-			getClass: () => 'ffz--subscribe-line',
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const user = msg.user,
-
-					plan = msg.sub_plan || {},
-					months = msg.sub_months || 1,
-					tier = SUB_TIERS[plan.plan] || 1;
-
-				let sub_msg;
-
-				const bits = {
-					months,
-					user: (msg.sub_anon || user.username === 'ananonymousgifter') ?
-						this.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
-						e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler,
-							onContextMenu: this.actions.handleUserContext
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName)),
-					plan: plan.plan === 'custom' ? '' :
-						this.i18n.t('chat.sub.gift-plan', 'Tier {tier}', {tier}),
-					recipient: e('span', {
-						role: 'button',
-						className: 'chatter-name',
-						onClick: inst.ffz_user_click_handler,
-						'data-user': JSON.stringify(msg.sub_recipient)
-					}, e('span', {
-						className: 'tw-c-text-base tw-strong'
-					}, msg.sub_recipient.displayName))
-				};
-
-				if ( months <= 1 )
-					sub_msg = this.i18n.tList('chat.sub.mystery', '{user} gifted a {plan} Sub to {recipient}! ', bits);
-				else
-					sub_msg = this.i18n.tList('chat.sub.gift-months', '{user} gifted {months, plural, one {# month} other {# months}} of {plan} Sub to {recipient}!', bits);
-
-				if ( msg.sub_total === 1 )
-					sub_msg.push(this.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));
-				else if ( msg.sub_total > 1 )
-					sub_msg.push(this.i18n.t('chat.sub.gift-total', "They've gifted {count,number} Subs in the channel!", {
-						count: msg.sub_total
-					}));
-
-				if ( ! this.chat.context.get('chat.subs.compact') )
-					sub_msg.ffz_icon = e('span', {
-						className: `ffz-i-${plan.prime ? 'crown' : 'star'} tw-mg-r-05`
-					});
-
-				return sub_msg;
-			}
-		}
-
-		this.line_types.sub_mystery = {
-
-			getClass: () => 'ffz--subscribe-line',
-
-			renderNotice: (msg, user, room, inst, e, source) => {
-				const mystery = msg.mystery;
-				if ( mystery )
-					mystery.line = inst;
-
-				const sub_msg = this.i18n.tList('chat.sub.gift', "{user} is gifting {count, plural, one {# Tier {tier} Sub} other {# Tier {tier} Subs}} to {channel}'s community! ", {
-					user: (msg.sub_anon || msg.user.username === 'ananonymousgifter') ?
-						this.i18n.t('chat.sub.anonymous-gifter', 'An anonymous gifter') :
-						e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler,
-							onContextMenu: this.actions.handleUserContext
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, msg.user.displayName)),
-					count: msg.sub_count,
-					tier: SUB_TIERS[msg.sub_plan] || 1,
-					channel: source?.displayName || source?.login || msg.roomLogin
-				});
-
-				if ( msg.sub_total === 1 )
-					sub_msg.push(this.i18n.t('chat.sub.gift-first', "It's their first time gifting a Sub in the channel!"));
-				else if ( msg.sub_total > 1 )
-					sub_msg.push(this.i18n.t('chat.sub.gift-total', "They've gifted {count} Subs in the channel!", {
-						count: msg.sub_total
-					}));
-
-				if ( ! inst.ffz_click_expand )
-					inst.ffz_click_expand = () => {
-						inst.setState({
-							ffz_expanded: ! inst.state.ffz_expanded
-						});
-					}
-
-				const expanded = this.chat.context.get('chat.subs.merge-gifts-visibility') ?
-					! inst.state.ffz_expanded : inst.state.ffz_expanded;
-
-				let sub_list = null;
-				if( expanded && mystery && mystery.recipients && mystery.recipients.length > 0 ) {
-					const the_list = [];
-					for(const x of mystery.recipients) {
-						if ( the_list.length )
-							the_list.push(', ');
-
-						the_list.push(e('span', {
-							role: 'button',
-							className: 'ffz--giftee-name',
-							onClick: inst.ffz_user_click_handler,
-							'data-user': JSON.stringify(x)
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, x.displayName)));
-					}
-
-					sub_list = e('div', {
-						className: 'tw-mg-t-05 tw-border-t tw-pd-t-05 tw-c-text-alt-2'
-					}, the_list);
-				}
-
-				const target = [
-					sub_msg
-				];
-
-				if ( mystery )
-					target.push(e('span', {
-						className: `tw-pd-l-05 ffz-font-size-4 ffz-i-${expanded ? 'down' : 'right'}-dir`
-					}));
-
-				const out = [
-					e('div', {
-						className: 'tw-full-width tw-c-text-alt-2',
-						onClick: inst.ffz_click_expand
-					}, target),
-					sub_list
-				];
-
-				if ( ! this.chat.context.get('chat.subs.compact') )
-					out.ffz_icon = e('span', {
-						className: `ffz-i-star${msg.sub_anon ? '-empty' : ''} tw-mg-r-05`
-					});
-
-				out.ffz_target = target;
-				return out;
-			}
-		};
-
-		this.line_types.first_time_chatter = {
-			getClass: () => {
-				const style = this.chat.context.get('chat.lines.first-time-chatter');
-				return `ffz--ftc-line ffz-custom-color${style === 1 ? ' ffz--ftc-bg' : ''}`;
-			},
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const notice = [
-					e('span', { className: 'tw-c-text-base tw-strong' },
-						this.i18n.t('chat.ftc-message', 'First Time Chatter')
-					)
-				];
-
-				notice.ffz_icon = e('span', {
-					className: 'ffz-i-first-time-chatter tw-c-text-base tw-mg-r-05'
-				});
-
-				return notice;
-			}
-		};
-
-		this.line_types.announcement = {
-			getClass: (msg) => {
-				const color = msg.announcement_color?.toLowerCase();
-				return `ffz--announcement-line ffz--announcement-${color}`;
-			},
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const target = [
-					e('span', { className: 'ffz-i-shoutout tw-mg-r-05' }),
-					this.i18n.t('chat.announcement', 'Announcement')
-				];
-
-				const out = [e('div', { className: 'tw-c-text-base tw-strong' }, target)];
-				out.ffz_target = target;
-				return out;
-			}
-		};
-
-		this.line_types.watch_streak = {
-			getClass: () => 'ffz--watch-streak-line',
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const user = msg.user;
-				const streak = msg.watch_streak;
-				const copo = msg.copo_reward;
-
-				const target = this.i18n.tList(
-					'chat.watch-streak.header',
-					'{icon}Watch Streak Reached {points_icon}+{copo}',
-					{
-						icon: e('span', { className: 'ffz-i-watch-streak tw-mg-r-05' }),
-						points_icon: e('span', { className: 'ffz--points-icon' }),
-						copo
-					}
-				);
-
-				const header = e('div', {
-					className: 'tw-c-text-base tw-strong'
-				}, target);
-
-				const body = e('div', {
-					className: 'tw-c-text-alt-2'
-				}, this.i18n.tList(
-					'chat.watch-streak.body',
-					'{user} is currently on a {streak,number}-stream streak!',
-					{
-						streak,
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName))
-					}
-				));
-
-				const out = [header, body];
-				out.ffz_target = target;
-				return out;
-			}
-		};
-
-		this.line_types.raid_notice = {
-			getClass: () => 'ffz--raid-line',
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const user = msg.user;
-				const count = msg.raid_viewer_count;
-
-				const target = this.i18n.tList(
-					'chat.raid.notice',
-					'{user} is raiding with a party of {count}.',
-					{
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							onClick: inst.ffz_user_click_handler
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, user.displayName)),
-						count: e('strong', {}, this.i18n.formatNumber(count))
-					}
-				);
-
-				const out = [e('div', { className: 'tw-c-text-base' }, target)];
-				out.ffz_target = target;
-				return out;
-			}
-		};
-
-		this.line_types.shoutout = {
-			getClass: () => 'ffz--shoutout-line',
-
-			renderNotice: (msg, current_user, room, inst, e) => {
-				const login = msg.shoutout_login;
-				const display = msg.shoutout_display;
-
-				const target_user = JSON.stringify({
-					id: null,
-					login,
-					displayName: display
-				});
-
-				const target = [
-					e('span', { className: 'ffz-i-shoutout tw-mg-r-05' }),
-					this.i18n.t('chat.shoutout', 'Shoutout!')
-				];
-
-				const header = e('div', {
-					className: 'tw-c-text-base tw-strong'
-				}, target);
-
-				const body = e('div', {}, this.i18n.tList(
-					'chat.shoutout.body',
-					'Was given to {user}',
-					{
-						user: e('span', {
-							role: 'button',
-							className: 'chatter-name',
-							'data-user': target_user,
-							onClick: inst.ffz_user_click_handler
-						}, e('span', {
-							className: 'tw-c-text-base tw-strong'
-						}, display))
-					}
-				));
-
-				const out = [header, body];
-				out.ffz_target = target;
-				return out;
-			}
-		};
+		// ========================================================================
+		// Line Types
+		// ========================================================================
+
+		defineLineTypes(this);
 
 		this.ChatLine = this.fine.define(
 			'chat-line',
@@ -798,14 +208,22 @@ export default class ChatLine extends Module {
 			});
 		});
 
-		const t = this,
-			React = await this.site.findReact();
+		const React = await this.site.findReact();
 		if ( ! React )
 			return;
 
 		const e = React.createElement,
 			FFZRichContent = this.rich_content && this.rich_content.RichContent;
 
+
+		this.hookWhisperLine(e);
+		this.hookChatLine(e, FFZRichContent);
+		this.hookExtensionLine(e, FFZRichContent);
+	}
+
+	/** Wraps the whisper line renderer. `e` is React.createElement. */
+	hookWhisperLine(e) {
+		const t = this;
 
 		this.WhisperLine.ready(cls => {
 			const old_render = cls.prototype.render;
@@ -866,6 +284,11 @@ export default class ChatLine extends Module {
 			// freaking out on us.
 			setTimeout(() => this.WhisperLine.forceUpdate());
 		});
+	}
+
+	/** Wraps the chat line renderer with FFZ rendering, replies and shared-chat pills. `e` is React.createElement. */
+	hookChatLine(e, FFZRichContent) {
+		const t = this;
 
 		this.ChatLine.ready(cls => {
 			const old_render = cls.prototype.render;
@@ -1018,80 +441,9 @@ export default class ChatLine extends Module {
 				return null;
 			}
 
-			cls.prototype.ffzNewRender = function() { try {
-				this._ffz_no_scan = true;
-
-				const msg = t.chat.standardizeMessage(this.props.message),
-					override_mode = t.chat.context.get('chat.filtering.display-deleted');
-
-				// Before anything else, check to see if the deleted message view is set
-				// to BRIEF and the message is deleted. In that case we can exit very
-				// early.
-				let mod_mode = this.props.deletedMessageDisplay;
-				if ( override_mode )
-					mod_mode = override_mode;
-				else if ( ! this.props.isCurrentUserModerator && mod_mode === 'DETAILED' )
-					mod_mode = 'LEGACY';
-
-				if ( mod_mode === 'BRIEF' && msg.deleted ) {
-					const deleted_count = this.props.deletedCount;
-					if ( deleted_count == null )
-						return null;
-
-					return e(
-						'div', {
-							className: 'chat-line__status'
-						},
-						t.i18n.t('chat.deleted-messages', `{count,plural,
-one {One message was deleted by a moderator.}
-other {# messages were deleted by a moderator.}
-}`, {
-							count: deleted_count
-						})
-					);
-				}
-
-				// First, we need to handle Shared Chat.
-				const source_id = msg.sourceRoomID,
-					source = source_id && this.props.sharedChatDataByChannelID?.get(source_id);
-
-				// Get the current room id and login. We might need to look these up.
-				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
-					room_id = msg.roomId ? msg.roomId : this.props.channelID;
-
-				if ( ! room && room_id ) {
-					const r = t.chat.getRoom(room_id, null, true);
-					if ( r && r.login )
-						room = msg.roomLogin = r.login;
-				}
-
-				if ( ! room_id && room ) {
-					const r = t.chat.getRoom(null, room, true);
-					if ( r && r.id )
-						room_id = msg.roomId = r.id;
-				}
-
-				// Construct the current room and current user objects.
-				const current_user = t.site.getUser(),
-					current_room = {id: room_id, login: room};
-
-				const is_in_source = ! source || source_id === room_id,
-					source_room = is_in_source
-						? current_room
-						: {id: source_id, login: source.login};
-
-				const reply_mode = t.chat.context.get('chat.replies.style'),
-					has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
-					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
-					can_reply = can_replies && (has_replies || (current_user && current_user.login !== msg.user?.login));
-
-				if ( current_user ) {
-					current_user.moderator = this.props.isCurrentUserModerator;
-					current_user.staff = this.props.isCurrentUserStaff;
-					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
-					current_user.reply_mode = reply_mode;
-					current_user.can_reply = can_reply;
-				}
+			// Installs the reply and username click handlers on this line instance.
+			cls.prototype.ffzSetupClickHandlers = function(ctx) {
+				const {msg, current_room, source_room} = ctx;
 
 				// Set up our click handlers as necessary.
 				if ( ! this.ffz_open_reply )
@@ -1132,32 +484,12 @@ other {# messages were deleted by a moderator.}
 					else
 						this.ffz_user_click_handler = this.openViewerCard || this.usernameClickHandler; //event => event.ctrlKey ? this.usernameClickHandler(event) : t.viewer_cards.openCard(r, user, event);
 				}
+			};
 
-				let notice;
-				let klass;
-				let bg_css = null;
-
-				// Do we have a special renderer?
-				let type = msg.ffz_type && t.line_types[msg.ffz_type];
-				if ( ! type && msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') )
-					type = t.line_types.cheer;
-
-				if ( ! type && ( msg.ffz_first_msg || msg.isFirstMsg ) && t.chat.context.get('chat.lines.first-time-chatter') !== 0 )
-					type = t.line_types.first_time_chatter;
-
-				if ( ! type && msg.ffz_type )
-					type = t.line_types.unknown;
-
-				if ( type ) {
-					if ( type.render )
-						return type.render(msg, current_user, current_room, this, e, source);
-
-					if ( type.renderNotice )
-						notice = type.renderNotice(msg, current_user, current_room, this, e, source);
-
-					if ( type.getClass )
-						klass = type.getClass(msg, current_user, current_room, this, e, source);
-				}
+			// Works out how a deleted or moderated message should display and which classes apply.
+			cls.prototype.ffzRenderDeletedState = function(ctx) {
+				const {msg, mod_mode} = ctx;
+				let {klass} = ctx;
 
 				// Render the line.
 				const user = msg.user,
@@ -1220,6 +552,13 @@ other {# messages were deleted by a moderator.}
 					}
 				}
 
+				return {klass, user, anim_hover, show, deleted, mod_action};
+			};
+
+			// Renders the highlight-reason tags shown beside a highlighted message.
+			cls.prototype.ffzRenderHighlightTags = function(ctx) {
+				const {msg} = ctx;
+
 				// Are we listing highlight reasons?
 				let highlight_tags = null;
 				const hl_position = t.chat.context.get('chat.filtering.show-reasons');
@@ -1266,6 +605,103 @@ other {# messages were deleted by a moderator.}
 						highlight_tags = null;
 				}
 
+				return {highlight_tags, hl_position};
+			};
+
+			// Renders the message body: timestamp, badges, name, tokens and rich content.
+			// Renders the username element, with the name override and shared-chat tooltip variants.
+			cls.prototype.ffzRenderUserBlock = function(ctx) {
+				const {msg, source, user, color} = ctx;
+
+				// First, render the user block.
+				const username = t.chat.formatUser(user, e),
+					override_name = t.overrides.getName(user.id);
+
+				let user_class = msg.ffz_user_class;
+				if ( user_class instanceof Set )
+					user_class = [...user_class].join(' ');
+				else if ( Array.isArray(user_class) )
+					user_class = user_class.join(' ');
+
+				const want_source_tip = source && t.chat.context.get('chat.shared-chat.username-tooltip');
+
+				const user_props = {
+					className: `chat-line__username notranslate${override_name ? ' ffz--name-override' : ''}${(override_name || want_source_tip) ? ' tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
+					role: 'button',
+					style: { color },
+					onClick: this.ffz_user_click_handler,
+					onContextMenu: t.actions.handleUserContext
+				};
+
+				if ( msg.ffz_user_props )
+					Object.assign(user_props, msg.ffz_user_props);
+
+				if ( msg.ffz_user_style )
+					Object.assign(user_props.style, msg.ffz_user_style);
+
+				const user_block = e(
+					'span',
+					user_props,
+					override_name
+						? [
+							e('span', {
+								className: 'chat-author__display-name'
+							}, override_name),
+							e('div', {
+								className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+							}, [
+								username,
+								want_source_tip
+									? e('div', {
+										className: 'ffz-font-size-8 tw-mg-t-05'
+									}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
+									: null
+								]
+							)
+						]
+						: want_source_tip
+							? [
+								username,
+								e('span', {
+									className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+								}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
+							]
+							: username
+				);
+
+				return user_block;
+			};
+
+			// Renders the message text, or the deleted-message placeholder when it is hidden.
+			cls.prototype.ffzRenderMessageBody = function(ctx) {
+				const {reply_mode, has_replies, show, tokens, action_italic, action_color, color, twitch_highlight} = ctx;
+
+				return show
+					? e(
+						'span',
+						{
+							className: `message ${action_italic ? 'chat-line__message-body--italicized' : ''} ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
+							style: action_color ? { color} : null
+						},
+						t.chat.renderTokens(
+							tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null
+						)
+					)
+					: e(
+						'span',
+						{
+							className: 'chat-line__message--deleted'
+						},
+						e('a', {
+							href: '',
+							onClick: this.alwaysShowMessage
+						}, t.i18n.t('chat.message-deleted', '<message deleted>'))
+					);
+			};
+
+			cls.prototype.ffzRenderMessageContent = function(ctx) {
+				const {msg, source, current_user, current_room, reply_mode, has_replies, notice, user, show, mod_action, highlight_tags, hl_position} = ctx;
+
 				// Check to see if we have message content to render.
 				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, current_user),
 					has_message = tokens.length > 0 || ! notice;
@@ -1292,60 +728,7 @@ other {# messages were deleted by a moderator.}
 						giant_emote = is_giant_emote && t.chat.pluckLastEmote(tokens, msg);
 
 					// First, render the user block.
-					const username = t.chat.formatUser(user, e),
-						override_name = t.overrides.getName(user.id);
-
-					let user_class = msg.ffz_user_class;
-					if ( user_class instanceof Set )
-						user_class = [...user_class].join(' ');
-					else if ( Array.isArray(user_class) )
-						user_class = user_class.join(' ');
-
-					const want_source_tip = source && t.chat.context.get('chat.shared-chat.username-tooltip');
-
-					const user_props = {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override' : ''}${(override_name || want_source_tip) ? ' tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
-						role: 'button',
-						style: { color },
-						onClick: this.ffz_user_click_handler,
-						onContextMenu: t.actions.handleUserContext
-					};
-
-					if ( msg.ffz_user_props )
-						Object.assign(user_props, msg.ffz_user_props);
-
-					if ( msg.ffz_user_style )
-						Object.assign(user_props.style, msg.ffz_user_style);
-
-					const user_block = e(
-						'span',
-						user_props,
-						override_name
-							? [
-								e('span', {
-									className: 'chat-author__display-name'
-								}, override_name),
-								e('div', {
-									className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
-								}, [
-									username,
-									want_source_tip
-										? e('div', {
-											className: 'ffz-font-size-8 tw-mg-t-05'
-										}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
-										: null
-									]
-								)
-							]
-							: want_source_tip
-								? [
-									username,
-									e('span', {
-										className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
-									}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
-								]
-								: username
-					);
+					const user_block = this.ffzRenderUserBlock({msg, source, user, color});
 
 					// The timestamp.
 					const timestamp = (this.props.showTimestamps || this.props.isHistorical)
@@ -1392,27 +775,7 @@ other {# messages were deleted by a moderator.}
 						reply_token,
 
 						// Message
-						show
-							? e(
-								'span',
-								{
-									className: `message ${action_italic ? 'chat-line__message-body--italicized' : ''} ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
-									style: action_color ? { color} : null
-								},
-								t.chat.renderTokens(
-									tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null
-								)
-							)
-							: e(
-								'span',
-								{
-									className: 'chat-line__message--deleted'
-								},
-								e('a', {
-									href: '',
-									onClick: this.alwaysShowMessage
-								}, t.i18n.t('chat.message-deleted', '<message deleted>'))
-							),
+						this.ffzRenderMessageBody({reply_mode, has_replies, show, tokens, action_italic, action_color, color, twitch_highlight}),
 
 						// Moderation Action
 						mod_action,
@@ -1428,6 +791,14 @@ other {# messages were deleted by a moderator.}
 							: null
 					];
 				}
+
+				return {message};
+			};
+
+			// Wraps the message in its notice container, if any, producing the line body.
+			cls.prototype.ffzRenderNotice = function(ctx) {
+				const {msg, source, current_user, current_room, source_room, user, highlight_tags, hl_position} = ctx;
+				let {notice, klass, message} = ctx;
 
 				// Is there a notice?
 				let out;
@@ -1508,6 +879,133 @@ other {# messages were deleted by a moderator.}
 						out = message;
 				}
 
+				return {notice, klass, message, out};
+			};
+
+			cls.prototype.ffzNewRender = function() { try {
+				this._ffz_no_scan = true;
+
+				const msg = t.chat.standardizeMessage(this.props.message),
+					override_mode = t.chat.context.get('chat.filtering.display-deleted');
+
+				// Before anything else, check to see if the deleted message view is set
+				// to BRIEF and the message is deleted. In that case we can exit very
+				// early.
+				let mod_mode = this.props.deletedMessageDisplay;
+				if ( override_mode )
+					mod_mode = override_mode;
+				else if ( ! this.props.isCurrentUserModerator && mod_mode === 'DETAILED' )
+					mod_mode = 'LEGACY';
+
+				if ( mod_mode === 'BRIEF' && msg.deleted ) {
+					const deleted_count = this.props.deletedCount;
+					if ( deleted_count == null )
+						return null;
+
+					return e(
+						'div', {
+							className: 'chat-line__status'
+						},
+						t.i18n.t('chat.deleted-messages', `{count,plural,
+one {One message was deleted by a moderator.}
+other {# messages were deleted by a moderator.}
+}`, {
+							count: deleted_count
+						})
+					);
+				}
+
+				// First, we need to handle Shared Chat.
+				const source_id = msg.sourceRoomID,
+					source = source_id && this.props.sharedChatDataByChannelID?.get(source_id);
+
+				// Get the current room id and login. We might need to look these up.
+				let room = msg.roomLogin ? msg.roomLogin : msg.channel ? msg.channel.slice(1) : undefined,
+					room_id = msg.roomId ? msg.roomId : this.props.channelID;
+
+				if ( ! room && room_id ) {
+					const r = t.chat.getRoom(room_id, null, true);
+					if ( r && r.login )
+						room = msg.roomLogin = r.login;
+				}
+
+				if ( ! room_id && room ) {
+					const r = t.chat.getRoom(null, room, true);
+					if ( r && r.id )
+						room_id = msg.roomId = r.id;
+				}
+
+				// Construct the current room and current user objects.
+				const current_user = t.site.getUser(),
+					current_room = {id: room_id, login: room};
+
+				const is_in_source = ! source || source_id === room_id,
+					source_room = is_in_source
+						? current_room
+						: {id: source_id, login: source.login};
+
+				const reply_mode = t.chat.context.get('chat.replies.style'),
+					has_replies = this.props && !!(this.props.hasReply || this.props.reply || ! this.props.replyRestrictedReason),
+					can_replies = has_replies && msg.message && ! msg.deleted && ! this.props.disableReplyClick,
+					can_reply = can_replies && (has_replies || (current_user && current_user.login !== msg.user?.login));
+
+				if ( current_user ) {
+					current_user.moderator = this.props.isCurrentUserModerator;
+					current_user.staff = this.props.isCurrentUserStaff;
+					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
+					current_user.reply_mode = reply_mode;
+					current_user.can_reply = can_reply;
+				}
+
+				// Set up our click handlers as necessary.
+				this.ffzSetupClickHandlers({msg, current_room, source_room});
+
+				let notice;
+				let klass;
+				let bg_css = null;
+
+				// Do we have a special renderer?
+				let type = msg.ffz_type && t.line_types[msg.ffz_type];
+				if ( ! type && msg.bits > 0 && t.chat.context.get('chat.bits.cheer-notice') )
+					type = t.line_types.cheer;
+
+				if ( ! type && ( msg.ffz_first_msg || msg.isFirstMsg ) && t.chat.context.get('chat.lines.first-time-chatter') !== 0 )
+					type = t.line_types.first_time_chatter;
+
+				if ( ! type && msg.ffz_type )
+					type = t.line_types.unknown;
+
+				if ( type ) {
+					if ( type.render )
+						return type.render(msg, current_user, current_room, this, e, source);
+
+					if ( type.renderNotice )
+						notice = type.renderNotice(msg, current_user, current_room, this, e, source);
+
+					if ( type.getClass )
+						klass = type.getClass(msg, current_user, current_room, this, e, source);
+				}
+
+				// Render the line.
+				const deleted_state = this.ffzRenderDeletedState({msg, mod_mode, klass});
+				klass = deleted_state.klass;
+				const {user, anim_hover, show, deleted, mod_action} = deleted_state;
+
+				// Are we listing highlight reasons?
+				const highlight_result = this.ffzRenderHighlightTags({msg});
+				const {highlight_tags, hl_position} = highlight_result;
+
+				// Check to see if we have message content to render.
+				const message_content = this.ffzRenderMessageContent({msg, source, current_user, current_room, reply_mode, has_replies, notice, user, show, mod_action, highlight_tags, hl_position});
+				let {message} = message_content;
+
+				// Is there a notice?
+				const notice_result = this.ffzRenderNotice({msg, source, current_user, current_room, source_room, notice, klass, user, highlight_tags, hl_position, message});
+				notice = notice_result.notice;
+				klass = notice_result.klass;
+				message = notice_result.message;
+				let {out} = notice_result;
+
 				// Check for hover actions, as those require we wrap the output in a few extra elements.
 				const hover_actions = (user && msg.id && ! msg.ffz_no_actions)
 					? t.actions.renderHover(msg, this.props.showModerationIcons, current_user, current_room, e, this)
@@ -1576,6 +1074,11 @@ other {# messages were deleted by a moderator.}
 			// freaking out on us.
 			setTimeout(() => this.ChatLine.forceUpdate());
 		});
+	}
+
+	/** Wraps the extension message line renderer. `e` is React.createElement. */
+	hookExtensionLine(e, FFZRichContent) {
+		const t = this;
 
 		this.ExtensionLine.ready(cls => {
 			const old_render = cls.prototype.render;

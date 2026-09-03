@@ -1,5 +1,8 @@
 const browser = ((globalThis as any).browser ?? globalThis.chrome) as typeof globalThis.chrome;
 
+// The IndexedDB cache, filled by the init-load handling further down.
+let cache: Map<string, any> | null = null;
+
 // First, the toolbar action handler.
 browser.runtime.onInstalled.addListener(() => {
 	browser.action.disable();
@@ -59,14 +62,13 @@ function newPort(port: chrome.runtime.Port) {
 
 	port.onMessage.addListener(msg => {
 		const type = msg?.ffz_type as keyof CorsRpcTypes;
-		const id = msg?.id  as number | undefined;
 		if ( ! type )
 			return;
 
 		if ( type === 'ready' ) {
 			// Echo back that we're ready.
 			port.postMessage({ffz_type: 'ready'});
-			return;
+			
 
 		} else if ( type === 'init-load' ) {
 			initializeCache().then(() => {
@@ -146,14 +148,13 @@ function broadcast(msg: any, exclude?: chrome.runtime.Port) {
 
 
 // IndexedDB Operations
-let cache: Map<string, any> | null = null;
 
 const DB_VERSION = 1,
 	_db_handle = new Map<string, IDBDatabase>,
 	_db_waiters = new Map<string, Promise<IDBDatabase>>;
 
 function openDatabase(name: string = 'FFZ', attempt = 0) {
-	let db = _db_handle.get(name);
+	const db = _db_handle.get(name);
 	if ( db )
 		return Promise.resolve(db);
 
@@ -161,7 +162,7 @@ function openDatabase(name: string = 'FFZ', attempt = 0) {
 	if ( waiter )
 		return waiter;
 
-	let start = performance.now();
+	const start = performance.now();
 
 	waiter = new Promise<IDBDatabase>((resolve, reject) => {
 
@@ -284,12 +285,6 @@ async function initializeCache() {
 }
 
 
-async function hasValue(key: string) {
-	if ( cache == null )
-		await initializeCache();
-
-	return cache!.has(key);
-}
 
 async function setValue(key: string, value: any, source?: chrome.runtime.Port) {
 	if ( cache == null )
@@ -548,10 +543,6 @@ async function blobKeys() {
 	});
 }
 
-async function hasBlob(key: string) {
-	const keys = await blobKeys();
-	return keys.includes(key);
-}
 
 async function clearBlobs(source?: chrome.runtime.Port) {
 	const db = await openDatabase(),
@@ -693,24 +684,6 @@ type RPCInputMessage<K extends keyof CorsRpcTypes> = {
 	ffz_type: K;
 	id?: number;
 } & CorsInput<K>;
-
-type CorsReplyMessage = {
-	ffz_type: 'reply';
-	id: number;
-	reply: any;
-};
-
-type CorsReplyErrorMessage = {
-	ffz_type: 'reply-error';
-	id: number;
-};
-
-type CorsMessage = CorsReplyMessage | CorsReplyErrorMessage | {
-	[K in keyof CorsRpcTypes]: RPCInputMessage<K>
-}[keyof CorsRpcTypes];
-
-/** A union of the various Blob types that are supported. */
-type BlobLike = Blob | File | ArrayBuffer | Uint8Array;
 
 /** A union of the various serialized blob types. */
 type SerializedBlobLike = SerializedBlob | SerializedFile | SerializedArrayBuffer | SerializedUint8Array;

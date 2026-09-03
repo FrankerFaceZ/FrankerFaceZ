@@ -29,7 +29,7 @@ export default class BTTVCompat extends Module {
 	awaitSettings(tries = 0) {
 		if ( ! window.BetterTTV?.settings ) {
 			if ( tries > 100 )
-				return Promise.reject();
+				return Promise.reject(new Error('BetterTTV settings did not appear.'));
 			return sleep(50).then(() => this.awaitSettings(tries + 1));
 		}
 
@@ -37,8 +37,15 @@ export default class BTTVCompat extends Module {
 	}
 
 	async hookSettings() {
-		const settings = await this.awaitSettings(),
-			waiter = () => this.updateContext(settings);
+		let settings;
+		try {
+			settings = await this.awaitSettings();
+		} catch(err) {
+			// BetterTTV is not installed, so there is nothing to hook.
+			return;
+		}
+
+		const waiter = () => this.updateContext(settings);
 
 		settings.on('changed.clickTwitchEmotes', waiter);
 		settings.on('changed.bttvGIFEmotes', waiter);

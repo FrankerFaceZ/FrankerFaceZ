@@ -11,7 +11,7 @@
 import {createElement, setChildren} from 'utilities/dom';
 import {maybe_call, debounce, has} from 'utilities/object';
 
-import {Instance, createPopper} from '@popperjs/core';
+import {type Instance, createPopper} from '@popperjs/core';
 import type Logger from './logging';
 import type { OptionallyCallable } from './types';
 
@@ -421,9 +421,9 @@ export class Tooltip {
 
 		// Build the DOM.
 		const arrow = createElement('div', {
-			className: opts.arrowClass,
-			'x-arrow': true
-		}),
+				className: opts.arrowClass,
+				'x-arrow': true
+			}),
 			inner = tip.element = createElement('div', opts.innerClass),
 
 			el = tip.outer = createElement('div', {

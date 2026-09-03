@@ -4,10 +4,10 @@
 // Add-On System
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { EXTENSION, SERVER_OR_EXT } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
-import { timeout, has, deep_copy, fetchJSON } from 'utilities/object';
+import {timeout, deep_copy, fetchJSON} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 import type SettingsManager from './settings';
 import type TranslationManager from './i18n';
@@ -232,7 +232,7 @@ export default class AddonManager extends Module<'addons'> {
 
 			for(const addon of cdn_data ) {
 				if ( addon.icon )
-				addon.icon = (new URL(addon.icon, base_path)).toString();
+					addon.icon = (new URL(addon.icon, base_path)).toString();
 				this.addAddon(addon, false);
 			}
 		}
@@ -256,7 +256,7 @@ export default class AddonManager extends Module<'addons'> {
 	}
 
 	addAddon(input: BasicAddonInfo, is_dev: boolean = false) {
-		let addon = input as FullAddonInfo;
+		const addon = input as FullAddonInfo;
 
 		const old = this.addons[addon.id];
 		this.addons[addon.id] = addon;
@@ -395,7 +395,7 @@ export default class AddonManager extends Module<'addons'> {
 			throw new Error(`Unknown add-on id: ${id}`);
 
 		// If the module isn't available, we can't reload it.
-		let module = this.resolve(`addon.${id}`);
+		const module = this.resolve(`addon.${id}`);
 		if ( ! module )
 			return false;
 
@@ -420,7 +420,7 @@ export default class AddonManager extends Module<'addons'> {
 
 		if ( module.children )
 			for(const child of Object.values(module.children))
-				await this.fullyUnloadModule(child);
+				await this.fullyUnloadModule(child); // eslint-disable-line no-await-in-loop -- children unload in order, before their parent
 
 		await module.disable();
 		await module.unload();
@@ -476,7 +476,7 @@ export default class AddonManager extends Module<'addons'> {
 
 		// Yeet the module into the abyss.
 		// This will also yeet all children.
-		let module = this.resolve(`addon.${id}`);
+		const module = this.resolve(`addon.${id}`);
 		if ( module )
 			try {
 				await this.fullyUnloadModule(module);
@@ -496,7 +496,7 @@ export default class AddonManager extends Module<'addons'> {
 			}
 
 		// Is there a script tab?
-		let el = document.querySelector(`script#ffz-loaded-addon-${addon.id}`);
+		const el = document.querySelector(`script#ffz-loaded-addon-${addon.id}`);
 		if ( el )
 			el.remove();
 
@@ -552,8 +552,8 @@ export default class AddonManager extends Module<'addons'> {
 			await module.enable();
 
 		if ( Array.isArray(addon.load_events) )
-		for(const event of addon.load_events)
-			this.load_tracker.notify(event, `addon.${id}`, false);
+			for(const event of addon.load_events)
+				this.load_tracker.notify(event, `addon.${id}`, false);
 	}
 
 	async loadAddon(id: string) {

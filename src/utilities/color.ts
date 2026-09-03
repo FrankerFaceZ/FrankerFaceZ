@@ -80,7 +80,7 @@ class RGBAColor implements BaseColor {
 	// ========================================================================
 
 	static fromName(name: string) {
-		const ctx = Color.getContext();
+		const ctx = Color.getContext(); // eslint-disable-line no-use-before-define -- Color aggregates the classes above and exists before any call
 		ctx.clearRect(0, 0, 1, 1);
 		ctx.fillStyle = name;
 		ctx.fillRect(0, 0, 1, 1);
@@ -287,8 +287,8 @@ class RGBAColor implements BaseColor {
 	daltonize(type: string | CVDMatrix) {
 		let cvd: CVDMatrix;
 		if ( typeof type === 'string' ) {
-			if ( Color.CVDMatrix.hasOwnProperty(type) )
-				cvd = Color.CVDMatrix[type];
+			if ( Object.prototype.hasOwnProperty.call(Color.CVDMatrix, type) ) // eslint-disable-line no-use-before-define -- Color aggregates the classes above and exists before any call
+				cvd = Color.CVDMatrix[type]; // eslint-disable-line no-use-before-define -- Color aggregates the classes above and exists before any call
 			else
 				throw new Error('Invalid CVD matrix');
 		} else
@@ -509,8 +509,8 @@ class HSLAColor implements BaseColor {
 
 	targetLuminance(target: number) {
 		let s = this.s,
-			min = 0,
-			max = 1;
+			min = 0;
+		const max = 1;
 
 		s *= Math.pow(this.l > 0.5 ? -this.l : this.l - 1, 7) + 1;
 
@@ -519,11 +519,8 @@ class HSLAColor implements BaseColor {
 
 		for (; d > 1/65536; d /= 2, mid = min + d) {
 			const luminance = RGBAColor.fromHSLA(this.h, s, mid, 1).luminance();
-			if (luminance > target) {
-				max = mid;
-			} else {
+			if (luminance <= target)
 				min = mid;
-			}
 		}
 
 		return new HSLAColor(this.h, s, mid, this.a);

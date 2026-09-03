@@ -4,8 +4,8 @@
 // Experiments
 // ============================================================================
 
-import {DEBUG, SERVER, SERVER_OR_EXT} from 'utilities/constants';
-import Module, { GenericModule } from 'utilities/module';
+import {DEBUG, CLIENT_SERVER, SERVER_OR_EXT} from 'utilities/constants';
+import Module, { type GenericModule } from 'utilities/module';
 import {has, deep_copy, fetchJSON} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
@@ -256,7 +256,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		try {
 			data = await fetchJSON(DEBUG
 				? EXPERIMENTS
-				: `${SERVER}/script/experiments.json?_=${getBuster()}`
+				: `${CLIENT_SERVER}/script/experiments.json?_=${getBuster()}`
 			);
 
 		} catch(err) {
@@ -539,7 +539,7 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		this._rebuildTwitchKey(key, false, old_val);
 	}
 
-	hasTwitchOverride(key: string) { // eslint-disable-line class-methods-use-this
+	hasTwitchOverride(key: string) {  
 		const overrides = this._getOverrideCookie(),
 			experiments = overrides.experiments;
 

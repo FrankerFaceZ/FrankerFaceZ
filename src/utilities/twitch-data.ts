@@ -5,7 +5,7 @@
 // Get data, from Twitch.
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import {get, debounce, TranslatableError} from 'utilities/object';
 import type Apollo from './compat/apollo';
 import type { DocumentNode } from 'graphql';
@@ -353,20 +353,20 @@ export default class TwitchData extends Module {
 		if ( code === 'TARGET_IS_BROADCASTER' )
 			throw new TranslatableError(
 				"You cannot delete the broadcaster's messages.",
-				"chat.delete.forbidden.broadcaster"
+				'chat.delete.forbidden.broadcaster'
 			);
 
 		if ( code === 'TARGET_IS_MODERATOR' )
 			throw new TranslatableError(
-				"You cannot delete messages from moderator {displayName}.",
-				"chat.delete.forbidden.moderator",
+				'You cannot delete messages from moderator {displayName}.',
+				'chat.delete.forbidden.moderator',
 				get('data.deleteChatMessage.message.sender', data)
 			);
 
 		if ( code !== 'SUCCESS' )
 			throw new TranslatableError(
 				"You don't have permission to delete messages.",
-				"chat.delete.forbidden"
+				'chat.delete.forbidden'
 			);
 
 		return true;
@@ -408,26 +408,26 @@ export default class TwitchData extends Module {
 
 		if (error?.code === 'TARGET_IS_SELF')
 			throw new TranslatableError(
-				"You cannot warn yourself.",
-				"chat.warn.forbidden.self"
+				'You cannot warn yourself.',
+				'chat.warn.forbidden.self'
 			);
 
 		if (error?.code === 'TARGET_IS_MOD')
 			throw new TranslatableError(
-				"You cannot warn a moderator.",
-				"chat.warn.forbidden.mod"
+				'You cannot warn a moderator.',
+				'chat.warn.forbidden.mod'
 			);
 
 		if (error?.code === 'TARGET_IS_BOT')
 			throw new TranslatableError(
-				"You cannot warn a bot.",
-				"chat.warn.forbidden.bot"
+				'You cannot warn a bot.',
+				'chat.warn.forbidden.bot'
 			);
 
 		if (error)
 			throw new TranslatableError(
 				"You don't have permission to warn this user.",
-				"chat.warn.forbidden"
+				'chat.warn.forbidden'
 			);
 
 		return true;
@@ -671,7 +671,6 @@ export default class TwitchData extends Module {
 	 */
 	getUserBasic(id?: ID, login?: LOGIN) {
 		let store: Map<string, StoredPromise<TwitchBasicUser | null>>;
-		let retval: Promise<TwitchBasicUser | null>;
 		let key: string;
 
 		if ( id ) {
@@ -683,14 +682,14 @@ export default class TwitchData extends Module {
 		} else
 			return Promise.reject('id and login cannot both be null');
 
-		let stored = store.get(key);
+		const stored = store.get(key);
 		if (stored)
 			return stored[0];
 
 		let success: (value: TwitchBasicUser | null) => void,
 			failure: (reason?: any) => void;
 
-		retval = new Promise<TwitchBasicUser | null>((s, f) => {
+		const retval = new Promise<TwitchBasicUser | null>((s, f) => {
 			success = s;
 			failure = f;
 		});
@@ -969,7 +968,6 @@ export default class TwitchData extends Module {
 	 */
 	getStreamMeta(id?: ID, login?: LOGIN) {
 		let store: Map<string, StoredPromise<TwitchStreamCreatedAt | null>>;
-		let retval: Promise<TwitchStreamCreatedAt | null>;
 		let key: string;
 
 		if ( id ) {
@@ -981,14 +979,14 @@ export default class TwitchData extends Module {
 		} else
 			return Promise.reject('id and login cannot both be null');
 
-		let stored = store.get(key);
+		const stored = store.get(key);
 		if (stored)
 			return stored[0];
 
 		let success: (value: TwitchStreamCreatedAt | null) => void,
 			failure: (reason?: any) => void;
 
-		retval = new Promise<TwitchStreamCreatedAt | null>((s, f) => {
+		const retval = new Promise<TwitchStreamCreatedAt | null>((s, f) => {
 			success = s;
 			failure = f;
 		});
@@ -1112,7 +1110,6 @@ export default class TwitchData extends Module {
 	 */
 	getStreamFlags(id?: ID, login?: LOGIN) {
 		let store: Map<string, StoredPromise<TwitchContentLabel[] | null>>;
-		let retval: Promise<TwitchContentLabel[] | null>;
 		let key: string;
 
 		if ( id ) {
@@ -1124,14 +1121,14 @@ export default class TwitchData extends Module {
 		} else
 			return Promise.reject('id and login cannot both be null');
 
-		let stored = store.get(key);
+		const stored = store.get(key);
 		if (stored)
 			return stored[0];
 
 		let success: (value: TwitchContentLabel[] | null) => void,
 			failure: (reason?: any) => void;
 
-		retval = new Promise<TwitchContentLabel[] | null>((s, f) => {
+		const retval = new Promise<TwitchContentLabel[] | null>((s, f) => {
 			success = s;
 			failure = f;
 		});

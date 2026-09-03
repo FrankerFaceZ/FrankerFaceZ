@@ -196,7 +196,7 @@
 
 <script>
 
-import { DEBUG, SERVER } from 'utilities/constants';
+import { DEBUG, CLIENT_SERVER } from 'utilities/constants';
 import { highlightJson } from 'utilities/dom';
 import { deep_copy, generateUUID } from 'utilities/object';
 import { getBuster } from 'utilities/time';
@@ -323,7 +323,7 @@ export default {
 			if ( has_loaded_samples )
 				return;
 
-			const values = await fetch(DEBUG ? SAMPLES : `${SERVER}/script/sample-chat-messages.json?_=${getBuster()}`).then(r => r.ok ? r.json() : null);
+			const values = await fetch(DEBUG ? SAMPLES : `${CLIENT_SERVER}/script/sample-chat-messages.json?_=${getBuster()}`).then(r => r.ok ? r.json() : null);
 			if ( Array.isArray(values) && values.length > 0 ) {
 				has_loaded_samples = true;
 

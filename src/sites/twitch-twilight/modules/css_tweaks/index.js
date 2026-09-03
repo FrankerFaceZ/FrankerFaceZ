@@ -361,6 +361,17 @@ export default class CSSTweaks extends Module {
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
 				title: 'Allow the Twitch Turbo button to appear.',
+				description: 'This is the button in the top navigation that offers Twitch Turbo, including its "Gift Turbo" form.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('layout.bits-cta', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Allow the Bits button to appear.',
+				description: 'This is the button in the top navigation that offers Bits, including its "Bits: 5% off" form.',
 				component: 'setting-check-box'
 			}
 		});

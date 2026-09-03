@@ -9,7 +9,7 @@ import type { ReactStateNode } from 'root/src/utilities/compat/react-types';
 // Loadable Stuff
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import type { AnyFunction } from 'utilities/types';
 import type Twilight from '..';
 
@@ -26,6 +26,7 @@ declare module 'utilities/types' {
 		'chat.hype.show-pinned': boolean;
 		'chat.input.show-shield': boolean;
 		'layout.turbo-cta': boolean;
+		'layout.bits-cta': boolean;
 		'layout.subtember': boolean;
 	}
 }
@@ -129,6 +130,10 @@ export default class Loadable extends Module {
 			this.toggle('TopNav__TurboButton_Available', val);
 		});
 
+		this.settings.getChanges('layout.bits-cta', val => {
+			this.toggle('TopNav__BitsButton_Available', val);
+		});
+
 		this.settings.getChanges('layout.subtember', val => {
 			this.toggle('TokenizedCommerceBanner', val);
 		});
@@ -169,7 +174,7 @@ export default class Loadable extends Module {
 				try {
 					const type = this.props.component;
 					if ( t.overrides.has(type) && this.state ) {
-						let cmp = this.state.Component;
+						const cmp = this.state.Component;
 						if ( typeof cmp === 'function' && ! (cmp as any).ffzWrapped ) {
 							const React = t.site.getReact(),
 								createElement = React && React.createElement;

@@ -4,7 +4,7 @@
 // Name and Color Overrides
 // ============================================================================
 
-import Module, { GenericModule } from 'utilities/module';
+import Module, { type GenericModule } from 'utilities/module';
 import { createElement, ClickOutside } from 'utilities/dom';
 import Tooltip from 'utilities/tooltip';
 import type SettingsManager from 'root/src/settings';
@@ -127,7 +127,7 @@ export default class Overrides extends Module<'chat.overrides'> {
 					throw new Error('unable to load vue');
 
 				const [, editor] = await Promise.all([vue.enable(), _editor]);
-				vue.component('override-editor', editor.default);
+				vue.component('OverrideEditor', editor.default);
 
 				ve = new vue.Vue({
 					el: createElement('div'),
@@ -234,7 +234,7 @@ export default class Overrides extends Module<'chat.overrides'> {
 					throw new Error('unable to load vue');
 
 				const [, editor] = await Promise.all([vue.enable(), _editor]);
-				vue.component('warn-editor', editor.default);
+				vue.component('WarnEditor', editor.default);
 
 				const actions = this.resolve('chat.actions') as any;
 

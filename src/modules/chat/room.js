@@ -10,7 +10,7 @@ import {NEW_API, WEBKIT_CSS as WEBKIT, IS_FIREFOX} from 'utilities/constants';
 
 import {ManagedStyle} from 'utilities/dom';
 import {has, SourcedSet, set_equals} from 'utilities/object';
-import { getBadgeCategory, fixBadgeData } from './badges';
+import { getBadgeCategory, fixBadgeData } from './badge_data';
 
 
 export default class Room {

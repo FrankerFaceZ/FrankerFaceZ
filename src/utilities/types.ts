@@ -1,19 +1,19 @@
-import type ExperimentManager from "../experiments";
-import type TranslationManager from "../i18n";
-import type Chat from "../modules/chat";
-import type Actions from "../modules/chat/actions/actions";
-import type Badges from "../modules/chat/badges";
-import type Emoji from "../modules/chat/emoji";
-import type Emotes from "../modules/chat/emotes";
-import type Overrides from "../modules/chat/overrides";
-import type EmoteCard from "../modules/emote_card";
-import type LinkCard from "../modules/link_card";
-import type MainMenu from "../modules/main_menu";
-import type TranslationUI from "../modules/translation_ui";
-import type SocketClient from "../socket";
-import type Apollo from "./compat/apollo";
-import type WebMunch from "./compat/webmunch";
-import type { NamespacedEvents } from "./events";
+import type ExperimentManager from '../experiments';
+import type TranslationManager from '../i18n';
+import type Chat from '../modules/chat';
+import type Actions from '../modules/chat/actions/actions';
+import type Badges from '../modules/chat/badges';
+import type Emoji from '../modules/chat/emoji';
+import type Emotes from '../modules/chat/emotes';
+import type Overrides from '../modules/chat/overrides';
+import type EmoteCard from '../modules/emote_card';
+import type LinkCard from '../modules/link_card';
+import type MainMenu from '../modules/main_menu';
+import type TranslationUI from '../modules/translation_ui';
+import type SocketClient from '../socket';
+import type Apollo from './compat/apollo';
+import type WebMunch from './compat/webmunch';
+import type { NamespacedEvents } from './events';
 
 /**
  * AddonInfo represents the data contained in an add-on's manifest.
@@ -111,20 +111,20 @@ export type ArrayShift<T extends any[]> = T extends [any, ...infer Rest]
 	: undefined;
 
 export type ExtractType<T, Path extends string[], Key = Path[0], Rest = ArrayShift<Path>> =
-	Key extends "@each"
+	Key extends '@each'
 		? ExtractEach<T, Rest>
 		:
-	Key extends "@last"
-		? T extends any[]
-			? ExtractEach<T, Rest>
-			: never
-		:
-	Key extends keyof T
-		? Rest extends string[]
-			? ExtractType<T[Key], Rest>
-			: T[Key]
-		:
-	never;
+		Key extends '@last'
+			? T extends any[]
+				? ExtractEach<T, Rest>
+				: never
+			:
+			Key extends keyof T
+				? Rest extends string[]
+					? ExtractType<T[Key], Rest>
+					: T[Key]
+				:
+				never;
 
 export type ExtractEach<T, Rest> =
 	Rest extends string[]
@@ -158,7 +158,7 @@ export type OptionalPromise<T> = T | Promise<T>;
 export type OptionalArray<T> = T | T[];
 
 export type UnionToIntersection<Union> = (
-    Union extends any ? (k: Union) => void : never
+	Union extends any ? (k: Union) => void : never
 ) extends (k: infer Intersection) => void ? Intersection : never;
 
 
@@ -172,7 +172,7 @@ export type RecursivePartial<T> = {
 export type JoinKeyPaths<K, P, Separator extends string = '.'> = K extends string ?
 	P extends string ?
 		`${K}${P extends '' ? '' : Separator}${P}`
-	: never : never;
+		: never : never;
 
 export type ObjectKeyPaths<T, Separator extends string = '.', Prefix extends string = ''> =
 	T extends object ?
@@ -182,13 +182,13 @@ export type ObjectKeyPaths<T, Separator extends string = '.', Prefix extends str
 
 export type ExtractFunctionNames<T, IncludeOptional extends boolean = false> = {
 	[K in keyof T]:
-		T[K] extends AnyFunction
-			? K
-			: IncludeOptional extends true ?
-				T[K] extends AnyFunction | undefined
-					? K
-					: never
-				: never;
+	T[K] extends AnyFunction
+		? K
+		: IncludeOptional extends true ?
+			T[K] extends AnyFunction | undefined
+				? K
+				: never
+			: never;
 }[keyof T];
 
 /**

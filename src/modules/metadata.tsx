@@ -1,16 +1,17 @@
 
+/* eslint-disable react/jsx-no-bind -- this JSX renders through the DOM helper, not React, and handlers are created per render on purpose */
+
 // ============================================================================
 // Channel Metadata
 // ============================================================================
 
-import { DEBUG } from 'utilities/constants';
 
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 import {maybe_call} from 'utilities/object';
 
-import Module, { buildAddonProxy, GenericModule } from 'utilities/module';
+import Module, { buildAddonProxy, type GenericModule } from 'utilities/module';
 import {duration_to_string, durationForURL} from 'utilities/time';
-import Tooltip, { TooltipInstance } from 'utilities/tooltip';
+import Tooltip, { type TooltipInstance } from 'utilities/tooltip';
 import type { AddonInfo, DomFragment, OptionallyThisCallable, OptionalPromise } from 'utilities/types';
 
 import type SettingsManager from '../settings';
@@ -352,7 +353,7 @@ export default class Metadata extends Module {
 			setup(data) {
 				let created = data?.channel?.live_since;
 				if ( ! created )
-						return null;
+					return null;
 
 				if ( !(created instanceof Date) )
 					created = new Date(created);
@@ -497,7 +498,7 @@ export default class Metadata extends Module {
 
 			click(src) {
 				const title = this.settings.get('context.title') || 'Untitled';
-				const name = title.replace(/[\\/:"*?<>|]+/, '_') + '.mp4';
+				const name = `${title.replace(/[\\/:"*?<>|]+/, '_')  }.mp4`;
 
 				const link = createElement('a', {
 					target: '_blank',
@@ -727,14 +728,14 @@ export default class Metadata extends Module {
 						:*/ null;
 
 				const buffer = stats.bufferSize > 0
-						? (<div>{this.i18n.t(
-							'metadata.player-stats.buffered',
-							'Buffered: {buffered} seconds',
-							{
-								buffered: stats.bufferSize.toFixed(2)
-							}
-						)}</div>)
-						: null;
+					? (<div>{this.i18n.t(
+						'metadata.player-stats.buffered',
+						'Buffered: {buffered} seconds',
+						{
+							buffered: stats.bufferSize.toFixed(2)
+						}
+					)}</div>)
+					: null;
 
 				if ( data.old )
 					return [
@@ -780,8 +781,7 @@ export default class Metadata extends Module {
 		if ( ! addon_id )
 			return this;
 
-		const overrides: Record<string, any> = {},
-			is_dev = DEBUG || addon?.dev;
+		const overrides: Record<string, any> = {};
 
 		overrides.define = <TData,>(key: string, definition: MetadataDefinition<TData>) => {
 			if ( definition )
@@ -980,10 +980,8 @@ export default class Metadata extends Module {
 
 			if ( ! el ) {
 				let icon = old_icon = maybe_call(def.icon, this, data);
-				let button = false;
 
 				if ( def.button !== false && (def.popup || def.click) ) {
-					button = true;
 
 					let btn: HTMLButtonElement | undefined,
 						popup: HTMLButtonElement | undefined;
