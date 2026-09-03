@@ -545,6 +545,9 @@ export default class ChatHook extends Module {
 		this.chat.context.getChanges('chat.input.show-mod-view', val =>
 			this.css_tweaks.toggleHide('ci-mod-view', ! val));
 
+		this.chat.context.getChanges('chat.input.keep-send-button', val =>
+			this.css_tweaks.toggle('ci-send-row', val));
+
 		this.chat.context.getChanges('chat.input.show-highlight', val =>
 			this.css_tweaks.toggleHide('ci-highlight-settings', !val));
 

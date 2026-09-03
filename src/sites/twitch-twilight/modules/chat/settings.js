@@ -657,6 +657,16 @@ export function defineSettings(chat) {
 		}
 	});
 
+	chat.settings.add('chat.input.keep-send-button', {
+		default: true,
+		ui: {
+			path: 'Chat > Input >> Appearance',
+			title: 'Keep the Send button on the same row as the chat buttons.',
+			description: 'When the row runs out of space, Twitch moves the Send button to its own line above the other buttons. This keeps it in place and lets the points and Drops buttons on the left give way instead.',
+			component: 'setting-check-box'
+		}
+	});
+
 	chat.settings.add('chat.input.show-highlight', {
 		default: true,
 		ui: {
