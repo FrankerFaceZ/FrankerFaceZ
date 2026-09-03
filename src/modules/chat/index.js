@@ -18,7 +18,7 @@ import Overrides from './overrides';
 
 import Room from './room';
 import User from './user';
-import * as TOKENIZERS from './tokenizers';
+import * as TOKENIZERS from './tokenizers/all';
 import * as RICH_PROVIDERS from './rich_providers';
 import * as LINK_PROVIDERS from './link_providers';
 
