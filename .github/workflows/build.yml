@@ -26,16 +26,15 @@ jobs:
     - name: Install Dependencies
       run: bun install --frozen-lockfile
 
-    # Lint and typecheck carry inherited baselines (hundreds of lint
-    # findings, 145 type errors), so they report without blocking until
-    # those are cleared.
+    # Lint carries an inherited baseline of several hundred findings, so it
+    # reports without blocking until that is cleared. Typecheck is clean and
+    # blocks.
     - name: Lint (non-blocking)
       run: bun run eslint
       continue-on-error: true
 
-    - name: Typecheck (non-blocking)
+    - name: Typecheck
       run: bun run typecheck
-      continue-on-error: true
 
     - name: Run Tests
       run: bun run test
