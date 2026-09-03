@@ -586,3 +586,50 @@
 	overflow-x: hidden;
 	scrollbar-width: thin;;
 }
+
+.ffz--emote-picker {
+	.ffz--gif-tab-label {
+		font-size: 1.1rem;
+		font-weight: 700;
+		letter-spacing: .05em;
+		line-height: 1.8rem;
+	}
+
+	.ffz--gif-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: .5rem;
+		padding: .5rem;
+	}
+
+	.ffz--gif-item {
+		display: block;
+		padding: 0;
+		border: 0;
+		border-radius: .4rem;
+		overflow: hidden;
+		line-height: 0;
+		background: transparent;
+		cursor: pointer;
+
+		&:hover,
+		&:focus {
+			outline: .2rem solid var(--color-border-brand, #9147ff);
+		}
+
+		&[disabled] {
+			cursor: default;
+			opacity: .5;
+		}
+
+		&.ffz--gif-item__sending {
+			opacity: 1;
+		}
+
+		img {
+			display: block;
+			width: 100%;
+			height: auto;
+		}
+	}
+}

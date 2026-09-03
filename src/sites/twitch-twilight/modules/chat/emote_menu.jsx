@@ -7,15 +7,17 @@
 import {has, get, once, set_equals} from 'utilities/object';
 import {WEBKIT_CSS as WEBKIT} from 'utilities/constants';
 import {IMAGE_PATHS} from 'src/modules/chat/emoji';
-import {maybe_date} from './utils';
+import {maybe_date} from './emote_menu/utils';
 import Twilight from 'site';
 import Module from 'utilities/module';
-import SUB_STATUS from '../sub_status.gql';
-import { createEmojiTonePicker } from './emoji-tone-picker';
-import { createMenuSection } from './menu-section';
-import { createEmojiSection } from './emoji-section';
-import { createMenuErrorWrapper } from './menu-error-wrapper';
-import { createMenuComponent } from './menu-component';
+import SUB_STATUS from './sub_status.gql';
+import SEND_GIF from './send_gif.gql';
+import { createEmojiTonePicker } from './emote_menu/emoji-tone-picker';
+import { createMenuSection } from './emote_menu/menu-section';
+import { createEmojiSection } from './emote_menu/emoji-section';
+import { createMenuErrorWrapper } from './emote_menu/menu-error-wrapper';
+import { createMenuComponent } from './emote_menu/menu-component';
+import { createGifPanel } from './emote_menu/gif-panel';
 
 export default class EmoteMenu extends Module {
 	constructor(...args) {
@@ -244,6 +246,41 @@ export default class EmoteMenu extends Module {
 			}
 		});
 
+		this.settings.add('chat.emote-menu.gifs', {
+			default: true,
+			ui: {
+				path: 'Chat > Emote Menu >> GIFs',
+				title: 'Show a GIF tab when you can send GIFs in the current channel.',
+				description: 'Twitch lets Tier 2 and Tier 3 subscribers send GIFs in channels that allow them. The tab appears in the emote menu on those channels and searches GIPHY using the menu\'s search box.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.emote-menu.gifs.api-key', {
+			default: '',
+			ui: {
+				path: 'Chat > Emote Menu >> GIFs',
+				title: 'GIPHY API Key',
+				description: 'GIF search talks to GIPHY directly and needs an API key.',
+				component: 'setting-text-box'
+			}
+		});
+
+		this.settings.add('chat.emote-menu.gifs.rating', {
+			default: 'g',
+			ui: {
+				path: 'Chat > Emote Menu >> GIFs',
+				title: 'Maximum Content Rating',
+				description: 'Twitch may reject GIFs above the rating the channel allows.',
+				component: 'setting-select-box',
+				data: [
+					{value: 'g', title: 'G'},
+					{value: 'pg', title: 'PG'},
+					{value: 'pg-13', title: 'PG-13'}
+				]
+			}
+		});
+
 
 		this.EmoteMenu = this.fine.define(
 			'chat-emote-menu',
@@ -284,6 +321,9 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.effect-tab', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.gifs', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.gifs.api-key', rebuild);
+		this.chat.context.on('changed:chat.emote-menu.gifs.rating', rebuild);
 
 		this.chat.context.on('changed:chat.emoji.style', this.updateEmojiVariables, this);
 
@@ -381,9 +421,73 @@ export default class EmoteMenu extends Module {
 		this.EmojiSection = createEmojiSection(this, React, this.MenuSection);
 		this.MenuErrorWrapper = createMenuErrorWrapper(this, React);
 		this.MenuComponent = createMenuComponent(this, React);
+		this.GifPanel = createGifPanel(this, React);
 		this.fine.wrap('ffz-emote-menu', this.MenuComponent);
 	}
 
+
+	/**
+	 * Whether the current user can send GIFs in the channel the menu is
+	 * open for: the GIF tab is enabled and they hold a Tier 2 or Tier 3
+	 * subscription to it. Twitch validates again server-side.
+	 */
+	canSendGifs(props, state) {
+		if ( ! this.chat.context.get('chat.emote-menu.gifs') )
+			return false;
+
+		const products = props?.channel_data?.user?.subscriptionProducts,
+			set_data = state?.set_data;
+
+		if ( ! Array.isArray(products) || ! set_data )
+			return false;
+
+		for(const product of products) {
+			const tier = parseInt(product?.tier, 10),
+				sub = product?.emoteSetID && set_data[product.emoteSetID];
+
+			if ( sub && tier >= 2000 )
+				return true;
+		}
+
+		return false;
+	}
+
+	getGiphyApiKey() {
+		const key = this.settings.get('chat.emote-menu.gifs.api-key');
+		return typeof key === 'string' && key.trim().length ? key.trim() : null;
+	}
+
+	/**
+	 * Send a GIF to a channel's chat. Resolves to an object with `ok`, and
+	 * on failure the `error` code and any `seconds` until sending is allowed.
+	 */
+	async sendGif(channel_id, gif) {
+		let result;
+		try {
+			result = await this.apollo.client.mutate({
+				mutation: SEND_GIF,
+				variables: {
+					input: {
+						channelID: String(channel_id),
+						gifID: gif.id,
+						gifURL: gif.url
+					}
+				}
+			});
+		} catch(err) {
+			this.log.warn('Unable to send GIF message.', err);
+			return {ok: false, error: null};
+		}
+
+		const payload = result?.data?.sendGifMessage;
+		if ( ! payload )
+			return {ok: false, error: null};
+
+		if ( payload.error )
+			return {ok: false, error: payload.error, seconds: payload.secondsUntilCanSend};
+
+		return {ok: true, id: payload.message?.id};
+	}
 
 	async getFFZSubPrices() {
 		let result;
@@ -538,6 +642,7 @@ export default class EmoteMenu extends Module {
 					prime: node.purchasedWithPrime,
 					set_id,
 					type: product.type,
+					tier: product.tier,
 					gift: node.gift?.isGift
 				};
 			}

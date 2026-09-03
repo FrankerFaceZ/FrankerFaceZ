@@ -285,6 +285,15 @@ export function createMenuComponent(t, React) {
 		clickTab(event) {
 			const tab = event.currentTarget.dataset.tab;
 
+			// The GIF tab is a mode of its own, even when tabs are combined.
+			if ( tab === 'gifs' ) {
+				this.setState({tab});
+				return;
+			}
+
+			if ( this.state.combineTabs && this.state.tab === 'gifs' )
+				this.setState({tab: null});
+
 			if ( tab === 'effect' )
 				this.seeEffects();
 
@@ -615,6 +624,7 @@ export function createMenuComponent(t, React) {
 			state.has_effect_tab = effects.length > 0;
 			state.hasNewEffects = effects.length > 0 && has_new_effects;
 			state.unlockedEffects = unlocked_effects;
+			state.has_gif_tab = t.canSendGifs(props, state);
 
 			return buildEmoji(t, state);
 		}
@@ -1402,7 +1412,7 @@ export function createMenuComponent(t, React) {
 
 		/** The scrolling emote area and the side navigation listing every visible set. */
 		renderNav(view) {
-			const {loading, padding, no_tabs, sets, is_favs, visibility, whisper} = view;
+			const {loading, padding, no_tabs, sets, is_favs, is_gifs, visibility, whisper} = view;
 
 			return (
 				<div class="tw-flex">
@@ -1410,8 +1420,15 @@ export function createMenuComponent(t, React) {
 						ref={this.saveScrollRef}
 						class={`emote-picker__tab-content${whisper ? '-whisper' : ''} tw-full-width ffz-emote-menu--scroll-area`}
 					>
-						{loading && this.renderLoading()}
-						{!loading && sets && sets.map((data,idx) => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
+						{is_gifs && <t.GifPanel
+							channel_id={this.props.channel_id}
+							search={this.state.filter}
+							api_key={t.getGiphyApiKey()}
+							rating={t.chat.context.get('chat.emote-menu.gifs.rating')}
+							toggleVisibility={this.props.toggleVisibility}
+						/>}
+						{! is_gifs && loading && this.renderLoading()}
+						{! is_gifs && !loading && sets && sets.map((data,idx) => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
 							data.emoji ? t.EmojiSection : t.MenuSection,
 							{
 								key: data.key,
@@ -1431,9 +1448,9 @@ export function createMenuComponent(t, React) {
 								stopObserving: this.stopObserving
 							}
 						))}
-						{! loading && (! sets || ! sets.length) && this.renderEmpty()}
+						{! is_gifs && ! loading && (! sets || ! sets.length) && this.renderEmpty()}
 					</div>
-					{(! loading && this.state.quickNav && ! is_favs) && (<div class={`emote-picker__nav_content${whisper ? '-whisper' : ''} tw-block tw-border-radius-none tw-c-background-alt-2`}>
+					{(! loading && this.state.quickNav && ! is_favs && ! is_gifs) && (<div class={`emote-picker__nav_content${whisper ? '-whisper' : ''} tw-block tw-border-radius-none tw-c-background-alt-2`}>
 						<div
 							ref={this.saveNavRef}
 							class={`emote-picker__nav-content-overflow${whisper ? '-whisper' : ''} ffz-emote-menu--scroll-area tw-pd-x-05`}
@@ -1601,6 +1618,20 @@ export function createMenuComponent(t, React) {
 								</div>
 							</button>
 						</div>}
+						{this.state.has_gif_tab && <div class={`emote-picker-tab-item${tab === 'gifs' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+							<button
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'gifs' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__gifs"
+								data-tab="gifs"
+								data-tooltip-type="html"
+								data-title={t.i18n.t('emote-menu.gifs', 'GIFs')}
+								onClick={this.clickTab}
+							>
+								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
+									<span class="ffz--gif-tab-label">GIF</span>
+								</div>
+							</button>
+						</div>}
 						<div class="tw-flex-grow-1" />
 						<div class="emote-picker-tab-item tw-relative">
 							<button
@@ -1631,8 +1662,12 @@ export function createMenuComponent(t, React) {
 				this.loadedOnce = true;
 
 			let tab, sets, is_emoji, is_favs, is_effect;
+			const is_gifs = this.state.has_gif_tab && this.state.tab === 'gifs';
 
-			if ( no_tabs ) {
+			if ( is_gifs ) {
+				tab = 'gifs';
+
+			} else if ( no_tabs ) {
 				sets = [
 					this.state.filtered_fav_sets,
 					this.state.filtered_channel_sets,
@@ -1643,7 +1678,7 @@ export function createMenuComponent(t, React) {
 
 			} else {
 				tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab');
-				if ( (tab === 'effect' && ! this.state.has_effect_tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
+				if ( (tab === 'effect' && ! this.state.has_effect_tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'gifs' && ! this.state.has_gif_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
 					tab = 'all';
 
 				is_emoji = tab === 'emoji';
@@ -1674,7 +1709,7 @@ export function createMenuComponent(t, React) {
 				whisper = this.props.source === 'whisper';
 
 
-			const view = {loading, padding, no_tabs, tab, sets, is_emoji, is_favs, is_effect, visibility, whisper};
+			const view = {loading, padding, no_tabs, tab, sets, is_emoji, is_favs, is_effect, is_gifs, visibility, whisper};
 
 			return (<div class={`tw-block${this.props.visible ? '' : ' tw-hide'}`} style={{display: this.props.visible ? null : 'none !important'}}>
 				<div class="tw-absolute ffz-attached ffz-attached--right ffz-attached--up">
