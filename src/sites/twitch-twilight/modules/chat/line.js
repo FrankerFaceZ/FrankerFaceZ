@@ -609,6 +609,96 @@ export default class ChatLine extends Module {
 			};
 
 			// Renders the message body: timestamp, badges, name, tokens and rich content.
+			// Renders the username element, with the name override and shared-chat tooltip variants.
+			cls.prototype.ffzRenderUserBlock = function(ctx) {
+				const {msg, source, user, color} = ctx;
+
+				// First, render the user block.
+				const username = t.chat.formatUser(user, e),
+					override_name = t.overrides.getName(user.id);
+
+				let user_class = msg.ffz_user_class;
+				if ( user_class instanceof Set )
+					user_class = [...user_class].join(' ');
+				else if ( Array.isArray(user_class) )
+					user_class = user_class.join(' ');
+
+				const want_source_tip = source && t.chat.context.get('chat.shared-chat.username-tooltip');
+
+				const user_props = {
+					className: `chat-line__username notranslate${override_name ? ' ffz--name-override' : ''}${(override_name || want_source_tip) ? ' tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
+					role: 'button',
+					style: { color },
+					onClick: this.ffz_user_click_handler,
+					onContextMenu: t.actions.handleUserContext
+				};
+
+				if ( msg.ffz_user_props )
+					Object.assign(user_props, msg.ffz_user_props);
+
+				if ( msg.ffz_user_style )
+					Object.assign(user_props.style, msg.ffz_user_style);
+
+				const user_block = e(
+					'span',
+					user_props,
+					override_name
+						? [
+							e('span', {
+								className: 'chat-author__display-name'
+							}, override_name),
+							e('div', {
+								className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+							}, [
+								username,
+								want_source_tip
+									? e('div', {
+										className: 'ffz-font-size-8 tw-mg-t-05'
+									}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
+									: null
+								]
+							)
+						]
+						: want_source_tip
+							? [
+								username,
+								e('span', {
+									className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+								}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
+							]
+							: username
+				);
+
+				return user_block;
+			};
+
+			// Renders the message text, or the deleted-message placeholder when it is hidden.
+			cls.prototype.ffzRenderMessageBody = function(ctx) {
+				const {reply_mode, has_replies, show, tokens, action_italic, action_color, color, twitch_highlight} = ctx;
+
+				return show
+					? e(
+						'span',
+						{
+							className: `message ${action_italic ? 'chat-line__message-body--italicized' : ''} ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
+							style: action_color ? { color} : null
+						},
+						t.chat.renderTokens(
+							tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null
+						)
+					)
+					: e(
+						'span',
+						{
+							className: 'chat-line__message--deleted'
+						},
+						e('a', {
+							href: '',
+							onClick: this.alwaysShowMessage
+						}, t.i18n.t('chat.message-deleted', '<message deleted>'))
+					);
+			};
+
 			cls.prototype.ffzRenderMessageContent = function(ctx) {
 				const {msg, source, current_user, current_room, reply_mode, has_replies, notice, user, show, mod_action, highlight_tags, hl_position} = ctx;
 
@@ -638,60 +728,7 @@ export default class ChatLine extends Module {
 						giant_emote = is_giant_emote && t.chat.pluckLastEmote(tokens, msg);
 
 					// First, render the user block.
-					const username = t.chat.formatUser(user, e),
-						override_name = t.overrides.getName(user.id);
-
-					let user_class = msg.ffz_user_class;
-					if ( user_class instanceof Set )
-						user_class = [...user_class].join(' ');
-					else if ( Array.isArray(user_class) )
-						user_class = user_class.join(' ');
-
-					const want_source_tip = source && t.chat.context.get('chat.shared-chat.username-tooltip');
-
-					const user_props = {
-						className: `chat-line__username notranslate${override_name ? ' ffz--name-override' : ''}${(override_name || want_source_tip) ? ' tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
-						role: 'button',
-						style: { color },
-						onClick: this.ffz_user_click_handler,
-						onContextMenu: t.actions.handleUserContext
-					};
-
-					if ( msg.ffz_user_props )
-						Object.assign(user_props, msg.ffz_user_props);
-
-					if ( msg.ffz_user_style )
-						Object.assign(user_props.style, msg.ffz_user_style);
-
-					const user_block = e(
-						'span',
-						user_props,
-						override_name
-							? [
-								e('span', {
-									className: 'chat-author__display-name'
-								}, override_name),
-								e('div', {
-									className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
-								}, [
-									username,
-									want_source_tip
-										? e('div', {
-											className: 'ffz-font-size-8 tw-mg-t-05'
-										}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
-										: null
-									]
-								)
-							]
-							: want_source_tip
-								? [
-									username,
-									e('span', {
-										className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
-									}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
-								]
-								: username
-					);
+					const user_block = this.ffzRenderUserBlock({msg, source, user, color});
 
 					// The timestamp.
 					const timestamp = (this.props.showTimestamps || this.props.isHistorical)
@@ -738,27 +775,7 @@ export default class ChatLine extends Module {
 						reply_token,
 
 						// Message
-						show
-							? e(
-								'span',
-								{
-									className: `message ${action_italic ? 'chat-line__message-body--italicized' : ''} ${twitch_highlight ? 'chat-line__message-body--highlighted' : ''}`,
-									style: action_color ? { color} : null
-								},
-								t.chat.renderTokens(
-									tokens, e, (reply_mode !== 0 && has_replies) ? this.props.reply : null
-								)
-							)
-							: e(
-								'span',
-								{
-									className: 'chat-line__message--deleted'
-								},
-								e('a', {
-									href: '',
-									onClick: this.alwaysShowMessage
-								}, t.i18n.t('chat.message-deleted', '<message deleted>'))
-							),
+						this.ffzRenderMessageBody({reply_mode, has_replies, show, tokens, action_italic, action_color, color, twitch_highlight}),
 
 						// Moderation Action
 						mod_action,
