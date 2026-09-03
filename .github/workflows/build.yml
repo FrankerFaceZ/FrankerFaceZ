@@ -2,17 +2,23 @@ name: Build Main Client
 
 on:
   push:
-    branches:
-    - master
+  pull_request:
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      can_deploy: ${{ steps.deploy-check.outputs.can_deploy }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
-    - name: Uses Bun
+    - name: Use Bun
       uses: oven-sh/setup-bun@v2
       with:
         bun-version-file: .bun-version
@@ -20,19 +26,58 @@ jobs:
     - name: Install Dependencies
       run: bun install --frozen-lockfile
 
+    # Lint and typecheck carry inherited baselines (hundreds of lint
+    # findings, 145 type errors), so they report without blocking until
+    # those are cleared.
+    - name: Lint (non-blocking)
+      run: bun run eslint
+      continue-on-error: true
+
+    - name: Typecheck (non-blocking)
+      run: bun run typecheck
+      continue-on-error: true
+
     - name: Run Tests
       run: bun run test
 
+    # Set the FFZ_CLIENT_HOST repository variable to build a client that
+    # loads from your own host; leave it unset for the default CDN.
     - name: Build the Client
       run: bun run build
+      env:
+        FFZ_CLIENT_HOST: ${{ vars.FFZ_CLIENT_HOST }}
 
-    - name: Create Archive
-      id: artifact-upload-setp
-      uses: actions/upload-artifact@v4
+    - name: Upload Archive
+      uses: actions/upload-artifact@v5
       with:
         name: client
-        path: |
-          dist
+        path: dist
+
+    # Deploy needs the HOST, SSH_USERNAME and SSH_PRIVATE_KEY secrets.
+    # Secrets are not readable from a job's `if`, so decide here.
+    - name: Check Deploy Secrets
+      id: deploy-check
+      env:
+        HOST: ${{ secrets.HOST }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      run: |
+        if [ -n "$HOST" ] && [ -n "$SSH_PRIVATE_KEY" ]; then
+          echo "can_deploy=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "can_deploy=false" >> "$GITHUB_OUTPUT"
+          echo "Deploy secrets are not configured; skipping deploy."
+        fi
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && needs.build.outputs.can_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Archive
+      uses: actions/download-artifact@v5
+      with:
+        name: client
+        path: dist
 
     - name: Deploy (Clean)
       uses: garygrossgarten/github-action-ssh@release
@@ -56,7 +101,7 @@ jobs:
     - name: Deploy (Execute)
       uses: garygrossgarten/github-action-ssh@release
       with:
-        command:  $HOME/update-client.sh
+        command: $HOME/update-client.sh
         host: ${{ secrets.HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
