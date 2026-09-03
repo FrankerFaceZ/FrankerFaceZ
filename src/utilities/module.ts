@@ -233,6 +233,7 @@ export class Module<
 			return this.resolve('addons')?.getAddon(this.__addon_id!) ??
 				(this.__addon_root?.constructor as typeof Addon)?.info ??
 				undefined;
+		return undefined;
 	}
 
 	/** A Logger instance for this module. */

@@ -139,7 +139,7 @@ export default class CSSTweaks<TPath extends string = 'site.css_tweaks'> extends
 		if ( this.style.has(key) )
 			return;
 
-		else if ( ! this._chunks_loaded ) {
+		if ( ! this._chunks_loaded ) {
 			this._loadChunks().then(() => this._apply(key));
 
 		} else if ( ! has(this.chunks, key) ) {

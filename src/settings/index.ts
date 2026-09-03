@@ -1409,14 +1409,13 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		// Remove it from all the things it required.
 		if ( Array.isArray(definition.requires) )
 			for(const req_key of definition.requires) {
-				let req = this.definitions.get(req_key);
-				if ( Array.isArray(req) ) {
-					const idx = req.indexOf(key);
+				const req = this.definitions.get(req_key),
+					list = Array.isArray(req) ? req : req?.required_by;
+				if ( Array.isArray(list) ) {
+					const idx = list.indexOf(key);
 					if ( idx !== -1 )
-						req.splice(idx, 1);
-
-				} else if ( req?.required_by )
-					req = req.required_by;
+						list.splice(idx, 1);
+				}
 			}
 
 		if ( definition.changed )

@@ -152,6 +152,7 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 			return this.history.location;
 		else if (this.router)
 			return this.router.router.state.location;
+		return undefined;
 	}
 
 	push(url: string, state: unknown) {

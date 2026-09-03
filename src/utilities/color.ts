@@ -287,7 +287,7 @@ class RGBAColor implements BaseColor {
 	daltonize(type: string | CVDMatrix) {
 		let cvd: CVDMatrix;
 		if ( typeof type === 'string' ) {
-			if ( Color.CVDMatrix.hasOwnProperty(type) )
+			if ( Object.prototype.hasOwnProperty.call(Color.CVDMatrix, type) )
 				cvd = Color.CVDMatrix[type];
 			else
 				throw new Error('Invalid CVD matrix');
@@ -509,8 +509,8 @@ class HSLAColor implements BaseColor {
 
 	targetLuminance(target: number) {
 		let s = this.s,
-			min = 0,
-			max = 1;
+			min = 0;
+		const max = 1;
 
 		s *= Math.pow(this.l > 0.5 ? -this.l : this.l - 1, 7) + 1;
 
@@ -519,11 +519,8 @@ class HSLAColor implements BaseColor {
 
 		for (; d > 1/65536; d /= 2, mid = min + d) {
 			const luminance = RGBAColor.fromHSLA(this.h, s, mid, 1).luminance();
-			if (luminance > target) {
-				max = mid;
-			} else {
+			if (luminance <= target)
 				min = mid;
-			}
 		}
 
 		return new HSLAColor(this.h, s, mid, this.a);

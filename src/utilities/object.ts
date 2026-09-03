@@ -862,7 +862,7 @@ export function deep_copy<T>(object: T, seen?: Set<any>): T {
  * an example.
  */
 export function normalizeAddonIdForComparison(input: string) {
-	return input.toLowerCase().replace(/[\.\_\-]+/, '-');
+	return input.toLowerCase().replace(/[._-]+/g, '-');
 }
 
 /**
@@ -874,7 +874,7 @@ export function normalizeAddonIdForComparison(input: string) {
  */
 export function makeAddonIdChecker(input: string) {
 	input = escape_regex(normalizeAddonIdForComparison(input));
-	input = input.replace(/-+/g, '[\.\_\-]+');
+	input = input.replace(/-+/g, '[._-]+');
 
 	// Special: ffzap-bttv
 	input = input.replace(/\bbttv\b/g, '(?:bttv|betterttv)');
@@ -1208,7 +1208,7 @@ export class SourcedSet<T> {
 			return;
 		}
 
-		const sources = [...this._sources?.entries()];
+		const sources = [...this._sources.entries()];
 		sources.sort((a, b) => this._sourceSortFn!(a[0], b[0]));
 
 		this._sorted_sources = sources.map(entry => entry[1]);

@@ -18,7 +18,8 @@ export class CrossOriginStorageBridge extends RemoteSettingsProvider {
 
 	// Static Stuff
 
-	static supported() { return false; return NOT_WWW_TWITCH && NOT_WWW_YT; }
+	// Disabled for now. Restore `NOT_WWW_TWITCH && NOT_WWW_YT` to re-enable.
+	static supported() { return false; }
 	static hasContent() {
 		return CrossOriginStorageBridge.supported();
 	}

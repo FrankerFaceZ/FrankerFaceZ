@@ -3,7 +3,6 @@
 import dayjs from 'dayjs';
 //import RavenLogger from './raven';
 
-import Logger from 'utilities/logging';
 import Module, { State } from 'utilities/module';
 import { timeout } from 'utilities/object';
 
@@ -31,7 +30,7 @@ import * as Utility_DOM from 'utilities/dom';
 import * as Utility_Events from 'utilities/events';
 import * as Utility_FontAwesome from 'utilities/font-awesome';
 import * as Utility_GraphQL from 'utilities/graphql';
-import * as Utility_Logging from 'utilities/logging';
+import Logger, * as Utility_Logging from 'utilities/logging';
 import * as Utility_Module from 'utilities/module';
 import * as Utility_Object from 'utilities/object';
 import * as Utility_Time from 'utilities/time';

@@ -538,7 +538,8 @@ export class TranslationCore {
 			locale = this.defaultLocale;
 
 		} else {
-			let parsed: MessageAST | null = null;
+			let parsed: MessageAST | null = null,
+				failed = false;
 			try {
 				parsed = this.parser.parse(phrase);
 			} catch(err) {
@@ -548,11 +549,14 @@ export class TranslationCore {
 				if ( ! settings.noWarn && this.warn )
 					this.warn(`Error parsing i18n phrase for key "${key}": ${phrase}`, err);
 
-				ast = ['parsing error'];
-				locale = this.defaultLocale;
+				failed = true;
 			}
 
-			if ( parsed ) {
+			if ( failed ) {
+				ast = ['parsing error'];
+				locale = this.defaultLocale;
+
+			} else if ( parsed ) {
 				ast = parsed;
 				locale = this.locale;
 

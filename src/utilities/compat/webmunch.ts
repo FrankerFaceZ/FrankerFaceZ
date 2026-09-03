@@ -333,27 +333,31 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 			return Promise.resolve(this._require);
 
 		if ( ! this._require_waiter )
-			this._require_waiter = new Promise<WebpackRequireV4>(async (resolve, reject) => {
-				let fn = await this.waitForLoader();
-				fn = fn.bind(this._original_store);
+			this._require_waiter = new Promise<WebpackRequireV4>((resolve, reject) => {
+				this.waitForLoader().then(loader => {
+					const fn = loader.bind(this._original_store);
 
-				// Inject a fake module and use that to grab require.
-				const id = `ffz-loader$${generateUUID()}`;
-				fn([
-					[id],
-					{
-						[id]: (module, exports, __webpack_require__) => {
-							this._require = __webpack_require__;
-							this._loadChunkNames();
-							resolve(this._require);
-							const end = performance.now();
-							this.log.info(`Hooked webpack require after ${Math.round(100*(end - this.start_time))/100}ms`);
-							this._processAllModules();
-							this._require_waiter = null;
-						}
-					},
-					(req: WebpackRequireV4) => req(id)
-				]);
+					// Inject a fake module and use that to grab require.
+					const id = `ffz-loader$${generateUUID()}`;
+					fn([
+						[id],
+						{
+							[id]: (module, exports, __webpack_require__) => {
+								this._require = __webpack_require__;
+								this._loadChunkNames();
+								resolve(this._require);
+								const end = performance.now();
+								this.log.info(`Hooked webpack require after ${Math.round(100*(end - this.start_time))/100}ms`);
+								this._processAllModules();
+								this._require_waiter = null;
+							}
+						},
+						(req: WebpackRequireV4) => req(id)
+					]);
+				}).catch(err => {
+					this._require_waiter = null;
+					reject(err);
+				});
 			});
 
 		return this._require_waiter;
