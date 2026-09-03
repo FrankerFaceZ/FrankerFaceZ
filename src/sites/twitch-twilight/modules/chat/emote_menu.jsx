@@ -662,7 +662,7 @@ export default class EmoteMenu extends Module {
 			}
 
 			buildURL(query, offset) {
-				const valid_ratings = ['g', 'pg', 'pg-13', 'r'],
+				const valid_ratings = ['g', 'pg'],
 				raw = (this.props.rating || '').toLowerCase(),
 				rating = valid_ratings.includes(raw) ? raw : 'g';
 
