@@ -1226,6 +1226,28 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('chat.gifs.enabled', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> GIFs',
+				title: 'Display GIFs in chat.',
+				description: 'Twitch subscribers (Tier 2 and 3) can post [animated GIFs](https://help.twitch.tv/s/article/gif-keyboard). When this is disabled, those messages are shown as a link instead.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('chat.gifs.size', {
+			default: 140,
+			ui: {
+				path: 'Chat > Appearance >> GIFs',
+				title: 'GIF Size',
+				description: 'How large GIFs should be, in pixels, as their maximum height.',
+				component: 'setting-text-box',
+				process: 'to_int',
+				bounds: [1]
+			}
+		});
+
 		const ts = new Date(0).toLocaleTimeString().toUpperCase(),
 			default_24 = ts.lastIndexOf('PM') === -1 && ts.lastIndexOf('AM') === -1;
 
