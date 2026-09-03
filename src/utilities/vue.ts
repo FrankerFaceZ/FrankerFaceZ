@@ -164,11 +164,6 @@ export class VueModule extends Module<'vue'> {
 				this._vue_i18n.phrases = {};
 			});
 
-			this.on('i18n:changed', () => {
-				this._vue_i18n.locale = this.i18n.locale;
-				this._vue_i18n.phrases = {};
-			});
-
 			this.on('i18n:loaded', keys => {
 				const i = this._vue_i18n,
 					p = i.phrases;

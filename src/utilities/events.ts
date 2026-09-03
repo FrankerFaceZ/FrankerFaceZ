@@ -479,7 +479,7 @@ export class EventEmitter<
 		event: K)
 		: ListenerInfo<NamespacedEventArgs<K, TNamespace, TEventMap>> {
 		const list = this.__listeners[event];
-		return list ? Array.from(list) as any : [];
+		return (list ? Array.from(list) : []) as any;
 	}
 
 	/**

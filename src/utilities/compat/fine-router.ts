@@ -4,7 +4,7 @@
 // Fine Router
 // ============================================================================
 
-import {parse, tokensToRegExp, tokensToFunction} from 'path-to-regexp';
+import {parse, tokensToRegExp, tokensToFunction, type Token, type PathFunction} from 'path-to-regexp';
 import Module, { type GenericModule } from 'utilities/module';
 import {has, deep_equals, sleep} from 'utilities/object';
 import type Fine from './fine';
@@ -28,11 +28,19 @@ type FineRouterEvents = {
 	':route': [route: RouteInfo | null, match: unknown];
 };
 
+export type RouteStateFn = (state: unknown) => boolean;
+
 export type RouteInfo = {
 	name: string;
 	domain: string | null;
-
+	parts: Token[];
+	score: number;
+	state_fn: RouteStateFn | null;
+	regex: RegExp;
+	url: PathFunction;
 };
+
+type UrlOptions = Parameters<PathFunction>[1];
 
 
 type ReactLocation = Location & {
@@ -79,8 +87,18 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 	current: RouteInfo | null;
 	current_name: string | null;
 	current_state: unknown | null;
-	match: unknown | null;
-	location: unknown | null;
+	match: RegExpExecArray | null;
+	location: string | null;
+	search: string | null = null;
+	domain: string | null = null;
+
+	old_route: RouteInfo | null = null;
+	old_name: string | null = null;
+	old_match: RegExpExecArray | null = null;
+	old_location: string | null = null;
+	old_search: string | null = null;
+	old_domain: string | null = null;
+	old_state: unknown | null = null;
 
 	// Things
 	history?: HistoryObject | null;
@@ -105,8 +123,8 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 
 	/** @internal */
 	onEnable(tries = 0): OptionalPromise<void> {
-		const thing = this.fine.searchTree<ReactStateNode<{history: HistoryObject}>>(null, n => n?.props?.history);
-		this.history = thing?.props?.history;
+		const thing = this.fine.searchTree<ReactStateNode<{history: HistoryObject}>>(null, n => !! (n as Partial<ReactStateNode<{history: HistoryObject}>>)?.props?.history);
+		this.history = (thing as ReactStateNode<{history: HistoryObject}> | null)?.props?.history;
 
 		if ( this.history ) {
 			this.history.listen(location => {
@@ -142,7 +160,7 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 		this._navigateTo(this.router.router.state.location);
 	}
 
-	navigate(route, data, opts, state) {
+	navigate(route: string, data?: unknown, opts?: UrlOptions, state?: unknown) {
 		const url = this.getURL(route, data, opts);
 		this.push(url, state);
 	}
@@ -208,7 +226,7 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 			if ( route.domain && route.domain !== host )
 				continue;
 
-			const match = route.regex.exec(path);
+			const match = route.regex.exec(path ?? '');
 			if ( match && (! route.state_fn || route.state_fn(this.current_state)) ) {
 				this.log.debug('Matching Route', route, match);
 				this.current = route;
@@ -223,19 +241,23 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 		this.emit(':route', null, null);
 	}
 
-	getURL(route, data, opts, ...args) {
+	getURL(route: string, data?: unknown, opts?: UrlOptions, ...args: unknown[]) {
 		const r = this.routes[route];
 		if ( ! r )
 			throw new Error(`unable to find route "${route}"`);
 
-		if ( typeof data !== 'object' ) {
+		let values: Record<string, unknown>;
+		if ( typeof data === 'object' )
+			values = (data as Record<string, unknown> | null) ?? {};
+		else {
+			// Positional arguments fill the route's named parts in order.
 			const parts = [data, opts, ...args];
-			data = {};
+			values = {};
 
 			let i = 0;
 			for(const part of r.parts) {
-				if ( part && part.name ) {
-					data[part.name] = parts[i];
+				if ( typeof part !== 'string' && part.name ) {
+					values[part.name] = parts[i];
 					i++;
 					if ( i >= parts.length )
 						break;
@@ -243,7 +265,7 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 			}
 		}
 
-		return r.url(data, opts);
+		return r.url(values, opts);
 	}
 
 	getRoute(name: string) {
@@ -291,9 +313,9 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 		}
 	}
 
-	route(name, path, domain = null, state_fn = null, process = true) {
+	route(name: string | Record<string, string>, path?: string | null, domain: string | null = null, state_fn: RouteStateFn | null = null, process = true) {
 		if ( typeof name === 'object' ) {
-			domain = path;
+			domain = path ?? null;
 			for(const key in name)
 				if ( has(name, key) )
 					this.route(key, name[key], domain, state_fn, false);
@@ -307,6 +329,9 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 
 			return;
 		}
+
+		if ( typeof path !== 'string' )
+			throw new TypeError(`route "${name}" needs a path`);
 
 		const parts = parse(path),
 			score = parts.reduce((total, val) => total + (

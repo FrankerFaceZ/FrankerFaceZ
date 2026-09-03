@@ -98,14 +98,14 @@ export type SettingType<K extends AllSettingsKeys> =
 					unknown;
 
 export type SettingMetadata = {
-	uses: number[];
+	uses: number[] | null;
 };
 
 
 // Usable Definitions
 
 export type OptionalSettingDefinitionKeys = 'type';
-export type ForbiddenSettingDefinitionKeys = '__source' | 'ui';
+export type ForbiddenSettingDefinitionKeys = 'ui';
 
 export type SettingDefinition<T> = Omit<
 	PartialPartial<FullSettingDefinition<T>, OptionalSettingDefinitionKeys>,
@@ -225,11 +225,15 @@ export type SettingUi_Select<T> = SettingUi_Basic & {
 
 	data: OptionallyCallable<[profile: SettingsProfile, current: T], SettingUi_Select_Entry<T>[]>;
 
+	/** Skip generating i18n keys for the entries. */
+	no_i18n?: boolean;
+
 }
 
 export type SettingUi_Select_Entry<T> = {
 	value: T;
 	title: string;
+	i18n_key?: string;
 };
 
 
@@ -243,6 +247,9 @@ export type SettingTypeUiDefinition<T> = SettingUi_TextBox | SettingUi_CheckBox 
 // We also support other components, if the component doesn't match.
 export type SettingOtherUiDefinition = SettingUi_Basic & {
 	component: Exclude<string, ExtractKey<SettingTypeUiDefinition<any>, 'component'>>;
+
+	/** Other components take whatever extra data they need. */
+	[key: string]: unknown;
 }
 
 // The final combined definition.
@@ -307,8 +314,8 @@ export type SettingsTypeHandler = {
 
 	get(
 		key: string,
-		profiles: SettingsProfile[],
-		definition: SettingDefinition<any>,
+		profiles: Iterable<SettingsProfile>,
+		definition: SettingDefinition<any> | undefined,
 		log: Logger,
 		ctx: SettingsContext
 	): [unknown, number[]] | null | undefined;

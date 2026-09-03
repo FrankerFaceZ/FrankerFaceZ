@@ -832,7 +832,7 @@ export class ColorAdjuster {
 		if ( this._cache.has(color) )
 			return this._cache.get(color);
 
-		let rgb: RGBAColor;
+		let rgb: RGBAColor | null;
 
 		try {
 			rgb = RGBAColor.fromCSS(color);

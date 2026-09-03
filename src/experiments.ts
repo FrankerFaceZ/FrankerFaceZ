@@ -467,24 +467,24 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 
 	private _checkExternalAccess() {
-		let stack;
+		let stack: string | undefined;
 		try {
 			stack = new Error().stack;
 		} catch(err) {
 			/* :thinking: */
 			try {
-				stack = err.stack;
+				stack = (err as Error).stack;
 			} catch(err_again) { /* aww */ }
 		}
 
 		if ( ! stack )
 			return;
 
-		stack = stack.split(/\s*\n+\s*/g).filter(x => x.startsWith('at '));
+		const frames = stack.split(/\s*\n+\s*/g).filter(x => x.startsWith('at '));
 
 		let external = false;
 
-		for(const line of stack) {
+		for(const line of frames) {
 			if ( ! line.includes(SERVER_OR_EXT) ) {
 				external = true;
 				break;

@@ -16,7 +16,7 @@ import * as VALIDATORS from './validators';
 import * as FILTERS from './filters';
 import * as CLEARABLES from './clearables';
 
-import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys } from './types';
+import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys, SettingUi_Select } from './types';
 import type { FilterType } from 'utilities/filtering';
 import { AdvancedSettingsProvider, IGNORE_CONTENT_KEYS, LocalStorageProvider, Providers, SettingsProvider } from './providers';
 import type { AddonInfo, SettingsTypeMap } from 'utilities/types';
@@ -827,7 +827,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	 * from the current provider.
 	 */
 	async changeProvider(key: string, transfer: boolean) {
-		if ( ! this.providers[key] || ! this.providers[key].supported() )
+		if ( ! this.providers[key] || ! this.providers[key].supported(this) )
 			throw new Error(`Invalid provider: ${key}`);
 
 		// If we're changing to the current provider... well, that doesn't make
@@ -1363,12 +1363,13 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			if ( ! ui.key && ui.title )
 				ui.key = ui.title.toSnakeCase();
 
+			const select_ui = ui as SettingUi_Select<unknown>;
 			if ( (ui.component === 'setting-select-box' ||
 				  ui.component === 'setting-combo-box') &&
-				Array.isArray(ui.data) && ! ui.no_i18n
+				Array.isArray(select_ui.data) && ! select_ui.no_i18n
 			) {
 				const i18n_base = `${ui.i18n_key || `setting.entry.${key}`}.values`;
-				for(const value of ui.data) {
+				for(const value of select_ui.data) {
 					if ( value.i18n_key === undefined && value.value !== undefined )
 						value.i18n_key = `${i18n_base}.${value.value}`;
 				}

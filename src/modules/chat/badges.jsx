@@ -349,7 +349,7 @@ export default class Badges extends Module {
 				this.loadGlobalBadges();
 		});
 
-		this.on('addon:fully-unload', addon_id => {
+		this.on('addons:fully-unload', addon_id => {
 			let removed = 0;
 			for(const [key, val] of Object.entries(this.badges)) {
 				if ( val?.__source === addon_id ) {

@@ -253,7 +253,7 @@ export default class Actions extends Module {
 			if ( has(RENDERERS, key) )
 				this.addRenderer(key, RENDERERS[key]);
 
-		this.on('addon:fully-unload', addon_id => {
+		this.on('addons:fully-unload', addon_id => {
 			let removed = 0;
 			for(const [key, def] of Object.entries(this.actions)) {
 				if ( def?.__source === addon_id ) {

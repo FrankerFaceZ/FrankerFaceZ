@@ -8,7 +8,7 @@ import {EventEmitter} from 'utilities/events';
 import {has, get as getter, array_equals, set_equals, map_equals, deep_equals} from 'utilities/object';
 
 import DEFINITIONS from './typehandlers';
-import type { AllSettingsKeys, ContextData, SettingMetadata, SettingType, SettingDefinition, SettingsKeys } from './types';
+import type { AllSettingsKeys, ContextData, SettingMetadata, SettingType, SettingDefinition, SettingsKeys, SettingsTypeHandler } from './types';
 import type SettingsManager from '.';
 import type SettingsProfile from './profile';
 import type { SettingsTypeMap } from 'utilities/types';
@@ -474,7 +474,7 @@ export default class SettingsContext extends EventEmitter<SettingsContextEvents>
 
 		this.__cache.set(key, value);
 		this.__meta.set(key, meta);
-		return value;
+		return value as TValue;
 	}
 
 
@@ -497,14 +497,17 @@ export default class SettingsContext extends EventEmitter<SettingsContextEvents>
 	}
 
 
-	_getRaw(key: SettingsKeys, type) {
+	_getRaw(key: SettingsKeys, type: SettingsTypeHandler | undefined) {
 		if ( ! type )
 			throw new Error(`non-existent type for ${key}`)
 
+		// A placeholder array stands in for settings that are only required
+		// by others and not yet defined.
+		const definition = this.manager.definitions.get(key);
 		return type.get(
 			key,
 			this.profiles(),
-			this.manager.definitions.get(key),
+			Array.isArray(definition) ? undefined : definition,
 			this.manager.log,
 			this
 		);

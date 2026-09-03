@@ -1,13 +1,13 @@
 'use strict';
 
-import type { SettingUiDefinition, SettingValidator } from './types';
+import type { SettingUiDefinition, SettingValidator, SettingUi_TextBox_Process_Number } from './types';
 
 
 function do_number(value: any, definition: SettingUiDefinition<number>) {
 	if ( typeof value !== 'number' || isNaN(value) || ! isFinite(value) )
 		return false;
 
-	const bounds = definition.bounds;
+	const bounds = (definition as SettingUi_TextBox_Process_Number).bounds;
 	if ( Array.isArray(bounds) ) {
 		if ( bounds.length >= 3 ) {
 			// [low, inclusive, high, inclusive]

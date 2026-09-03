@@ -66,7 +66,7 @@ export const Everything: SettingsClearable = {
 	label: 'Absolutely Everything',
 	async clear(provider, settings) {
 		provider.clear();
-		if ( provider.supportsBlobs && provider instanceof AdvancedSettingsProvider )
+		if ( provider instanceof AdvancedSettingsProvider && provider.supportsBlobs )
 			await provider.clearBlobs();
 
 		settings.loadProfiles();

@@ -14,6 +14,7 @@ import type SocketClient from '../socket';
 import type Apollo from './compat/apollo';
 import type WebMunch from './compat/webmunch';
 import type { NamespacedEvents } from './events';
+import type { GenericModule } from './module';
 
 /**
  * AddonInfo represents the data contained in an add-on's manifest.
@@ -250,7 +251,30 @@ export interface ExperimentTypeMap {
 };
 
 export interface ModuleEventMap {
+	'i18n': I18nEvents;
 	'main_menu': MainMenuEvents;
+};
+
+export type I18nEvents = {
+	':update': [];
+	':transform': [];
+	':loaded': [keys: string[]];
+	':got-keys': [];
+};
+
+/**
+ * The parts of the site module that shared code relies on. Each site
+ * implements them in JavaScript.
+ */
+export type SiteModule = GenericModule & {
+	getCore(): any;
+	getUser(): any;
+	getSession(): any;
+};
+
+/** The site's menu button module, which can show toasts. */
+export type MenuButtonModule = GenericModule & {
+	addToast(toast: Record<string, unknown>): void;
 };
 
 export type MainMenuEvents = {
@@ -261,6 +285,8 @@ export type MainMenuEvents = {
 };
 
 export interface ModuleMap {
+	'site': SiteModule;
+	'site.menu_button': MenuButtonModule;
 	'chat': Chat;
 	'chat.actions': Actions;
 	'chat.badges': Badges;

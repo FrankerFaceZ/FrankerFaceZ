@@ -52,7 +52,7 @@ export type WebMunchEvents = {
 };
 
 export type Predicate = ((n: unknown) => boolean) & {
-	chunks?: string | string[];
+	chunks?: string | string[] | ((name: string | undefined, id: string | number) => boolean);
 	use_result?: boolean;
 };
 
@@ -729,18 +729,18 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 
 		let ids: Set<string>;
 		if ( this._original_store && predicate.chunks && this._chunk_names && Object.keys(this._chunk_names).length ) {
-			const chunk_pred = typeof predicate.chunks === 'function';
-			if ( ! chunk_pred && ! Array.isArray(predicate.chunks) )
+			if ( typeof predicate.chunks !== 'function' && ! Array.isArray(predicate.chunks) )
 				predicate.chunks = [predicate.chunks];
 
-			const chunks = predicate.chunks,
+			const chunk_fn = typeof predicate.chunks === 'function' ? predicate.chunks : null,
+				chunk_list = Array.isArray(predicate.chunks) ? predicate.chunks : null,
 				names = this._chunk_names;
 
 			let id_list: string[] = [];
 			for(const [cs, modules] of this._original_store) {
 				let matched = false;
 				for(const c of cs) {
-					if ( chunk_pred ? chunks(names[c], c) : (chunks.includes(c) || chunks.includes(String(c)) || (names[c] && chunks.includes(names[c]))) ) {
+					if ( chunk_fn ? chunk_fn(names[c], c) : (chunk_list!.includes(String(c)) || (names[c] && chunk_list!.includes(names[c]))) ) {
 						matched = true;
 						break;
 					}

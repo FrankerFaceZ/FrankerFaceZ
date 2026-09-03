@@ -1,6 +1,6 @@
 'use strict';
 
-import type { SettingProcessor, SettingUiDefinition } from './types';
+import type { SettingProcessor, SettingUiDefinition, SettingUi_TextBox_Process_Number } from './types';
 
 const BAD = Symbol('BAD');
 type BadType = typeof BAD;
@@ -14,7 +14,7 @@ function do_number(
 		input = BAD;
 
 	if ( input !== BAD ) {
-		const bounds = definition.bounds;
+		const bounds = (definition as SettingUi_TextBox_Process_Number).bounds;
 		if ( Array.isArray(bounds) ) {
 			if ( bounds.length >= 3 ) {
 				// [low, inclusive, high, inclusive]

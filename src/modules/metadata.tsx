@@ -28,7 +28,7 @@ declare global {
 		_ffz_order?: number | null;
 
 		_ffz_destroy?: (() => void) | null;
-		_ffz_outside?: ClickOutside<any> | null;
+		_ffz_outside?: ClickOutside | null;
 		_ffz_popup?: Tooltip | null;
 		tip?: TooltipInstance | null;
 		tip_content?: any;
@@ -831,7 +831,7 @@ export default class Metadata extends Module {
 			return opts;
 		}
 
-		this.on('addon:fully-unload', addon_id => {
+		this.on('addons:fully-unload', addon_id => {
 			const removed = new Set<string>;
 			for(const [key, def] of Object.entries(this.definitions)) {
 				if ( def?.__source === addon_id ) {

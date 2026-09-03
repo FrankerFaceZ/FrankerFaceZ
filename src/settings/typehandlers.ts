@@ -13,7 +13,7 @@ const DEFAULT = Symbol('default');
 
 
 export const basic: SettingsTypeHandler = {
-	get<T>(key: string, profiles: SettingsProfile[]) {
+	get<T>(key: string, profiles: Iterable<SettingsProfile>) {
 		for(const profile of profiles)
 			if ( profile.has(key) )
 				return [
@@ -25,7 +25,7 @@ export const basic: SettingsTypeHandler = {
 
 
 export const object_merge: SettingsTypeHandler = {
-	get<T>(key: string, profiles: SettingsProfile[], definition: SettingDefinition<any>, log: Logger) {
+	get<T>(key: string, profiles: Iterable<SettingsProfile>, definition: SettingDefinition<any> | undefined, log: Logger) {
 		const values: T[] = [],
 			sources: number[] = [];
 
@@ -53,7 +53,7 @@ export const object_merge: SettingsTypeHandler = {
 type UnwrapArray<T> = T extends Array<infer U> ? U : T;
 
 export const basic_array_merge: SettingsTypeHandler = {
-	get<T>(key: string, profiles: SettingsProfile[], definition: SettingDefinition<any>, log: Logger) {
+	get<T>(key: string, profiles: Iterable<SettingsProfile>, definition: SettingDefinition<any> | undefined, log: Logger) {
 		const values: UnwrapArray<T>[] = [],
 			sources: number[] = [];
 
@@ -91,8 +91,8 @@ export const array_merge: SettingsTypeHandler = {
 
 	get<T>(
 		key: string,
-		profiles: SettingsProfile[],
-		definition: SettingDefinition<any>,
+		profiles: Iterable<SettingsProfile>,
+		definition: SettingDefinition<any> | undefined,
 		log: Logger,
 		ctx: SettingsContext
 	) {
@@ -102,14 +102,14 @@ export const array_merge: SettingsTypeHandler = {
 		let trailing: UnwrapArray<T>[] = [];
 		let had_value = false;
 
-		let profs: (SettingsProfile | typeof DEFAULT)[] = profiles;
-		if ( definition.inherit_default )
+		let profs: Iterable<SettingsProfile | typeof DEFAULT> = profiles;
+		if ( definition?.inherit_default )
 			profs = [...profiles, DEFAULT];
 
 		for(const profile of profs) {
 			let value;
 			if ( profile === DEFAULT ) {
-				value = definition.default;
+				value = definition?.default;
 				if ( typeof value === 'function' )
 					value = value(ctx);
 
@@ -145,7 +145,7 @@ export const array_merge: SettingsTypeHandler = {
 			trailing = trail.concat(trailing);
 
 			// If we didn't run into an inherit, don't inherit.
-			if ( ! is_trailing && ! definition.always_inherit )
+			if ( ! is_trailing && ! definition?.always_inherit )
 				break;
 		}
 

@@ -5,6 +5,7 @@
 // ============================================================================
 
 import Module, { type GenericModule } from 'utilities/module';
+import type { VNodeData } from 'vue';
 import { createElement, ClickOutside } from 'utilities/dom';
 import Tooltip from 'utilities/tooltip';
 import type SettingsManager from 'root/src/settings';
@@ -129,7 +130,7 @@ export default class Overrides extends Module<'chat.overrides'> {
 				const [, editor] = await Promise.all([vue.enable(), _editor]);
 				vue.component('OverrideEditor', editor.default);
 
-				ve = new vue.Vue({
+				ve = new (vue.Vue!)({
 					el: createElement('div'),
 					render: h => h('override-editor', {
 						user,
@@ -141,13 +142,13 @@ export default class Overrides extends Module<'chat.overrides'> {
 						originalColor: user.color,
 
 						updateTip: () => tip.update(),
-						setColor: val => this.setColor(user.id, val),
+						setColor: (val: string) => this.setColor(user.id, val),
 						deleteColor: () => this.deleteColor(user.id),
-						setName: val => this.setName(user.id, val),
+						setName: (val: string) => this.setName(user.id, val),
 						deleteName: () => this.deleteName(user.id),
 
 						close: () => tip.hide()
-					})
+					} as VNodeData) // the editor reads this from $vnode.data
 				});
 
 				return ve.$el;
@@ -238,7 +239,7 @@ export default class Overrides extends Module<'chat.overrides'> {
 
 				const actions = this.resolve('chat.actions') as any;
 
-				ve = new vue.Vue({
+				ve = new (vue.Vue!)({
 					el: createElement('div'),
 					render: h => h('warn-editor', {
 						user: data.user,
@@ -253,7 +254,7 @@ export default class Overrides extends Module<'chat.overrides'> {
 						},
 
 						close: () => tip.hide()
-					})
+					} as VNodeData) // the editor reads this from $vnode.data
 				});
 
 				return ve.$el;
