@@ -798,7 +798,7 @@ export default class EmoteMenu extends Module {
 							{t.i18n.t('emote-menu.gif-empty', 'No GIFs found.')}
 						</div>
 					)}
-					<div class="ffz--gif-picker-grid tw-flex tw-flex-wrap">
+					<div class="ffz--gif-picker-grid">
 						{this.state.results.map(gif => (
 							<button
 								key={gif.id}
