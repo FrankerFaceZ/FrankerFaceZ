@@ -8,6 +8,13 @@ import {SourcedSet} from 'utilities/object';
 import type Chat from '.';
 import type Room from './room';
 import type { BadgeAssignment } from './types';
+import type Emotes from './emotes';
+
+/** The user maps kept by the chat module and by each room. */
+type UserContainer = {
+	users: Record<string, User | null>;
+	user_ids: Record<string, User | null>;
+};
 
 export default class User {
 
@@ -37,7 +44,17 @@ export default class User {
 		this.login = login;
 
 		if ( id )
-			(room ?? manager).user_ids[id] = this;
+			((room ?? manager) as unknown as UserContainer).user_ids[id] = this;
+	}
+
+	/** The room or chat module holding this user's maps. */
+	private get container(): UserContainer {
+		return (this.room ?? this.manager) as unknown as UserContainer;
+	}
+
+	/** The emotes module, injected into the chat module at runtime. */
+	private get emotes(): Emotes {
+		return this.manager.resolve('chat.emotes') as Emotes;
 	}
 
 	destroy() {
@@ -45,7 +62,7 @@ export default class User {
 
 		if ( this.emote_sets ) {
 			for(const set_id of this.emote_sets._cache)
-				this.manager.emotes.unrefSet(set_id);
+				this.emotes.unrefSet(set_id);
 
 			this.emote_sets = null;
 		}
@@ -54,13 +71,13 @@ export default class User {
 		if ( this.badges )
 			this.badges = null;
 
-		const parent = this.room || this.manager;
+		const parent = this.container;
 
 		if ( parent ) {
 			if ( this._login && parent.users && parent.users[this._login] === this )
 				parent.users[this._login] = null;
 
-			if ( parent.user_ids && parent.user_ids[this._id] === this )
+			if ( this._id && parent.user_ids && parent.user_ids[this._id] === this )
 				parent.user_ids[this._id] = null;
 		}
 	}
@@ -99,7 +116,7 @@ export default class User {
 		if ( this._login === val )
 			return;
 
-		const obj = this.room || this.manager;
+		const obj = this.container;
 
 		if ( this._login ) {
 			const old_user = obj.users[this._login];
@@ -138,7 +155,7 @@ export default class User {
 			data = {id: badge_id};
 
 		if ( ! this.badges )
-			this.badges = new SourcedSet(false, this.manager.emotes.sourceSortFn);
+			this.badges = new SourcedSet(false, this.emotes.sourceSortFn ?? undefined);
 
 		const existing = this.badges.get(provider);
 		if ( existing )
@@ -223,11 +240,11 @@ export default class User {
 		}
 
 		if ( data )
-			this.manager.emotes.loadSetData(set_id, data);
+			this.emotes.loadSetData(set_id, data);
 
 		if ( changed ) {
-			this.manager.emotes.refSet(set_id);
-			this.manager.emotes.emit(':update-user-sets', this, provider, set_id, true);
+			this.emotes.refSet(set_id);
+			this.emotes.emit(':update-user-sets', this, provider, set_id, true);
 		}
 
 		return added;
@@ -257,8 +274,8 @@ export default class User {
 		if ( this.emote_sets.sourceIncludes(provider, set_id) ) {
 			this.emote_sets.remove(provider, set_id);
 			if ( ! this.emote_sets.includes(set_id) ) {
-				this.manager.emotes.unrefSet(set_id);
-				this.manager.emotes.emit(':update-user-sets', this, provider, set_id, false);
+				this.emotes.unrefSet(set_id);
+				this.emotes.emit(':update-user-sets', this, provider, set_id, false);
 			}
 			return true;
 		}

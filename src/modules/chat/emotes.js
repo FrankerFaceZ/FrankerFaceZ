@@ -290,7 +290,7 @@ export default class Emotes extends Module {
 				this.loadGlobalSets();
 		});
 
-		this.on('addon:fully-unload', addon_id => {
+		this.on('addons:fully-unload', addon_id => {
 			let removed = 0;
 			for(const [key, set] of Object.entries(this.emote_sets)) {
 				if ( set?.__source === addon_id ) {

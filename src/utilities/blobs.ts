@@ -79,7 +79,8 @@ export async function serializeBlob(blob?: BlobLike): Promise<SerializedBlobLike
 	if ( blob instanceof Uint8Array )
 		return {
 			type: 'u8',
-			buffer: blob.buffer
+			// A view may sit on a SharedArrayBuffer; ours never do.
+			buffer: blob.buffer as ArrayBuffer
 		}
 
 	throw new TypeError('Invalid type');

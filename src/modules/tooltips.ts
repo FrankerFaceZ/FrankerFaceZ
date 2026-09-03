@@ -190,7 +190,7 @@ export default class TooltipProvider extends Module<'tooltips', TooltipEvents> {
 
 		this.on(':cleanup', this.cleanup);
 
-		this.on('addon:fully-unload', addon_id => {
+		this.on('addons:fully-unload', addon_id => {
 			let removed = 0;
 			for(const [key, handler] of Object.entries(this.types)) {
 				if ( handler?.__source === addon_id ) {

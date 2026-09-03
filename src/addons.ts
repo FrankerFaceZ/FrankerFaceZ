@@ -108,7 +108,7 @@ export default class AddonManager extends Module<'addons'> {
 			title: 'Add-Ons',
 			no_filter: true,
 
-			getExtraTerms: () => Object.values(this.addons).map(addon => addon.search_terms),
+			getExtraTerms: () => Object.values(this.addons).flatMap(addon => Array.isArray(addon) || ! addon.search_terms ? [] : [addon.search_terms]),
 
 			getFFZ: () => this,
 			isReady: () => this.enabled,

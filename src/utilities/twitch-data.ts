@@ -6,6 +6,7 @@
 // ============================================================================
 
 import Module, { type GenericModule } from 'utilities/module';
+import type { SiteModule } from 'utilities/types';
 import {get, debounce, TranslatableError} from 'utilities/object';
 import type Apollo from './compat/apollo';
 import type { DocumentNode } from 'graphql';
@@ -143,7 +144,7 @@ export type StoredPromise<T> = [
 export default class TwitchData extends Module {
 
 	apollo: Apollo = null!;
-	site: GenericModule = null!;
+	site: SiteModule = null!;
 
 	private _waiting_user_ids: Map<string, StoredPromise<TwitchBasicUser | null>>;
 	private _waiting_user_logins: Map<string, StoredPromise<TwitchBasicUser | null>>;
@@ -161,7 +162,7 @@ export default class TwitchData extends Module {
 	constructor(name?: string, parent?: GenericModule) {
 		super(name, parent);
 
-		this.site = this.parent as GenericModule;
+		this.site = this.parent as SiteModule;
 
 		this.inject('site.apollo');
 
@@ -874,7 +875,7 @@ export default class TwitchData extends Module {
 	 *
 	 *  console.log(this.twitch_data.createPoll(19571641, "Pick an option:", ["One", "Two", "Three"], {bits: 10, duration: 120, subscriberMultiplier: false, subscriberOnly: true}));
 	 */
-	async createPoll(channel_id, title, choices, options = {}) {
+	async createPoll(channel_id: string | number, title: string, choices: string[], options: {bits?: number; duration?: number; subscriberMultiplier?: boolean; subscriberOnly?: boolean} = {}) {
 		if ( typeof title !== 'string' )
 			throw new TypeError('title must be string');
 
@@ -920,7 +921,7 @@ export default class TwitchData extends Module {
 	 *
 	 *  console.log(this.twitch_data.archivePoll(1337));
 	 */
-	async archivePoll(poll_id) {
+	async archivePoll(poll_id: string | number) {
 		const data = await this.mutate({
 			mutation: await import(/* webpackChunkName: 'queries' */ './data/poll-archive.gql'),
 			variables: {
@@ -944,7 +945,7 @@ export default class TwitchData extends Module {
 	 *
 	 *  console.log(this.twitch_data.archivePoll(1337));
 	 */
-	async terminatePoll(poll_id) {
+	async terminatePoll(poll_id: string | number) {
 		const data = await this.mutate({
 			mutation: await import(/* webpackChunkName: 'queries' */ './data/poll-terminate.gql'),
 			variables: {

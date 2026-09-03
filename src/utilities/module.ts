@@ -1152,7 +1152,7 @@ export function buildAddonProxy<TObj extends object, TNoProxy extends boolean = 
 		}
 	};
 
-	return no_proxy ? handler : new Proxy<TObj>(thing, handler) as any;
+	return (no_proxy ? handler : new Proxy<TObj>(thing, handler)) as any;
 
 }
 

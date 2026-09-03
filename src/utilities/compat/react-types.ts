@@ -22,6 +22,8 @@ export type ReactRoot = {
 };
 
 export type ReactNode = {
+	/** Props for the pending render, used to find providers by their props. */
+	pendingProps?: any;
 	alternate: ReactNode | null;
 	child: ReactNode | null;
 	return: ReactNode | null;

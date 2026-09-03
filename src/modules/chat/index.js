@@ -427,7 +427,7 @@ export default class Chat extends Module {
 			this.triggered_reload = false;
 		});
 
-		this.on('addon:fully-unload', addon_id => {
+		this.on('addons:fully-unload', addon_id => {
 			let removed = 0;
 			for(const [key, def] of Object.entries(this.link_providers)) {
 				if ( def?.__source === addon_id ) {

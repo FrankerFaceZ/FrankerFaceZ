@@ -585,3 +585,21 @@ export function highlightJson(object: any, pretty = false, depth = 1, max_depth 
 
 	return `<span class="ffz-ct--obj-open" depth="${depth}">{</span>${out.join('')}${out.length && pretty ? `\n${indent}` : ''}<span class="ffz-ct--obj-close" depth="${depth}">}</span>`;
 }
+
+
+// ============================================================================
+// JSX Typing
+// ============================================================================
+
+// TypeScript resolves the JSX namespace through the factory named in
+// tsconfig (createElement.JSX) before falling back to the global one, so
+// JSX in files that import this helper types as DOM elements rather than
+// through Vue's global VNode typing.
+export declare namespace createElement {
+	namespace JSX {
+		type Element = HTMLElement;
+		interface IntrinsicElements {
+			[elemName: string]: any;
+		}
+	}
+}
