@@ -20,6 +20,7 @@
 		"build:stats": "NODE_ENV=production rspack build --json > stats.json",
 		"build:prod": "NODE_ENV=production rspack build",
 		"build:dev": "NODE_ENV=development rspack build",
+		"serve:dist": "bun tools/serve-dist.js",
 		"build:types": "tsc --declaration --emitDeclarationOnly --outDir typedist && bun bin/build_types",
 		"abuild:types": "bun bin/build_types",
 		"build:docs": "typedoc --options typedoc.json",

@@ -116,6 +116,27 @@ const SWC_REACT = {
 	runtime: 'classic'
 };
 
+const fs = require('fs');
+
+/**
+ * Empties the output directory before a build without removing the
+ * directory entry, so rebuilds keep working while something has it open.
+ */
+class EmptyOutputDirPlugin {
+	apply(compiler) {
+		const empty = () => {
+			const dir = compiler.options.output.path;
+			if ( ! fs.existsSync(dir) )
+				return;
+
+			for(const entry of fs.readdirSync(dir))
+				fs.rmSync(path.join(dir, entry), {recursive: true, force: true});
+		};
+
+		compiler.hooks.beforeRun.tap('EmptyOutputDirPlugin', empty);
+	}
+}
+
 /** @type {import('@rspack/core').Configuration} */
 const config = {
 	mode: DEV_BUILD
@@ -156,7 +177,10 @@ const config = {
 
 	output: {
 		chunkFormat: 'array-push',
-		clean: true,
+		// Cleaning is done by EmptyOutputDirPlugin below rather than here:
+		// Rspack's clean removes the directory itself, which Windows refuses
+		// while an editor, Explorer window or serve:dist has it open.
+		clean: false,
 		publicPath: FOR_EXTENSION
 			? 'auto'
 			: FILE_PATH,
@@ -207,6 +231,7 @@ const config = {
 	},
 
 	plugins: [
+		new EmptyOutputDirPlugin(),
 		new rspack.CopyRspackPlugin({
 			patterns: COPY_PATTERNS
 		}),
