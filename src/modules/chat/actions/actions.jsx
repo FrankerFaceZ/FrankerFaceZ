@@ -123,10 +123,11 @@ export default class Actions extends Module {
 				val.filter(this.filterAction),
 
 			default: [
-				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-block'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
+				{v: {action: 'ban', appearance: {type: 'icon', icon: 'ffz-i-tw-ban'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
 				{v: {action: 'unban', appearance: {type: 'icon', icon: 'ffz-i-ok'}, options: {}, display: {mod: true, mod_icons: true, deleted: true}}},
-				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-clock'}, display: {mod: true, mod_icons: true}}},
-				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-trash'}, options: {}, display: {mod: true, mod_icons: true}}}
+				{v: {action: 'timeout', appearance: {type: 'icon', icon: 'ffz-i-tw-timeout'}, display: {mod: true, mod_icons: true}}},
+				{v: {action: 'warn', appearance: {type: 'icon', icon: 'ffz-i-tw-warn'}, options: {}, display: {mod: true, mod_icons: true, deleted: false}}},
+				{v: {action: 'msg_delete', appearance: {type: 'icon', icon: 'ffz-i-tw-trash'}, options: {}, display: {mod: true, mod_icons: true}}}
 			],
 
 			type: 'array_merge',

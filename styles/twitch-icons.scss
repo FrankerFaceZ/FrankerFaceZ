@@ -1,0 +1,41 @@
+// Twitch's own moderation icons, usable through the `ffz-i-tw-*` classes.
+// They ride on the icon font's base rule from icons.scss (which sets the
+// inline-block box and 1em width) and replace the glyph with a CSS mask, so
+// the icon takes the current text colour. The list of names lives in
+// src/utilities/twitch-icons.ts; keep the two in sync.
+
+@mixin twitch-icon($svg) {
+	&:before {
+		mask-image: url("data:image/svg+xml,#{$svg}");
+		-webkit-mask-image: url("data:image/svg+xml,#{$svg}");
+	}
+}
+
+[class^="ffz-i-tw-"]:before, [class*=" ffz-i-tw-"]:before {
+	content: '';
+	height: 1em;
+	vertical-align: -0.125em;
+	background-color: currentColor;
+	mask-size: contain;
+	mask-repeat: no-repeat;
+	mask-position: center;
+	-webkit-mask-size: contain;
+	-webkit-mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+}
+
+.ffz-i-tw-ban {
+	@include twitch-icon("%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12Zm11 9A9 9 0 0 1 4.968 6.382l12.65 12.65A8.962 8.962 0 0 1 12 21Zm7.032-3.382a9 9 0 0 0-12.65-12.65l12.65 12.65Z'/%3E%3C/svg%3E");
+}
+
+.ffz-i-tw-timeout {
+	@include twitch-icon("%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 11.586V5h-2v7.414l3.293 3.293 1.414-1.414L13 11.586Z'/%3E%3Cpath fill-rule='evenodd' d='M1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12Zm11 9a9 9 0 1 1 0-18 9 9 0 0 1 0 18Z'/%3E%3C/svg%3E");
+}
+
+.ffz-i-tw-warn {
+	@include twitch-icon("%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M13.226 2.72a1.404 1.404 0 0 0-2.452 0L2.192 17.84c-.545.96.136 2.16 1.226 2.16h17.164c1.09 0 1.771-1.2 1.226-2.16L13.226 2.72ZM13 7h-2v7h2V7Zm0 9h-2v2h2v-2Z'/%3E%3C/svg%3E");
+}
+
+.ffz-i-tw-trash {
+	@include twitch-icon("%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 2h4v2h7v2H3V4h7V2ZM5 8h2v12h10V8h2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8Z'/%3E%3C/svg%3E");
+}

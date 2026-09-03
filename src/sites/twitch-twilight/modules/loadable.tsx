@@ -26,6 +26,7 @@ declare module 'utilities/types' {
 		'chat.hype.show-pinned': boolean;
 		'chat.input.show-shield': boolean;
 		'layout.turbo-cta': boolean;
+		'layout.bits-cta': boolean;
 		'layout.subtember': boolean;
 	}
 }
@@ -127,6 +128,10 @@ export default class Loadable extends Module {
 
 		this.settings.getChanges('layout.turbo-cta', val => {
 			this.toggle('TopNav__TurboButton_Available', val);
+		});
+
+		this.settings.getChanges('layout.bits-cta', val => {
+			this.toggle('TopNav__BitsButton_Available', val);
 		});
 
 		this.settings.getChanges('layout.subtember', val => {
