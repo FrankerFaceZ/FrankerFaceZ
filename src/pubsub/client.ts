@@ -1,5 +1,5 @@
 import { EventEmitter } from '../utilities/events';
-import { set_equals, shallow_object_equals } from '../utilities/object';
+import {set_equals} from '../utilities/object';
 
 export type PubSubClientEvents = {
 	connect: [event: Event];

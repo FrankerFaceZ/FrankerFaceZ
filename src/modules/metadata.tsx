@@ -5,7 +5,6 @@
 // Channel Metadata
 // ============================================================================
 
-import { DEBUG } from 'utilities/constants';
 
 import {createElement, ClickOutside, setChildren} from 'utilities/dom';
 import {maybe_call} from 'utilities/object';
@@ -782,8 +781,7 @@ export default class Metadata extends Module {
 		if ( ! addon_id )
 			return this;
 
-		const overrides: Record<string, any> = {},
-			is_dev = DEBUG || addon?.dev;
+		const overrides: Record<string, any> = {};
 
 		overrides.define = <TData,>(key: string, definition: MetadataDefinition<TData>) => {
 			if ( definition )
@@ -982,10 +980,8 @@ export default class Metadata extends Module {
 
 			if ( ! el ) {
 				let icon = old_icon = maybe_call(def.icon, this, data);
-				let button = false;
 
 				if ( def.button !== false && (def.popup || def.click) ) {
-					button = true;
 
 					let btn: HTMLButtonElement | undefined,
 						popup: HTMLButtonElement | undefined;

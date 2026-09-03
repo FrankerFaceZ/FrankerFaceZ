@@ -9,7 +9,7 @@ import Module, { type GenericModule } from 'utilities/module';
 import {has, deep_equals, sleep} from 'utilities/object';
 import type Fine from './fine';
 import type { OptionalPromise } from 'utilities/types';
-import type { ReactNode, ReactStateNode } from './react-types';
+import type { ReactStateNode } from './react-types';
 
 declare module 'utilities/types' {
 	interface ModuleEventMap {

@@ -1,6 +1,6 @@
 'use strict';
 
-import type { SettingDefinition, SettingProcessor, SettingUiDefinition } from './types';
+import type { SettingProcessor, SettingUiDefinition } from './types';
 
 const BAD = Symbol('BAD');
 type BadType = typeof BAD;

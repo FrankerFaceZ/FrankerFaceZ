@@ -7,7 +7,7 @@
 import Module, { type GenericModule } from 'utilities/module';
 import { EXTENSION, SERVER_OR_EXT } from 'utilities/constants';
 import { createElement } from 'utilities/dom';
-import { timeout, has, deep_copy, fetchJSON } from 'utilities/object';
+import {timeout, deep_copy, fetchJSON} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 import type SettingsManager from './settings';
 import type TranslationManager from './i18n';

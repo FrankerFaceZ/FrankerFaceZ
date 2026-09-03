@@ -67,8 +67,6 @@ const BOOLEAN_ATTRS = [
 ];
 
 
-const range = document.createRange();
-
 function camelCase(name: string) {
 	return name.replace(/[-_]\w/g, m => m[1].toUpperCase());
 }

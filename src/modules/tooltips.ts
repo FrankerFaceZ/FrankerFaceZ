@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {createElement, sanitize} from 'utilities/dom';
-import {has, maybe_call} from 'utilities/object';
+import {maybe_call} from 'utilities/object';
 
 import Tooltip, { type TooltipInstance } from 'utilities/tooltip';
 import Module, { type GenericModule, buildAddonProxy } from 'utilities/module';

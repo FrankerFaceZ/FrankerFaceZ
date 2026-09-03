@@ -9,7 +9,6 @@ import {type FilterData, type FilterType, createTester} from 'utilities/filterin
 import { DEBUG } from 'utilities/constants';
 import type { ContextData } from './types';
 import type { ScreenDetails } from 'root/types/getScreenDetails';
-import SettingsManager from '.';
 
 let safety: ((input: string | RegExp) => boolean) | null = null;
 

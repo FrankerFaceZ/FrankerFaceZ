@@ -4,7 +4,6 @@
 // Settings System
 // ============================================================================
 
-import { DEBUG } from 'utilities/constants';
 import Module, { type GenericModule, buildAddonProxy } from 'utilities/module';
 import {deep_equals, has, debounce, deep_copy, generateUUID} from 'utilities/object';
 import {type PathNode, parse as parse_path} from 'utilities/path-parser';
@@ -17,11 +16,10 @@ import * as VALIDATORS from './validators';
 import * as FILTERS from './filters';
 import * as CLEARABLES from './clearables';
 
-import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys, ConcreteLocalStorageData } from './types';
+import type { SettingsProfileMetadata, ContextData, ExportedFullDump, SettingsClearable, SettingDefinition, SettingProcessor, SettingUiDefinition, SettingValidator, SettingType, ExportedBlobMetadata, SettingsKeys, AllSettingsKeys } from './types';
 import type { FilterType } from 'utilities/filtering';
 import { AdvancedSettingsProvider, IGNORE_CONTENT_KEYS, LocalStorageProvider, Providers, SettingsProvider } from './providers';
 import type { AddonInfo, SettingsTypeMap } from 'utilities/types';
-import { FFZEvent } from '../utilities/events';
 
 export {parse as parse_path} from 'utilities/path-parser';
 
@@ -961,7 +959,6 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	 */
 	loadProfiles(suppress_events: boolean = false) {
 		const old_profile_ids = this.__profile_ids,
-			old_profile_uuids = this.__profile_uuids,
 			old_profiles = this.__profiles,
 
 			profile_ids: Record<number, SettingsProfile> = this.__profile_ids = {},
@@ -1280,8 +1277,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		if ( ! addon_id )
 			return this;
 
-		const overrides: Record<string, any> = {},
-			is_dev = DEBUG || addon?.dev;
+		const overrides: Record<string, any> = {};
 
 		overrides.add = <
 			K extends SettingsKeys,

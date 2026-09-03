@@ -1,6 +1,5 @@
 'use strict';
 
-import { has } from 'utilities/object';
 import type { OptionalArray } from 'utilities/types';
 import type SettingsManager from '..';
 import { RemoteSettingsProvider } from './base';

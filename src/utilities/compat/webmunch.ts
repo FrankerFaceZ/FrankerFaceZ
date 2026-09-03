@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module, { type GenericModule } from 'utilities/module';
-import {has, generateUUID, makeAddonIdChecker} from 'utilities/object';
+import {has, generateUUID} from 'utilities/object';
 import { DEBUG } from 'utilities/constants';
 
 declare module 'utilities/types' {
@@ -93,11 +93,6 @@ const NAMES = [
 	'webpackChunktwitch_twilight',
 	'webpackChunktwitch_sunlight',
 	'webpackJsonp_N_E'
-];
-
-const HARD_MODULES = [
-	[0, 'vendor'],
-	[1, 'core']
 ];
 
 
@@ -619,10 +614,11 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 		if ( ! this._require || ! this._original_store )
 			throw new Error('We do not have webpack');
 
-		const out: unknown[] = [],
-			names = this._chunk_names;
-		for(const [cs, modules] of this._original_store) {
-			/*if ( chunks ) {
+		const out: unknown[] = [];
+		for(const modules of this._original_store.values()) {
+			/* Disabled chunk filter. It needs `[cs, modules]` from the store
+			entries and `names = this._chunk_names`.
+			if ( chunks ) {
 				let matched = false;
 				for(const c of cs) {
 					if ( chunks.includes(c) || chunks.includes(`${c}`) || (names[c] && chunks.includes(names[c])) ) {

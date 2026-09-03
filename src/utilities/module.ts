@@ -8,7 +8,7 @@
 import EventEmitter, { type EventListener, type EventMap, type NamespacedEventArgs, type NamespacedEventKey, type NamespacedEvents } from 'utilities/events';
 import {has} from 'utilities/object';
 import type Logger from './logging';
-import type { AddonInfo, KnownEvents, ModuleKeys, ModuleMap, OptionalPromise } from './types';
+import type { AddonInfo, KnownEvents, ModuleMap, OptionalPromise } from './types';
 import type { Addon } from './addon';
 
 
@@ -449,8 +449,7 @@ export class Module<
 
 
 	private __canUnload(initial: string | undefined, chain: GenericModule[]) {
-		const path = this.__path || this.name,
-			state = this.__load_state;
+		const state = this.__load_state;
 
 		if ( chain.includes(this) )
 			throw new CyclicDependencyError(`cyclic load requirements when checking if can unload ${initial}`, [...chain, this]);
@@ -624,8 +623,7 @@ export class Module<
 
 
 	private __canDisable(initial: string | undefined, chain: GenericModule[]) {
-		const path = this.__path || this.name,
-			state = this.__state;
+		const state = this.__state;
 
 		if ( chain.includes(this) )
 			throw new CyclicDependencyError(`cyclic load requirements when checking if can disable ${initial}`, [...chain, this]);

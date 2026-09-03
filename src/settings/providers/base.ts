@@ -2,7 +2,6 @@
 
 import { isValidBlob, deserializeBlob, serializeBlob, jsonSerialize, jsonDeserialize, type BlobLike, type SerializedBlobLike, type JsonSerialized } from 'utilities/blobs';
 import { EventEmitter } from 'utilities/events';
-import { has } from 'utilities/object';
 import type { OptionalArray, OptionalPromise, ProviderTypeMap } from 'utilities/types';
 import type SettingsManager from '..';
 import type { CorsRpcTypes, CorsOutput, RPCInputMessage, CorsReplyMessage, CorsReplyErrorMessage, CorsMessage } from './rpc-types';

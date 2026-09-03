@@ -1,14 +1,9 @@
 'use strict';
 
-import type { SerializedBlobLike, JsonSerialized } from 'utilities/blobs';
-import { has, once } from 'utilities/object';
 import type { OptionalArray } from 'utilities/types';
 import type SettingsManager from '..';
 import { RemoteSettingsProvider } from './base';
 import type { CorsMessage } from './rpc-types';
-
-const NOT_WWW_TWITCH = window.location.host !== 'www.twitch.tv',
-	NOT_WWW_YT = window.location.host !== 'www.youtube.com';
 
 // ============================================================================
 // CrossOriginStorageBridge
@@ -18,7 +13,8 @@ export class CrossOriginStorageBridge extends RemoteSettingsProvider {
 
 	// Static Stuff
 
-	// Disabled for now. Restore `NOT_WWW_TWITCH && NOT_WWW_YT` to re-enable.
+	// Disabled for now. To re-enable, return whether window.location.host
+	// is neither www.twitch.tv nor www.youtube.com.
 	static supported() { return false; }
 	static hasContent() {
 		return CrossOriginStorageBridge.supported();

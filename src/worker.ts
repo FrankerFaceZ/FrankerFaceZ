@@ -62,7 +62,6 @@ function newPort(port: chrome.runtime.Port) {
 
 	port.onMessage.addListener(msg => {
 		const type = msg?.ffz_type as keyof CorsRpcTypes;
-		const id = msg?.id  as number | undefined;
 		if ( ! type )
 			return;
 
@@ -286,12 +285,6 @@ async function initializeCache() {
 }
 
 
-async function hasValue(key: string) {
-	if ( cache == null )
-		await initializeCache();
-
-	return cache!.has(key);
-}
 
 async function setValue(key: string, value: any, source?: chrome.runtime.Port) {
 	if ( cache == null )
@@ -550,10 +543,6 @@ async function blobKeys() {
 	});
 }
 
-async function hasBlob(key: string) {
-	const keys = await blobKeys();
-	return keys.includes(key);
-}
 
 async function clearBlobs(source?: chrome.runtime.Port) {
 	const db = await openDatabase(),
@@ -695,24 +684,6 @@ type RPCInputMessage<K extends keyof CorsRpcTypes> = {
 	ffz_type: K;
 	id?: number;
 } & CorsInput<K>;
-
-type CorsReplyMessage = {
-	ffz_type: 'reply';
-	id: number;
-	reply: any;
-};
-
-type CorsReplyErrorMessage = {
-	ffz_type: 'reply-error';
-	id: number;
-};
-
-type CorsMessage = CorsReplyMessage | CorsReplyErrorMessage | {
-	[K in keyof CorsRpcTypes]: RPCInputMessage<K>
-}[keyof CorsRpcTypes];
-
-/** A union of the various Blob types that are supported. */
-type BlobLike = Blob | File | ArrayBuffer | Uint8Array;
 
 /** A union of the various serialized blob types. */
 type SerializedBlobLike = SerializedBlob | SerializedFile | SerializedArrayBuffer | SerializedUint8Array;

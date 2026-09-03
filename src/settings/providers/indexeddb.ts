@@ -1,7 +1,7 @@
 'use strict';
 
 import { isValidBlob, type BlobLike } from 'utilities/blobs';
-import { TicketLock, has, once } from 'utilities/object';
+import { TicketLock, once } from 'utilities/object';
 import type SettingsManager from '..';
 import { AdvancedSettingsProvider, IGNORE_CONTENT_KEYS } from './base';
 

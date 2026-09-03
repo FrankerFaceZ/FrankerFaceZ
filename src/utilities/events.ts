@@ -76,7 +76,7 @@ export type EventKey<TEvent extends EventMap> = string & keyof TEvent;
 export type AddEventKeyNamespace<
 	TNamespace extends string,
 	TKey extends string
-> = TKey extends `:${infer Rest}`
+> = TKey extends `:${infer _rest}`
 	? `${TNamespace}${TKey}`
 	: TKey;
 
