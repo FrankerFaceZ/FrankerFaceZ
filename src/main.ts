@@ -221,7 +221,7 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 			/*, 'lazy-once' */
 		);
 
-		const modules = this.loadFromContext(ctx, this.core_log);
+		const modules = await this.loadFromContext(ctx, this.core_log);
 
 		this.core_log.info(`Loaded descriptions of ${Object.keys(modules).length} modules.`);
 	}
