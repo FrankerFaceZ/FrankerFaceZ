@@ -17,6 +17,7 @@ const BUILD_GLOBALS = {
 	'__version_patch__': 'readonly',
 	'__version_prerelease__': 'readonly',
 	'__extension__': 'readonly',
+	'__client_host__': 'readonly',
 	'FrankerFaceZ': 'readonly'
 };
 

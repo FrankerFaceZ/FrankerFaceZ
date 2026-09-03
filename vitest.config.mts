@@ -36,6 +36,7 @@ export default defineConfig({
 		__version_build__: 'null',
 		__git_commit__: '"test"',
 		__extension__: 'false',
+		__client_host__: '"https://cdn2.frankerfacez.com"',
 		__webpack_hash__: '"test"'
 	},
 

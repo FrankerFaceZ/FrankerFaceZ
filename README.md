@@ -55,6 +55,37 @@ button. Otherwise, you can use `bun run font:save` to download the changes
 from your session.
 
 
+Hosting Your Own Build
+======================
+
+The user-script loader and the compiled client both default to loading from
+the FrankerFaceZ CDN. To build a client that loads from your own host instead,
+set `FFZ_CLIENT_HOST` when building:
+
+```bash
+FFZ_CLIENT_HOST=https://ffz.example.com bun run build
+```
+
+This changes three things: the public path baked into every chunk URL, the
+`CLIENT_SERVER` constant the client uses for its own data files, and the CDN
+reference inside the copied loader script (`dist/script.min.js`). Everything
+else is unchanged, so a build without the variable is identical to upstream's.
+
+Your host needs to serve `dist/` over HTTPS with an
+`Access-Control-Allow-Origin: *` header, laid out the way the loader expects:
+
+- `/static/` holds every hashed file from `dist/` (chunks, styles, fonts, JSON).
+  These names never change once published, so cache them for as long as you like.
+- `/script/` holds the stable, unhashed names the loader and the client request:
+  `avalon.js`, `clips.js`, `player.js`, `bridge.js`, `esbridge.js`,
+  `experiments.json` and `sample-chat-messages.json`. `dist/manifest.json` maps
+  each stable name to its current hashed file. Do not cache these for long.
+
+Only the client itself comes from your host. Emoji images, Twitch badge art,
+emote replacements, translations and add-ons are still loaded from the
+FrankerFaceZ CDN (`SERVER` in `src/utilities/constants.ts`), and emote and
+badge data still comes from the FrankerFaceZ API.
+
 Editor Settings
 ===============
 

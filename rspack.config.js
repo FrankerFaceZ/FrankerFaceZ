@@ -18,12 +18,20 @@ const DEV_BUILD = process.env.NODE_ENV !== 'production';
 // Is this for an extension?
 const FOR_EXTENSION = !! process.env.FFZ_EXTENSION;
 
+// Where this build of the client will be hosted. Defaults to the FrankerFaceZ
+// CDN; set FFZ_CLIENT_HOST to build for your own host. Only the client's own
+// files come from here; emoji, badges, translations and add-ons stay on the
+// FrankerFaceZ CDN.
+const DEFAULT_CLIENT_HOST = 'https://cdn2.frankerfacez.com';
+const CLIENT_HOST = (process.env.FFZ_CLIENT_HOST || DEFAULT_CLIENT_HOST).replace(/\/+$/, '');
+const CUSTOM_HOST = CLIENT_HOST !== DEFAULT_CLIENT_HOST;
+
 // Get the public path.
 const FILE_PATH = DEV_SERVER
 	? 'https://localhost:8000/script/'
 	: FOR_EXTENSION
 		? ''
-		: 'https://cdn2.frankerfacez.com/static/';
+		: `${CLIENT_HOST}/static/`;
 
 
 console.log('NODE_ENV:', process.env.NODE_ENV);
@@ -31,6 +39,7 @@ console.log('FOR_EXTENSION:', FOR_EXTENSION, FOR_EXTENSION ? ` (${process.env.FF
 console.log('IS_DEV_BUILD:', DEV_BUILD);
 console.log('IS SERVE:', DEV_SERVER);
 console.log('FILE PATH:', FILE_PATH);
+console.log('CLIENT HOST:', CLIENT_HOST, CUSTOM_HOST ? '(custom)' : '(default)');
 
 
 // Version Stuff
@@ -62,7 +71,12 @@ const COPY_PATTERNS = [
 			: './src/entry.js',
 		to: (DEV_SERVER || DEV_BUILD)
 			? 'script.js'
-			: 'script.min.js'
+			: 'script.min.js',
+		// The loader is copied rather than bundled, so point it at the custom
+		// host by rewriting its CDN reference. Left untouched for the default.
+		transform: (CUSTOM_HOST && ! FOR_EXTENSION)
+			? content => content.toString().replace("'//cdn2.frankerfacez.com'", JSON.stringify(CLIENT_HOST).replace(/"/g, "'"))
+			: undefined
 	},
 ];
 
@@ -204,6 +218,7 @@ const config = {
 			__version_prerelease__: JSON.stringify(VERSION.prerelease),
 			__version_build__: JSON.stringify(process.env.FFZ_BUILD || null),
 			__git_commit__: JSON.stringify(commit_hash),
+			__client_host__: JSON.stringify(CLIENT_HOST),
 			__extension__: FOR_EXTENSION
 				? JSON.stringify(process.env.FFZ_EXTENSION)
 				: JSON.stringify(false)
