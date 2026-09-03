@@ -106,15 +106,14 @@ const STYLE_LOADERS = [
 	}
 ];
 
-// JSX in this project compiles to createElement from utilities/dom, not
-// React. The same pragma applies to .js/.jsx and .ts/.tsx files.
-const SWC_REACT = {
-	pragma: 'createElement',
-	pragmaFrag: 'Fragment',
-	throwIfNamespace: true,
-	development: false,
-	runtime: 'classic'
-};
+// JSX in this project compiles to whichever `createElement` is in scope:
+// the DOM helper from utilities/dom in most files, or Twitch's React in the
+// modules that render inside Twitch's tree, where it is a local binding.
+// esbuild honours that local binding. SWC's JSX transform does not: its
+// hygiene pass renames a local `createElement` when the JSX is in a nested
+// function, leaving the compiled calls unbound (ReferenceError at runtime).
+// So JS and TS go through esbuild-loader, as they did under webpack.
+const JSX_FACTORY = 'createElement';
 
 const fs = require('fs');
 
@@ -123,7 +122,7 @@ const fs = require('fs');
  * directory entry, so rebuilds keep working while something has it open.
  */
 class EmptyOutputDirPlugin {
-	apply(compiler) {
+	apply(compiler) { // eslint-disable-line class-methods-use-this
 		const empty = () => {
 			const dir = compiler.options.output.path;
 			if ( ! fs.existsSync(dir) )
@@ -258,35 +257,21 @@ const config = {
 			{
 				test: /\.jsx?$/,
 				exclude: /node_modules/,
-				loader: 'builtin:swc-loader',
+				loader: 'esbuild-loader',
 				options: {
-					jsc: {
-						parser: {
-							syntax: 'ecmascript',
-							jsx: true
-						},
-						transform: {
-							react: SWC_REACT
-						},
-						target: TARGET
-					}
+					loader: 'jsx',
+					jsxFactory: JSX_FACTORY,
+					target: TARGET
 				}
 			},
 			{
 				test: /\.tsx?$/,
 				exclude: /node_modules/,
-				loader: 'builtin:swc-loader',
+				loader: 'esbuild-loader',
 				options: {
-					jsc: {
-						parser: {
-							syntax: 'typescript',
-							tsx: true
-						},
-						transform: {
-							react: SWC_REACT
-						},
-						target: TARGET
-					}
+					loader: 'tsx',
+					jsxFactory: JSX_FACTORY,
+					target: TARGET
 				}
 			},
 			{
@@ -344,7 +329,9 @@ const config = {
 				loader: 'vue-loader'
 			},
 			{
-				// Stylesheets loaded at runtime by URL.
+				// Stylesheets loaded at runtime by URL. Named like the script
+				// chunks so a rebuild changes the URL and long-lived caches
+				// never serve a stale stylesheet.
 				test: /\.(?:sa|sc|c)ss$/,
 				resourceQuery: {
 					not: [
@@ -357,9 +344,9 @@ const config = {
 						loader: CSS_ASSET_LOADER,
 						options: {
 							mode: 'file',
-							filename: HASHED
-								? '[name].[contenthash:8].css'
-								: '[name].css'
+							filename: (FOR_EXTENSION || DEV_SERVER)
+								? '[name].css'
+								: '[name].[contenthash:8].css'
 						}
 					},
 					...STYLE_LOADERS

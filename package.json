@@ -44,6 +44,7 @@
 		"@types/webpack-env": "^1.18.8",
 		"browserslist": "^4.25.0",
 		"css-loader": "^6.11.0",
+		"esbuild-loader": "^4",
 		"eslint": "^10.9.1",
 		"eslint-plugin-react": "^7.37.5",
 		"eslint-plugin-vue": "^10.10.0",
