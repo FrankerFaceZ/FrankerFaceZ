@@ -1,4 +1,5 @@
 import type { ClientVersion } from "./types";
+import { forwardLog, installDevLogForwarder } from './dev-log';
 
 const RAVEN_LEVELS: Record<number, string> = {
 	1: 'debug',
@@ -98,6 +99,7 @@ export class Logger {
 
 	/** @internal */
 	hi(core: Core, version?: ClientVersion) {
+		installDevLogForwarder();
 		const VER = version ?? (core.constructor as any)?.version_info;
 		this.info(`FrankerFaceZ v${VER} (s:${core.host} f:${core.flavor} b:${VER?.build} c:${VER?.commit || 'null'})`);
 
@@ -171,6 +173,7 @@ export class Logger {
 	}
 
 	capture(exc: Error, opts?: any, ...args: any[]) {
+		forwardLog('exception', this.name, [exc, ...args]);
 		if ( this.raven ) {
 			opts = opts || {};
 			if ( ! opts.logger )
@@ -186,6 +189,8 @@ export class Logger {
 	}
 
 	invokeColor(level: number, message: any, colors: string | string[], ...optionalParams: any[]) {
+		if ( level >= LogLevel.Warning && this.enabled && level >= this.level )
+			forwardLog(RAVEN_LEVELS[level] || String(level), this.name, [message, ...optionalParams]);
 		if ( ! this.enabled || level < this.level )
 			return;
 
@@ -264,6 +269,9 @@ export class Logger {
 			message,
 			...optionalParams
 		] : [message];
+
+		if ( level >= LogLevel.Warning )
+			forwardLog(RAVEN_LEVELS[level] || String(level), this.name, result);
 
 		if ( level > LogLevel.Verbose ) {
 			const out = result.join(' ');

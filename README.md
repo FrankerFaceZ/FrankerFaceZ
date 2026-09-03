@@ -81,6 +81,14 @@ Your host needs to serve `dist/` over HTTPS with an
   `experiments.json` and `sample-chat-messages.json`. `dist/manifest.json` maps
   each stable name to its current hashed file. Do not cache these for long.
 
+To try a self-hosted build locally, `bun run serve:dist` serves `dist/` with
+that layout on `https://localhost:8001`, using a self-signed certificate (it
+reuses the dev server's, or creates one with openssl). Build with
+`FFZ_CLIENT_HOST=https://localhost:8001 bun run build`, open the loader URL the
+server prints once to trust the certificate, and install `dist/script.min.js`
+as a userscript. HTTPS matters: Firefox refuses plain-HTTP scripts injected
+into twitch.tv.
+
 Only the client itself comes from your host. Emoji images, Twitch badge art,
 emote replacements, translations and add-ons are still loaded from the
 FrankerFaceZ CDN (`SERVER` in `src/utilities/constants.ts`), and emote and
