@@ -1423,8 +1423,8 @@ export function createMenuComponent(t, React) {
 						{is_gifs && <t.GifPanel
 							channel_id={this.props.channel_id}
 							search={this.state.filter}
-							api_key={t.getGiphyApiKey()}
-							rating={t.chat.context.get('chat.emote-menu.gifs.rating')}
+							api_key={t.getGiphyApiKey(this.props.channel_id)}
+							rating={t.getGifRating(this.props.channel_id)}
 							toggleVisibility={this.props.toggleVisibility}
 						/>}
 						{! is_gifs && loading && this.renderLoading()}

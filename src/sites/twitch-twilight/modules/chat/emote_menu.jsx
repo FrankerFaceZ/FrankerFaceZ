@@ -12,6 +12,7 @@ import Twilight from 'site';
 import Module from 'utilities/module';
 import SUB_STATUS from './sub_status.gql';
 import SEND_GIF from './send_gif.gql';
+import GIF_CONFIG from './gif_picker_config.gql';
 import { createEmojiTonePicker } from './emote_menu/emoji-tone-picker';
 import { createMenuSection } from './emote_menu/menu-section';
 import { createEmojiSection } from './emote_menu/emoji-section';
@@ -37,6 +38,9 @@ export default class EmoteMenu extends Module {
 		this.inject('site.css_tweaks');
 
 		this.SUB_STATUS = SUB_STATUS;
+
+		// Per-channel GIF picker configuration from Twitch, keyed by channel ID.
+		this._gif_configs = new Map();
 
 		this.settings.add('chat.emote-menu.shortcut', {
 			default: false,
@@ -260,20 +264,21 @@ export default class EmoteMenu extends Module {
 			default: '',
 			ui: {
 				path: 'Chat > Emote Menu >> GIFs',
-				title: 'GIPHY API Key',
-				description: 'GIF search talks to GIPHY directly and needs an API key.',
+				title: 'GIPHY API Key Override',
+				description: 'Twitch provides a GIPHY key for every channel that allows GIFs, so this is normally left empty. Enter a key only to search with your own instead.',
 				component: 'setting-text-box'
 			}
 		});
 
 		this.settings.add('chat.emote-menu.gifs.rating', {
-			default: 'g',
+			default: 'channel',
 			ui: {
 				path: 'Chat > Emote Menu >> GIFs',
 				title: 'Maximum Content Rating',
-				description: 'Twitch may reject GIFs above the rating the channel allows.',
+				description: 'Each channel sets the rating it allows. Twitch rejects GIFs above it, so a stricter choice here only narrows the search.',
 				component: 'setting-select-box',
 				data: [
+					{value: 'channel', title: 'Use the channel\'s setting'},
 					{value: 'g', title: 'G'},
 					{value: 'pg', title: 'PG'},
 					{value: 'pg-13', title: 'PG-13'}
@@ -308,10 +313,7 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
 			this.EmoteMenu.forceUpdate());
 
-		const rebuild = () => {
-			for(const inst of this.MenuWrapper.instances)
-				inst.rebuildData();
-		}
+		const rebuild = () => this.rebuildMenus();
 
 		this.chat.context.on('changed:chat.emotes.enabled', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.modifiers', rebuild);
@@ -426,10 +428,16 @@ export default class EmoteMenu extends Module {
 	}
 
 
+	rebuildMenus() {
+		for(const inst of this.MenuWrapper.instances)
+			inst.rebuildData();
+	}
+
 	/**
 	 * Whether the current user can send GIFs in the channel the menu is
-	 * open for: the GIF tab is enabled and they hold a Tier 2 or Tier 3
-	 * subscription to it. Twitch validates again server-side.
+	 * open for: the GIF tab is enabled, they hold a Tier 2 or Tier 3
+	 * subscription to the channel, and the channel allows GIFs. Twitch
+	 * validates again server-side.
 	 */
 	canSendGifs(props, state) {
 		if ( ! this.chat.context.get('chat.emote-menu.gifs') )
@@ -441,20 +449,113 @@ export default class EmoteMenu extends Module {
 		if ( ! Array.isArray(products) || ! set_data )
 			return false;
 
+		let subscribed = false;
 		for(const product of products) {
 			const tier = parseInt(product?.tier, 10),
 				sub = product?.emoteSetID && set_data[product.emoteSetID];
 
-			if ( sub && tier >= 2000 )
-				return true;
+			if ( sub && tier >= 2000 ) {
+				subscribed = true;
+				break;
+			}
 		}
 
-		return false;
+		if ( ! subscribed )
+			return false;
+
+		// The channel's configuration loads on demand; the menu is rebuilt
+		// when it arrives.
+		const config = this.getGifConfig(props.channel_id);
+		return !! (config && config.isEnabled && config.isAllowlisted);
 	}
 
-	getGiphyApiKey() {
+	/**
+	 * Twitch's GIF picker configuration for a channel, or null while it is
+	 * loading or when the channel is unknown. Starts a load when needed.
+	 */
+	getGifConfig(channel_id) {
+		if ( ! channel_id )
+			return null;
+
+		const key = String(channel_id),
+			entry = this._gif_configs.get(key);
+
+		if ( entry && (entry.loading || Date.now() < entry.expires) )
+			return entry.config;
+
+		this.loadGifConfig(key);
+		return null;
+	}
+
+	async loadGifConfig(channel_id) {
+		const entry = {loading: true, config: null, expires: 0};
+		this._gif_configs.set(channel_id, entry);
+
+		let config = null, ttl = 60 * 1000;
+		try {
+			const result = await this.apollo.client.query({
+				query: GIF_CONFIG,
+				variables: {channelID: channel_id},
+				fetchPolicy: 'network-only'
+			});
+
+			const data = result?.data?.gifPickerConfig;
+			if ( data ) {
+				config = {
+					isEnabled: !! data.isEnabled,
+					isAllowlisted: !! data.isAllowlisted,
+					apiKey: typeof data.apiKey === 'string' && data.apiKey.length ? data.apiKey : null,
+					contentRating: data.contentRating ?? null
+				};
+				ttl = 10 * 60 * 1000;
+			}
+
+			this.log.debug('Loaded GIF picker configuration for channel', channel_id, config);
+
+		} catch(err) {
+			this.log.warn('Unable to load the GIF picker configuration.', err);
+		}
+
+		entry.loading = false;
+		entry.config = config;
+		entry.expires = Date.now() + ttl;
+
+		this.rebuildMenus();
+	}
+
+	/**
+	 * The GIPHY key to search with: the user's override when set, else the
+	 * key Twitch provides for the channel.
+	 */
+	getGiphyApiKey(channel_id) {
 		const key = this.settings.get('chat.emote-menu.gifs.api-key');
-		return typeof key === 'string' && key.trim().length ? key.trim() : null;
+		if ( typeof key === 'string' && key.trim().length )
+			return key.trim();
+
+		return this.getGifConfig(channel_id)?.apiKey ?? null;
+	}
+
+	/**
+	 * The GIPHY rating to search with. The setting can pin a rating;
+	 * otherwise the channel's configured rating applies, normalised from
+	 * Twitch's enum (G, PG, PG13) to GIPHY's names.
+	 */
+	getGifRating(channel_id) {
+		const setting = this.settings.get('chat.emote-menu.gifs.rating');
+		if ( setting && setting !== 'channel' )
+			return setting;
+
+		const raw = this.getGifConfig(channel_id)?.contentRating;
+		if ( raw == null )
+			return 'g';
+
+		const rating = String(raw).toLowerCase().replace(/[_\s]/g, '-');
+		if ( /^pg-?13$/.test(rating) )
+			return 'pg-13';
+		if ( rating === 'g' || rating === 'pg' || rating === 'r' )
+			return rating;
+
+		return 'g';
 	}
 
 	/**

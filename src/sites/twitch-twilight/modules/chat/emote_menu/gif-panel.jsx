@@ -139,7 +139,7 @@ export function createGifPanel(t, React) {
 
 			return (<div class="ffz--gif-panel">
 				{notice && <div class="ffz--gif-notice tw-pd-x-1 tw-pd-y-05 tw-c-text-alt">{notice}</div>}
-				{error === 'no-key' && this.renderMessage(t.i18n.t('emote-menu.gifs.no-key', 'GIF search needs a GIPHY API key. Add one under Chat > Emote Menu > GIFs.'))}
+				{error === 'no-key' && this.renderMessage(t.i18n.t('emote-menu.gifs.no-key', 'Twitch did not provide a GIPHY key for this channel. You can add your own under Chat > Emote Menu > GIFs.'))}
 				{error === 'load' && this.renderMessage(t.i18n.t('emote-menu.gifs.load-error', 'Unable to load GIFs right now.'))}
 				{items.length > 0 && <div class="ffz--gif-grid">
 					{items.map(gif => (<button
