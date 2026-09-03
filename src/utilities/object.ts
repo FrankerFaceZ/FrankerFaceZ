@@ -955,11 +955,11 @@ export function pick_random(obj: any) {
 /**
  * Escape a string for inclusion in a regular expression.
  */
-export const escape_regex: (str: string) => string = /*(RegExp as any).escape
-	? (str: string) => ((RegExp as any).escape(` ${str}`) as string).slice(1)
-	:*/ function escape_regex(str: string) {
-		return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	};
+// RegExp.escape could replace this once it is available everywhere:
+// (str) => RegExp.escape(` ${str}`).slice(1)
+export function escape_regex(str: string) {
+	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 
 export function addWordSeparators(str: string) {

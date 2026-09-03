@@ -34,7 +34,7 @@ export class ExtensionProvider extends RemoteSettingsProvider {
 				}
 			};
 
-			const cleanup = () => {
+			function cleanup() {
 				if (!responded) {
 					responded = true;
 					resolve(false);

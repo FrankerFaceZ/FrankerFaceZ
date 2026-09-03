@@ -226,7 +226,7 @@ ${typeof x[1] === 'string' ? x[1] : JSON.stringify(x[1], null, 4)}`).join('\n\n'
 	}
 
 
-	async enableInitialModules() {
+	enableInitialModules() {
 		const promises = [];
 		for(const module of Object.values((this as any).__modules)) {
 			if ( module instanceof Module && module.should_enable )

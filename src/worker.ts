@@ -1,5 +1,8 @@
 const browser = ((globalThis as any).browser ?? globalThis.chrome) as typeof globalThis.chrome;
 
+// The IndexedDB cache, filled by the init-load handling further down.
+let cache: Map<string, any> | null = null;
+
 // First, the toolbar action handler.
 browser.runtime.onInstalled.addListener(() => {
 	browser.action.disable();
@@ -146,7 +149,6 @@ function broadcast(msg: any, exclude?: chrome.runtime.Port) {
 
 
 // IndexedDB Operations
-let cache: Map<string, any> | null = null;
 
 const DB_VERSION = 1,
 	_db_handle = new Map<string, IDBDatabase>,

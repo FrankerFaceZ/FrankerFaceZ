@@ -320,7 +320,7 @@ export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 		});
 	}
 
-	async hasBlob(key: string) {
+	hasBlob(key: string) {
 		return this.rpc({ffz_type: 'has-blob', key});
 	}
 
@@ -328,7 +328,7 @@ export abstract class RemoteSettingsProvider extends AdvancedSettingsProvider {
 		await this.rpc('clear-blobs');
 	}
 
-	async blobKeys() {
+	blobKeys() {
 		return this.rpc('blob-keys');
 	}
 

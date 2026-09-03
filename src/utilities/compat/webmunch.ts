@@ -613,10 +613,9 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 	}
 
 
+	// `chunks` is accepted for compatibility; the chunk filter below is
+	// currently disabled, so it has no effect.
 	findDeep(chunks: string | string[] | null, predicate: DeepPredicate, multi = true) {
-		if ( chunks && ! Array.isArray(chunks) )
-			chunks = [chunks];
-
 		if ( ! this._require || ! this._original_store )
 			throw new Error('We do not have webpack');
 

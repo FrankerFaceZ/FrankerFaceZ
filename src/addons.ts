@@ -420,7 +420,7 @@ export default class AddonManager extends Module<'addons'> {
 
 		if ( module.children )
 			for(const child of Object.values(module.children))
-				await this.fullyUnloadModule(child);
+				await this.fullyUnloadModule(child); // eslint-disable-line no-await-in-loop -- children unload in order, before their parent
 
 		await module.disable();
 		await module.unload();

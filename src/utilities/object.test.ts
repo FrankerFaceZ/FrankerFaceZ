@@ -120,7 +120,7 @@ describe('make_enum', () => {
 
 describe('once', () => {
 	it('only invokes the wrapped function once', async () => {
-		const fn = vi.fn(async (x: number) => x * 2);
+		const fn = vi.fn((x: number) => Promise.resolve(x * 2));
 		const wrapped = once(fn);
 		const [a, b] = await Promise.all([wrapped(2), wrapped(3)]);
 		expect(a).toBe(4);

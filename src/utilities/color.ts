@@ -80,7 +80,7 @@ class RGBAColor implements BaseColor {
 	// ========================================================================
 
 	static fromName(name: string) {
-		const ctx = Color.getContext();
+		const ctx = Color.getContext(); // eslint-disable-line no-use-before-define -- Color aggregates the classes above and exists before any call
 		ctx.clearRect(0, 0, 1, 1);
 		ctx.fillStyle = name;
 		ctx.fillRect(0, 0, 1, 1);
@@ -287,8 +287,8 @@ class RGBAColor implements BaseColor {
 	daltonize(type: string | CVDMatrix) {
 		let cvd: CVDMatrix;
 		if ( typeof type === 'string' ) {
-			if ( Object.prototype.hasOwnProperty.call(Color.CVDMatrix, type) )
-				cvd = Color.CVDMatrix[type];
+			if ( Object.prototype.hasOwnProperty.call(Color.CVDMatrix, type) ) // eslint-disable-line no-use-before-define -- Color aggregates the classes above and exists before any call
+				cvd = Color.CVDMatrix[type]; // eslint-disable-line no-use-before-define -- Color aggregates the classes above and exists before any call
 			else
 				throw new Error('Invalid CVD matrix');
 		} else

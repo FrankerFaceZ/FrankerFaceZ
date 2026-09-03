@@ -671,7 +671,6 @@ export default class TwitchData extends Module {
 	 */
 	getUserBasic(id?: ID, login?: LOGIN) {
 		let store: Map<string, StoredPromise<TwitchBasicUser | null>>;
-		let retval: Promise<TwitchBasicUser | null>;
 		let key: string;
 
 		if ( id ) {
@@ -690,7 +689,7 @@ export default class TwitchData extends Module {
 		let success: (value: TwitchBasicUser | null) => void,
 			failure: (reason?: any) => void;
 
-		retval = new Promise<TwitchBasicUser | null>((s, f) => {
+		const retval = new Promise<TwitchBasicUser | null>((s, f) => {
 			success = s;
 			failure = f;
 		});
@@ -969,7 +968,6 @@ export default class TwitchData extends Module {
 	 */
 	getStreamMeta(id?: ID, login?: LOGIN) {
 		let store: Map<string, StoredPromise<TwitchStreamCreatedAt | null>>;
-		let retval: Promise<TwitchStreamCreatedAt | null>;
 		let key: string;
 
 		if ( id ) {
@@ -988,7 +986,7 @@ export default class TwitchData extends Module {
 		let success: (value: TwitchStreamCreatedAt | null) => void,
 			failure: (reason?: any) => void;
 
-		retval = new Promise<TwitchStreamCreatedAt | null>((s, f) => {
+		const retval = new Promise<TwitchStreamCreatedAt | null>((s, f) => {
 			success = s;
 			failure = f;
 		});
@@ -1112,7 +1110,6 @@ export default class TwitchData extends Module {
 	 */
 	getStreamFlags(id?: ID, login?: LOGIN) {
 		let store: Map<string, StoredPromise<TwitchContentLabel[] | null>>;
-		let retval: Promise<TwitchContentLabel[] | null>;
 		let key: string;
 
 		if ( id ) {
@@ -1131,7 +1128,7 @@ export default class TwitchData extends Module {
 		let success: (value: TwitchContentLabel[] | null) => void,
 			failure: (reason?: any) => void;
 
-		retval = new Promise<TwitchContentLabel[] | null>((s, f) => {
+		const retval = new Promise<TwitchContentLabel[] | null>((s, f) => {
 			success = s;
 			failure = f;
 		});
