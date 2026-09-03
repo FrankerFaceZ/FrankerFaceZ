@@ -1,0 +1,17 @@
+// Twitch lays the chat input's button row out with wrap-reverse, so when the
+// row overflows (points balance, a bonus claim and Drops on the left, three
+// moderator buttons and Send on the right) the Send button moves to a line
+// of its own above the buttons. Keep everything on one row and let the
+// left-hand group give way instead.
+//
+// Twitch's styled-components rules share our specificity and are injected
+// later, so the two decisive properties are marked important.
+div.chat-input__buttons-container[data-test-selector="chat-input-buttons-container"] {
+	flex-wrap: nowrap !important;
+
+	& > div:first-child {
+		flex: 1 1 auto !important;
+		min-width: 0;
+		overflow: hidden;
+	}
+}

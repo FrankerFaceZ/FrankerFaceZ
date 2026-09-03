@@ -645,13 +645,22 @@ export default class Actions extends Module {
 	}
 
 
-	isCurrentUserLeadMod() { // eslint-disable-line class-methods-use-this
+	isCurrentUserLeadMod() {
 		try {
 			const input = this.resolve('site.chat.input');
 			const perms = input?.CommandSuggestions?.first?.props?.chatCommandPermissions;
-			// Lead mods have a non-empty chatCommandPermissions Set;
-			// regular mods and viewers have an empty one or none at all.
-			return perms instanceof Set && perms.size > 0;
+			// Twitch's permissionLevel is the same for lead and regular
+			// moderators. What sets lead moderators apart is the set of
+			// chat command permissions, which holds the role-management
+			// entries (moderation.roles.mod:add and friends) only for them.
+			if ( ! (perms instanceof Set) )
+				return false;
+
+			for(const perm of perms)
+				if ( typeof perm === 'string' && perm.startsWith('moderation.roles.') )
+					return true;
+
+			return false;
 		} catch (err) {
 			return false;
 		}
@@ -816,7 +825,7 @@ export default class Actions extends Module {
 			u.moderator = line.props.isCurrentUserModerator;
 			u.staff = line.props.isCurrentUserStaff;
 			u.lead_moderator = this.isCurrentUserLeadMod();
-			u.reply_mode = this.parent.context.get('chat.replies.style'),
+			u.reply_mode = this.parent.context.get('chat.replies.style');
 			u.can_reply = can_reply;
 		}
 
