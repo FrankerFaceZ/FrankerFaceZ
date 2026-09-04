@@ -9,7 +9,7 @@ import {SERVER} from 'utilities/constants';
 import {has} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
-import splitter from 'emoji-regex/es2015/index';
+import splitter from 'emoji-regex';
 
 
 /*export const SIZES = {
