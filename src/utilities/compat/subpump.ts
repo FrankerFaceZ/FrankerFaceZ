@@ -7,6 +7,7 @@
 
 import Module, { type GenericModule } from 'utilities/module';
 import { FFZEvent } from 'utilities/events';
+import { sleep } from 'utilities/object';
 
 declare global {
 	interface Window {
@@ -140,10 +141,12 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 		//instances = window.__Twitch__pubsubInstances;
 
 		if ( ! instance ) { //} && ! instances ) {
-			if ( tries > 10 )
+			// 50, 100, 200, 400ms: four attempts spanning at least the
+			// 550ms the old eleven fixed 50ms retries covered.
+			if ( tries > 3 )
 				this.log.info('Unable to find PubSub.');
 			else
-				new Promise(r => setTimeout(r, 50)).then(() => this.onEnable(tries + 1));
+				sleep(Math.min(50 * (2 ** tries), 1000)).then(() => this.onEnable(tries + 1));
 
 			return;
 		}

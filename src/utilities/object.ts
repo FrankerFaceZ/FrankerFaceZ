@@ -532,29 +532,47 @@ export function deep_equals(
 	if ( first_seen.has(first) || second_seen.has(second) )
 		throw new Error('recursive structure detected');
 
+	// The seen sets track the chain of ancestors currently being compared,
+	// not every object visited. Rather than cloning them for every child
+	// (which was quadratic in allocations), add ourselves before recursing
+	// and remove ourselves after. Shared references between siblings are
+	// still fine; only a true cycle is detected.
 	first_seen.add(first);
 	second_seen.add(second);
 
-	// TODO: Special logic for Sets and Maps
+	try {
+		// TODO: Special logic for Sets and Maps
 
-	const source_keys = Object.keys(first),
-		dest_keys = Object.keys(second);
+		const source_keys = Object.keys(first),
+			dest_keys = Object.keys(second);
 
-	if ( ! ignore_undefined && ! set_equals(new Set(source_keys), new Set(dest_keys)) )
-		return false;
+		if ( ! ignore_undefined ) {
+			if ( source_keys.length !== dest_keys.length )
+				return false;
 
-	for(const key of source_keys)
-		if ( ! deep_equals(first[key], second[key], ignore_undefined, new Set(first_seen), new Set(second_seen)) )
-			return false;
-
-	if ( ignore_undefined )
-		for(const key of dest_keys)
-			if ( ! source_keys.includes(key) ) {
-				if ( ! deep_equals(first[key], second[key], ignore_undefined, new Set(first_seen), new Set(second_seen)) )
+			const source_set = new Set(source_keys);
+			for(const key of dest_keys)
+				if ( ! source_set.has(key) )
 					return false;
-			}
+		}
 
-	return true;
+		for(const key of source_keys)
+			if ( ! deep_equals(first[key], second[key], ignore_undefined, first_seen, second_seen) )
+				return false;
+
+		if ( ignore_undefined )
+			for(const key of dest_keys)
+				if ( ! source_keys.includes(key) ) {
+					if ( ! deep_equals(first[key], second[key], ignore_undefined, first_seen, second_seen) )
+						return false;
+				}
+
+		return true;
+
+	} finally {
+		first_seen.delete(first);
+		second_seen.delete(second);
+	}
 }
 
 /**

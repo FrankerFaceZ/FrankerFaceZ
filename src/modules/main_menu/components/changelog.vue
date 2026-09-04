@@ -175,16 +175,25 @@ export default {
 			return this.addons ? ADDONS_REPOSITORY : GITHUB_REPOSITORY;
 		},
 
-		display() {
-			const out = [],
-				addons = this.addons ? this.item.getFFZ().resolve('addons') : null,
-				entries = [];
+		// Parsed separately from display so toggling the non-versioned
+		// filter doesn't re-run the regex-heavy commit parser over every
+		// loaded commit.
+		entries() {
+			const entries = [];
 
 			for(const commit of this.commits) {
 				const entry = parseCommit(commit, this.repo);
 				if ( entry )
 					entries.push(entry);
 			}
+
+			return entries;
+		},
+
+		display() {
+			const out = [],
+				addons = this.addons ? this.item.getFFZ().resolve('addons') : null,
+				entries = this.entries;
 
 			const active_sha = this.addons ? null : findActiveSha(entries, window.FrankerFaceZ.version_info.commit);
 

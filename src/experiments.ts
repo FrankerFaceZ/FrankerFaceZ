@@ -160,6 +160,20 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 	private cache: Map<keyof ExperimentTypeMap, unknown>;
 
+	/**
+	 * Resolves once the initial experiment data has been fetched (or the
+	 * fetch has failed). Loading does not block module enable, so anything
+	 * that truly needs the server data can await this instead. (Named to
+	 * avoid Module's own `loaded` state accessor.)
+	 */
+	dataLoaded: Promise<void>;
+	private _data_loaded: boolean;
+
+	// Keys that were requested before the experiment data arrived. They
+	// resolved to null at the time, so we re-check them once data lands
+	// and emit `:changed` if they now have an assignment.
+	private _pending_keys: Set<keyof ExperimentTypeMap>;
+
 
 	// Helpers
 	Cookie: typeof Cookie;
@@ -227,6 +241,13 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 		this.experiments = {};
 		this.cache = new Map;
+		this._data_loaded = false;
+		this._pending_keys = new Set;
+
+		// Start fetching immediately, the same way AddonManager does. This
+		// used to happen in onLoad, which put a cross-origin request on the
+		// critical path of every module that requires experiments.
+		this.dataLoaded = this.loadExperiments();
 	}
 
 
@@ -245,41 +266,54 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 		this.settings.provider.set('exp-lock', Date.now());
 	}
 
-	async onLoad() {
-		await this.loadExperiments();
-	}
-
-
 	async loadExperiments() {
 		let data: Record<keyof ExperimentTypeMap, FFZExperimentData> | null;
 
 		try {
 			data = await fetchJSON(DEBUG
 				? EXPERIMENTS
-				: `${CLIENT_SERVER}/script/experiments.json?_=${getBuster()}`
+				: `${CLIENT_SERVER}/script/experiments.json?_=${getBuster(300)}`
 			);
 
 		} catch(err) {
 			this.log.warn('Unable to load experiment data.', err);
+			this._data_loaded = true;
 			return;
 		}
+
+		this._data_loaded = true;
 
 		if ( ! data )
 			return;
 
 		this.experiments = data;
 
-		const old_cache = this.cache;
+		const old_cache = this.cache,
+			pending = this._pending_keys;
+
 		this.cache = new Map;
+		this._pending_keys = new Set;
 
 		let changed = 0;
 
 		for(const [key, old_val] of old_cache.entries()) {
+			pending.delete(key);
 			const new_val = this.getAssignment(key);
 			if ( old_val !== new_val ) {
 				changed++;
 				this.emit(':changed', key, new_val, old_val);
 				this.emit(`:changed:${key as keyof ExperimentTypeMap}`, new_val as any, old_val as any);
+			}
+		}
+
+		// Keys read before the data arrived resolved to null. Now that we
+		// know about them, tell anyone listening about their real value.
+		for(const key of pending) {
+			const new_val = this.getAssignment(key);
+			if ( new_val !== null ) {
+				changed++;
+				this.emit(':changed', key, new_val, null);
+				this.emit(`:changed:${key}`, new_val as any, null as any);
 			}
 		}
 
@@ -682,7 +716,12 @@ export default class ExperimentManager extends Module<'experiments', ExperimentE
 
 		const experiment = this.experiments[key];
 		if ( ! experiment ) {
-			this.log.warn(`Tried to get assignment for experiment "${key}" which is not known.`);
+			// Until the data arrives, unknown keys are expected. Remember
+			// them so loadExperiments can emit `:changed` once it knows.
+			if ( ! this._data_loaded )
+				this._pending_keys.add(key);
+			else
+				this.log.warn(`Tried to get assignment for experiment "${key}" which is not known.`);
 			return null as ExperimentTypeMap[K];
 		}
 

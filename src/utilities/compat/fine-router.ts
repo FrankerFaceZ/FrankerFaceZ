@@ -122,7 +122,7 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 	}
 
 	/** @internal */
-	onEnable(tries = 0): OptionalPromise<void> {
+	onEnable(tries = 0, waited = 0): OptionalPromise<void> {
 		const thing = this.fine.searchTree<ReactStateNode<{history: HistoryObject}>>(null, n => !! (n as Partial<ReactStateNode<{history: HistoryObject}>>)?.props?.history);
 		this.history = (thing as ReactStateNode<{history: HistoryObject}> | null)?.props?.history;
 
@@ -144,12 +144,14 @@ export default class FineRouter extends Module<'site.router', FineRouterEvents> 
 		this.navigator = nav?.pendingProps?.navigator;
 
 		if ( ! this.router || ! this.navigator ) {
-			if (tries > 100) {
-				this.log.warn('Finding React\'s router is taking a long time.');
-				tries = -500;
-			}
+			// Each attempt is three full tree searches, so back off rather
+			// than repeating them every 50ms. The wait is unbounded, as before.
+			const delay = Math.min(50 * (2 ** tries), 1000);
 
-			return sleep(50).then(() => this.onEnable(tries + 1));
+			if ( waited < 5000 && waited + delay >= 5000 )
+				this.log.warn('Finding React\'s router is taking a long time.');
+
+			return sleep(delay).then(() => this.onEnable(tries + 1, waited + delay));
 		}
 
 		this.router.subscribe(evt => {

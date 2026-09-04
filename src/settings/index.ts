@@ -154,6 +154,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	disable_profiles: boolean = false;
 
 	updateSoon: () => void;
+	private _updateProxiesSoon: () => void;
 
 	/** @internal */
 	constructor(name?: string, parent?: GenericModule) {
@@ -255,7 +256,11 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 			this.emit(`:uses_changed:${key}`, new_uses, old_uses);
 		});
 
-		this.main_context.on('context_changed', () => this._updateContextProxies());
+		// Serializing the whole context for proxies is not cheap, and a burst
+		// of Redux actions can change the context many times in a row. Let
+		// the burst settle and send one update.
+		this._updateProxiesSoon = debounce(() => this._updateContextProxies(), 50, false);
+		this.main_context.on('context_changed', this._updateProxiesSoon);
 		this._context_proxies = new Set;
 
 		window.addEventListener('message', event => {
@@ -337,8 +342,13 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		this.updateRoutes();
 	}
 
-	getFilterBasicEditor() {  
-		return () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	getFilterBasicEditor() {
+		// Kept out of the main-menu chunk, along with the editors in
+		// filters.ts: the settings system is shared with the bridge entry,
+		// which lacks the menu's other dependencies, so naming that chunk
+		// here forced those dependencies to be duplicated into the menu
+		// bundle instead of reusing the copies every site already has.
+		return () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 	}
 
 
@@ -379,7 +389,9 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 		// When the router updates we additional routes, make sure to
 		// trigger a rebuild of profile context and re-select profiles.
-		this.on('site.router:updated-routes', this.updateRoutes, this);
+		// Sites register routes in several batches while loading, so
+		// debounce this rather than clearing every matcher each time.
+		this.on('site.router:updated-routes', this.updateSoon, this);
 
 		// Load profiles, but don't run any events because we haven't done
 		// migrations yet.
@@ -801,10 +813,16 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 				providers.splice(i, 1);
 		}
 
-		// If there's a provider that has content, then use it.
-		for(const [key, provider] of providers) {
-			if ( await provider.hasContent(this) ) // eslint-disable-line no-await-in-loop
-				return key;
+		// If there's a provider that has content, then use it. Check them
+		// all at once (IndexedDB has to open a database to answer) and pick
+		// the highest priority one that said yes.
+		const has_content = await Promise.all(
+			providers.map(([, provider]) => provider.hasContent(this))
+		);
+
+		for(let i = 0; i < providers.length; i++) {
+			if ( has_content[i] )
+				return providers[i][0];
 		}
 
 		// Select the first provider that allows itself to be the default.
@@ -1327,11 +1345,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 		if ( definition.ui ) {
 			const ui = definition.ui;
-			ui.path_tokens = ui.path_tokens ?
-				format_path_tokens(ui.path_tokens) :
-				ui.path ?
-					parse_path(ui.path) :
-					undefined;
+			define_path_tokens(ui);
 
 			if ( source && ui.path_tokens && ui.path_tokens.length >= 2 && ui.path_tokens[0].key === 'add_ons' ) {
 				const addons = this.resolve('addons'),
@@ -1383,8 +1397,19 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 
 		// Do not re-emit `added-definition` when re-adding an existing
 		// setting. Prevents the settings UI from goofing up.
-		if ( ! old_definition || Array.isArray(old_definition) )
+		if ( ! old_definition || Array.isArray(old_definition) ) {
+			// If the setting was read before it was defined, contexts have
+			// cached `undefined` for it. Now that we know its default and
+			// type, re-resolve it so those reads stop being stale.
+			for(const context of this.__contexts)
+				try {
+					context._refresh(key);
+				} catch(err) {
+					this.log.warn(`Unable to refresh cached value for newly defined setting "${key}":`, err);
+				}
+
 			this.emit(':added-definition', key, definition);
+		}
 	}
 
 
@@ -1439,11 +1464,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		def.__source = source;
 
 		const ui = def.ui as SettingUiDefinition<TValue>;
-		ui.path_tokens = ui.path_tokens ?
-			format_path_tokens(ui.path_tokens) :
-			ui.path ?
-				parse_path(ui.path) :
-				undefined;
+		define_path_tokens(ui);
 
 		if ( ! ui.key && ui.title )
 			ui.key = ui.title.toSnakeCase();
@@ -1516,6 +1537,46 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 	getValidators() {
 		return deep_copy(this.validators);
 	}
+}
+
+
+/**
+ * Ensure a UI definition has `path_tokens`. Tokens that were supplied
+ * directly are normalized right away. Tokens derived from `path` are
+ * only needed by the settings menu, and parsing several hundred paths
+ * at registration is measurable on startup, so those are parsed lazily
+ * on first access and cached. The property stays enumerable and
+ * writable so code that assigns, copies, or serializes it keeps working.
+ */
+function define_path_tokens(ui: {path?: string; path_tokens?: (string | PathNode)[]}) {
+	if ( ui.path_tokens ) {
+		ui.path_tokens = format_path_tokens(ui.path_tokens);
+		return;
+	}
+
+	if ( ! ui.path ) {
+		ui.path_tokens = undefined;
+		return;
+	}
+
+	let tokens: PathNode[] | undefined,
+		parsed = false;
+
+	Object.defineProperty(ui, 'path_tokens', {
+		configurable: true,
+		enumerable: true,
+		get() {
+			if ( ! parsed ) {
+				parsed = true;
+				tokens = ui.path ? parse_path(ui.path) : undefined;
+			}
+			return tokens;
+		},
+		set(value: PathNode[] | undefined) {
+			parsed = true;
+			tokens = value;
+		}
+	});
 }
 
 

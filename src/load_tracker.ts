@@ -98,7 +98,7 @@ export default class LoadTracker extends Module<'load_tracker', LoadEvents> {
 
 	/**
 	 * Register our intent to perform a load. This lets the system know that
-	 * a load of {@link type} is pending, and it starts a wait of 15 seconds
+	 * a load of {@link type} is pending, and it starts a wait of 8 seconds
 	 * for the load to complete.
 	 *
 	 * You must, after using this, call {@link notify} when your load
@@ -125,7 +125,11 @@ export default class LoadTracker extends Module<'load_tracker', LoadEvents> {
 			return;
 
 		data.pending.add(key);
-		data.timers[key] = setTimeout(() => this.notify(type, key, false), 15000);
+		// If a load stalls, everything waiting on `:complete:${type}` (such
+		// as the chat retokenize after emote data arrives) waits this long.
+		// 15 seconds was generous; a request that hasn't answered in 8 is
+		// not going to make chat look better by being waited on.
+		data.timers[key] = setTimeout(() => this.notify(type, key, false), 8000);
 	}
 
 	/**

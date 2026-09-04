@@ -1078,11 +1078,16 @@ export class Module<
 	 * will default to this module's default logger.
 	 * @returns A map of all loaded modules.
 	 */
+	// Kept async so callers keep getting a promise, even though a
+	// require.context resolves synchronously and nothing here awaits.
+	// eslint-disable-next-line require-await
 	async loadFromContext(ctx: __WebpackModuleApi.RequireContext, log?: Logger) {
 		log = log ?? this.log;
 		const added: Record<string, GenericModule> = {};
 		for(const raw_path of ctx.keys()) {
-			const raw_module = await ctx(raw_path), // eslint-disable-line no-await-in-loop
+			// A require.context is synchronous; awaiting it just deferred
+			// every module registration by a microtask.
+			const raw_module = ctx(raw_path),
 				module = raw_module.module || raw_module.default,
 				lix = raw_path.lastIndexOf('.'),
 				trimmed = lix > 2 ? raw_path.slice(2, lix) : raw_path,

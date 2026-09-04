@@ -169,7 +169,13 @@ export default class TranslationManager extends Module {
 				data: (profile, val) => this.getLocaleOptions(val)
 			},
 
-			changed: val => this.locale = val
+			changed: val => {
+				// The locale list can finish loading (and re-resolve this
+				// setting) before onEnable has created the translation core.
+				// onEnable reads the setting itself in that case.
+				if ( this._ )
+					this.locale = val;
+			}
 		});
 
 
@@ -631,7 +637,7 @@ export default class TranslationManager extends Module {
 
 
 	async loadLocales() {
-		const resp = await fetch(`${SERVER}/script/locale/locales.json?_=${getBuster(30)}`);
+		const resp = await fetch(`${SERVER}/script/locale/locales.json?_=${getBuster(3600)}`);
 		let data;
 		if ( ! resp.ok ) {
 			this.log.warn(`Error Populating Locales -- Status: ${resp.status}`);
@@ -655,6 +661,13 @@ export default class TranslationManager extends Module {
 			this.localeData[key] = locale;
 			this.availableLocales.push(key);
 		}
+
+		// The `i18n.locale` setting was most likely resolved against the
+		// English-only default list before this request finished, which
+		// leaves non-English users stuck on English. Re-resolve it now that
+		// we know which locales exist; the setting's `changed` handler
+		// applies the result.
+		this.settings.update('i18n.locale');
 
 		this.emit(':locales-loaded');
 	}

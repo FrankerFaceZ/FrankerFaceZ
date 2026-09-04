@@ -17,7 +17,7 @@ import Subpump from 'utilities/compat/subpump';
 //import Switchboard from './switchboard';
 
 import {createElement} from 'utilities/dom';
-import {has} from 'utilities/object';
+import {has, sleep} from 'utilities/object';
 
 import MAIN_URL from 'site/styles/main.scss';
 
@@ -55,18 +55,21 @@ export default class Twilight extends BaseSite {
 
 		this.web_munch.known(Twilight.KNOWN_MODULES);
 
-		this.router.route(Twilight.ROUTES);
+		// Processing a route batch re-sorts the table and emits
+		// :updated-routes, which has settings recompile every profile
+		// matcher. Defer that until the last batch so it happens once.
+		this.router.route(Twilight.ROUTES, null, null, null, false);
 		this.router.routeName(Twilight.ROUTE_NAMES);
 
-		this.router.route('user', '/:userName', null, state => state?.channelView !== 'Home');
-		this.router.route('user-home', '/:userName', null, state => state?.channelView === 'Home');
+		this.router.route('user', '/:userName', null, state => state?.channelView !== 'Home', false);
+		this.router.route('user-home', '/:userName', null, state => state?.channelView === 'Home', false);
 
-		this.router.route(Twilight.DASH_ROUTES, 'dashboard.twitch.tv');
-		this.router.route(Twilight.PLAYER_ROUTES, 'player.twitch.tv');
+		this.router.route(Twilight.DASH_ROUTES, 'dashboard.twitch.tv', null, null, false);
+		this.router.route(Twilight.PLAYER_ROUTES, 'player.twitch.tv', null, null, false);
 		this.router.route(Twilight.CLIP_ROUTES, 'clips.twitch.tv');
 	}
 
-	onEnable() {
+	onEnable(tries = 0) {
 		this.settings = this.resolve('settings');
 
 		//window.ffzSimplebar = window.ffzSimplebar || SimpleBar;
@@ -79,8 +82,9 @@ export default class Twilight extends BaseSite {
 		const thing = this.fine.searchNode(null, n => n?.pendingProps?.store?.getState),
 			store = this.store = thing?.pendingProps?.store;
 
+		// Back off so a slow mount doesn't cost a full tree search every 50ms.
 		if ( ! store )
-			return new Promise(r => setTimeout(r, 50)).then(() => this.onEnable());
+			return sleep(Math.min(50 * (2 ** tries), 1000)).then(() => this.onEnable(tries + 1));
 
 		// Event Bridge
 		this.on(':dom-update', (...args) => {
@@ -100,15 +104,16 @@ export default class Twilight extends BaseSite {
 		});
 
 		// Window Size
+		const get_size = () => ({
+			height: window.innerHeight,
+			width: window.innerWidth
+		});
+
 		const update_size = () => this.settings.updateContext({
-			size: {
-				height: window.innerHeight,
-				width: window.innerWidth
-			}
+			size: get_size()
 		});
 
 		window.addEventListener('resize', update_size);
-		update_size();
 
 		const update_fullscreen = () => {
 			this.settings.updateContext({
@@ -118,13 +123,11 @@ export default class Twilight extends BaseSite {
 		}
 
 		document.addEventListener('fullscreenchange', update_fullscreen);
-		this.settings.updateContext({
-			fullscreen: !! document.fullscreenElement
-		});
 
 		// Share Context
-		store.subscribe(() => this.updateContext());
-		this.updateContext();
+		// Redux dispatches arrive in bursts. The update reads getState()
+		// when it runs, so coalescing a burst into one update loses nothing.
+		store.subscribe(() => this._scheduleContextUpdate());
 
 		this.router.on(':route', (route, match) => {
 			this.log.info('Navigation', route && route.name, match && match[0]);
@@ -136,13 +139,19 @@ export default class Twilight extends BaseSite {
 			});
 		});
 
+		// Seed the context with one call. Each updateContext that changes
+		// something rebuilds the settings context and re-selects profiles,
+		// so seeding it one source at a time meant doing that several times.
 		const current = this.router.current;
-		this.fine.route(current && current.name);
-		this.elemental.route(current && current.name);
-		this.settings.updateContext({
+		this.updateContext({
+			size: get_size(),
+			fullscreen: !! document.fullscreenElement,
 			route: current,
 			route_data: this.router.match
 		});
+
+		this.fine.route(current && current.name);
+		this.elemental.route(current && current.name);
 
 		document.head.appendChild(createElement('link', {
 			href: MAIN_URL,
@@ -166,21 +175,37 @@ export default class Twilight extends BaseSite {
 		}
 	}
 
-	updateContext() {
-		try {
-			const state = this.store.getState(),
-				location = this.router?.reactLocation;
+	_scheduleContextUpdate() {
+		if ( this._context_update )
+			return;
 
-			this.settings.updateContext({
-				location,
-				ui: state && state.ui,
-				session: state && state.session,
-				chat: state && state.chat
-			});
+		this._context_update = true;
+		queueMicrotask(() => {
+			this._context_update = false;
+			this.updateContext();
+		});
+	}
+
+	/**
+	 * Push the Redux-derived context to settings. Any `extra` context is
+	 * sent in the same call, and still sent if reading the store fails.
+	 */
+	updateContext(extra = null) {
+		const context = Object.assign({}, extra);
+
+		try {
+			const state = this.store.getState();
+
+			context.location = this.router?.reactLocation;
+			context.ui = state && state.ui;
+			context.session = state && state.session;
+			context.chat = state && state.chat;
 
 		} catch(err) {
 			this.log.error('Error updating context.', err);
 		}
+
+		this.settings.updateContext(context);
 	}
 
 	getSession() {
@@ -310,7 +335,6 @@ Twilight.KNOWN_MODULES = {
 const VEND_CORE = n => ! n || n.includes('vendor') || n.includes('core');
 
 Twilight.KNOWN_MODULES.core.use_result = true;
-Twilight.KNOWN_MODULES.core.skip_cache = true;
 //Twilight.KNOWN_MODULES.core.chunks = 'core';
 
 Twilight.KNOWN_MODULES.simplebar.chunks = VEND_CORE;

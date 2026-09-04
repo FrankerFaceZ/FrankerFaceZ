@@ -171,6 +171,13 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 
 	_loaded_ids: Set<string>;
 	_pending_ready_ids: Set<string>;
+	/** Every module id that has reached Ready, in the order it got there.
+	 * Modules only leave this list by being Used, which is still requirable,
+	 * so it is exactly the set of modules a predicate can be run against. */
+	_ready_order: string[];
+	/** Per predicate: how much of the chunk store has been read into the
+	 * set of module ids its chunk filter matches. */
+	private _chunk_ids: WeakMap<Predicate, [read: number, ids: Set<string>]>;
 
 	_graph: Record<string, GraphNode>;
 	_graph_update_raf?: ReturnType<typeof requestAnimationFrame> | null;
@@ -198,6 +205,8 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 
 		this._pending_ready_ids = new Set;
 		this._loaded_ids = new Set;
+		this._ready_order = [];
+		this._chunk_ids = new WeakMap;
 		this._graph = {};
 
 		this.hookLoader();
@@ -443,6 +452,7 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 				node.state = NodeState.Ready;
 				this._loaded_ids.delete(mod_id);
 				this._pending_ready_ids.add(mod_id);
+				this._ready_order.push(mod_id);
 			}
 
 			// Mark any nodes that depend on this node as dirty
@@ -462,6 +472,11 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 		let name_match = /^\([^,)]+,[^,)]+,([^,)]+)\)=>/.exec(str);
 		if ( ! name_match )
 			name_match = /^function\([^,)]+,[^,)]+,([^,)]+)/.exec(str);
+
+		// The regex below only matches text containing `name(`, so skip the
+		// full scan of the source for modules that never call require.
+		if ( name_match && str.indexOf(`${name_match[1]}(`) === -1 )
+			name_match = null;
 
 		if ( name_match ) {
 			const regex = getRequireRegex(name_match[1]);
@@ -519,20 +534,19 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 		const start = performance.now();
 		const count = this._pending_ready_ids.size;
 
-		// Iterate until no further nodes have become Ready.
-		let changed = true;
-		while(changed) {
-			changed = false;
-
-			// Determine our candidates.
-			if (this._loaded_ids.size === 0)
-				break;
-
-			// Compute strongly connected components among the candidates.
+		// Tarjan's algorithm emits SCCs in reverse topological order: every
+		// candidate a component depends on is emitted before it. Nothing
+		// outside the candidates changes state during this call, so one
+		// pass in emission order settles every component; there is no
+		// need to recompute the SCCs until no more become Ready.
+		if (this._loaded_ids.size > 0) {
 			const sccs = computeSCC(this._graph, this._loaded_ids);
 			for(const scc of sccs) {
 				if (scc.length === 0)
 					continue;
+
+				// Only a real cycle needs a lookup for "is this in my SCC".
+				const in_scc = scc.length > 1 ? new Set(scc) : null;
 
 				// Check if each node in the SCC has all external dependencies Ready/Used.
 				let eligible = true;
@@ -542,7 +556,7 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 					if (node.requires)
 						for(const req_id of node.requires) {
 							// Ignore other modules that are part of this SCC.
-							if (scc.includes(req_id))
+							if (in_scc ? in_scc.has(req_id) : req_id === mod_id)
 								continue;
 
 							const req_node = this._graph[req_id];
@@ -557,18 +571,16 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 				}
 
 				// If the entire SCC is eligible, mark every node in it as Ready.
-				if (eligible) {
-					changed = true;
-
+				if (eligible)
 					for(const mod_id of scc) {
 						const node = this._graph[mod_id];
 						if (node.state === NodeState.Loaded) {
 							node.state = NodeState.Ready;
 							this._loaded_ids.delete(mod_id);
 							this._pending_ready_ids.add(mod_id);
+							this._ready_order.push(mod_id);
 						}
 					}
-				}
 			}
 		}
 
@@ -723,36 +735,62 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 	}
 
 
+	/**
+	 * The module ids in every chunk matching a predicate's chunk filter.
+	 * The chunk store only grows, so the result is kept per predicate and
+	 * extended with chunks pushed since the last call rather than rebuilt
+	 * from the whole store every time a lookup is retried.
+	 */
+	private _chunkModuleIds(predicate: Predicate) {
+		if ( typeof predicate.chunks !== 'function' && ! Array.isArray(predicate.chunks) )
+			predicate.chunks = [predicate.chunks as string];
+
+		const chunk_fn = typeof predicate.chunks === 'function' ? predicate.chunks : null,
+			chunk_list = Array.isArray(predicate.chunks) ? predicate.chunks : null,
+			names = this._chunk_names,
+			store = this._original_store!;
+
+		let entry = this._chunk_ids.get(predicate);
+		if ( ! entry )
+			this._chunk_ids.set(predicate, entry = [0, new Set]);
+
+		const ids = entry[1];
+		for(let i = entry[0]; i < store.length; i++) {
+			const chunk = store[i];
+			if ( ! chunk )
+				continue;
+
+			const [cs, modules] = chunk;
+			let matched = false;
+			for(const c of cs) {
+				if ( chunk_fn ? chunk_fn(names[c], c) : (chunk_list!.includes(String(c)) || (names[c] && chunk_list!.includes(names[c]))) ) {
+					matched = true;
+					break;
+				}
+			}
+
+			if ( matched && modules )
+				for(const id of Object.keys(modules))
+					ids.add(id);
+		}
+
+		entry[0] = store.length;
+		return ids;
+	}
+
+
 	_newGetModule(key: string | null, predicate: Predicate, require: WebpackRequireV4) {
 		if ( ! require )
 			return null;
 
-		let ids: Set<string>;
-		if ( this._original_store && predicate.chunks && this._chunk_names && Object.keys(this._chunk_names).length ) {
-			if ( typeof predicate.chunks !== 'function' && ! Array.isArray(predicate.chunks) )
-				predicate.chunks = [predicate.chunks];
-
-			const chunk_fn = typeof predicate.chunks === 'function' ? predicate.chunks : null,
-				chunk_list = Array.isArray(predicate.chunks) ? predicate.chunks : null,
-				names = this._chunk_names;
-
-			let id_list: string[] = [];
-			for(const [cs, modules] of this._original_store) {
-				let matched = false;
-				for(const c of cs) {
-					if ( chunk_fn ? chunk_fn(names[c], c) : (chunk_list!.includes(String(c)) || (names[c] && chunk_list!.includes(names[c]))) ) {
-						matched = true;
-						break;
-					}
-				}
-
-				if ( matched )
-					id_list = [...id_list, ...Object.keys(modules)];
-			}
-
-			ids = new Set(id_list);
-		} else
-			ids = new Set(Object.keys(this._graph));
+		let ids: Iterable<string>;
+		if ( this._original_store && predicate.chunks && this._chunk_names && Object.keys(this._chunk_names).length )
+			ids = this._chunkModuleIds(predicate);
+		else
+			// Only Ready/Used modules pass the state check below and every
+			// one of them is in _ready_order, so walk that directly instead
+			// of building a Set of every graph node on each lookup.
+			ids = this._ready_order;
 
 		let checked = 0;
 		for(const id of ids) {
