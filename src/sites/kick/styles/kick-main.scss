@@ -1,0 +1,133 @@
+// The stylesheet for the Kick flavor. Beyond the shared FrankerFaceZ
+// styles, it has to bring what Twitch's pages provide and Kick's don't:
+// Twitch's design tokens (variables.scss) and the tw-* utility classes the
+// control center is built with (tw-shim.scss).
+
+@use '../../../../styles/main.scss';
+@use 'variables';
+@use 'tw-shim';
+@use 'chat';
+
+
+// FrankerFaceZ's stylesheets were written against Twitch's 10px root font
+// size and use rem throughout, while Kick's root is 16px. Rather than
+// restate every size, the container our UI renders into is zoomed by
+// 10/16, so a rem inside it is 10px again. Tooltips render outside it
+// (Popper positions them in screen coordinates, which zoom would skew)
+// and get px sizes instead; see the end of this file and variables.scss.
+$zoom: 0.625;
+
+.ffz-kick-root {
+	position: fixed;
+	inset: 0;
+	z-index: 5000;
+	zoom: $zoom;
+
+	// Only what we put in here should take clicks; the page underneath
+	// stays usable.
+	pointer-events: none;
+
+	font-family: var(--font-base);
+	font-size: var(--font-size-base);
+	line-height: var(--line-height-body);
+	color: var(--color-text-base);
+
+	// Dark scrollbars and form controls, to match the palette.
+	color-scheme: dark;
+
+	> * {
+		pointer-events: auto;
+	}
+
+	// A maximized dialog marks its container, and dialog.scss makes that
+	// container position: relative. Ours has to stay fixed.
+	&.ffz-has-dialog {
+		position: fixed;
+	}
+
+	// The dialog sizes and centers itself against the viewport. Viewport
+	// units scale along with everything else inside a zoomed box, so size
+	// it against this container instead, which fills the viewport anyway.
+	.ffz-dialog:not(.maximized) {
+		--width: min(75%, 128rem);
+		--height: min(75%, 96rem);
+
+		max-width: 75%;
+		max-height: 75%;
+
+		top: calc((100% - var(--height)) / 2);
+		left: calc((100% - var(--width)) / 2);
+	}
+
+	// Kick's Tailwind preflight strips the defaults our markup leans on.
+	h1, h2, h3, h4, h5, h6 {
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-heading);
+	}
+
+	p, figure {
+		margin: 0;
+	}
+
+	ul, ol {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	a {
+		color: var(--color-text-link);
+	}
+
+	button {
+		font: inherit;
+		color: inherit;
+		background: none;
+		border: 0;
+		cursor: pointer;
+	}
+
+	img {
+		display: inline-block;
+		vertical-align: middle;
+	}
+}
+
+
+// The control center button in Kick's top bar. It sits in Kick's own tree,
+// outside the zoomed root, so it is sized in px.
+.ffz-top-nav {
+	display: flex;
+	align-items: center;
+
+	&__button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		width: 36px;
+		height: 36px;
+		border-radius: 4px;
+
+		color: #fff;
+		font-size: 20px;
+		line-height: 1;
+
+		&:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+		}
+
+		figure {
+			margin: 0;
+		}
+	}
+}
+
+
+// Tooltips are attached to the body, outside the zoomed root, so the rem
+// sizes in tooltips.scss come out 1.6x too large here. Restate them in px.
+.ffz__tooltip {
+	font-size: 12px;
+	padding: 3px 6px;
+	max-width: 300px;
+}

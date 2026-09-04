@@ -1,0 +1,3 @@
+{
+	"//": "Which Twitch channel's FrankerFaceZ emotes a Kick channel shows. Keys are Kick channel slugs; values are Twitch logins, or null to show none. Channels not listed here use the Twitch channel with the same name. Served beside the client as kick-rooms.json."
+}

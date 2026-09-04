@@ -1,6 +1,7 @@
 'use strict';
 
 import Module from 'utilities/module';
+import { setDialogSelectors } from 'utilities/dialog';
 
 let last_site = 0;
 let last_call = 0;
@@ -12,6 +13,14 @@ export default class BaseSite extends Module {
 		this._id = `_ffz$${last_site++}`;
 
 		//this.inject('settings');
+
+		// Tell dialogs where they go on this site. Sites that don't say
+		// (player, clips) get the defaults.
+		setDialogSelectors({
+			exclusive: this.constructor.DIALOG_EXCLUSIVE,
+			maximized: this.constructor.DIALOG_MAXIMIZED,
+			normal: this.constructor.DIALOG_SELECTOR
+		});
 
 		this.log.info(`Using: ${this.constructor.name}`);
 	}

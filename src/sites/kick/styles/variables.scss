@@ -1,0 +1,413 @@
+// Twitch's design tokens, as FrankerFaceZ's stylesheets and the control
+// center expect them. On Twitch these come from Twitch's own CSS; on Kick
+// nothing provides them, so they are defined here for our own elements.
+// Values are Twitch's dark theme, captured from twitch.tv. Kick only has a
+// dark theme, so there is no light set.
+
+// Where our UI lives: the root container (see kick-main.scss), tooltips
+// (attached to the body) and the button in Kick's top bar.
+.ffz-kick-root,
+.ffz__tooltip,
+.ffz-top-nav {
+	// Type. Sizes are in rem, which inside the zoomed root is 10px, as on
+	// Twitch. Elements outside it override these in px below.
+	--font-base: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--font-display: "Roobert", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--font-mono: monospace;
+
+	--font-size-1: 6rem;
+	--font-size-2: 2.4rem;
+	--font-size-3: 1.8rem;
+	--font-size-4: 1.4rem;
+	--font-size-5: 1.2rem;
+	--font-size-6: 1.4rem;
+	--font-size-7: 1.2rem;
+	--font-size-8: 1.2rem;
+	--font-size-base: 1.4rem;
+
+	--font-weight-bold: 700;
+	--font-weight-semibold: 600;
+	--font-weight-normal: 400;
+
+	--line-height-body: 1.4;
+	--line-height-heading: 1.1;
+
+	// styles/main.scss derives these on :root, where --font-size-base is
+	// not defined on Kick, so they are derived again here.
+	--ffz-font-size-1: calc(var(--font-size-base) * 3.8571428571);
+	--ffz-font-size-2: calc(var(--font-size-base) * 2.5714285714);
+	--ffz-font-size-3: calc(var(--font-size-base) * 1.7142857143);
+	--ffz-font-size-4: calc(var(--font-size-base) * 1.2857142857);
+	--ffz-font-size-5: var(--font-size-base);
+	--ffz-font-size-6: calc(var(--font-size-base) * 0.9285714286);
+	--ffz-font-size-7: calc(var(--font-size-base) * 0.8571428571);
+
+	// Shape
+	--border-radius-none: 0;
+	--border-radius-small: 0.2rem;
+	--border-radius-medium: 0.4rem;
+	--border-radius-large: 0.6rem;
+	--border-radius-extra-large: 1rem;
+	--border-radius-rounded: 9000px;
+
+	--border-width-default: 1px;
+	--border-width-checkbox: 2px;
+	--border-width-marked: 3px;
+	--border-width-tag: 2px;
+
+	--button-padding-x: 8px;
+	--button-padding-y: 4px;
+	--button-size-small: 2.4rem;
+	--button-size-default: 3.2rem;
+	--button-size-large: 3.6rem;
+	--button-text-small: 1.2rem;
+	--button-text-default: 1.4rem;
+	--button-text-large: 1.4rem;
+
+	--z-index-below: -1;
+	--z-index-default: 1;
+	--z-index-above: 10;
+	--z-index-balloon: 2000;
+
+	--shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0px 2px rgba(0, 0, 0, 0.9);
+	--shadow-elevation-2: 0 4px 8px rgba(0, 0, 0, 0.6), 0 0px 4px rgba(0, 0, 0, 0.4);
+	--shadow-elevation-3: 0 6px 16px rgba(0, 0, 0, 0.6), 0 0px 4px rgba(0, 0, 0, 0.4);
+	--shadow-elevation-4: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0px 8px rgba(0, 0, 0, 0.4);
+	--shadow-elevation-5: 0 32px 64px rgba(0, 0, 0, 0.22), 0 0px 16px rgba(0, 0, 0, 0.08);
+	--shadow-button-active: 0 0 6px 0 #772ce8;
+	--shadow-button-focus: 0 0 6px 0 #772ce8;
+	--shadow-button-overlay-active: 0 0 6px 0 rgba(255, 255, 255, 0.28);
+	--shadow-button-overlay-focus: 0 0 6px 0 rgba(255, 255, 255, 0.28);
+	--shadow-input-focus: 0 0 10px -2px #a970ff;
+	--shadow-input-error: 0 0 0 1px #ff4f4d;
+	--shadow-input-error-focus: 0 0 6px -2px #ff4f4d;
+
+	// Palette
+	--color-white: #ffffff;
+	--color-black: #000000;
+	--color-red: #e91916;
+	--color-green: #00f593;
+	--color-green-darker: #00ad96;
+
+	--color-twitch-purple-1: #040109;
+	--color-twitch-purple-2: #0d031c;
+	--color-twitch-purple-3: #15052e;
+	--color-twitch-purple-4: #23094e;
+	--color-twitch-purple-5: #330c6e;
+	--color-twitch-purple-6: #451093;
+	--color-twitch-purple-7: #5c16c5;
+	--color-twitch-purple-8: #772ce8;
+	--color-twitch-purple-9: #9147ff;
+	--color-twitch-purple-10: #a970ff;
+	--color-twitch-purple-11: #bf94ff;
+	--color-twitch-purple-12: #d1b3ff;
+	--color-twitch-purple-13: #e3d1ff;
+	--color-twitch-purple-14: #ede0ff;
+	--color-twitch-purple-15: #f3ebff;
+
+	// The accent scale the Twitch theme module normally maps.
+	--ffz-color-accent: var(--color-twitch-purple-9);
+	--ffz-color-accent-1: var(--color-twitch-purple-1);
+	--ffz-color-accent-2: var(--color-twitch-purple-2);
+	--ffz-color-accent-3: var(--color-twitch-purple-3);
+	--ffz-color-accent-4: var(--color-twitch-purple-4);
+	--ffz-color-accent-5: var(--color-twitch-purple-5);
+	--ffz-color-accent-6: var(--color-twitch-purple-6);
+	--ffz-color-accent-7: var(--color-twitch-purple-7);
+	--ffz-color-accent-8: var(--color-twitch-purple-8);
+	--ffz-color-accent-9: var(--color-twitch-purple-9);
+	--ffz-color-accent-10: var(--color-twitch-purple-10);
+	--ffz-color-accent-11: var(--color-twitch-purple-11);
+	--ffz-color-accent-12: var(--color-twitch-purple-12);
+	--ffz-color-accent-13: var(--color-twitch-purple-13);
+	--ffz-color-accent-14: var(--color-twitch-purple-14);
+	--ffz-color-accent-15: var(--color-twitch-purple-15);
+
+	// Backgrounds
+	--color-background-body: #0e0e10;
+	--color-background-base: #18181b;
+	--color-background-alt: #26262c;
+	--color-background-alt-2: #26262c;
+	--color-background-float: #323239;
+	--color-background-modal: #15052e;
+	--color-background-modal-overlay: rgba(0, 0, 0, 0.6);
+	--color-background-overlay-alt: rgba(0, 0, 0, 0.6);
+	--color-background-placeholder: rgba(83, 83, 95, 0.38);
+	--color-background-overlay-placeholder: rgba(255, 255, 255, 0.13);
+	--color-background-accent: #5c16c5;
+	--color-background-accent-alt: #451093;
+	--color-background-accent-alt-2: #330c6e;
+	--color-background-brand: #bf94ff;
+	--color-background-overlay-brand: #bf94ff;
+	--color-background-top-nav: #451093;
+	--color-background-tooltip: #ffffff;
+	--color-background-pill: #53535f;
+	--color-background-pill-notification: #e91916;
+	--color-background-scrollbar: #fff6;
+	--color-background-prime: #0e9bd8;
+	--color-background-live: #e91916;
+	--color-background-error: #ff8280;
+	--color-background-info: #a3c2ff;
+	--color-background-success: #00f593;
+	--color-background-warn: #ffd37a;
+	--color-background-overlay-error: #ff8280;
+	--color-background-overlay-info: #a3c2ff;
+	--color-background-overlay-success: #00f593;
+	--color-background-overlay-warn: #ffd37a;
+	--color-background-graph: #0d031c;
+	--color-background-graph-fill: #772ce8;
+	--color-background-image-selector-overlay: rgba(0, 0, 0, 0);
+	--color-background-chat: #040109;
+	--color-background-chat-alt: #15052e;
+	--color-background-chat-header: #0d031c;
+	--color-background-chat-line-mentioned: #f7f7f8;
+	--color-background-chat-line-mentioning: #323239;
+
+	--color-background-button-primary-default: #9147ff;
+	--color-background-button-primary-hover: #772ce8;
+	--color-background-button-primary-active: #5c16c5;
+	--color-background-button-secondary-default: rgba(83, 83, 95, 0.38);
+	--color-background-button-secondary-hover: rgba(83, 83, 95, 0.48);
+	--color-background-button-secondary-active: rgba(83, 83, 95, 0.55);
+	--color-background-button-text-default: rgba(0, 0, 0, 0);
+	--color-background-button-text-hover: rgba(83, 83, 95, 0.48);
+	--color-background-button-text-active: rgba(83, 83, 95, 0.55);
+	--color-background-button-hover: #772ce8;
+	--color-background-button-disabled: rgba(83, 83, 95, 0.55);
+	--color-background-button-destructive-default: #ff4f4d;
+	--color-background-button-purchase: rgba(0, 0, 0, 0.22);
+	--color-background-button-alert: #e91916;
+	--color-background-button-alert-hover: #bb1411;
+	--color-background-button-alert-active: #e91916;
+	--color-background-button-success: #00db84;
+	--color-background-button-success-hover: #5cffbe;
+	--color-background-button-success-active: #a8ffdc;
+	--color-background-button-status-hover: #ffaaa8;
+	--color-background-button-status-focus: #ffaaa8;
+	--color-background-button-status-active: #ffdcdb;
+	--color-background-button-icon-overlay-default: rgba(0, 0, 0, 0);
+	--color-background-button-icon-overlay-hover: rgba(255, 255, 255, 0.13);
+	--color-background-button-icon-overlay-active: rgba(255, 255, 255, 0.16);
+	--color-background-button-overlay-primary-default: #ffffff;
+	--color-background-button-overlay-primary-hover: rgba(255, 255, 255, 0.9);
+	--color-background-button-overlay-primary-active: rgba(255, 255, 255, 0.85);
+	--color-background-button-overlay-secondary-default: rgba(255, 255, 255, 0.13);
+	--color-background-button-overlay-secondary-hover: rgba(255, 255, 255, 0.13);
+	--color-background-button-overlay-secondary-active: rgba(255, 255, 255, 0.16);
+	--color-background-button-overlay-text-default: rgba(0, 0, 0, 0);
+	--color-background-button-overlay-text-hover: rgba(255, 255, 255, 0.13);
+	--color-background-button-overlay-text-active: rgba(255, 255, 255, 0.16);
+
+	--color-background-input: #18181b;
+	--color-background-input-focus: #18181b;
+	--color-background-input-overlay: rgba(0, 0, 0, 0.28);
+	--color-background-input-overlay-focus: rgba(0, 0, 0, 0.28);
+	--color-background-input-checkbox-checked: #a970ff;
+	--color-background-input-checkbox-checked-background: rgba(0, 0, 0, 0);
+	--color-background-input-checkbox-checked-background-overlay: #000000;
+	--color-background-input-checkbox-checked-overlay: #ffffff;
+
+	--color-background-interactable-hover: rgba(83, 83, 95, 0.48);
+	--color-background-interactable-active: rgba(83, 83, 95, 0.55);
+	--color-background-interactable-selected: #9147ff;
+	--color-background-interactable-destructive-hover: #bb1411;
+	--color-background-interactable-destructive-active: #e91916;
+	--color-background-interactable-overlay-hover: rgba(255, 255, 255, 0.13);
+	--color-background-interactable-overlay-active: rgba(255, 255, 255, 0.16);
+	--color-background-interactable-overlay-selected: #ffffff;
+
+	--color-background-progress: rgba(83, 83, 95, 0.55);
+	--color-background-progress-status: #a970ff;
+	--color-background-range: rgba(83, 83, 95, 0.55);
+	--color-background-range-fill: #a970ff;
+	--color-background-range-overlay: rgba(255, 255, 255, 0.28);
+	--color-background-range-overlay-fill: #ffffff;
+
+	--color-background-tag-default: rgba(83, 83, 95, 0.38);
+	--color-background-tag-hover: rgba(83, 83, 95, 0.48);
+	--color-background-tag-active: rgba(83, 83, 95, 0.55);
+	--color-background-subscriber-stream-tag-default: #23094e;
+	--color-background-subscriber-stream-tag-hover: #15052e;
+	--color-background-subscriber-stream-tag-active: #23094e;
+
+	// Borders
+	--color-border-base: rgba(83, 83, 95, 0.48);
+	--color-border-region: #3b3b44;
+	--color-border-overlay: rgba(255, 255, 255, 0.22);
+	--color-border-balloon-overlay: rgba(255, 255, 255, 0.16);
+	--color-border-quote: #adadb8;
+	--color-border-tag: rgba(83, 83, 95, 0.48);
+	--color-border-subscriber-stream-tag: #330c6e;
+	--color-border-brand: #a970ff;
+	--color-border-brand-decorative: #a970ff;
+	--color-border-overlay-brand: #ffffff;
+	--color-border-overlay-brand-decorative: #a970ff;
+	--color-border-alert: #e91916;
+	--color-border-error: #ff4f4d;
+	--color-border-error-decorative: #ff4f4d;
+	--color-border-overlay-error: #ff4f4d;
+	--color-border-overlay-error-decorative: #ff4f4d;
+	--color-border-info: #528bff;
+	--color-border-info-decorative: #528bff;
+	--color-border-overlay-info: #528bff;
+	--color-border-overlay-info-decorative: #528bff;
+	--color-border-success: #00db84;
+	--color-border-success-decorative: #00db84;
+	--color-border-overlay-success: #00db84;
+	--color-border-overlay-success-decorative: #00db84;
+	--color-border-warn: #ffb31a;
+	--color-border-warn-decorative: #ffb31a;
+	--color-border-overlay-warn: #ffb31a;
+	--color-border-overlay-warn-decorative: #ffb31a;
+	--color-border-button-hover: #772ce8;
+	--color-border-button-active: #772ce8;
+	--color-border-tab-active: #a970ff;
+	--color-border-interactable-selected: #a970ff;
+	--color-border-range-handle: #a970ff;
+	--color-border-range-handle-focus: #ffffff;
+	--color-border-spinner: rgba(83, 83, 95, 0.48);
+	--color-border-spinner-fill: #efeff1;
+	--color-border-whisper-incoming: #a970ff;
+	--color-border-whisper-outgoing: #adadb8;
+	--color-border-image-selector: rgba(0, 0, 0, 0.28);
+	--color-border-image-selector-overlay: rgba(255, 255, 255, 0.28);
+	--color-border-image-selector-overlay-selected: #ffffff;
+
+	--color-border-input: rgba(222, 222, 227, 0.95);
+	--color-border-input-hover: rgba(222, 222, 227, 0.55);
+	--color-border-input-focus: #a970ff;
+	--color-border-input-error: #ff4f4d;
+	--color-border-input-overlay: rgba(255, 255, 255, 0.7);
+	--color-border-input-overlay-hover: rgba(255, 255, 255, 0.7);
+	--color-border-input-overlay-focus: #ffffff;
+	--color-border-input-checkbox: rgba(222, 222, 227, 0.95);
+	--color-border-input-checkbox-hover: #ffffff;
+	--color-border-input-checkbox-focus: #a970ff;
+	--color-border-input-checkbox-checked: #a970ff;
+	--color-border-input-checkbox-error: #ff4f4d;
+	--color-border-input-checkbox-overlay: rgba(255, 255, 255, 0.7);
+	--color-border-input-checkbox-hover-overlay: #ffffff;
+	--color-border-input-checkbox-checked-overlay: #ffffff;
+
+	// Fills
+	--color-fill-alt: #efeff1;
+	--color-fill-alt-2: #d3d3d9;
+	--color-fill-brand: #a970ff;
+	--color-fill-alert: #eb0400;
+	--color-fill-live: #eb0400;
+	--color-fill-success: #00f593;
+	--color-fill-warn: #ffb31a;
+	--color-fill-new-item-indicator: #ff75e6;
+	--color-fill-button-icon: #efeff1;
+	--color-fill-button-icon-hover: #efeff1;
+	--color-fill-button-icon-active: #efeff1;
+
+	// Text
+	--color-text-base: #efeff1;
+	--color-text-alt: #efeff1;
+	--color-text-alt-2: #d3d3d9;
+	--color-text-label: #f7f7f8;
+	--color-text-label-optional: #848494;
+	--color-text-hint: #848494;
+	--color-text-input: #efeff1;
+	--color-text-input-placeholder: rgba(255, 255, 255, 0.7);
+	--color-text-input-placeholder-overlay: rgba(255, 255, 255, 0.7);
+	--color-text-tooltip: #0e0e10;
+	--color-text-tooltip-alt: rgba(14, 14, 16, 0.8);
+	--color-text-tooltip-alt-2: rgba(14, 14, 16, 0.6);
+	--color-text-tag: #efeff1;
+	--color-text-pill: #000000;
+	--color-text-badge-alt: #000000;
+	--color-text-badge-alt-2: #000000;
+	--color-text-brand: #bf94ff;
+	--color-text-prime: #0e9bd8;
+	--color-text-live: #ff8280;
+	--color-text-alert: #ff8280;
+	--color-text-error: #ff8280;
+	--color-text-info: #7aa7ff;
+	--color-text-success: #00c274;
+	--color-text-warn: #e69900;
+	--color-text-accessible-red: #ff8280;
+	--color-text-accessible-green: #00c274;
+	--color-text-accessible-blue: #7aa7ff;
+	--color-text-link: #bf94ff;
+	--color-text-link-hover: #a970ff;
+	--color-text-link-focus: #a970ff;
+	--color-text-link-active: #bf94ff;
+	--color-text-link-visited: #bf94ff;
+	--color-text-overlay: #ffffff;
+	--color-text-overlay-alt: rgba(255, 255, 255, 0.85);
+	--color-text-overlay-brand: #ffffff;
+	--color-text-overlay-error: #ff8280;
+	--color-text-overlay-info: #7aa7ff;
+	--color-text-overlay-success: #00c274;
+	--color-text-overlay-warn: #e69900;
+	--color-text-overlay-link: #ffffff;
+	--color-text-overlay-link-hover: rgba(255, 255, 255, 0.8);
+	--color-text-overlay-link-focus: rgba(255, 255, 255, 0.8);
+	--color-text-overlay-link-active: #ffffff;
+	--color-text-overlay-link-visited: #ffffff;
+	--color-text-chat-line-mentioned: #18181b;
+	--color-text-chat-line-mentioning: #ffffff;
+	--color-text-channel-status-text-indicator-offline: #000000;
+	--color-text-channel-status-text-indicator-offline-overlay: #000000;
+	--color-text-channel-status-text-indicator-hosting: #000000;
+	--color-text-channel-status-text-indicator-hosting-overlay: #000000;
+	--color-text-channel-status-text-indicator-rerun: #000000;
+	--color-text-channel-status-text-indicator-rerun-overlay: #000000;
+	--color-text-interactable-selected: #ffffff;
+	--color-text-interactable-inverted: #ffffff;
+	--color-text-interactable-overlay-selected: #000000;
+
+	--color-text-button: #ffffff;
+	--color-text-button-hover: #ffffff;
+	--color-text-button-disabled: #efeff1;
+	--color-text-button-primary: #ffffff;
+	--color-text-button-secondary: #efeff1;
+	--color-text-button-text: #bf94ff;
+	--color-text-button-destructive: #000000;
+	--color-text-button-alert: #000000;
+	--color-text-button-alert-hover: #000000;
+	--color-text-button-alert-active: #000000;
+	--color-text-button-success: #000000;
+	--color-text-button-success-hover: #000000;
+	--color-text-button-success-active: #000000;
+	--color-text-button-status-hover: #ffffff;
+	--color-text-button-status-focus: #ffffff;
+	--color-text-button-status-active: #ffffff;
+	--color-text-button-overlay: #ffffff;
+	--color-text-button-overlay-hover: #ffffff;
+	--color-text-button-overlay-focus: #ffffff;
+	--color-text-button-overlay-active: #ffffff;
+	--color-text-button-overlay-primary: #000000;
+	--color-text-button-overlay-secondary: #ffffff;
+	--color-text-button-overlay-text: #ffffff;
+}
+
+
+// Outside the zoomed root, a rem is Kick's 16px, so the sizes above would
+// come out 1.6x too large. These elements get the same values in px.
+.ffz__tooltip,
+.ffz-top-nav {
+	--font-size-1: 60px;
+	--font-size-2: 24px;
+	--font-size-3: 18px;
+	--font-size-4: 14px;
+	--font-size-5: 12px;
+	--font-size-6: 14px;
+	--font-size-7: 12px;
+	--font-size-8: 12px;
+	--font-size-base: 14px;
+
+	--border-radius-small: 2px;
+	--border-radius-medium: 4px;
+	--border-radius-large: 6px;
+	--border-radius-extra-large: 10px;
+
+	--button-size-small: 24px;
+	--button-size-default: 32px;
+	--button-size-large: 36px;
+	--button-text-small: 12px;
+	--button-text-default: 14px;
+	--button-text-large: 14px;
+}

@@ -77,8 +77,9 @@ Your host needs to serve `dist/` over HTTPS with an
 - `/static/` holds every hashed file from `dist/` (chunks, styles, fonts, JSON).
   These names never change once published, so cache them for as long as you like.
 - `/script/` holds the stable, unhashed names the loader and the client request:
-  `avalon.js`, `clips.js`, `player.js`, `bridge.js`, `esbridge.js`,
-  `experiments.json` and `sample-chat-messages.json`. `dist/manifest.json` maps
+  `avalon.js`, `clips.js`, `kick.js`, `player.js`, `bridge.js`,
+  `esbridge.js`, `experiments.json`, `kick-rooms.json` and
+  `sample-chat-messages.json`. `dist/manifest.json` maps
   each stable name to its current hashed file. Do not cache these for long.
 
 To try a self-hosted build locally, `bun run serve:dist` serves `dist/` with
@@ -111,6 +112,29 @@ Only the client itself comes from your host. Emoji images, Twitch badge art,
 emote replacements, translations and add-ons are still loaded from the
 FrankerFaceZ CDN (`SERVER` in `src/utilities/constants.ts`), and emote and
 badge data still comes from the FrankerFaceZ API.
+
+Kick
+====
+
+The client also has a `kick` flavor that runs on kick.com. It is early: it
+loads the settings system, the FFZ Control Center (from a button in Kick's
+top navigation), add-ons, tooltips and chat. Chat messages are run through
+FFZ's tokenizers, so FFZ's emotes, emoji, links and mentions render in
+Kick's chat alongside Kick's own emotes. The player is not touched yet.
+
+FFZ's channel emotes belong to Twitch channels, and FFZ's backend does not
+know Kick channels, so a Kick channel shows the emotes of the Twitch channel
+with the same name. `src/sites/kick/kick-rooms.json`, served beside the
+client as `kick-rooms.json`, overrides that per channel: each key is a Kick
+channel slug and its value a Twitch login, or `null` to show no channel
+emotes there. The whole behaviour can be turned off in the control center
+under Chat > Emotes.
+
+The loader picks the flavor by hostname, the same way it picks the clips
+and player flavors, and it is served as `kick.js` beside the other stable
+names. The site module lives in `src/sites/kick`; its stylesheet carries
+Twitch's design tokens and the `tw-*` utility classes the control center is
+built with, since Kick's pages provide neither.
 
 Editor Settings
 ===============

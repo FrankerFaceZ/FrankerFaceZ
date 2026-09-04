@@ -1,0 +1,47 @@
+// Chat lines on Kick. FFZ renders each message body into its own span
+// (.ffz--kick-message) beside Kick's, which is hidden; see chat/line.js.
+// These sit inside Kick's chat, outside the zoomed root, so sizes follow
+// Kick's own --chatroom-font-size rather than rem.
+
+.ffz--kick-hidden {
+	display: none !important;
+}
+
+.ffz--kick-message {
+	.ffz--inline {
+		display: inline;
+	}
+
+	// Kick keeps its lines at 1.55 line-height and lets emotes overflow
+	// them; pull ours in the same way so lines don't grow.
+	// Kick's preflight makes images block-level.
+	.chat-line__message--emote {
+		display: inline-block;
+		vertical-align: middle;
+		margin: -0.35em 0;
+	}
+
+	// Kick serves a single full-size image per emote. Size it to match
+	// Kick's own rendering unless the renderer set a height (2x emotes).
+	.chat-line__message--emote[data-provider="kick"]:not([height]) {
+		height: calc(var(--chatroom-font-size, 13px) * 28 / 13);
+		width: auto;
+	}
+
+	.ffz-emoji {
+		width: calc(var(--chatroom-font-size, 13px) * 1.5);
+		height: calc(var(--chatroom-font-size, 13px) * 1.5);
+	}
+
+	.link-fragment {
+		color: #53fc18;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	.chat-line__message-mention {
+		font-weight: 600;
+	}
+}

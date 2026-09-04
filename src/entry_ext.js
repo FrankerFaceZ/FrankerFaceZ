@@ -4,9 +4,15 @@
 	const browser = globalThis.browser ?? globalThis.chrome;
 	const is_firefox = (typeof browser === 'object' && browser.runtime.getURL('').startsWith('moz'));
 
+	// On Kick, only the main site is supported. Its other subdomains
+	// (player, help, dashboard, ...) have nothing for us yet.
+	const IS_KICK = /(?:^|\.)kick\.com$/.test(location.hostname);
+
 	if (
 		// Don't run on certain sub-domains.
 		/^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev|gql|passport)\./.test(location.hostname)
+		||
+		( IS_KICK && ! /^(?:www\.)?kick\.com$/.test(location.hostname) )
 		||
 		// Don't run on pages that have disabled FFZ.
 		/disable_frankerfacez/.test(location.search)
@@ -81,9 +87,10 @@
 		script = document.createElement('script');
 
 	let FLAVOR =
-		HOST.includes('player') ? 'player' :
-			HOST.includes('clips') ? 'clips' :
-				(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon');
+		IS_KICK ? 'kick' :
+			HOST.includes('player') ? 'player' :
+				HOST.includes('clips') ? 'clips' :
+					(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon');
 
 	if (FLAVOR === 'clips' && location.pathname === '/embed')
 		FLAVOR = 'player';
