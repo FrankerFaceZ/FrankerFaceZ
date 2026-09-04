@@ -23,6 +23,9 @@ import {fetchJSON, has} from 'utilities/object';
 import {getBuster} from 'utilities/time';
 
 import Line from './line';
+import Input from './input';
+import Completion from './completion';
+import EmoteMenu from './emote_menu';
 import {KickEmotes} from './tokenizer';
 
 import ROOMS_URL from '../kick-rooms.json';
@@ -59,10 +62,13 @@ export default class Chat extends Module {
 		this.inject('chat.overrides');
 		this.inject('site.css_tweaks');
 
-		// Registered rather than injected so it is enabled from here, after
-		// the tokenizer is in place, instead of as a prerequisite of this
-		// module.
+		// Registered rather than injected so they are enabled from here,
+		// after the tokenizer is in place, instead of as prerequisites of
+		// this module.
 		this.register('line', Line, true);
+		this.register('input', Input, true);
+		this.register('completion', Completion, true);
+		this.register('emote_menu', EmoteMenu, true);
 
 		this.should_enable = true;
 
@@ -132,14 +138,25 @@ export default class Chat extends Module {
 		this.settings.getChanges('kick.chat.timestamps', this.recolorLines, this);
 		this.updateColors();
 
-		return this.line.enable();
+		return Promise.all([
+			this.line.enable(),
+			this.input.enable().then(() => Promise.all([
+				this.completion.enable(),
+				this.emote_menu.enable()
+			]))
+		]);
 	}
 
 	onDisable() {
 		this.chat.removeTokenizer(KickEmotes);
 		this.setRoom(null);
 		this.updateContext(null, null);
-		return this.line.disable();
+		return Promise.all([
+			this.line.disable(),
+			this.completion.disable(),
+			this.emote_menu.disable(),
+			this.input.disable()
+		]);
 	}
 
 
