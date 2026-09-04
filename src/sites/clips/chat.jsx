@@ -150,11 +150,11 @@ export default class Chat extends Module {
 	// API Compliance
 	// ========================================================================
 
-	addNotice() { // eslint-disable-line class-methods-use-this
+	addNotice() {  
 		return false;
 	}
 
-	sendMessage() { // eslint-disable-line class-methods-use-this
+	sendMessage() {  
 		return null;
 	}
 
@@ -229,7 +229,7 @@ export default class Chat extends Module {
 			this.updateRoomBadges(chat, new_room_badges);
 	}
 
-	updateRoomBadges(chat, badges) { // eslint-disable-line class-methods-use-this
+	updateRoomBadges(chat, badges) {  
 		const room = chat._ffz_room;
 		if ( ! room )
 			return;

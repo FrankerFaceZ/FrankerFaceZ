@@ -20,81 +20,82 @@
 				}"
 			/>
 		</div>
-		<div
-			v-for="(mod, idx) in modifiers"
-			v-if="expanded"
-			:key="idx"
-			class="tw-pd-05 tw-flex tw-align-items-center tw-border-t"
-		>
-			<div class="tw-mg-l-05 tw-inline-flex">
-				<figure
-					v-if="mod.icon"
-					class="ffz-avatar ffz-avatar--50"
-				>
-					<img
-						:src="mod.icon"
-						class="tw-block tw-image tw-image-avatar"
+		<template v-if="expanded">
+			<div
+				v-for="(mod, idx) in modifiers"
+				:key="idx"
+				class="tw-pd-05 tw-flex tw-align-items-center tw-border-t"
+			>
+				<div class="tw-mg-l-05 tw-inline-flex">
+					<figure
+						v-if="mod.icon"
+						class="ffz-avatar ffz-avatar--50"
 					>
-				</figure>
-				<figure
-					v-else
-					class="ffz-avatar"
-					:style="mod.imageStyle"
-				>
-					<img
-						v-if="mod.src"
-						:src="mod.src"
-						:srcset="mod.srcSet"
-						class="tw-block tw-image tw-image-avatar"
+						<img
+							:src="mod.icon"
+							class="tw-block tw-image tw-image-avatar"
+						>
+					</figure>
+					<figure
+						v-else
+						class="ffz-avatar"
+						:style="mod.imageStyle"
 					>
-				</figure>
+						<img
+							v-if="mod.src"
+							:src="mod.src"
+							:srcset="mod.srcSet"
+							class="tw-block tw-image tw-image-avatar"
+						>
+					</figure>
+				</div>
+				<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-x-1">
+					<h4 class="tw-inline ffz-font-size-4" :title="mod.name">
+						{{ mod.name }}
+					</h4>
+					<p
+						v-if="mod.source"
+						class="tw-c-text-alt-2 ffz-font-size-6"
+						:title="mod.source_i18n ? t(mod.source_i18n, mod.source) : mod.source"
+					>
+						{{ mod.source_i18n ? t(mod.source_i18n, mod.source) : mod.source }}
+					</p>
+					<p v-if="mod.owner" class="tw-c-text-alt-2 ffz-font-size-6">
+						<t-list
+							phrase="emote-card.owner"
+							default="Owner: {owner}"
+						>
+							<template #owner>
+								<a
+									v-if="mod.ownerLink"
+									rel="noopener noreferrer"
+									target="_blank"
+									:href="mod.ownerLink"
+								>{{ mod.owner }}</a>
+								<span v-else>{{ mod.owner }}</span>
+							</template>
+						</t-list>
+					</p>
+					<p v-if="mod.artist" class="tw-c-text-alt-2 ffz-font-size-6">
+						<t-list
+							phrase="emote-card.artist"
+							default="Artist: {artist}"
+						>
+							<template #artist>
+								<a
+									v-if="mod.artistLink"
+									rel="noopener noreferrer"
+									target="_blank"
+									:href="mod.artistLink"
+									class="ffz-i-artist"
+								>{{ mod.artist }}</a>
+								<span v-else>{{ mod.artist }}</span>
+							</template>
+						</t-list>
+					</p>
+				</div>
 			</div>
-			<div class="tw-align-left tw-flex-grow-1 tw-ellipsis tw-mg-x-1">
-				<h4 class="tw-inline ffz-font-size-4" :title="mod.name">
-					{{ mod.name }}
-				</h4>
-				<p
-					v-if="mod.source"
-					class="tw-c-text-alt-2 ffz-font-size-6"
-					:title="mod.source_i18n ? t(mod.source_i18n, mod.source) : mod.source"
-				>
-					{{ mod.source_i18n ? t(mod.source_i18n, mod.source) : mod.source }}
-				</p>
-				<p v-if="mod.owner" class="tw-c-text-alt-2 ffz-font-size-6">
-					<t-list
-						phrase="emote-card.owner"
-						default="Owner: {owner}"
-					>
-						<template #owner>
-							<a
-								v-if="mod.ownerLink"
-								rel="noopener noreferrer"
-								target="_blank"
-								:href="mod.ownerLink"
-							>{{ mod.owner }}</a>
-							<span v-else>{{ mod.owner }}</span>
-						</template>
-					</t-list>
-				</p>
-				<p v-if="mod.artist" class="tw-c-text-alt-2 ffz-font-size-6">
-					<t-list
-						phrase="emote-card.artist"
-						default="Artist: {artist}"
-					>
-						<template #artist>
-							<a
-								v-if="mod.artistLink"
-								rel="noopener noreferrer"
-								target="_blank"
-								:href="mod.artistLink"
-								class="ffz-i-artist"
-							>{{ mod.artist }}</a>
-							<span v-else>{{ mod.artist }}</span>
-						</template>
-					</t-list>
-				</p>
-			</div>
-		</div>
+		</template>
 	</section>
 </template>
 

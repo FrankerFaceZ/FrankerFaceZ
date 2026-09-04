@@ -262,7 +262,7 @@ export default class Line extends Module {
 		return out;
 	}
 
-	detokenizeMessage(msg) { // eslint-disable-line class-methods-use-this
+	detokenizeMessage(msg) {  
 		const out = [],
 			parts = msg.messageParts,
 			l = parts.length,

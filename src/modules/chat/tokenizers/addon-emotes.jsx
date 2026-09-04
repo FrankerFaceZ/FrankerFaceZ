@@ -509,19 +509,22 @@ export const AddonEmotes = {
 							data-effects={effects}
 						>
 							{as_bg
-								? <div
+								? (
+									<div
 										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
 										style={style}
-								/>
-								: <img
+									/>
+								)
+								: (
+									<img
 										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
 										src={target.src}
 										srcSet={target.srcSet}
 										style={style}
 										height={style ? undefined : `${target.height * 2}px`}
 										onLoad={tip.update}
-								/>
-							}
+									/>
+								)}
 						</div>
 					</div>);
 				}

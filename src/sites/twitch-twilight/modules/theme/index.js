@@ -335,7 +335,7 @@ export default class ThemeEngine extends Module {
 	}
 
 
-	generateBackgroundBlob(color) { // eslint-disable-line class-methods-use-this
+	generateBackgroundBlob(color) {  
 		const hsla = color.toHSLA(),
 			luma = hsla.l,
 			dark = luma < 0.5;
@@ -351,7 +351,7 @@ export default class ThemeEngine extends Module {
 	}
 
 
-	generateTextBlob(color) { // eslint-disable-line class-methods-use-this
+	generateTextBlob(color) {  
 		if ( color.a < 0.4 )
 			color = color._a(0.4);
 
@@ -368,7 +368,7 @@ export default class ThemeEngine extends Module {
 	}
 
 
-	generateAccentBlob(color, dark) { // eslint-disable-line class-methods-use-this
+	generateAccentBlob(color, dark) {  
 		if ( color.a < 1 )
 			color = color._a(1);
 

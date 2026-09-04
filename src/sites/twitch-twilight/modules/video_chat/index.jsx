@@ -603,7 +603,7 @@ export default class VideoChatHook extends Module {
 	}
 
 
-	removeRoom(thing) { // eslint-disable-line class-methods-use-this
+	removeRoom(thing) {  
 		if ( ! thing._ffz_room )
 			return;
 
@@ -675,7 +675,7 @@ export default class VideoChatHook extends Module {
 	}
 
 
-	updateRoomBadges(chat, badges) { // eslint-disable-line class-methods-use-this
+	updateRoomBadges(chat, badges) {  
 		const room = chat._ffz_room;
 		if ( ! room )
 			return;
@@ -684,7 +684,7 @@ export default class VideoChatHook extends Module {
 	}
 
 
-	updateRoomBitsConfig(chat, config) { // eslint-disable-line class-methods-use-this
+	updateRoomBitsConfig(chat, config) {  
 		const room = chat._ffz_room;
 		if ( ! room )
 			return;

@@ -106,7 +106,7 @@ export class LocalStorageProvider extends SettingsProvider {
 	}
 
 
-	flush() { /* no-op */ } // eslint-disable-line class-methods-use-this
+	flush() { /* no-op */ }  
 
 
 	broadcast(msg: any) {

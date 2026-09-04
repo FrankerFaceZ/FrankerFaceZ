@@ -212,6 +212,7 @@
 						<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 					</div>
 					<code v-else-if="typeof raw_data === 'string'">{{ raw_data }}</code>
+					<!-- eslint-disable-next-line vue/no-v-html -- highlightJson escapes its input -->
 					<code v-else v-html="highlightJson(raw_data, true)" />
 				</div>
 			</div>

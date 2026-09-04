@@ -29,10 +29,12 @@
 			</div>
 		</div>
 		<div v-if="current && current.variables" class="tw-mg-t-1">
+			<!-- eslint-disable-next-line vue/no-v-html -- highlightJson escapes its input -->
 			<div v-html="highlightJson(current.variables)" />
 		</div>
 		<div v-if="current && current.result" class="ffz--example-report ffz--tall">
 			<div class="tw-mg-t-1 tw-c-background-alt-2 tw-font-size-5 tw-pd-y-05 tw-pd-x-1 tw-border-radius-large">
+				<!-- eslint-disable-next-line vue/no-v-html -- highlightJson escapes its input -->
 				<code v-html="highlightJson(current.result, true)" />
 			</div>
 		</div>

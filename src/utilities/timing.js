@@ -29,7 +29,7 @@ export default class Timing extends Module {
 		});
 	}
 
-	_time() { /* no-op */ } // eslint-disable-line class-methods-use-this
+	_time() { /* no-op */ }  
 
 	addEvent(event) {
 		event.ts = performance.now();

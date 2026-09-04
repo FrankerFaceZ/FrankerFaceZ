@@ -60,7 +60,7 @@ export function createMenuSection(t, React) {
 				this.props.stopObserving(this.ref);
 		}
 
-		keyInteract(code) { // eslint-disable-line
+		keyInteract(code) {  
 			/* no-op */
 		}
 
@@ -349,8 +349,8 @@ export function createMenuSection(t, React) {
 			if ( ! data.all_locked || ! data.locks )
 				return null;
 
-			let lock = data.locks[this.state.unlocked],
-				locks = Object.values(data.locks).filter(x => x.id !== 'cheer'),
+			let lock = data.locks[this.state.unlocked];
+			const locks = Object.values(data.locks).filter(x => x.id !== 'cheer'),
 				has_ffz = locks.filter(x => x.is_ffz).length > 0;
 
 			if ( ! lock && data.locks.length === 1 )

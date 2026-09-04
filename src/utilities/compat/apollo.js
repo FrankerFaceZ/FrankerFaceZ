@@ -333,7 +333,7 @@ export default class Apollo extends Module {
 	}
 
 
-	applyModifier(request, modifier) { // eslint-disable-line class-methods-use-this
+	applyModifier(request, modifier) {  
 		request.query = merge(request.query, modifier);
 	}
 

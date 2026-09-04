@@ -1001,7 +1001,7 @@ export default class Directory extends Module {
 	}
 
 
-	clearUptime(inst) { // eslint-disable-line class-methods-use-this
+	clearUptime(inst) {  
 		if ( inst.ffz_update_timer ) {
 			clearInterval(inst.ffz_update_timer);
 			inst.ffz_update_timer = null;

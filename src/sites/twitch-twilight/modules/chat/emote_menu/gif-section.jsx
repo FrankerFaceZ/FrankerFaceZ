@@ -161,7 +161,7 @@ export function createGifSection(t, React) {
 						<button
 							key={gif.id}
 							class={disabled ? 'ffz--gif-picker-item--disabled' : ''}
-							onClick={() => this.handleSelect(gif)} // eslint-disable-line react/jsx-no-bind
+							onClick={() => this.handleSelect(gif)}
 						>
 							<img src={gif.images.fixed_width_small.url} alt={gif.title} />
 						</button>

@@ -213,7 +213,7 @@ export default class Channel extends Module {
 		}
 	}
 
-	removePanelTips(inst) { // eslint-disable-line class-methods-use-this
+	removePanelTips(inst) {  
 		if ( inst?._ffz_tips ) {
 			inst._ffz_tips.destroy();
 			inst._ffz_tips = null;

@@ -8,7 +8,7 @@
 			</span>
 			<span v-if="item.header_links" class="ffz--menu-page__header-links">
 				<span class="tw-mg-x-05">•</span>
-				<template v-for="i in item.header_links">
+				<span v-for="(i, idx) in item.header_links" :key="idx" class="ffz--contents">
 					<a
 						v-if="i.href && i.href.startsWith('~')"
 						class="tw-mg-r-05"
@@ -41,7 +41,7 @@
 					>{{
 						t(i.i18n_key, i.title)
 					}}</a>
-				</template>
+				</span>
 			</span>
 		</header>
 		<section v-if="context.currentProfile.ephemeral && item.profile_warning !== false" class="tw-border-t tw-pd-t-1 tw-pd-b-2">

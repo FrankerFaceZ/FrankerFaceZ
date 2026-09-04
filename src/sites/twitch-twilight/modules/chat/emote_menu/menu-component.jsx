@@ -336,7 +336,7 @@ export function createMenuComponent(t, React) {
 			});
 		}
 
-		clickSettings(event) { // eslint-disable-line class-methods-use-this
+		clickSettings(event) {  
 			const evt = new FFZEvent({
 				item: 'chat.emote_menu',
 				event,
@@ -648,7 +648,7 @@ export function createMenuComponent(t, React) {
 		}
 
 		/** Builds the All tab from the Twitch emote sets in the emote data. */
-		buildTwitchSets(ctx) { // eslint-disable-line class-methods-use-this
+		buildTwitchSets(ctx) {  
 			const {all, bits_unlocked, data, emote_map, emote_sets, favorites, follower_sets, grouped_sets, set_ids, sort_emotes, twitch_favorites, twitch_hidden, twitch_seen, user} = ctx;
 
 			if ( Array.isArray(emote_sets) )
@@ -885,7 +885,7 @@ export function createMenuComponent(t, React) {
 		}
 
 		/** Builds the Channel tab from the current channel's subscription, follower and bits emotes. */
-		buildChannelSets(ctx) { // eslint-disable-line class-methods-use-this
+		buildChannelSets(ctx) {  
 			const {bits, bits_unlocked, channel, data, favorites, follower_locked, local_sets, products, set_ids, sort_emotes, twitch_favorites, twitch_hidden, twitch_seen, user} = ctx;
 
 			if ( Array.isArray(local_sets) || Array.isArray(products) || Array.isArray(bits) ) {
@@ -1124,8 +1124,8 @@ export function createMenuComponent(t, React) {
 			const {all, channel, effects, favorites, sort_emotes, state, props} = ctx;
 
 			let wants_resub_info = false,
-				wants_plan_info = false,
 				has_new_effects = false;
+			const wants_plan_info = false;
 
 			const unlocked_effects = [...t.settings.provider.get('unlocked-effects', [])];
 
@@ -1421,7 +1421,7 @@ export function createMenuComponent(t, React) {
 			</div>)
 		}
 
-		renderLoading() { // eslint-disable-line class-methods-use-this
+		renderLoading() {  
 			return (<div class="tw-align-center tw-pd-1">
 				<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 				{t.i18n.t('emote-menu.loading', 'Loading...')}
@@ -1531,9 +1531,9 @@ export function createMenuComponent(t, React) {
 								placeholder={
 									is_gifs ?
 										t.i18n.t('emote-menu.search-gifs', 'Search GIPHY') :
-									is_emoji ?
-										t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
-										t.i18n.t('emote-menu.search', 'Search for Emotes')
+										is_emoji ?
+											t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
+											t.i18n.t('emote-menu.search', 'Search for Emotes')
 								}
 								value={this.state.filter}
 								autoFocus

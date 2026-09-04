@@ -84,7 +84,7 @@ export function createEmojiTonePicker(t, React) {
 			</div>);
 		}
 
-		renderEmoji(data) { // eslint-disable-line class-methods-use-this
+		renderEmoji(data) {  
 			if ( ! data )
 				return null;
 

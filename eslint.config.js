@@ -91,8 +91,8 @@ module.exports = [
 			'no-unused-vars': ['error', {'caughtErrors': 'none', 'args': 'none'}],
 			'accessor-pairs': ['error'],
 			'block-scoped-var': ['error'],
-			// Advisory: many handlers are methods for the override pattern.
-			'class-methods-use-this': ['warn'],
+			// Off: it mostly flags override points and stubs.
+			'class-methods-use-this': 'off',
 			'for-direction': ['error'],
 			'guard-for-in': ['warn'],
 			'no-alert': ['error'],
@@ -120,7 +120,8 @@ module.exports = [
 			'no-useless-concat': ['warn'],
 			'no-useless-return': ['warn'],
 			'no-void': ['error'],
-			'no-warning-comments': ['warn'],
+			// Off: TODO comments are how open work is recorded here.
+			'no-warning-comments': 'off',
 			'no-with': ['error'],
 			'radix': ['error'],
 			'require-await': ['warn'],
@@ -191,12 +192,13 @@ module.exports = [
 			'vue/multi-word-component-names': 'off',
 			'vue/prop-name-casing': 'off',
 			'vue/no-mutating-props': 'off',
-			// Advisory until the templates are reworked.
-			'vue/require-v-for-key': 'warn',
-			'vue/valid-v-for': 'warn',
-			'vue/no-use-v-if-with-v-for': 'warn',
-			'vue/no-template-shadow': 'warn',
-			'vue/no-v-html': 'warn',
+			'vue/require-v-for-key': 'error',
+			'vue/valid-v-for': 'error',
+			'vue/no-use-v-if-with-v-for': 'error',
+			'vue/no-template-shadow': 'error',
+			// v-html is allowed only with a disable comment stating why the
+			// content is safe.
+			'vue/no-v-html': 'error',
 			'vue/html-closing-bracket-newline': [
 				'error',
 				{
