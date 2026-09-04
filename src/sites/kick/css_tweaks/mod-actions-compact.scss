@@ -1,7 +1,9 @@
 // Kick's mod actions (delete, timeout, ban) drawn the way Twitch draws its
 // mod icons: small, grey, lit on hover, tucked in before the name rather
-// than three 24px buttons with a wide gap. The row is the element Kick
-// shows or hides with its mod-actions variable.
+// than three 24px buttons with a wide gap, and with FFZ's own glyphs in
+// place of Kick's, the ones FFZ uses for the same actions on Twitch. The
+// row is the element Kick shows or hides with its mod-actions variable;
+// each button is told apart by the icon Kick gives it.
 
 #chatroom-messages div[style*="--chatroom-mod-actions-display"] {
 	gap: 1px !important;
@@ -24,9 +26,29 @@
 			background-color: rgba(255, 255, 255, 0.15) !important;
 		}
 
-		svg {
-			width: 14px;
-			height: 14px;
+		&::before {
+			font-family: 'ffz-fontello';
+			font-style: normal;
+			font-weight: normal;
+			font-size: 14px;
+			line-height: 1;
+			speak: none;
+		}
+
+		// Kick's icon names, with FFZ's glyphs for the same actions.
+		&:has(svg[data-ds-icon="Trash"]) {
+			svg { display: none; }
+			&::before { content: '\f1f8'; }
+		}
+
+		&:has(svg[data-ds-icon="Hourglass"]) {
+			svg { display: none; }
+			&::before { content: '\e803'; }
+		}
+
+		&:has(svg[data-ds-icon="Prohibited"]) {
+			svg { display: none; }
+			&::before { content: '\e824'; }
 		}
 	}
 }
