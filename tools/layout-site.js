@@ -20,8 +20,6 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const ROOT = path.resolve(__dirname, '..');
-const DIST = path.join(ROOT, 'dist');
-const SITE = path.resolve(process.env.SITE_DIR || path.join(ROOT, 'site'));
 
 // The names the loader and the client request without a hash.
 const STABLE_NAMES = [
@@ -48,46 +46,72 @@ const HEADERS = `# Twitch fetches everything cross-origin.
   Cache-Control: no-cache
 `;
 
-const manifest_path = path.join(DIST, 'manifest.json');
-if ( ! fs.existsSync(manifest_path) ) {
-	console.error(`No build found at ${DIST}. Run a production build first.`);
-	process.exit(1);
-}
+/**
+ * Write the static-host layout for a build.
+ *
+ * @param {object} options
+ * @param {string} options.dist The build directory, holding manifest.json.
+ * @param {string} options.site The directory to write; it is emptied first.
+ * @returns {{copied: number, stable: string[], missing: string[]}}
+ */
+function layoutSite({dist, site}) {
+	const manifest_path = path.join(dist, 'manifest.json');
+	if ( ! fs.existsSync(manifest_path) )
+		throw new Error(`No build found at ${dist}. Run a production build first.`);
 
-const manifest = JSON.parse(fs.readFileSync(manifest_path, 'utf8'));
+	const manifest = JSON.parse(fs.readFileSync(manifest_path, 'utf8'));
 
-fs.rmSync(SITE, {recursive: true, force: true});
-fs.mkdirSync(path.join(SITE, 'static'), {recursive: true});
-fs.mkdirSync(path.join(SITE, 'script'), {recursive: true});
+	fs.rmSync(site, {recursive: true, force: true});
+	fs.mkdirSync(path.join(site, 'static'), {recursive: true});
+	fs.mkdirSync(path.join(site, 'script'), {recursive: true});
 
-// Everything in dist/ is served under /static/.
-let copied = 0;
-for(const entry of fs.readdirSync(DIST, {withFileTypes: true})) {
-	if ( ! entry.isFile() )
-		continue;
-	fs.copyFileSync(path.join(DIST, entry.name), path.join(SITE, 'static', entry.name));
-	copied++;
-}
-
-// Stable names get a copy of whatever the manifest currently maps them to.
-const missing = [];
-for(const name of STABLE_NAMES) {
-	let file = manifest[name] || name;
-	// Dev builds copy the loader as script.js rather than script.min.js.
-	if ( name === 'script.min.js' && ! fs.existsSync(path.join(DIST, file)) && fs.existsSync(path.join(DIST, 'script.js')) )
-		file = 'script.js';
-
-	const source = path.join(DIST, file);
-	if ( ! fs.existsSync(source) ) {
-		missing.push(name);
-		continue;
+	// Everything in dist/ is served under /static/.
+	let copied = 0;
+	for(const entry of fs.readdirSync(dist, {withFileTypes: true})) {
+		if ( ! entry.isFile() )
+			continue;
+		fs.copyFileSync(path.join(dist, entry.name), path.join(site, 'static', entry.name));
+		copied++;
 	}
 
-	fs.copyFileSync(source, path.join(SITE, 'script', name));
+	// Stable names get a copy of whatever the manifest currently maps them to.
+	const stable = [], missing = [];
+	for(const name of STABLE_NAMES) {
+		let file = manifest[name] || name;
+		// Dev builds copy the loader as script.js rather than script.min.js.
+		if ( name === 'script.min.js' && ! fs.existsSync(path.join(dist, file)) && fs.existsSync(path.join(dist, 'script.js')) )
+			file = 'script.js';
+
+		const source = path.join(dist, file);
+		if ( ! fs.existsSync(source) ) {
+			missing.push(name);
+			continue;
+		}
+
+		fs.copyFileSync(source, path.join(site, 'script', name));
+		stable.push(name);
+	}
+
+	fs.writeFileSync(path.join(site, '_headers'), HEADERS);
+
+	return {copied, stable, missing};
 }
 
-fs.writeFileSync(path.join(SITE, '_headers'), HEADERS);
+module.exports = {layoutSite, STABLE_NAMES, HEADERS};
 
-console.log(`Laid out ${copied} files under ${path.relative(ROOT, SITE)}/static and ${STABLE_NAMES.length - missing.length} stable names under script/.`);
-if ( missing.length )
-	console.warn(`Not in this build, skipped: ${missing.join(', ')}`);
+if ( require.main === module ) {
+	const dist = path.join(ROOT, 'dist'),
+		site = path.resolve(process.env.SITE_DIR || path.join(ROOT, 'site'));
+
+	let result;
+	try {
+		result = layoutSite({dist, site});
+	} catch(err) {
+		console.error(err.message);
+		process.exit(1);
+	}
+
+	console.log(`Laid out ${result.copied} files under ${path.relative(ROOT, site)}/static and ${result.stable.length} stable names under script/.`);
+	if ( result.missing.length )
+		console.warn(`Not in this build, skipped: ${result.missing.join(', ')}`);
+}
