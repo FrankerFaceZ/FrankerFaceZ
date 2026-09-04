@@ -86,7 +86,15 @@ export const CHAT_TYPES = make_enum(
 	'CharityDonation',
 	'MessageIdUpdate',
 	'ViewerMilestone',
-	'GigantifiedEmote'
+	'GigantifiedEmote',
+	'SubsidizedSub',
+	'SubsidizedSubMysteryGift',
+	'SocialSharingBadge',
+	'GiftSubBaseMatch',
+	'GiftSubBonusMatchSummary',
+	'GiftSubBonusMatchIndividual',
+	'Modiversary',
+	'SponsoredShoppingPurchase'
 );
 
 

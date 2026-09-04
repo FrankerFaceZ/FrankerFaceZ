@@ -668,7 +668,16 @@ export default class TranslationManager extends Module {
 			return {};
 
 		const hashes = this.localeData[locale]?.hashes;
-		if (! hashes) {
+		if (! hashes || ! Object.keys(hashes).length) {
+			// A regional variant without translations of its own, such as
+			// en-gb, uses its base language.
+			const idx = locale.indexOf('-');
+			if ( idx !== -1 ) {
+				const base = locale.slice(0, idx);
+				this.log.debug(`No translations for ${locale}; using ${base}.`);
+				return this.loadLocale(base, chunk);
+			}
+
 			this.log.info(`Cannot Load Locale: ${locale}`);
 			return {};
 		}
