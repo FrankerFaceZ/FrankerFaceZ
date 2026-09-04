@@ -212,7 +212,7 @@ export default class Line extends Module {
 		return this._updateLines(false, true);
 	}
 
-	_updateLines(clear_tokens = true, clear_badges = true) { // eslint-disable-line no-unused-vars
+	_updateLines(clear_tokens = true, clear_badges = true) {
 		for(const inst of this.ChatLine.instances) {
 			const msg = inst.props.node;
 			this.messages.delete(msg);

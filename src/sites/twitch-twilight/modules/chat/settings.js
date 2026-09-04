@@ -305,7 +305,7 @@ export function defineSettings(chat) {
 		default: true,
 		ui: {
 			path: 'Chat > Appearance >> Community',
-			title: 'Allow the \"Chat seems active.\" clip suggestion to be displayed in chat.',
+			title: 'Allow the "Chat seems active." clip suggestion to be displayed in chat.',
 			component: 'setting-check-box'
 		}
 	});

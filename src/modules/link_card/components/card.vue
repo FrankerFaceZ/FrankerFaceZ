@@ -63,14 +63,12 @@
 							>
 								<simplebar classes="ffz-mh-30">
 									<div class="tw-pd-y-05">
-										<template v-for="(entry, idx) in moreActions">
+										<div v-for="(entry, idx) in moreActions" :key="idx" class="ffz--contents">
 											<div
 												v-if="entry.divider"
-												:key="idx"
 												class="tw-mg-1 tw-border-b"
 											/>
 											<a
-												:key="idx"
 												:disabled="entry.disabled"
 												:href="entry.href"
 												rel="noopener noreferrer"
@@ -91,7 +89,7 @@
 													/>
 												</div>
 											</a>
-										</template>
+										</div>
 									</div>
 								</simplebar>
 							</balloon>
@@ -145,13 +143,13 @@
 			<ManageFFZ
 				v-if="active_tab === 'manage' && ffzEmote"
 				:emote="ffzEmote"
-				:getFFZ="getFFZ"
+				:get-f-f-z="getFFZ"
 				:no-header="true"
 			/>
 		</keep-alive>
 		<div
-			class="tw-c-background-base tw-pd-05"
 			v-if="active_tab === 'urls'"
+			class="tw-c-background-base tw-pd-05"
 		>
 			<table v-if="embed && embed.urls && embed.urls.length">
 				<tbody
@@ -159,7 +157,9 @@
 					:key="idx"
 				>
 					<tr>
-						<td class="tw-c-text-alt-2">{{ tNumber(idx + 1) }}.</td>
+						<td class="tw-c-text-alt-2">
+							{{ tNumber(idx + 1) }}.
+						</td>
 						<td class="tw-pd-x-05 tw-word-break-all">
 							<a
 								:data-url="url.url"
@@ -180,8 +180,8 @@
 								class="ffz-pill"
 							>{{ t('link-card.shortened', 'shortened') }}</span>
 							<span
-								v-if="url.flags"
 								v-for="flag in url.flags"
+								v-if="url.flags"
 								class="ffz-pill ffz-pill--live"
 							>{{ flag }}</span>
 						</td>
@@ -392,7 +392,7 @@ export default {
 		this.createDrag();
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.ffzEmit(':close', this);
 		this.destroyDrag();
 		if ( this._on_resize ) {

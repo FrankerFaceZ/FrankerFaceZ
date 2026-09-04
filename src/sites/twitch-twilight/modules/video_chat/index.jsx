@@ -4,7 +4,7 @@
 // Video Chat Hooks
 // ============================================================================
 
-import {get, has} from 'utilities/object';
+import {get} from 'utilities/object';
 import {print_duration} from 'utilities/time';
 //import {ClickOutside} from 'utilities/dom';
 import {formatBitsConfig} from '../chat';
@@ -185,7 +185,7 @@ export default class VideoChatHook extends Module {
 
 			render() {
 				//if ( ! t.VideoChatMenu._class )
-					return null;
+				return null;
 
 				/*return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
 					<t.VideoChatMenu._class
@@ -456,7 +456,7 @@ export default class VideoChatHook extends Module {
 		return this._updateLines(false, true);
 	}
 
-	_updateLines(clear_tokens = true, clear_badges = true) { // eslint-disable-line no-unused-vars
+	_updateLines(clear_tokens = true, clear_badges = true) {
 		for(const inst of this.VideoChatLine.instances) {
 			const context = inst.props.messageContext;
 			if ( ! context.comment )
@@ -529,7 +529,7 @@ export default class VideoChatHook extends Module {
 	// Message Standardization
 	// ========================================================================
 
-	standardizeMessage(comment, author) { // eslint-disable-line class-methods-use-this
+	standardizeMessage(comment, author) {  
 		if ( comment._ffz_message )
 			return comment._ffz_message;
 

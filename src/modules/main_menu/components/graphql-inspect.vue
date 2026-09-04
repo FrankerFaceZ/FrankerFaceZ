@@ -81,7 +81,7 @@ export default {
 		this.has_printer = !! this.printer;
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.client = null;
 		this.ffz = null;
 		this.has_client = false;

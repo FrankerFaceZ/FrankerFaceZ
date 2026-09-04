@@ -1,7 +1,9 @@
 <template lang="html">
 	<div class="ffz-featured-follow tw-c-background-base">
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
-			<h4 class="ffz-font-size-4">{{ t('metadata.featured-follow.title', 'Featured Channels') }}</h4>
+			<h4 class="ffz-font-size-4">
+				{{ t('metadata.featured-follow.title', 'Featured Channels') }}
+			</h4>
 
 			<div class="tw-flex-grow-1 tw-pd-x-2" />
 			<button

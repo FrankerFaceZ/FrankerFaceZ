@@ -591,10 +591,10 @@ export default class Badges extends Module {
 		}
 
 		return {
-			room_id: room_id,
-			room_login: room_login,
-			user_id: user_id,
-			user_login: user_login,
+			room_id,
+			room_login,
+			user_id,
+			user_login,
 			data
 		};
 	}
@@ -1164,11 +1164,11 @@ export default class Badges extends Module {
 								return;
 
 							if ( d.lifetime )
-								return '\n' + this.i18n.t('badges.subwoofer.lifetime', 'Lifetime Subwoofer');
+								return `\n${  this.i18n.t('badges.subwoofer.lifetime', 'Lifetime Subwoofer')}`;
 
-							return '\n' + this.i18n.t('badges.subwoofer.months', '({count, plural, one {# Month} other {# Months}})', {
+							return `\n${  this.i18n.t('badges.subwoofer.months', '({count, plural, one {# Month} other {# Months}})', {
 								count: d.months
-							});
+							})}`;
 						})
 				};
 			}

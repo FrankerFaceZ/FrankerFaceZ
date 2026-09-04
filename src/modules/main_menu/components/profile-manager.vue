@@ -259,7 +259,9 @@
 					</div>
 
 					<div class="tw-flex-grow-1">
-						<h4 class="ffz-font-size-4">{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
+						<h4 class="ffz-font-size-4">
+							{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}
+						</h4>
 						<div v-if="p.description" class="description">
 							{{ p.desc_i18n_key ? t(p.desc_i18n_key, p.description, p) : p.description }}
 						</div>
@@ -344,7 +346,7 @@ export default {
 		});
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		if ( this._sortable )
 			this._sortable.destroy();
 
@@ -541,7 +543,7 @@ export default {
 			prof.update({
 				i18n_key: undefined,
 				desc_i18n_key: undefined,
-				description: `${prof.description ? prof.description + '\n' : ''}${this.t('setting.backup-restore.imported-at', 'Imported at {now,datetime}.', {now: new Date})}`
+				description: `${prof.description ? `${prof.description  }\n` : ''}${this.t('setting.backup-restore.imported-at', 'Imported at {now,datetime}.', {now: new Date})}`
 			});
 
 			let i = 0;

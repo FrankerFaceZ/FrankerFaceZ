@@ -67,21 +67,6 @@ export default class Player extends PlayerBase {
 	}
 
 
-	repositionPlayer() {
-		if ( ! this._mover ) {
-			const el = document.querySelector('.channel-root__player');
-			this._mover = this.fine.searchNode(
-				el,
-				n => n.memoizedProps?.triggerPlayerReposition,
-				50
-			);
-		}
-
-		if ( this._mover )
-			this._mover.memoizedProps.triggerPlayerReposition();
-	}
-
-
 	registerSettings() {
 		super.registerSettings();
 

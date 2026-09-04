@@ -212,7 +212,7 @@
 						<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 					</div>
 					<code v-else-if="typeof raw_data === 'string'">{{ raw_data }}</code>
-					<code v-else v-html="highlightJson(raw_data, true)"></code>
+					<code v-else v-html="highlightJson(raw_data, true)" />
 				</div>
 			</div>
 		</div>
@@ -374,7 +374,7 @@ export default {
 		}
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		if (this.es) {
 			this.es.close();
 			this.es = null;

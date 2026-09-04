@@ -22,9 +22,7 @@ export function defineLineTypes(line) {
 	line.line_types = {};
 
 	line.line_types.unknown = {
-		renderNotice: (msg, current_user, room, inst, e) => {
-			return `Unknown message type: ${msg.ffz_type}`
-		}
+		renderNotice: (msg, current_user, room, inst, e) => `Unknown message type: ${msg.ffz_type}`
 	};
 
 	line.line_types.notice = {
@@ -160,19 +158,17 @@ export function defineLineTypes(line) {
 	};
 
 	line.line_types.cheer = {
-		renderNotice: (msg, current_user, room, inst, e) => {
-			return line.i18n.tList(
-				'chat.bits-message',
-				'Cheered {count, plural, one {# Bit} other {# Bits}}',
-				{
-					count: msg.bits || 0
-				}
-			);
-		}
+		renderNotice: (msg, current_user, room, inst, e) => line.i18n.tList(
+			'chat.bits-message',
+			'Cheered {count, plural, one {# Bit} other {# Bits}}',
+			{
+				count: msg.bits || 0
+			}
+		)
 	};
 
 	line.line_types.points = {
-		getClass: (msg) => {
+		getClass: msg => {
 			const highlight = msg.ffz_reward_highlight && line.chat.context.get('chat.points.allow-highlight') === 2;
 
 			return `ffz--points-line tw-pd-l-1 tw-pd-r-2 ${highlight ? 'ffz-custom-color ffz--points-highlight' : ''}`;
@@ -476,7 +472,7 @@ export function defineLineTypes(line) {
 	};
 
 	line.line_types.announcement = {
-		getClass: (msg) => {
+		getClass: msg => {
 			const color = msg.announcement_color?.toLowerCase();
 			return `ffz--announcement-line ffz--announcement-${color}`;
 		},

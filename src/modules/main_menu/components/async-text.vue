@@ -76,7 +76,7 @@ export default {
 			ctx.on(`changed:${key}`, this.refresh, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		const ctx = this.context.context;
 		for(const key of this.item.watch)
 			ctx.off(`changed:${key}`, this.refresh, this);

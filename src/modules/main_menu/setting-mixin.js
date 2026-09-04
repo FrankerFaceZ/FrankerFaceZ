@@ -32,7 +32,7 @@ export default {
 		ctx.on(`uses_changed:${setting}`, this._uses_changed, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		const ctx = this.context.context,
 			setting = this.item.setting;
 

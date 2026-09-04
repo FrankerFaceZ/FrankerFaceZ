@@ -61,7 +61,6 @@
 					{{ t('setting.actions.chat.target-incompatible', 'Note: This is not compatible with pasting a message into chat, and will not function if that is enabled.') }}
 				</div>
 			</div>
-
 		</div>
 	</div>
 </template>

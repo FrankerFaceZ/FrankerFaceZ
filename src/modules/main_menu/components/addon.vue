@@ -243,7 +243,7 @@ export default {
 		this.item.on(':addon-disabled', this.onDisabled, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		this.item.off('i18n:update', this.updateDescription, this);
 		this.item.off(':added', this.refreshExternal, this);
 		this.item.off(':ready', this.refreshExternal, this);

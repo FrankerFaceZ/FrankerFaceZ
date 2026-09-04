@@ -3,11 +3,13 @@
 		<div v-if="loading" class="tw-align-center tw-pd-1">
 			<h1 class="tw-mg-5 ffz-i-zreknarf loading ffz-font-size-1" />
 		</div>
-		<markdown v-else :source="t(`home.${key}`, md)" />
+		<markdown v-else :source="t(`home.${key}`, md, {github_url})" />
 	</div>
 </template>
 
 <script>
+
+import { GITHUB_URL } from 'utilities/constants';
 
 export default {
 	props: ['item', 'context'],
@@ -17,6 +19,7 @@ export default {
 
 		return {
 			key,
+			github_url: GITHUB_URL,
 			loading: true,
 			md: null
 		}

@@ -478,11 +478,8 @@ export default class Metadata extends Module {
 
 			if ( ! el ) {
 				let icon = old_icon = maybe_call(def.icon, this, data);
-				let button = false;
 
 				if ( def.button !== false && (def.popup || def.click) ) {
-					button = true;
-
 					let btn, popup;
 					const border = maybe_call(def.border, this, data),
 						inherit = maybe_call(def.inherit, this, data);
@@ -644,7 +641,7 @@ export default class Metadata extends Module {
 				if ( order != null )
 					el.style.order = order;
 
-				let subcontainer = container;
+				const subcontainer = container;
 
 				/*if ( button )
 					subcontainer = container.querySelector('.tw-flex:last-child') || container;

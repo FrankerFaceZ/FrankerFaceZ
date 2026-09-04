@@ -35,6 +35,7 @@ export default defineConfig({
 		__version_prerelease__: '[]',
 		__version_build__: 'null',
 		__git_commit__: '"test"',
+		__git_repository__: '"Example/FrankerFaceZ"',
 		__extension__: 'false',
 		__client_host__: '"https://cdn2.frankerfacez.com"',
 		__webpack_hash__: '"test"'
@@ -45,7 +46,7 @@ export default defineConfig({
 		// time, so even the pure utilities need a DOM.
 		environment: 'happy-dom',
 		setupFiles: ['./tools/vitest.setup.ts'],
-		include: ['src/**/*.test.{ts,tsx,js,jsx}'],
+		include: ['src/**/*.test.{ts,tsx,js,jsx}', 'tools/**/*.test.{ts,js}'],
 		globals: false
 	}
 });

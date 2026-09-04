@@ -6,7 +6,7 @@ import { IS_FIREFOX } from 'src/utilities/constants';
 // ============================================================================
 
 import Module from 'utilities/module';
-import {debounce, has} from 'utilities/object';
+import {debounce} from 'utilities/object';
 
 const PORTRAIT_ROUTES = ['user', 'video', 'user-video', 'user-clip', 'user-videos', 'user-clips', 'user-collections', 'user-events', 'user-followers', 'user-following'];
 const MINIMAL_ROUTES = ['popout', 'embed-chat', 'dash-chat'];
@@ -381,7 +381,7 @@ export default class Layout extends Module {
 			const react = this.fine.getReactInstance(card),
 				props = react?.return?.return?.memoizedProps,
 				stream = props?.metadataRight?.props?.stream,
-				rerun = stream?.type === 'rerun' ?? false,
+				rerun = stream?.type === 'rerun',
 				game = stream?.game?.displayName,
 				offline = props?.offline ?? false;
 

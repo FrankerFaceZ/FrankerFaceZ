@@ -119,12 +119,12 @@ export default {
 		this._chat.context.on('changed:chat.actions.viewer-card', this.updateSetting, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		this._chat.context.off('changed:chat.actions.viewer-card', this.updateSetting, this);
 	},
 
 	methods: {
-		displayAction(action) { // eslint-disable-line no-unused-vars
+		displayAction(action) {
 			return true;
 		},
 

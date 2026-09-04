@@ -70,7 +70,7 @@ export default {
 		this.cacheCategory = debounce(this.cacheCategory, 50);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.cacheCategory = null;
 	},
 

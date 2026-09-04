@@ -48,7 +48,9 @@
 					phrase="emote-card.report-details"
 					default="You are reporting this emote for {reason}. Please enter any additional details below:"
 				>
-					<template #reason><code>{{ category.i18n ? t(category.i18n, category.title, category) : category.title }}</code></template>
+					<template #reason>
+						<code>{{ category.i18n ? t(category.i18n, category.title, category) : category.title }}</code>
+					</template>
 				</t-list>
 			</p>
 
@@ -88,12 +90,12 @@
 				>
 					<input
 						:id="'report$' + id + '$reason$' + idx"
-						:name="'report-reasons$' + id"
 						v-model="pendingCategory"
+						:name="'report-reasons$' + id"
 						:value="reason"
 						type="radio"
 						class="ffz-radio__input"
-					/>
+					>
 					<label
 						:for="'report$' + id + '$reason$' + idx"
 						class="tw-block ffz-radio__label tw-pd-r-1 tw-pd-y-1"
@@ -117,7 +119,6 @@
 					</span>
 				</button>
 			</div>
-
 		</template>
 	</section>
 </template>
@@ -155,7 +156,7 @@ export default {
 
 	data() {
 		return {
-			REASONS: REASONS,
+			REASONS,
 			id: id++,
 			message: '',
 			pendingCategory: null,

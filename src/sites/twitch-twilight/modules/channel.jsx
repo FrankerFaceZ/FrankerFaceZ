@@ -521,7 +521,7 @@ export default class Channel extends Module {
 					// is actually a static string.
 					if ( typeof c === 'string' && /^[0-9,.]+$/.test(c) ) {
 						try {
-							const val = parseInt(c.replace(/[\.,]+/, ''), 10);
+							const val = parseInt(c.replace(/[.,]+/, ''), 10);
 							if ( ! isNaN(val) && isFinite(val) && val > 0 )
 								return val;
 						} catch(err) { /* no-op */ }
@@ -554,7 +554,7 @@ export default class Channel extends Module {
 	updateRoot(el) {
 		const root = this.fine.getReactInstance(el);
 
-		let channel = null, node = root, j=0, i=0;
+		let channel = null, node = root, j=0, i;
 		while(node != null && channel == null && j < 10) {
 			let state = node?.memoizedState;
 			i=0;
@@ -618,6 +618,7 @@ export default class Channel extends Module {
 			}
 		}
 
+		// eslint-disable-next-line no-async-promise-executor -- every await is caught and routed to the waiters
 		return new Promise(async (s, f) => {
 			if ( cache.updating ) {
 				cache.updating.push([s, f]);
@@ -664,6 +665,7 @@ export default class Channel extends Module {
 				return Promise.resolve(cache.broadcast_id);
 		}
 
+		// eslint-disable-next-line no-async-promise-executor -- every await is caught and routed to the waiters
 		return new Promise(async (s, f) => {
 			if ( cache.updating ) {
 				cache.updating.push([s, f]);

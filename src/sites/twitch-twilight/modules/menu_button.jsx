@@ -548,8 +548,8 @@ export default class MenuButton extends Module {
 			<div class="tw-inline-flex tw-relative ffz-il-tooltip__container">
 				{btn = (<button
 					class={`tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative${this.loading ? ' loading' : ''}`}
-					onClick={e => this.handleClick(e, btn)} // eslint-disable-line react/jsx-no-bind
-					onContextMenu={e => this.renderContext(e, btn)} // eslint-disable-line react/jsx-no-bind
+					onClick={e => this.handleClick(e, btn)}
+					onContextMenu={e => this.renderContext(e, btn)}
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<span class="tw-button-icon__icon">
@@ -565,7 +565,7 @@ export default class MenuButton extends Module {
 							</div>
 							{this.error.permanent ? null : (<button
 								class="tw-button-icon tw-mg-l-05 tw-relative ffz-il-tooltip__container"
-								onClick={() => this.error = null} // eslint-disable-line react/jsx-no-bind
+								onClick={() => this.error = null}
 							>
 								<span class="tw-button-icon__icon">
 									<figure class="ffz-i-cancel" />
@@ -701,7 +701,7 @@ export default class MenuButton extends Module {
 			const toggle = (<button
 				class="tw-flex-shrink-0 tw-mg-r-1 tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-relative ffz-tooltip ffz-tooltip--no-mouse"
 				data-title={this.renderButtonTip(profile)}
-				onClick={e => {  // eslint-disable-line react/jsx-no-bind
+				onClick={e => {
 					profile.toggled = ! profile.toggled;
 
 					setChildren(toggle, this.renderButtonIcon(profile));
@@ -747,7 +747,7 @@ export default class MenuButton extends Module {
 							<div class="tw-inline-flex tw-relative ffz-il-tooltip__container">
 								<button
 									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
-									onDblClick={() => {this.emit('site.player:reset'); destroy()}} // eslint-disable-line react/jsx-no-bind
+									onDblClick={() => {this.emit('site.player:reset'); destroy()}}
 								>
 									<span class="tw-button-icon__icon">
 										<figure class="ffz-i-t-reset" />
@@ -767,7 +767,7 @@ export default class MenuButton extends Module {
 							<div class="tw-inline-flex tw-relative ffz-il-tooltip__container">
 								<button
 									class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden"
-									onClick={e => {this.openSettings(e, btn); destroy()}} // eslint-disable-line react/jsx-no-bind
+									onClick={e => {this.openSettings(e, btn); destroy()}}
 								>
 									<span class="tw-button-icon__icon">
 										<figure class="ffz-i-cog" />
@@ -781,7 +781,7 @@ export default class MenuButton extends Module {
 						<div class="tw-flex tw-flex-column tw-justify-content-center tw-mg-l-05 tw-popover-header__icon-slot--right">
 							<button
 								class="tw-align-items-center tw-align-middle tw-border-radius-medium tw-button-icon tw-button-icon--secondary ffz-core-button ffz-core-button--border tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-								onClick={destroy} // eslint-disable-line react/jsx-no-bind
+								onClick={destroy}
 							>
 								<span class="tw-button-icon__icon">
 									<figure class="ffz-i-cancel" />

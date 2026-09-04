@@ -27,8 +27,8 @@
 					class="tw-button tw-button--small ffz-tooltip ffz-tooltip--no-mouse"
 					:class="filter_state !== 0 && 'tw-button--secondary'"
 					:data-title="t('addon.filter-all.tooltip', 'Display all add-ons')"
-					@click="filter_state = 0"
 					style="border-radius: .4rem 0 0 .4rem"
+					@click="filter_state = 0"
 				>
 					<span class="tw-button__text">{{ t('addon.filter-all', 'All') }}</span>
 				</button>
@@ -36,8 +36,8 @@
 					class="tw-button tw-button--small ffz-tooltip ffz-tooltip--no-mouse"
 					:class="filter_state !== 1 && 'tw-button--secondary'"
 					:data-title="t('addon.filter-enabled.tooltip', 'Display only enabled add-ons')"
-					@click="filter_state = 1"
 					style="border-radius: 0; border-left: 1px solid rgba(255,255,255,.15); border-right: 1px solid rgba(255,255,255,.15)"
+					@click="filter_state = 1"
 				>
 					<span class="tw-button__text">{{ t('addon.filter-enabled', 'Enabled') }}</span>
 				</button>
@@ -45,8 +45,8 @@
 					class="tw-button tw-button--small ffz-tooltip ffz-tooltip--no-mouse"
 					:class="filter_state !== 2 && 'tw-button--secondary'"
 					:data-title="t('addon.filter-disabled.tooltip', 'Display only disabled add-ons')"
-					@click="filter_state = 2"
 					style="border-radius: 0 .4rem .4rem 0"
+					@click="filter_state = 2"
 				>
 					<span class="tw-button__text">{{ t('addon.filter-disabled', 'Disabled') }}</span>
 				</button>
@@ -58,12 +58,24 @@
 				v-model="sort_by"
 				class="tw-border-radius-medium ffz-font-size-6 ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05"
 			>
-				<option :value="0">{{ t('addon.sort-name-asc', 'Name (A–Z)') }}</option>
-				<option :value="1">{{ t('addon.sort-name-desc', 'Name (Z–A)') }}</option>
-				<option :value="2">{{ t('addon.sort-update-desc', 'Updated (Newest)') }}</option>
-				<option :value="3">{{ t('addon.sort-update-asc', 'Updated (Oldest)') }}</option>
-				<option :value="4">{{ t('addon.sort-create-desc', 'Created (Newest)') }}</option>
-				<option :value="5">{{ t('addon.sort-create-asc', 'Created (Oldest)') }}</option>
+				<option :value="0">
+					{{ t('addon.sort-name-asc', 'Name (A–Z)') }}
+				</option>
+				<option :value="1">
+					{{ t('addon.sort-name-desc', 'Name (Z–A)') }}
+				</option>
+				<option :value="2">
+					{{ t('addon.sort-update-desc', 'Updated (Newest)') }}
+				</option>
+				<option :value="3">
+					{{ t('addon.sort-update-asc', 'Updated (Oldest)') }}
+				</option>
+				<option :value="4">
+					{{ t('addon.sort-create-desc', 'Created (Newest)') }}
+				</option>
+				<option :value="5">
+					{{ t('addon.sort-create-asc', 'Created (Oldest)') }}
+				</option>
 			</select>
 		</div>
 
@@ -209,7 +221,7 @@ export default {
 		this.item.on(':reload-required', this.onReload, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		this.item.off(':ready', this.onReady, this);
 		this.item.off(':added', this.onAdded, this);
 		this.item.off(':reload-required', this.onReload, this);

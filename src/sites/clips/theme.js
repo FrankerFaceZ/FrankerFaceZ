@@ -5,7 +5,6 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {createElement} from 'utilities/dom';
 import {Color} from 'utilities/color';
 
 //import THEME_CSS from 'site/styles/theme.scss';

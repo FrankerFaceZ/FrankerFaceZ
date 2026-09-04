@@ -1,6 +1,4 @@
 
-/* eslint-disable react/jsx-no-bind -- this JSX renders through the DOM helper, not React, and handlers are created per render on purpose */
-
 // ============================================================================
 // Channel Metadata
 // ============================================================================

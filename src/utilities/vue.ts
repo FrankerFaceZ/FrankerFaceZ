@@ -9,6 +9,7 @@ import Module, { type GenericModule } from 'utilities/module';
 import {has} from 'utilities/object';
 import type TranslationManager from '../i18n';
 import type { VueConstructor } from 'vue';
+import { installLifecycleShim } from './vue-lifecycle';
 import type Vue from 'vue';
 import type { CombinedVueInstance } from 'vue/types/vue';
 import type { MessageNode } from '@ffz/icu-msgparser';
@@ -54,22 +55,25 @@ export class VueModule extends Module<'vue'> {
 			components = this._components;
 
 		const [
-			ObserveVisibility,
-			Clickaway,
+			Directives,
 			//RavenVue,
 			Components
 
 		] = await Promise.all([
-			import(/* webpackChunkName: "vue" */ 'vue-observe-visibility'),
-			import(/* webpackChunkName: "vue" */ 'vue-clickaway'),
+			import(/* webpackChunkName: "vue" */ './vue-directives'),
 			//import(/* webpackChunkName: "vue" */ 'raven-js/plugins/vue'),
 			import(/* webpackChunkName: "vue" */ 'src/std-components/index.js')
 		]);
 
 		this.component(Components.default);
 
-		Vue.use(ObserveVisibility as any);
-		Vue.mixin(Clickaway.mixin);
+		// v-on-clickaway and v-observe-visibility, kept under the names the
+		// replaced packages used so add-ons keep working.
+		Vue.directive('onClickaway', Directives.clickaway as any);
+		Vue.directive('observeVisibility', Directives.observeVisibility as any);
+
+		// Components use Vue 3's lifecycle names; see utilities/vue-lifecycle.
+		installLifecycleShim(Vue as any);
 
 		/*if ( ! DEBUG && this.root.raven )
 			this.root.raven.addPlugin(RavenVue, Vue);*/

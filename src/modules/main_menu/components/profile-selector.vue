@@ -86,7 +86,9 @@
 									</div>
 								</div>
 
-								<h4 class="ffz-font-size-4">{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}</h4>
+								<h4 class="ffz-font-size-4">
+									{{ p.i18n_key ? t(p.i18n_key, p.title, p) : p.title }}
+								</h4>
 								<div v-if="p.description" class="description">
 									{{ p.desc_i18n_key ? t(p.desc_i18n_key, p.description, p) : p.description }}
 								</div>
@@ -132,7 +134,7 @@ export default {
 			if (!scroller || ! window.ffzSimplebar || scroller.SimpleBar)
 				return;
 
-			new ffzSimplebar(scroller, ffzSimplebar.getElOptions(scroller));
+			new window.ffzSimplebar(scroller, window.ffzSimplebar.getElOptions(scroller));
 		},
 
 		openConfigure() {

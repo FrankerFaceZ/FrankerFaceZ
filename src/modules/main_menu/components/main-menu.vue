@@ -94,7 +94,7 @@
 					<div class="tw-c-text-alt-2">
 						<a
 							v-if="version.commit"
-							:href="`https://www.github.com/FrankerFaceZ/FrankerFaceZ/commit/${version.commit}`"
+							:href="`${github_url}/commit/${version.commit}`"
 							class="ffz-link ffz-link--inherit"
 							target="_blank"
 							rel="noopener noreferrer"
@@ -128,6 +128,7 @@
 
 import displace from 'displacejs';
 import { getDialogNextZ } from 'src/utilities/dialog';
+import { GITHUB_URL } from 'utilities/constants';
 
 const VALID_FLAGS = [
 	'modified'
@@ -138,6 +139,7 @@ export default {
 		const out = this.$vnode.data;
 
 		out.z = getDialogNextZ();
+		out.github_url = GITHUB_URL;
 
 		return out;
 	},
@@ -183,7 +185,7 @@ export default {
 		this.context.context._add_user();
 	},
 
-	destroyed() {
+	unmounted() {
 		this.context.context._remove_user();
 	},
 
@@ -194,7 +196,7 @@ export default {
 		window.addEventListener('resize', this._on_resize);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.destroyDrag();
 
 		if ( this._on_resize ) {

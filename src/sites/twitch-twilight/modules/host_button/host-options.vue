@@ -1,7 +1,9 @@
 <template lang="html">
 	<div class="ffz-auto-host-options tw-c-background-base">
 		<header class="tw-full-width tw-align-items-center tw-flex tw-flex-nowrap">
-			<h4 class="ffz-font-size-4">{{ t('metadata.host.title', 'Auto Host Management') }}</h4>
+			<h4 class="ffz-font-size-4">
+				{{ t('metadata.host.title', 'Auto Host Management') }}
+			</h4>
 		</header>
 		<div
 			v-show="activeTab === 'auto-host'"

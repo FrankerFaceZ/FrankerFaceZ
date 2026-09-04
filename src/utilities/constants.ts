@@ -17,6 +17,16 @@ export const DEBUG = localStorage.ffzDebugMode === 'true' && document.body.class
 export const CLIENT_SERVER = DEBUG ? 'https://localhost:8000' : __client_host__;
 
 /**
+ * The GitHub repository this client was built from, as `owner/name`. Taken
+ * from the `repository` field of package.json at build time, so a fork's
+ * changelog and commit links point at the fork.
+ */
+export const GITHUB_REPOSITORY = __git_repository__;
+
+/** The GitHub URL of {@link GITHUB_REPOSITORY}. */
+export const GITHUB_URL = `https://github.com/${GITHUB_REPOSITORY}`;
+
+/**
  * The base URL of the FrankerFaceZ CDN, for assets that are not part of this
  * build: emoji images, Twitch badge art, emote replacements, translations
  * and add-ons.

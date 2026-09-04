@@ -311,7 +311,7 @@ export const BlockedTerms = {
 	tooltip(target) {
 		const ds = target.dataset;
 		return [
-			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-border-b tw-mg-b-05">{  
 				this.i18n.t('chat.filtering.blocked-term', 'Blocked Term')
 			}</div>),
 			ds.text

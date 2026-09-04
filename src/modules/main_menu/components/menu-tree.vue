@@ -18,8 +18,8 @@
 			role="presentation"
 		>
 			<div
-				:aria-expanded="item.expanded"
-				:aria-selected="currentItem === item"
+				:aria-expanded="item.expanded ? 'true' : 'false'"
+				:aria-selected="currentItem === item ? 'true' : 'false'"
 				class="tw-flex__item tw-flex tw-flex-nowrap tw-align-items-center tw-pd-y-05 tw-pd-r-05"
 				role="treeitem"
 				@click="clickItem(item)"

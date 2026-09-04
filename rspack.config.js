@@ -50,6 +50,14 @@ const commit_hash = DEV_SERVER
 		? process.env.CLIENT_COMMIT
 		: execSync('git rev-parse HEAD').toString().trim();
 
+// The GitHub repository this client is built from, as "owner/name", taken
+// from package.json. The client links its commits and changelog to it.
+const REPOSITORY = (() => {
+	const url = require('./package.json').repository?.url ?? '',
+		match = /github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?\/?$/i.exec(url);
+	return match ? `${match[1]}/${match[2]}` : 'FrankerFaceZ/FrankerFaceZ';
+})();
+
 
 // The Config
 
@@ -249,6 +257,7 @@ const config = {
 			__version_prerelease__: JSON.stringify(VERSION.prerelease),
 			__version_build__: JSON.stringify(process.env.FFZ_BUILD || null),
 			__git_commit__: JSON.stringify(commit_hash),
+			__git_repository__: JSON.stringify(REPOSITORY),
 			__client_host__: JSON.stringify(CLIENT_HOST),
 			__extension__: FOR_EXTENSION
 				? JSON.stringify(process.env.FFZ_EXTENSION)

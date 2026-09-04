@@ -22,7 +22,7 @@
 				v-for="(i, idx) in visibleTabs"
 				:id="'tab-for-' + i.full_key"
 				:key="i.full_key"
-				:aria-selected="selected === idx"
+				:aria-selected="selected === idx ? 'true' : 'false'"
 				:aria-controls="'tab-panel-' + i.full_key"
 				:class="{'active': selected === idx, 'ffz-unmatched-item': showing && ! shouldShow(i)}"
 				role="tab"
@@ -87,7 +87,7 @@ export default {
 				return [];
 
 			//if ( ! this.context.matches_only )
-				return this.item.tabs;
+			return this.item.tabs;
 
 			//return this.item.tabs.filter(tab => this.shouldShow(tab));
 		},
@@ -112,7 +112,7 @@ export default {
 		this.markSeen()
 	},
 
-	destroyed() {
+	unmounted() {
 		if ( this.item._component === this )
 			this.item._component = null;
 	},

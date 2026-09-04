@@ -35,7 +35,7 @@ export const Emoji = {
 			}
 
 			const text = replace ?
-				token.text.replace(JOINER_REPLACEMENT, "\u200d") :
+				token.text.replace(JOINER_REPLACEMENT, '\u200d') :
 				token.text;
 
 			splitter.lastIndex = 0;
