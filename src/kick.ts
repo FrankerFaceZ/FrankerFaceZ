@@ -4,9 +4,9 @@
 // FrankerFaceZ for Kick
 //
 // The client that runs on kick.com. It is its own flavor with its own site
-// module (src/sites/kick) and, for now, loads only the parts of the client
-// that aren't tied to Twitch: settings, the control center, add-ons and
-// tooltips. Chat and player support come later.
+// module (src/sites/kick) and loads only the parts of the client that
+// aren't tied to Twitch: settings, the control center, add-ons, tooltips
+// and chat. Player support comes later.
 // ============================================================================
 
 import dayjs from 'dayjs';
@@ -30,6 +30,7 @@ import Site from './sites/kick';
 
 import Tooltips from 'src/modules/tooltips';
 import MainMenu from 'src/modules/main_menu';
+import Chat from 'src/modules/chat';
 
 import type { ClientVersion } from 'utilities/types';
 
@@ -131,6 +132,7 @@ class FrankerFaceZ extends Module {
 
 		this.inject('tooltips', Tooltips);
 		this.register('main_menu', MainMenu);
+		this.register('chat', Chat);
 
 		Promise.resolve(this.enable())
 			.then(() => this.enableInitialModules())

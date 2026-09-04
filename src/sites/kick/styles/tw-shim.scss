@@ -315,6 +315,21 @@ $corners: top-left top-right bottom-left bottom-right;
 	position: relative;
 }
 
+// Twitch's scrolling region. The control center's navigation and pages
+// are built on it (see std-components/simplebar.vue).
+.scrollable-area {
+	position: relative;
+	overflow: auto;
+
+	&--suppress-scroll-x {
+		overflow-x: hidden;
+	}
+
+	&--suppress-scroll-y {
+		overflow-y: hidden;
+	}
+}
+
 
 // ============================================================================
 // Buttons

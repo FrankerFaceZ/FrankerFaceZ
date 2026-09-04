@@ -6,6 +6,7 @@
 @use '../../../../styles/main.scss';
 @use 'variables';
 @use 'tw-shim';
+@use 'chat';
 
 
 // FrankerFaceZ's stylesheets were written against Twitch's 10px root font
@@ -30,6 +31,9 @@ $zoom: 0.625;
 	font-size: var(--font-size-base);
 	line-height: var(--line-height-body);
 	color: var(--color-text-base);
+
+	// Dark scrollbars and form controls, to match the palette.
+	color-scheme: dark;
 
 	> * {
 		pointer-events: auto;

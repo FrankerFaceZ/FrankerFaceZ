@@ -216,6 +216,12 @@ export function createElement(tag: string, props?: any, ...children: DomFragment
 				const lk = key.toLowerCase(),
 					prop = props[key];
 
+				// React drops undefined props, and the JSX in this project
+				// is written for either renderer, so do the same here rather
+				// than writing the string "undefined" into an attribute.
+				if ( prop === undefined )
+					continue;
+
 				if ( key === 'className' ) {
 					el.setAttribute('class', prop);
 

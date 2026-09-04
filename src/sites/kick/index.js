@@ -10,6 +10,7 @@ import Elemental from 'utilities/compat/elemental';
 import {createElement} from 'utilities/dom';
 
 import MenuButton from './menu_button';
+import Chat from './chat';
 
 import MAIN_URL from './styles/kick-main.scss';
 
@@ -32,6 +33,7 @@ export default class KickSite extends BaseSite {
 
 		this.inject(Elemental);
 		this.inject('menu_button', MenuButton);
+		this.inject('chat', Chat);
 
 		this.container = null;
 	}
