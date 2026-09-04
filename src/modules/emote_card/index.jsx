@@ -59,8 +59,10 @@ export default class EmoteCard extends Module {
 		this.inject('chat.emotes');
 		this.inject('chat.emoji');
 		this.inject('site');
-		this.inject('site.apollo');
-		this.inject('site.twitch_data');
+
+		// Twitch emotes need Apollo, which only Twitch has; it is resolved
+		// when one is opened rather than required here, so the card works
+		// on sites without it.
 
 		this.vue = this.resolve('vue');
 
@@ -546,11 +548,16 @@ export default class EmoteCard extends Module {
 
 		child = component.$children[0];
 
-		const el = component.$el;
-		el.style.left = `${pos_x}px`;
-		el.style.top = `${pos_y}px`;
-
 		const container = document.querySelector(this.site.constructor.DIALOG_SELECTOR ?? '#root>div>.tw-full-height,.twilight-minimal-root>.tw-full-height');
+
+		// The position is in screen pixels. If the container is zoomed (the
+		// Kick site's is), its pixels are larger than the screen's.
+		const zoom = Number(getComputedStyle(container).zoom) || 1;
+
+		const el = component.$el;
+		el.style.left = `${pos_x / zoom}px`;
+		el.style.top = `${pos_y / zoom}px`;
+
 		container.appendChild(el);
 
 		requestAnimationFrame(() => child.constrain());

@@ -135,9 +135,11 @@ greys, tone Kick's green down a little, color usernames Twitch-style (with
 FFZ's readability adjustment), set chat's font size and message spacing,
 shrink, reshape or hide badges (each type on its own, the way Twitch badges
 can be), stripe alternate lines, show FFZ-formatted timestamps,
-highlight lines that mention you, and hide the sidebar's recommended
-channels, the Gift Subs button, the banners above chat, the "New messages"
-divider, the row of emotes above the chat box and the counters below it.
+highlight lines that mention you, show link previews below messages,
+compact the channel header, restyle the chat box, and hide the sidebar's
+recommended channels, the Gift Subs button, the Kicks balance, the banners
+above chat, the "New messages" divider, the row of emotes above the chat
+box and the counters below it. Clicking an emote opens FFZ's emote card.
 
 The loader picks the flavor by hostname, the same way it picks the clips
 and player flavors, and it is served as `kick.js` beside the other stable

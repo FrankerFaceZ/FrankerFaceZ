@@ -64,11 +64,30 @@ export default class Appearance extends Module {
 			}
 		});
 
+		this.settings.add('kick.layout.compact-header', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Compact channel header.',
+				description: 'A smaller avatar, pill-shaped buttons and tighter spacing, closer to Twitch\'s.',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('kick.layout.hide-gift-subs', {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Channel',
 				title: 'Hide the Gift Subs button.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('kick.layout.hide-kicks', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Bar',
+				title: 'Hide the Kicks balance.',
 				component: 'setting-check-box'
 			}
 		});
@@ -147,6 +166,31 @@ export default class Appearance extends Module {
 			}
 		});
 
+		this.settings.add('kick.chat.input-style', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Twitch-style chat box.',
+				description: 'A thin border and a lifted background instead of Kick\'s outline and white focus ring.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('kick.chat.mod-actions', {
+			default: 0,
+			ui: {
+				path: 'Chat > Behavior >> Moderation',
+				title: 'Mod Actions',
+				description: 'Kick\'s own ban, timeout and delete buttons at the start of each line, for moderators.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Kick\'s Setting'},
+					{value: 1, title: 'Always Shown'},
+					{value: 2, title: 'Hidden'}
+				]
+			}
+		});
+
 		this.settings.add('kick.chat.timestamps', {
 			default: 1,
 			ui: {
@@ -175,6 +219,22 @@ export default class Appearance extends Module {
 
 		hide('kick.layout.hide-recommended', 'sidebar-recommended');
 		hide('kick.layout.hide-gift-subs', 'gift-subs');
+		hide('kick.layout.hide-kicks', 'kicks-balance');
+
+		this.settings.getChanges('kick.layout.compact-header', val =>
+			tweaks.toggle('compact-header', val));
+
+		this.settings.getChanges('kick.chat.input-style', val =>
+			tweaks.toggle('chat-input', val));
+
+		this.settings.getChanges('kick.chat.mod-actions', val => {
+			if ( val === 1 )
+				tweaks.set('chat-mod-actions', 'html{--chatroom-mod-actions-display:inline-flex !important}');
+			else if ( val === 2 )
+				tweaks.set('chat-mod-actions', 'html{--chatroom-mod-actions-display:none !important}');
+			else
+				tweaks.delete('chat-mod-actions');
+		});
 		hide('kick.layout.hide-chat-banners', 'chat-banners');
 		hide('kick.layout.hide-new-messages', 'chat-divider');
 		hide('kick.layout.hide-quick-emotes', 'quick-emotes');

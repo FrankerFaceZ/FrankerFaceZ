@@ -7,6 +7,17 @@
 	display: none !important;
 }
 
+// Link previews below messages. Built from FFZ's rem-sized card styles,
+// so zoomed like the root container (see kick-main.scss).
+.ffz--kick-rich {
+	zoom: 0.625;
+	margin: 0.5rem 0 0.25rem;
+	max-width: 40rem;
+	font-size: var(--font-size-base);
+	line-height: var(--line-height-body);
+	color: var(--color-text-base);
+}
+
 .ffz--kick-message {
 	.ffz--inline {
 		display: inline;
