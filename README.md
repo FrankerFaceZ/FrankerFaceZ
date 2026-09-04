@@ -82,8 +82,9 @@ Your host needs to serve `dist/` over HTTPS with an
   each stable name to its current hashed file. Do not cache these for long.
 
 To try a self-hosted build locally, `bun run serve:dist` serves `dist/` with
-that layout on `https://localhost:8001`, using a self-signed certificate (it
-reuses the dev server's, or creates one with openssl). Build with
+that layout on `https://localhost:8001`, using a self-signed certificate kept
+in `~/.frankerfacez/serve-dist/` (created with openssl on first run, and left
+alone by reinstalls; set `FFZ_SERVE_DIR` to move it). Build with
 `FFZ_CLIENT_HOST=https://localhost:8001 bun run build`, open the loader URL the
 server prints once to trust the certificate, and install `dist/script.min.js`
 as a userscript. HTTPS matters: Firefox refuses plain-HTTP scripts injected
