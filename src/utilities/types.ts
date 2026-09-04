@@ -258,6 +258,7 @@ export interface ModuleEventMap {
 export type I18nEvents = {
 	':update': [];
 	':transform': [];
+	':changed': [new_locale: string, old_locale: string];
 	':loaded': [keys: string[]];
 	':got-keys': [];
 };

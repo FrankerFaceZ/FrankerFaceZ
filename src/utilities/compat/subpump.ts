@@ -149,6 +149,13 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 		}
 
 		if ( instance ) {
+			// Twitch's current client has no connection to hook; PubSub has
+			// been replaced, so there is nothing for this module to do.
+			if ( ! instance.connection ) {
+				this.log.debug('PubSub client has no connection to hook; Twitch no longer uses PubSub.');
+				return;
+			}
+
 			this.instance = instance;
 			try {
 				this.hookClient(instance);
@@ -174,7 +181,7 @@ export default class Subpump extends Module<'site.subpump', SubpumpEvents> {
 		*/
 
 		if ( ! this.instance )
-			this.log.info('Unable to find a PubSub instance.');
+			this.log.debug('Unable to find a PubSub instance.');
 	}
 
 	handleMessage(msg: TwitchPubSubMessageEvent) {
