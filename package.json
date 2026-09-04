@@ -41,7 +41,6 @@
 		"@types/crypto-js": "^4.2.2",
 		"@types/js-cookie": "^3.0.6",
 		"@types/safe-regex": "^1.1.6",
-		"@types/vue-clickaway": "^2.2.4",
 		"@types/webpack-env": "^1.18.8",
 		"browserslist": "^4.25.0",
 		"css-loader": "^7.1.5",
@@ -101,9 +100,7 @@
 		"sourcemapped-stacktrace": "^1.1.11",
 		"text-diff": "^1.0.1",
 		"vue": "^2.7.16",
-		"vue-clickaway": "^2.2.2",
 		"vue-color": "^2.8.2",
-		"vue-observe-visibility": "^1.0.0",
 		"vuedraggable": "^2.24.3"
 	}
 }
