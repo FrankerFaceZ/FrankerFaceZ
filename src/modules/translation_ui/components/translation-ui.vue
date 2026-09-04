@@ -356,7 +356,7 @@ export default {
 		window.addEventListener('resize', this._on_resize);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.destroyDrag();
 
 		if ( this._on_resize ) {

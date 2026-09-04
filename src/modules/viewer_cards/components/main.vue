@@ -119,7 +119,7 @@ export default {
 		this._chat.context.on('changed:chat.actions.viewer-card', this.updateSetting, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		this._chat.context.off('changed:chat.actions.viewer-card', this.updateSetting, this);
 	},
 

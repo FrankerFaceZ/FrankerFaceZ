@@ -312,7 +312,7 @@ export default {
 		this.item.on(':twitch-changed', this.twitchValueChanged, this);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.item.off(':changed', this.valueChanged, this);
 		this.item.off(':twitch-changed', this.twitchValueChanged, this);
 	},

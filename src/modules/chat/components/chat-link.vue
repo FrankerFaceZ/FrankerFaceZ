@@ -1,13 +1,19 @@
-<template functional>
+<template>
 	<a
-		:href="props.token.url"
-		:data-url="props.token.url"
-		:data-is-mail="props.token.is_mail"
+		:href="$attrs.token.url"
+		:data-url="$attrs.token.url"
+		:data-is-mail="$attrs.token.is_mail"
 		class="ffz-tooltip"
 		data-tooltip-type="link"
 		rel="noopener noreferrer"
 		target="_blank"
 	>
-		{{ props.token.text }}
+		{{ $attrs.token.text }}
 	</a>
 </template>
+
+<script>
+export default {
+	inheritAttrs: false
+};
+</script>

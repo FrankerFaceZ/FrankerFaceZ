@@ -233,7 +233,7 @@ export default {
 		this.createDrag();
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.$emit('emit', ':close', this);
 		this.destroyDrag();
 

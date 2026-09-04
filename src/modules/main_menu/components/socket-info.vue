@@ -279,7 +279,7 @@ export default {
 		socket.on(':disconnected', this.update, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		clearInterval(this.time_interval);
 		clearInterval(this.info_interval);
 

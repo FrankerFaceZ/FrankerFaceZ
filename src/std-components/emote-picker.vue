@@ -47,7 +47,7 @@
 						<div
 							v-for="i of visible"
 							:key="`${i.provider}:${i.id}`"
-							:aria-checked="val.provider === i.provider && val.id === i.id"
+							:aria-checked="val.provider === i.provider && val.id === i.id ? 'true' : 'false'"
 							:class="{'ffz-interactable--selected': val.provider === i.provider && val.id === i.id}"
 							:data-provider="i.provider"
 							:data-id="i.id"

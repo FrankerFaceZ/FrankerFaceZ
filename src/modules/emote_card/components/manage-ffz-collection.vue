@@ -4,7 +4,7 @@
 		class="tw-mg-05 tw-border tw-border-radius-medium tw-pd-05 ffz--cursor"
 		role="checkbox"
 		tabindex="0"
-		:aria-checked="isInCollection"
+		:aria-checked="isInCollection ? 'true' : 'false'"
 		:class="entryClasses"
 		@click="toggle"
 		@keypress="onPress($event)"

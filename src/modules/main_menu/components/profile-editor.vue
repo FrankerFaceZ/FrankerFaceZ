@@ -289,7 +289,7 @@ export default {
 		this.revert();
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.context.context.off('context_changed', this.updateContext, this);
 	},
 

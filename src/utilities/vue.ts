@@ -9,6 +9,7 @@ import Module, { type GenericModule } from 'utilities/module';
 import {has} from 'utilities/object';
 import type TranslationManager from '../i18n';
 import type { VueConstructor } from 'vue';
+import { installLifecycleShim } from './vue-lifecycle';
 import type Vue from 'vue';
 import type { CombinedVueInstance } from 'vue/types/vue';
 import type { MessageNode } from '@ffz/icu-msgparser';
@@ -70,6 +71,9 @@ export class VueModule extends Module<'vue'> {
 
 		Vue.use(ObserveVisibility as any);
 		Vue.mixin(Clickaway.mixin);
+
+		// Components use Vue 3's lifecycle names; see utilities/vue-lifecycle.
+		installLifecycleShim(Vue as any);
 
 		/*if ( ! DEBUG && this.root.raven )
 			this.root.raven.addPlugin(RavenVue, Vue);*/

@@ -31,7 +31,7 @@ export default {
 		this.timer = setInterval(() => this.now = new Date, 1000);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		clearInterval(this.timer);
 		this.timer = null;
 	}

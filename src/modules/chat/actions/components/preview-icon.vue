@@ -1,6 +1,12 @@
-<template functional>
+<template>
 	<figure
-		:class="`${props.data.icon||'ffz-i-zreknarf'}`"
-		:style="{color:props.color}"
+		:class="`${$attrs.data.icon||'ffz-i-zreknarf'}`"
+		:style="{color:$attrs.color}"
 	/>
 </template>
+
+<script>
+export default {
+	inheritAttrs: false
+};
+</script>

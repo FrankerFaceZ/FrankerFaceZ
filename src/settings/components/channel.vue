@@ -72,7 +72,7 @@ export default {
 		this.cacheUser = debounce(this.cacheUser, 50);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.cacheUser = null;
 	},
 
