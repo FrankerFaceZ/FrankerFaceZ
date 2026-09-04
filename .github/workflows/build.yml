@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       can_deploy: ${{ steps.deploy-check.outputs.can_deploy }}
+      can_deploy_pages: ${{ steps.deploy-check.outputs.can_deploy_pages }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v5
@@ -52,19 +53,40 @@ jobs:
         name: client
         path: dist
 
-    # Deploy needs the HOST, SSH_USERNAME and SSH_PRIVATE_KEY secrets.
+    # The same build laid out for a static host (see tools/layout-site.js).
+    - name: Lay Out Static Site
+      run: bun run layout:site
+
+    - name: Upload Static Site
+      uses: actions/upload-artifact@v5
+      with:
+        name: site
+        path: site
+
+    # The SSH deploy needs the HOST, SSH_USERNAME and SSH_PRIVATE_KEY
+    # secrets; the Cloudflare Pages deploy needs CLOUDFLARE_API_TOKEN and
+    # CLOUDFLARE_ACCOUNT_ID plus the CLOUDFLARE_PAGES_PROJECT variable.
     # Secrets are not readable from a job's `if`, so decide here.
     - name: Check Deploy Secrets
       id: deploy-check
       env:
         HOST: ${{ secrets.HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
       run: |
         if [ -n "$HOST" ] && [ -n "$SSH_PRIVATE_KEY" ]; then
           echo "can_deploy=true" >> "$GITHUB_OUTPUT"
         else
           echo "can_deploy=false" >> "$GITHUB_OUTPUT"
-          echo "Deploy secrets are not configured; skipping deploy."
+          echo "SSH deploy secrets are not configured; skipping that deploy."
+        fi
+        if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$CLOUDFLARE_PAGES_PROJECT" ]; then
+          echo "can_deploy_pages=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "can_deploy_pages=false" >> "$GITHUB_OUTPUT"
+          echo "Cloudflare Pages settings are not configured; skipping that deploy."
         fi
 
   deploy:
@@ -105,3 +127,21 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  deploy-pages:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && needs.build.outputs.can_deploy_pages == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Static Site
+      uses: actions/download-artifact@v5
+      with:
+        name: site
+        path: site
+
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        command: pages deploy site --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=master --commit-dirty=true
