@@ -1,0 +1,26 @@
+// Twitch's dark greys in place of Kick's. Kick's surfaces, text and
+// borders all resolve through this one asphalt-black scale, so restating
+// it re-colors the whole site consistently. Values are Twitch's hinted-grey
+// scale, interpolated where Kick has more steps than Twitch.
+
+:root {
+	--edge-color-kick-asphaltBlack-1000: #000000;
+	--edge-color-kick-asphaltBlack-950: #0e0e10;
+	--edge-color-kick-asphaltBlack-900: #18181b;
+	--edge-color-kick-asphaltBlack-850: #1f1f23;
+	--edge-color-kick-asphaltBlack-800: #26262c;
+	--edge-color-kick-asphaltBlack-750: #323239;
+	--edge-color-kick-asphaltBlack-700: #3b3b44;
+	--edge-color-kick-asphaltBlack-650: #464650;
+	--edge-color-kick-asphaltBlack-600: #53535f;
+	--edge-color-kick-asphaltBlack-550: #6a6a78;
+	--edge-color-kick-asphaltBlack-500: #848494;
+	--edge-color-kick-asphaltBlack-450: #9a9aa6;
+	--edge-color-kick-asphaltBlack-400: #adadb8;
+	--edge-color-kick-asphaltBlack-350: #c0c0c9;
+	--edge-color-kick-asphaltBlack-300: #d3d3d9;
+	--edge-color-kick-asphaltBlack-250: #dedee3;
+	--edge-color-kick-asphaltBlack-200: #e6e6ea;
+	--edge-color-kick-asphaltBlack-150: #efeff1;
+	--edge-color-kick-asphaltBlack-100: #f7f7f8;
+}

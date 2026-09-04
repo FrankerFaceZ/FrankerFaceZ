@@ -184,6 +184,9 @@ export default class Line extends Module {
 			entry = props?.chatEntry,
 			data = entry?.data;
 
+		// The "New messages" divider is marked so it can be hidden by CSS.
+		row.classList.toggle('ffz--kick-divider', entry?.type === 'divider');
+
 		// Dividers, system entries and anything without a message body
 		// are left to Kick.
 		if ( ! data || typeof data.content !== 'string' || ! data.sender )
@@ -199,8 +202,11 @@ export default class Line extends Module {
 		const key = `${entry.id}\n${data.content}`,
 			state = this.rows.get(row);
 
-		if ( ! force && state && state.key === key && state.original === original && state.el.previousSibling === original && original.classList.contains(HIDDEN_CLASS) )
+		if ( ! force && state && state.key === key && state.original === original && state.el.previousSibling === original && original.classList.contains(HIDDEN_CLASS) ) {
+			// Kick may have rebuilt the name button; keep it our color.
+			this.colorUsername(body, state.msg);
 			return;
+		}
 
 		this.cleanup(row);
 
@@ -232,8 +238,22 @@ export default class Line extends Module {
 
 		original.classList.add(HIDDEN_CLASS);
 		original.after(el);
+		this.colorUsername(body, msg);
 
 		this.rows.set(row, {key, original, el, msg});
+	}
+
+	// The username is Kick's own button, colored inline. Kick's React only
+	// rewrites that style when the color prop changes, so a color set here
+	// sticks until the row is rebuilt, which brings us back here.
+	colorUsername(body, msg) {
+		const button = body.querySelector(':scope > div > button');
+		if ( ! button )
+			return;
+
+		const color = this.parent.getUserColor(msg.user);
+		if ( color && button.style.color !== color )
+			button.style.color = color;
 	}
 
 	cleanup(row) {
