@@ -1,0 +1,588 @@
+// The subset of Twitch's core-ui utility and component classes that
+// FrankerFaceZ's own UI (the control center, its widgets and the shared
+// components) is built with. Twitch's stylesheet provides these on
+// twitch.tv; nothing does on kick.com. Values follow Twitch's, using the
+// tokens from variables.scss, and utilities use !important as Twitch's do.
+//
+// Sizes are in rem, which inside the zoomed root is 10px, as on Twitch.
+
+@use 'sass:map';
+
+
+// ============================================================================
+// Display, Position, Overflow
+// ============================================================================
+
+.tw-block { display: block !important; }
+.tw-inline { display: inline !important; }
+.tw-inline-block { display: inline-block !important; }
+.tw-inline-flex, .tw-flex-inline { display: inline-flex !important; }
+.tw-flex, .tw-xs-flex, .tw-sm-flex, .tw-md-flex, .tw-lg-flex, .tw-xl-flex, .tw-xxl-flex { display: flex !important; }
+.tw-hide, .tw-hidden { display: none !important; }
+.tw-visible { visibility: visible !important; }
+
+.tw-hide-accessible {
+	position: absolute !important;
+	clip: rect(0 0 0 0);
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+}
+
+.tw-relative { position: relative !important; }
+.tw-absolute { position: absolute !important; }
+.tw-fixed { position: fixed !important; }
+.tw-top-0 { top: 0 !important; }
+.tw-right-0 { right: 0 !important; }
+.tw-bottom-0 { bottom: 0 !important; }
+.tw-left-0 { left: 0 !important; }
+
+.tw-z-below { z-index: var(--z-index-below) !important; }
+.tw-z-default { z-index: var(--z-index-default) !important; }
+.tw-z-above { z-index: var(--z-index-above) !important; }
+
+.tw-full-width { width: 100% !important; }
+.tw-full-height { height: 100% !important; }
+
+.tw-overflow-hidden { overflow: hidden !important; }
+.tw-overflow-auto { overflow: auto !important; }
+.tw-overflow-scroll { overflow: scroll !important; }
+.tw-overflow-visible { overflow: visible !important; }
+
+.tw-resize-none { resize: none !important; }
+.tw-resize-x { resize: horizontal !important; }
+.tw-resize-y { resize: vertical !important; }
+
+.tw-clearfix::after {
+	content: '';
+	display: table;
+	clear: both;
+}
+
+
+// ============================================================================
+// Flex
+// ============================================================================
+
+.tw-flex-row { flex-direction: row !important; }
+.tw-flex-row-reverse { flex-direction: row-reverse !important; }
+.tw-flex-column { flex-direction: column !important; }
+.tw-flex-column-reverse { flex-direction: column-reverse !important; }
+.tw-flex-wrap { flex-wrap: wrap !important; }
+.tw-flex-wrap-reverse { flex-wrap: wrap-reverse !important; }
+.tw-flex-nowrap { flex-wrap: nowrap !important; }
+
+@for $i from 0 through 4 {
+	.tw-flex-grow-#{$i} { flex-grow: $i !important; }
+	.tw-flex-shrink-#{$i} { flex-shrink: $i !important; }
+	.tw-item-order-#{$i} { order: $i !important; }
+}
+
+$flex-positions: (
+	start: flex-start,
+	end: flex-end,
+	center: center,
+	between: space-between,
+	around: space-around,
+	stretch: stretch,
+	baseline: baseline,
+	auto: auto
+);
+
+@each $name, $value in $flex-positions {
+	.tw-align-items-#{$name} { align-items: $value !important; }
+	.tw-align-self-#{$name} { align-self: $value !important; }
+	.tw-align-content-#{$name} { align-content: $value !important; }
+	.tw-justify-content-#{$name} { justify-content: $value !important; }
+}
+
+
+// ============================================================================
+// Spacing
+// ============================================================================
+
+$spacing: (
+	'0': 0,
+	'05': 0.5rem,
+	'1': 1rem,
+	'2': 2rem,
+	'3': 3rem,
+	'4': 4rem,
+	'5': 5rem,
+	'6': 6rem,
+	'7': 7rem,
+	'8': 8rem,
+	'9': 9rem,
+	'10': 10rem,
+	'auto': auto
+);
+
+$sides: (t: top, r: right, b: bottom, l: left);
+
+@each $key, $value in $spacing {
+	.tw-mg-#{$key} { margin: $value !important; }
+	.tw-mg-x-#{$key} { margin-left: $value !important; margin-right: $value !important; }
+	.tw-mg-y-#{$key} { margin-top: $value !important; margin-bottom: $value !important; }
+
+	@each $short, $side in $sides {
+		.tw-mg-#{$short}-#{$key} { margin-#{$side}: $value !important; }
+	}
+
+	@if $value != auto {
+		.tw-pd-#{$key} { padding: $value !important; }
+		.tw-pd-x-#{$key} { padding-left: $value !important; padding-right: $value !important; }
+		.tw-pd-y-#{$key} { padding-top: $value !important; padding-bottom: $value !important; }
+
+		@each $short, $side in $sides {
+			.tw-pd-#{$short}-#{$key} { padding-#{$side}: $value !important; }
+		}
+	}
+}
+
+
+// ============================================================================
+// Text
+// ============================================================================
+
+@for $i from 1 through 8 {
+	.tw-font-size-#{$i} { font-size: var(--font-size-#{$i}) !important; }
+}
+
+.tw-font-size-base { font-size: var(--font-size-base) !important; }
+
+.tw-regular { font-weight: var(--font-weight-normal) !important; }
+.tw-semibold, .tw-strong { font-weight: var(--font-weight-semibold) !important; }
+.tw-bold { font-weight: var(--font-weight-bold) !important; }
+.tw-italic { font-style: italic !important; }
+.tw-upcase { text-transform: uppercase !important; }
+.tw-capcase { text-transform: capitalize !important; }
+.tw-underline { text-decoration: underline !important; }
+.tw-strikethrough { text-decoration: line-through !important; }
+.tw-tabular-nums { font-variant-numeric: tabular-nums !important; }
+
+.tw-line-height-body { line-height: var(--line-height-body) !important; }
+.tw-line-height-heading { line-height: var(--line-height-heading) !important; }
+
+.tw-align-left { text-align: left !important; }
+.tw-align-center { text-align: center !important; }
+.tw-align-right { text-align: right !important; }
+.tw-align-justify { text-align: justify !important; }
+
+.tw-align-top { vertical-align: top !important; }
+.tw-align-middle { vertical-align: middle !important; }
+.tw-align-bottom { vertical-align: bottom !important; }
+.tw-align-baseline { vertical-align: baseline !important; }
+.tw-align-text-top { vertical-align: text-top !important; }
+.tw-align-text-bottom { vertical-align: text-bottom !important; }
+
+.tw-white-space-nowrap { white-space: nowrap !important; }
+.tw-white-space-pre-wrap { white-space: pre-wrap !important; }
+
+.tw-word-break-word { word-break: break-word !important; overflow-wrap: anywhere !important; }
+.tw-word-break-all { word-break: break-all !important; }
+.tw-word-break-normal { word-break: normal !important; }
+.tw-word-break-keep-all { word-break: keep-all !important; }
+
+.tw-ellipsis {
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+	white-space: nowrap !important;
+}
+
+.tw-line-clamp-2 {
+	display: -webkit-box !important;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden !important;
+}
+
+
+// ============================================================================
+// Colors
+// ============================================================================
+
+$text-colors: base alt alt-2 label hint input tooltip tag pill badge-alt badge-alt-2
+	brand prime live alert error info success warn
+	accessible-red accessible-green accessible-blue
+	link link-hover link-focus link-active link-visited
+	overlay overlay-alt overlay-brand overlay-error overlay-info overlay-success overlay-warn
+	overlay-link overlay-link-hover overlay-link-focus overlay-link-active overlay-link-visited
+	button button-text chat-line-mentioned chat-line-mentioning
+	channel-status-text-indicator-offline channel-status-text-indicator-offline-overlay
+	channel-status-text-indicator-hosting channel-status-text-indicator-hosting-overlay
+	channel-status-text-indicator-rerun channel-status-text-indicator-rerun-overlay;
+
+@each $name in $text-colors {
+	.tw-c-text-#{$name} { color: var(--color-text-#{$name}) !important; }
+}
+
+.tw-c-text-inherit { color: inherit !important; }
+
+$background-colors: body base alt alt-2 float modal modal-overlay placeholder
+	accent accent-alt accent-alt-2 brand top-nav tooltip pill prime live
+	error info success warn graph graph-fill chat chat-alt chat-header
+	chat-line-mentioned chat-line-mentioning scrollbar
+	overlay-alt overlay-brand overlay-error overlay-info overlay-success overlay-warn overlay-placeholder
+	tag-default tag-hover tag-active
+	subscriber-stream-tag-default subscriber-stream-tag-hover subscriber-stream-tag-active
+	range range-fill range-overlay range-overlay-fill image-selector-overlay;
+
+@each $name in $background-colors {
+	.tw-c-background-#{$name} { background-color: var(--color-background-#{$name}) !important; }
+}
+
+.tw-c-background-inherit { background-color: inherit !important; }
+
+$border-colors: base region overlay quote tag alert
+	brand brand-decorative error error-decorative info info-decorative
+	success success-decorative warn warn-decorative
+	overlay-brand overlay-brand-decorative overlay-error overlay-error-decorative
+	overlay-info overlay-info-decorative overlay-success overlay-success-decorative
+	overlay-warn overlay-warn-decorative
+	subscriber-stream-tag whisper-incoming whisper-outgoing
+	range-handle range-handle-focus spinner spinner-fill
+	image-selector image-selector-overlay image-selector-overlay-selected;
+
+@each $name in $border-colors {
+	.tw-c-border-#{$name} { border-color: var(--color-border-#{$name}) !important; }
+}
+
+
+// ============================================================================
+// Borders, Radii, Elevation
+// ============================================================================
+
+.tw-border { border: var(--border-width-default) solid var(--color-border-base) !important; }
+.tw-border-t { border-top: var(--border-width-default) solid var(--color-border-base) !important; }
+.tw-border-r { border-right: var(--border-width-default) solid var(--color-border-base) !important; }
+.tw-border-b { border-bottom: var(--border-width-default) solid var(--color-border-base) !important; }
+.tw-border-l { border-left: var(--border-width-default) solid var(--color-border-base) !important; }
+.tw-border--marked { border-width: var(--border-width-marked) !important; }
+
+$radii: none small medium large rounded;
+$corners: top-left top-right bottom-left bottom-right;
+
+@each $size in $radii {
+	.tw-border-radius-#{$size} { border-radius: var(--border-radius-#{$size}) !important; }
+
+	@each $corner in $corners {
+		.tw-border-#{$corner}-radius-#{$size} { border-#{$corner}-radius: var(--border-radius-#{$size}) !important; }
+	}
+}
+
+@for $i from 1 through 5 {
+	.tw-elevation-#{$i} { box-shadow: var(--shadow-elevation-#{$i}) !important; }
+}
+
+
+// ============================================================================
+// Interactables, Cards, Images
+// ============================================================================
+
+.tw-interactive {
+	cursor: pointer;
+}
+
+.tw-card {
+	display: flex;
+	position: relative;
+}
+
+.tw-card-body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.tw-image {
+	max-width: 100%;
+}
+
+.tw-avatar {
+	position: relative;
+	overflow: hidden;
+	background-color: inherit;
+}
+
+.tw-image-avatar {
+	width: 100%;
+	border-radius: var(--border-radius-rounded);
+}
+
+.tw-search-input {
+	position: relative;
+}
+
+
+// ============================================================================
+// Buttons
+// ============================================================================
+
+%button-base {
+	display: inline-flex;
+	position: relative;
+	align-items: center;
+	justify-content: center;
+
+	height: var(--button-size-default);
+	padding: 0;
+
+	font-size: var(--button-text-default);
+	font-weight: var(--font-weight-semibold);
+	line-height: 1;
+	white-space: nowrap;
+	text-decoration: none;
+
+	border: 0;
+	border-radius: var(--border-radius-medium);
+	cursor: pointer;
+	user-select: none;
+
+	background-color: var(--color-background-button-primary-default);
+	color: var(--color-text-button-primary);
+
+	&:hover {
+		background-color: var(--color-background-button-primary-hover);
+		color: var(--color-text-button-hover);
+		text-decoration: none;
+	}
+
+	&:active {
+		background-color: var(--color-background-button-primary-active);
+	}
+
+	&:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-button-focus);
+	}
+
+	&:disabled,
+	&--disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+
+	&--small {
+		height: var(--button-size-small);
+		font-size: var(--button-text-small);
+	}
+
+	&--large {
+		height: var(--button-size-large);
+		font-size: var(--button-text-large);
+	}
+
+	&--secondary {
+		background-color: var(--color-background-button-secondary-default);
+		color: var(--color-text-button-secondary);
+
+		&:hover {
+			background-color: var(--color-background-button-secondary-hover);
+			color: var(--color-text-button-secondary);
+		}
+
+		&:active {
+			background-color: var(--color-background-button-secondary-active);
+		}
+	}
+
+	&--overlay {
+		background-color: var(--color-background-button-overlay-secondary-default);
+		color: var(--color-text-button-overlay-secondary);
+
+		&:hover {
+			background-color: var(--color-background-button-overlay-secondary-hover);
+			color: var(--color-text-button-overlay-secondary);
+		}
+	}
+}
+
+.tw-button {
+	@extend %button-base;
+
+	&--text {
+		background-color: var(--color-background-button-text-default);
+		color: var(--color-text-button-text);
+
+		&:hover {
+			background-color: var(--color-background-button-text-hover);
+			color: var(--color-text-button-text);
+		}
+
+		&:active {
+			background-color: var(--color-background-button-text-active);
+		}
+	}
+
+	&--success,
+	&--state-success {
+		background-color: var(--color-background-button-success);
+		color: var(--color-text-button-success);
+
+		&:hover {
+			background-color: var(--color-background-button-success-hover);
+			color: var(--color-text-button-success-hover);
+		}
+	}
+
+	&--alert {
+		background-color: var(--color-background-button-alert);
+		color: var(--color-text-button-alert);
+
+		&:hover {
+			background-color: var(--color-background-button-alert-hover);
+			color: var(--color-text-button-alert-hover);
+		}
+	}
+
+	&--status {
+		background-color: var(--color-background-button-secondary-default);
+		color: var(--color-text-button-secondary);
+
+		&:hover {
+			background-color: var(--color-background-button-status-hover);
+			color: var(--color-text-button-status-hover);
+		}
+	}
+
+	&--purchase {
+		background-color: var(--color-background-button-purchase);
+	}
+
+	&--state-loading {
+		cursor: progress;
+	}
+
+	&--full-width {
+		width: 100%;
+	}
+
+	&__text {
+		display: flex;
+		align-items: center;
+		padding: 0 1rem;
+	}
+
+	&__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		&--left {
+			padding-left: 1rem;
+
+			+ .tw-button__text {
+				padding-left: 0.5rem;
+			}
+		}
+
+		&--right {
+			padding-right: 1rem;
+		}
+
+		&--status {
+			padding-left: 1rem;
+		}
+	}
+
+	&__text:has(+ .tw-button__icon--right) {
+		padding-right: 0.5rem;
+	}
+}
+
+.tw-core-button {
+	@extend %button-base;
+
+	&--primary {
+		background-color: var(--color-background-button-primary-default);
+		color: var(--color-text-button-primary);
+	}
+}
+
+.tw-core-button-label {
+	display: flex;
+	align-items: center;
+	padding: 0 1rem;
+
+	&--icon {
+		padding-left: 0.5rem;
+	}
+
+	&--dropdown {
+		padding-right: 0.5rem;
+	}
+}
+
+.tw-button-icon {
+	display: inline-flex;
+	position: relative;
+	align-items: center;
+	justify-content: center;
+
+	width: var(--button-size-default);
+	height: var(--button-size-default);
+	padding: 0;
+
+	border: 0;
+	border-radius: var(--border-radius-medium);
+	cursor: pointer;
+	user-select: none;
+
+	background-color: var(--color-background-button-text-default);
+	color: var(--color-fill-button-icon);
+
+	&:hover {
+		background-color: var(--color-background-button-text-hover);
+		color: var(--color-fill-button-icon-hover);
+	}
+
+	&:active {
+		background-color: var(--color-background-button-text-active);
+		color: var(--color-fill-button-icon-active);
+	}
+
+	&:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-button-focus);
+	}
+
+	&:disabled,
+	&--disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+
+	&--small {
+		width: var(--button-size-small);
+		height: var(--button-size-small);
+	}
+
+	&--large {
+		width: var(--button-size-large);
+		height: var(--button-size-large);
+	}
+
+	&--overlay {
+		background-color: var(--color-background-button-icon-overlay-default);
+		color: var(--color-text-overlay);
+
+		&:hover {
+			background-color: var(--color-background-button-icon-overlay-hover);
+			color: var(--color-text-overlay);
+		}
+	}
+
+	&--success { color: var(--color-text-success); }
+	&--alert { color: var(--color-text-alert); }
+	&--status { color: var(--color-text-alt-2); }
+
+	&__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+}

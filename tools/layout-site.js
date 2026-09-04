@@ -28,6 +28,7 @@ const STABLE_NAMES = [
 	'script.min.js',
 	'avalon.js',
 	'clips.js',
+	'kick.js',
 	'player.js',
 	'bridge.js',
 	'esbridge.js',

@@ -5,6 +5,12 @@
 	if ( /^(?:localhost\.rig|blog|im|chatdepot|tmi|api|brand|dev|gql|passport)\./.test(location.hostname) )
 		return;
 
+	// On Kick, only the main site is supported. Its other subdomains
+	// (player, help, dashboard, ...) have nothing for us yet.
+	const IS_KICK = /(?:^|\.)kick\.com$/.test(location.hostname);
+	if ( IS_KICK && ! /^(?:www\.)?kick\.com$/.test(location.hostname) )
+		return;
+
 	if ( /disable_frankerfacez/.test(location.search) )
 		return;
 
@@ -19,6 +25,7 @@
 		script = document.createElement('script');
 
 	let FLAVOR =
+		IS_KICK ? 'kick' :
 			HOST.includes('player') ? 'player' :
 				HOST.includes('clips') ? 'clips' :
 					(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon');

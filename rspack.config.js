@@ -58,7 +58,8 @@ const ENTRY_POINTS = {
 	esbridge: './src/esbridge.js',
 	player: './src/player.js',
 	avalon: './src/main.ts',
-	clips: './src/clips.js'
+	clips: './src/clips.js',
+	kick: './src/kick.ts'
 };
 
 if ( FOR_EXTENSION )

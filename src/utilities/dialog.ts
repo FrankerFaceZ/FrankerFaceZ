@@ -6,8 +6,6 @@
 
 import {EventEmitter} from 'utilities/events';
 
-import Site from 'site';
-
 
 let last_z = 9000;
 
@@ -39,11 +37,35 @@ export type DialogEvents = {
 };
 
 
+// Where dialogs go is up to the site. The site registers its selectors
+// when it is constructed (see BaseSite), which keeps this module free of
+// the build-time `site` alias, so a bundle for another site (Kick) does
+// not pull the Twitch site in with it. Until a site registers, dialogs go
+// straight into the body.
+const site_selectors: DialogSelectors = {
+	exclusive: 'body',
+	maximized: 'body',
+	normal: 'body'
+};
+
+export function setDialogSelectors(selectors: Partial<DialogSelectors>) {
+	for(const key of ['exclusive', 'maximized', 'normal'] as const) {
+		const value = selectors[key];
+		if ( typeof value === 'string' && value.length )
+			site_selectors[key] = value;
+	}
+}
+
+export function getDialogSelectors(): DialogSelectors {
+	return {...site_selectors};
+}
+
+
 export class Dialog extends EventEmitter<DialogEvents> {
 
-	static EXCLUSIVE = Site.DIALOG_EXCLUSIVE;
-	static MAXIMIZED = Site.DIALOG_MAXIMIZED;
-	static SELECTOR = Site.DIALOG_SELECTOR;
+	static get EXCLUSIVE() { return site_selectors.exclusive; }
+	static get MAXIMIZED() { return site_selectors.maximized; }
+	static get SELECTOR() { return site_selectors.normal; }
 
 	selectors: DialogSelectors;
 
@@ -234,8 +256,14 @@ export class Dialog extends EventEmitter<DialogEvents> {
 			container = this.getContainer(),
 			old_container = this._element.parentElement;
 
-		if ( container === old_container )
+		// When both sizes share a container (Kick), there is nothing to move,
+		// but the size still changed and listeners still need to hear it.
+		if ( container === old_container ) {
+			if ( container )
+				container.classList.toggle('ffz-has-dialog', maximized);
+			this.emit('resize');
 			return;
+		}
 
 		if ( maximized ) {
 			if ( container )

@@ -77,8 +77,8 @@ Your host needs to serve `dist/` over HTTPS with an
 - `/static/` holds every hashed file from `dist/` (chunks, styles, fonts, JSON).
   These names never change once published, so cache them for as long as you like.
 - `/script/` holds the stable, unhashed names the loader and the client request:
-  `avalon.js`, `clips.js`, `player.js`, `bridge.js`, `esbridge.js`,
-  `experiments.json` and `sample-chat-messages.json`. `dist/manifest.json` maps
+  `avalon.js`, `clips.js`, `kick.js`, `player.js`, `bridge.js`,
+  `esbridge.js`, `experiments.json` and `sample-chat-messages.json`. `dist/manifest.json` maps
   each stable name to its current hashed file. Do not cache these for long.
 
 To try a self-hosted build locally, `bun run serve:dist` serves `dist/` with
@@ -110,6 +110,18 @@ Only the client itself comes from your host. Emoji images, Twitch badge art,
 emote replacements, translations and add-ons are still loaded from the
 FrankerFaceZ CDN (`SERVER` in `src/utilities/constants.ts`), and emote and
 badge data still comes from the FrankerFaceZ API.
+
+Kick
+====
+
+The client also has a `kick` flavor that runs on kick.com. It is early: it
+loads the settings system, the FFZ Control Center (from a button in Kick's
+top navigation), add-ons and tooltips, and nothing that touches chat or the
+player yet. The loader picks it by hostname, the same way it picks the clips
+and player flavors, and it is served as `kick.js` beside the other stable
+names. The site module lives in `src/sites/kick`; its stylesheet carries
+Twitch's design tokens and the `tw-*` utility classes the control center is
+built with, since Kick's pages provide neither.
 
 Editor Settings
 ===============
