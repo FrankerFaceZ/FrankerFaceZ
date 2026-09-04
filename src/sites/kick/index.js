@@ -19,6 +19,40 @@ import MAIN_URL from './styles/kick-main.scss';
 // them on the root element.
 const ROOT_CLASSES = ['tw-root--theme-dark', 'tw-root--hover'];
 
+// Settings that can't do anything on Kick yet stay out of the control
+// center here. They configure parts of chat FFZ doesn't render on Kick
+// (usernames, badges, timestamps, colors, mod actions, deleted messages,
+// rich embeds) or Twitch-only features (bits, GIFs, AutoMod, GraphQL).
+// Add-on changelogs go too, since no add-on targets Kick yet.
+// Menu locations in key form; a location hides everything under it.
+const HIDDEN_SETTING_PATHS = [
+	'add_ons.changelog',
+	'chat.actions',
+	'chat.badges',
+	'chat.bits_and_cheering',
+	'chat.viewer_cards',
+	'chat.behavior.deleted_messages',
+	'chat.behavior.general',
+	'chat.appearance.chat_lines',
+	'chat.appearance.colors',
+	'chat.appearance.general',
+	'chat.appearance.usernames',
+	'chat.appearance.gifs',
+	'chat.appearance.rich_content',
+	'chat.filtering.general.auto_mod_filters',
+	'chat.filtering.block.badges',
+	'chat.filtering.highlight.badges',
+	'chat.filtering.highlight.users',
+	'chat.tooltips.badges',
+	'debugging.graph_ql'
+];
+
+// Individual settings, for sections that otherwise apply.
+const HIDDEN_SETTINGS = new Set([
+	'chat.fix-bad-emotes',
+	'chat.emotes.allow-gigantify'
+]);
+
 
 // ============================================================================
 // The Site
@@ -97,6 +131,18 @@ export default class KickSite extends BaseSite {
 			this.container.remove();
 			this.container = null;
 		}
+	}
+
+	// Asked by the control center for every setting it lists.
+	isSettingVisible(key, path) { // eslint-disable-line class-methods-use-this
+		if ( HIDDEN_SETTINGS.has(key) )
+			return false;
+
+		for(const hidden of HIDDEN_SETTING_PATHS)
+			if ( path === hidden || path.startsWith(`${hidden}.`) )
+				return false;
+
+		return true;
 	}
 
 	// The site API shared modules expect. Kick's session isn't wired up yet.
