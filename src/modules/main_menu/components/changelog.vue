@@ -41,7 +41,7 @@
 				</label>
 
 				<div class="ffz-il-tooltip ffz-balloon--md ffz-il-tooltip--wrap ffz-il-tooltip--down ffz-il-tooltip--align-right">
-					{{ t('home.changelog.about-nonversioned', 'Non-versioned commits are commits to the FrankerFaceZ repository not associated with a release build. They typically represent maintenance or contributions from the community that will be included in a subsequent release.') }}
+					{{ t('home.changelog.about-nonversioned', 'Non-versioned commits are commits to the repository not associated with a release build. They typically represent maintenance or contributions from the community that will be included in a subsequent release.') }}
 				</div>
 			</div>
 		</div>
@@ -120,7 +120,7 @@
 					>({{ formatDate(commit.date) }})</time>
 				</div>
 				<markdown :source="commit.message" />
-				<div v-for="entry in commit.segments" class="ffz--changelog-segment">
+				<div v-for="entry in commit.segments" :key="entry.key" class="ffz--changelog-segment">
 					<strong>{{ entry.key }}</strong>
 					<markdown :source="entry.value" />
 				</div>
@@ -147,19 +147,9 @@
 
 <script>
 
-import {get} from 'utilities/object';
-
-const TITLE_MATCH = /^(.+?)?\s*v?(\d+\.\d+\.\d+(?:-[a-z0-9-]+)?)$/i,
-	SETTING_REGEX = /\]\(~([^)]+)\)/g,
-	CHANGE_REGEX = /^\*\s*([^:]+?):\s*(.+)$/i,
-	ISSUE_REGEX = /(^|\s)#(\d+)\b/g;
-
-
-function linkify(text, repo) {
-	text = text.replace(SETTING_REGEX, (_, link) => `](~${link})`);
-
-	return text.replace(ISSUE_REGEX, (_, space, number) => `${space}[#${number}](https://github.com/FrankerFaceZ/${repo}/issues/${number})`);
-}
+import { GITHUB_REPOSITORY } from 'utilities/constants';
+import { get } from 'utilities/object';
+import { ADDONS_REPOSITORY, fetchCommits, fetchRecentCommits, findActiveSha, parseCommit } from '../changelog';
 
 
 export default {
@@ -170,7 +160,10 @@ export default {
 			error: false,
 			addon: this.item.addon,
 			addons: this.item.addons,
-			nonversioned: false,
+			// A fork's own work is not cut into releases, so show every
+			// commit of the main repository by default. The add-ons
+			// changelog is release entries only.
+			nonversioned: ! this.item.addons,
 			loading: false,
 			more: true,
 			commits: []
@@ -178,90 +171,37 @@ export default {
 	},
 
 	computed: {
-		display() {
-			window.thing = this;
+		repo() {
+			return this.addons ? ADDONS_REPOSITORY : GITHUB_REPOSITORY;
+		},
 
+		display() {
 			const out = [],
 				addons = this.addons ? this.item.getFFZ().resolve('addons') : null,
-				old_commit = this.t('home.changelog.nonversioned', 'Non-Versioned Commit');
+				entries = [];
 
 			for(const commit of this.commits) {
-				const input = commit.commit.message;
-				let title = old_commit,
+				const entry = parseCommit(commit, this.repo);
+				if ( entry )
+					entries.push(entry);
+			}
+
+			const active_sha = this.addons ? null : findActiveSha(entries, window.FrankerFaceZ.version_info.commit);
+
+			for(const entry of entries) {
+				if ( entry.auto_merge )
+					continue;
+
+				if ( ! this.nonversioned && ! entry.versioned )
+					continue;
+
+				let title = entry.title,
 					title_nav = null,
 					icon = null,
-					version = null,
-					author = null,
-					sections = {},
-					description = [];
-
-				if ( /\bskiplog\b/i.test(input) && ! this.nonversion )
-					continue;
-
-				const lines = input.split(/\r?\n/),
-					first = lines.shift(),
-					match = first ? TITLE_MATCH.exec(first) : null;
-
-				const date = new Date(commit.commit.author.date),
-					active = commit.sha === window.FrankerFaceZ.version_info.commit,
-					has_content = lines.length && match;
-
-				if ( ! this.nonversion && ! has_content )
-					continue;
-
-				let last_bit = null;
-
-				if ( match ) {
-					title = match[1];
-					version = match[2];
-				}
-
-				if ( has_content )
-					for(const line of lines) {
-						const trimmed = line.trim();
-						if ( ! trimmed.length ) {
-							if ( ! last_bit && description.length )
-								description.push(line);
-							continue;
-						}
-
-						const m = CHANGE_REGEX.exec(trimmed);
-						if ( ! m ) {
-							if ( ! last_bit )
-								description.push(line);
-							else
-								last_bit.push(trimmed);
-
-						} else {
-							const section = sections[m[1]] = sections[m[1]] || [];
-							last_bit = [m[2]];
-							section.push(last_bit);
-						}
-					}
-
-				else {
-					lines.unshift(first);
-					description = lines;
-				}
-
-				const message = description.join('\n').trim();
-
-				const segments = [];
-
-				for(const [key, val] of Object.entries(sections)) {
-					if ( ! val?.length )
-						continue;
-
-					const bit = val.map(x => `* ${x.join(' ')}`).join('\n').trim();
-
-					segments.push({
-						key,
-						value: linkify(bit, this.addons ? 'add-ons' : 'frankerfacez')
-					});
-				}
+					author = null;
 
 				if ( this.addons ) {
-					author = commit.author;
+					author = entry.author;
 
 					if ( title ) {
 						const ltitle = title.toLowerCase();
@@ -299,15 +239,15 @@ export default {
 					icon,
 					title,
 					title_nav,
-					version,
+					version: entry.version,
 					author,
-					message,
-					segments,
-					active,
-					hash: commit.sha && commit.sha.slice(0,7),
-					link: commit.html_url,
-					sha: commit.sha,
-					date
+					message: entry.message,
+					segments: entry.segments,
+					active: entry.sha === active_sha,
+					hash: entry.hash,
+					link: entry.link,
+					sha: entry.sha,
+					date: entry.date
 				});
 			}
 
@@ -341,24 +281,26 @@ export default {
 		},
 
 		async fetchMore() {
+			if ( this.loading )
+				return;
+
 			const last_commit = this.commits[this.commits.length - 1],
 				until = last_commit && get('commit.author.date', last_commit);
 
 			this.loading = true;
 
-			const url = new URL(`https://api.github.com/repos/frankerfacez/${this.addons ? 'add-ons' : 'frankerfacez'}/commits`);
-			if ( until )
-				url.searchParams.append('until', until);
-
-			if ( this.addon )
-				url.searchParams.append('path', `src/${this.addon.id}`);
-
 			try {
-				const resp = await fetch(url),
-					data = resp.ok ? await resp.json() : null;
+				// The first page of the main changelog is shared with the
+				// home page's recent changes.
+				const data = ( ! until && ! this.addon && ! this.addons )
+					? await fetchRecentCommits(this.repo)
+					: await fetchCommits(this.repo, {
+						until,
+						path: this.addon ? `src/${this.addon.id}` : null
+					});
 
-				if ( ! data || ! Array.isArray(data) ) {
-					this.more = false;
+				if ( ! data ) {
+					this.error = true;
 					return;
 				}
 
@@ -376,10 +318,11 @@ export default {
 				if ( ! added )
 					this.more = false;
 
-				this.loading = false;
-
 			} catch(err) {
 				this.error = true;
+
+			} finally {
+				this.loading = false;
 			}
 		}
 	}
