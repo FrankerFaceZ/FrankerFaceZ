@@ -221,7 +221,7 @@ export default {
 		this.item.on(':reload-required', this.onReload, this);
 	},
 
-	destroyed() {
+	unmounted() {
 		this.item.off(':ready', this.onReady, this);
 		this.item.off(':added', this.onAdded, this);
 		this.item.off(':reload-required', this.onReload, this);

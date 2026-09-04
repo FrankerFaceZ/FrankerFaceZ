@@ -1,3 +1,9 @@
-<template functional>
-	<div :style="{marginTop: props.item.top}" />
+<template>
+	<div :style="{marginTop: $attrs.item.top}" />
 </template>
+
+<script>
+export default {
+	inheritAttrs: false
+};
+</script>

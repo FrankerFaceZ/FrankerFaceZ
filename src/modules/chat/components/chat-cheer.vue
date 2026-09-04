@@ -1,11 +1,17 @@
-<template functional>
+<template>
 	<span
-		:data-prefix="props.token.prefix"
-		:data-amount="props.token.amount"
-		:data-tier="props.token.tier"
-		:data-individuals="JSON.stringify(props.token.individuals || null)"
-		:alt="props.token.text"
+		:data-prefix="$attrs.token.prefix"
+		:data-amount="$attrs.token.amount"
+		:data-tier="$attrs.token.tier"
+		:data-individuals="JSON.stringify($attrs.token.individuals || null)"
+		:alt="$attrs.token.text"
 		class="ffz-cheer ffz-tooltip"
 		data-tooltip-type="cheer"
 	/>
 </template>
+
+<script>
+export default {
+	inheritAttrs: false
+};
+</script>

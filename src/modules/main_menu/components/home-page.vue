@@ -239,7 +239,7 @@ export default {
 		ffz.on('addons:data-loaded', this.updateAddons, this);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.context.context.off('changed:theme.is-dark', this.updateTheme, this);
 
 		const ffz = this.context.getFFZ();

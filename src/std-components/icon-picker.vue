@@ -45,7 +45,7 @@
 						<div
 							v-for="i of visible"
 							:key="i[0]"
-							:aria-checked="val === i[0]"
+							:aria-checked="val === i[0] ? 'true' : 'false'"
 							:class="{'ffz-interactable--selected': val === i[0]}"
 							:data-title="i[1]"
 							class="ffz-tooltip ffz-icon ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive"

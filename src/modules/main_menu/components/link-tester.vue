@@ -374,7 +374,7 @@ export default {
 		}
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		if (this.es) {
 			this.es.close();
 			this.es = null;

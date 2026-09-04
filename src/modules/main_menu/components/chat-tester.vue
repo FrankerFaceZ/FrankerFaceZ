@@ -308,7 +308,7 @@ export default {
 			this.listenPubsub();
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.unlistenChat();
 		this.unlistenPubsub();
 

@@ -29,7 +29,7 @@ export default {
 		this.item.setListener(this.onEvent);
 	},
 
-	destroyed() {
+	unmounted() {
 		this.onEvent = null;
 		this.item.setListener(null);
 	},

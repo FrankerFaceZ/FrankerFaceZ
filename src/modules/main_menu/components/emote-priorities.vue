@@ -134,7 +134,7 @@ export default {
 		});
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		if ( this._sortable )
 			this._sortable.destroy();
 

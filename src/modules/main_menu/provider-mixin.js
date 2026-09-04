@@ -32,7 +32,7 @@ export default {
 		}
 	},
 
-	destroyed() {
+	unmounted() {
 		const provider = this.context.provider;
 
 		provider.off('changed', this._providerChange, this);

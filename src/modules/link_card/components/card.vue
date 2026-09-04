@@ -63,14 +63,12 @@
 							>
 								<simplebar classes="ffz-mh-30">
 									<div class="tw-pd-y-05">
-										<template v-for="(entry, idx) in moreActions">
+										<div v-for="(entry, idx) in moreActions" :key="idx" class="ffz--contents">
 											<div
 												v-if="entry.divider"
-												:key="idx"
 												class="tw-mg-1 tw-border-b"
 											/>
 											<a
-												:key="idx"
 												:disabled="entry.disabled"
 												:href="entry.href"
 												rel="noopener noreferrer"
@@ -91,7 +89,7 @@
 													/>
 												</div>
 											</a>
-										</template>
+										</div>
 									</div>
 								</simplebar>
 							</balloon>
@@ -394,7 +392,7 @@ export default {
 		this.createDrag();
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.ffzEmit(':close', this);
 		this.destroyDrag();
 		if ( this._on_resize ) {

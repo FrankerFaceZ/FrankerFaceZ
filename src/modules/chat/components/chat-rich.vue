@@ -62,7 +62,7 @@ export default {
 		this.handle_click = this.handleClick.bind(this);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.unlisten();
 		this.clearRefresh();
 

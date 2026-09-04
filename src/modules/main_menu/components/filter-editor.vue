@@ -196,7 +196,7 @@ export default {
 		});
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		if ( this.sortable ) {
 			this.sortable.destroy();
 			this.sortable = null;

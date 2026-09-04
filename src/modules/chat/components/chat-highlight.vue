@@ -1,5 +1,11 @@
-<template functional>
+<template>
 	<strong class="ffz--highlight">
-		{{ props.token.text }}
+		{{ $attrs.token.text }}
 	</strong>
 </template>
+
+<script>
+export default {
+	inheritAttrs: false
+};
+</script>

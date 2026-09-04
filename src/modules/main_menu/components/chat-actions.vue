@@ -193,27 +193,24 @@
 					:key="idx"
 					class="tw-flex tw-align-items-center tw-justify-content-center"
 				>
-					<template v-for="act in actions">
+					<div v-for="act in actions" :key="act.id" class="ffz--contents">
 						<div
 							v-if="act.type === 'space'"
-							:key="act.id"
 							class="tw-flex-grow-1"
 						/>
 						<div
 							v-else-if="act.type === 'space-small'"
-							:key="act.id"
 							class="tw-mg-x-1"
 						/>
 						<action-preview
 							v-else
-							:key="act.id"
 							:act="maybeDynamic(act.v)"
 							:process-color="color"
 							:renderers="data.renderers"
 							tooltip="true"
 							pad="true"
 						/>
-					</template>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -274,15 +271,13 @@
 									</div>
 								</div>
 							</button>
-							<template v-for="(preset, idx) in presets">
+							<div v-for="(preset, idx) in presets" :key="idx" class="ffz--contents">
 								<div
 									v-if="preset.divider"
-									:key="idx"
 									class="tw-mg-1 tw-border-b"
 								/>
 								<button
 									v-else
-									:key="idx"
 									:disabled="preset.disabled"
 									class="ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive tw-full-width"
 									@click="add(preset.value)"
@@ -299,7 +294,7 @@
 										/>
 									</div>
 								</button>
-							</template>
+							</div>
 						</div>
 					</simplebar>
 				</balloon>
@@ -622,7 +617,7 @@ export default {
 		});
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		if ( this._sortable )
 			this._sortable.destroy();
 

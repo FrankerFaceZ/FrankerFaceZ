@@ -1,3 +1,9 @@
-<template functional>
-	<span :style="{color:props.color}" :class="props.data.icon">{{ props.data.text }}</span>
+<template>
+	<span :style="{color:$attrs.color}" :class="$attrs.data.icon">{{ $attrs.data.text }}</span>
 </template>
+
+<script>
+export default {
+	inheritAttrs: false
+};
+</script>

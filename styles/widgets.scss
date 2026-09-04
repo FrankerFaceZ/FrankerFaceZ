@@ -549,3 +549,9 @@ textarea.ffz-input {
 .ffz-mh-30 {
 	max-height: 30rem;
 }
+
+// A keyed wrapper that adds no box of its own, for groups of siblings
+// rendered per item where both Vue 2 and Vue 3 need the key on one element.
+.ffz--contents {
+	display: contents;
+}
