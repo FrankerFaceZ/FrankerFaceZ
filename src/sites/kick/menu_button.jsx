@@ -65,7 +65,7 @@ export default class MenuButton extends Module {
 			el = (<div class="ffz-top-nav">
 				<button
 					class="ffz-top-nav__button ffz-tooltip"
-					onClick={e => this.handleClick(e, el)} // eslint-disable-line react/jsx-no-bind
+					onClick={e => this.handleClick(e, el)}  
 				>
 					<figure class="ffz-i-zreknarf" />
 				</button>
