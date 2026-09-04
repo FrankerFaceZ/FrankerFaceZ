@@ -1,8 +1,0 @@
-query FFZ_GetGifPickerConfig($channelID: ID!) {
-	gifPickerConfig(channelID: $channelID) {
-		isEnabled
-		isAllowlisted
-		apiKey
-		contentRating
-	}
-}

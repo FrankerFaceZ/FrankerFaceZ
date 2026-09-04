@@ -33,6 +33,10 @@ export function createMenuComponent(t, React) {
 			}
 
 			this.ref = null;
+			this.saveGifRef = ref => {
+				this.gifSection = ref;
+			};
+
 			this.saveScrollRef = ref => {
 				this.ref = ref;
 				this.createObserver();
@@ -95,6 +99,7 @@ export function createMenuComponent(t, React) {
 			//this.clickRefresh = this.clickRefresh.bind(this);
 			this.handleFilterChange = this.handleFilterChange.bind(this);
 			this.handleKeyDown = this.handleKeyDown.bind(this);
+			this.handleTabScroll = this.handleTabScroll.bind(this);
 			this.toggleVisibilityControl = this.toggleVisibilityControl.bind(this);
 		}
 
@@ -286,12 +291,12 @@ export function createMenuComponent(t, React) {
 			const tab = event.currentTarget.dataset.tab;
 
 			// The GIF tab is a mode of its own, even when tabs are combined.
-			if ( tab === 'gifs' ) {
+			if ( tab === 'gif' ) {
 				this.setState({tab});
 				return;
 			}
 
-			if ( this.state.combineTabs && this.state.tab === 'gifs' )
+			if ( this.state.combineTabs && this.state.tab === 'gif' )
 				this.setState({tab: null});
 
 			if ( tab === 'effect' )
@@ -405,7 +410,22 @@ export function createMenuComponent(t, React) {
 		}
 
 		handleFilterChange(event) {
-			this.setState(filterState(storage, event.target.value, this.state));
+			const value = event.target.value;
+			this.setState(filterState(storage, value, this.state));
+
+			if ( this.state.tab === 'gif' && this.gifSection )
+				this.gifSection.handleQueryChange(value);
+		}
+
+		handleTabScroll(event) {
+			if ( this.state.tab !== 'gif' || ! this.gifSection )
+				return;
+
+			const el = event.currentTarget,
+				remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+			if ( remaining < 200 )
+				this.gifSection.loadMore();
 		}
 
 		handleKeyDown(event) {
@@ -624,7 +644,7 @@ export function createMenuComponent(t, React) {
 			state.has_effect_tab = effects.length > 0;
 			state.hasNewEffects = effects.length > 0 && has_new_effects;
 			state.unlockedEffects = unlocked_effects;
-			state.has_gif_tab = t.canSendGifs(props, state);
+			state.has_gif_tab = !!(props.giphy_enabled && props.giphy_allowlisted);
 
 			return buildEmoji(t, state);
 		}
@@ -1419,13 +1439,15 @@ export function createMenuComponent(t, React) {
 					<div
 						ref={this.saveScrollRef}
 						class={`emote-picker__tab-content${whisper ? '-whisper' : ''} tw-full-width ffz-emote-menu--scroll-area`}
+						onScroll={this.handleTabScroll}
 					>
-						{is_gifs && <t.GifPanel
-							channel_id={this.props.channel_id}
-							search={this.state.filter}
-							api_key={t.getGiphyApiKey(this.props.channel_id)}
-							rating={t.getGifRating(this.props.channel_id)}
-							toggleVisibility={this.props.toggleVisibility}
+						{is_gifs && <t.GifSection
+							ref={this.saveGifRef}
+							apiKey={this.props.giphy_api_key}
+							rating={this.props.giphy_rating}
+							cooldown={this.props.giphy_cooldown}
+							query={this.state.filter}
+							onSelectGif={this.props.onSelectGif}
 						/>}
 						{! is_gifs && loading && this.renderLoading()}
 						{! is_gifs && !loading && sets && sets.map((data,idx) => data && (! visibility || (! data.emoji && ! data.is_favorites)) && createElement(
@@ -1499,7 +1521,7 @@ export function createMenuComponent(t, React) {
 
 		/** The search box, visibility toggle and tab buttons. */
 		renderControls(view) {
-			const {no_tabs, tab, is_emoji, visibility} = view;
+			const {no_tabs, tab, is_emoji, is_gifs, visibility} = view;
 
 			return (
 				<div class="emote-picker__controls-container tw-relative">
@@ -1509,6 +1531,8 @@ export function createMenuComponent(t, React) {
 								type="text"
 								class="tw-block tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-input tw-pd-x-1 tw-pd-y-05"
 								placeholder={
+									is_gifs ?
+										t.i18n.t('emote-menu.search-gifs', 'Search GIPHY') :
 									is_emoji ?
 										t.i18n.t('emote-menu.search-emoji', 'Search for Emoji') :
 										t.i18n.t('emote-menu.search', 'Search for Emotes')
@@ -1618,17 +1642,17 @@ export function createMenuComponent(t, React) {
 								</div>
 							</button>
 						</div>}
-						{this.state.has_gif_tab && <div class={`emote-picker-tab-item${tab === 'gifs' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
+						{this.state.has_gif_tab && <div class={`emote-picker-tab-item${tab === 'gif' ? ' emote-picker-tab-item--active' : ''} tw-relative`}>
 							<button
-								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'gifs' ? ' ffz-interactable--selected' : ''}`}
-								id="emote-picker__gifs"
-								data-tab="gifs"
+								class={`ffz-tooltip tw-block tw-full-width ffz-interactable ffz-interactable--hover-enabled ffz-interactable--default tw-interactive${tab === 'gif' ? ' ffz-interactable--selected' : ''}`}
+								id="emote-picker__gif"
+								data-tab="gif"
 								data-tooltip-type="html"
 								data-title={t.i18n.t('emote-menu.gifs', 'GIFs')}
 								onClick={this.clickTab}
 							>
 								<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
-									<span class="ffz--gif-tab-label">GIF</span>
+									<figure class="ffz-i-keyboard" />
 								</div>
 							</button>
 						</div>}
@@ -1662,10 +1686,10 @@ export function createMenuComponent(t, React) {
 				this.loadedOnce = true;
 
 			let tab, sets, is_emoji, is_favs, is_effect;
-			const is_gifs = this.state.has_gif_tab && this.state.tab === 'gifs';
+			const is_gifs = this.state.has_gif_tab && this.state.tab === 'gif';
 
 			if ( is_gifs ) {
-				tab = 'gifs';
+				tab = 'gif';
 
 			} else if ( no_tabs ) {
 				sets = [
@@ -1678,7 +1702,7 @@ export function createMenuComponent(t, React) {
 
 			} else {
 				tab = this.state.tab || t.chat.context.get('chat.emote-menu.default-tab');
-				if ( (tab === 'effect' && ! this.state.has_effect_tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'gifs' && ! this.state.has_gif_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
+				if ( (tab === 'effect' && ! this.state.has_effect_tab) || (tab === 'channel' && ! this.state.has_channel_tab) || (tab === 'gif' && ! this.state.has_gif_tab) || (tab === 'emoji' && ! this.state.has_emoji_tab) )
 					tab = 'all';
 
 				is_emoji = tab === 'emoji';

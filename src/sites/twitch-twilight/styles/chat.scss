@@ -587,49 +587,75 @@
 	scrollbar-width: thin;;
 }
 
-.ffz--emote-picker {
-	.ffz--gif-tab-label {
-		font-size: 1.1rem;
-		font-weight: 700;
-		letter-spacing: .05em;
-		line-height: 1.8rem;
+.ffz--gif-embed-wrapper {
+	border-radius: .4rem;
+	display: block;
+	margin: .4rem 0;
+	overflow: hidden;
+	width: fit-content;
+
+	.ffz--gif-report-overlay {
+		background: rgba(0,0,0,.5);
+		border-radius: var(--border-radius-rounded);
+		inset-inline-end: .4rem;
+		opacity: 0;
+		position: absolute;
+		top: .4rem;
+		transition: opacity .15s ease;
 	}
 
-	.ffz--gif-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: .5rem;
-		padding: .5rem;
+	&:hover .ffz--gif-report-overlay,
+	&:focus-within .ffz--gif-report-overlay {
+		opacity: 1;
 	}
 
-	.ffz--gif-item {
-		display: block;
-		padding: 0;
-		border: 0;
-		border-radius: .4rem;
-		overflow: hidden;
-		line-height: 0;
-		background: transparent;
+	&:hover .ffz--gif-embed__image {
+		filter: brightness(.75);
+	}
+
+	.ffz--gif-report-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		user-select: none;
+		border-radius: var(--border-radius-rounded);
+		height: var(--button-size-small);
+		width: var(--button-size-small);
+		background-color: var(--color-background-button-text-default);
+		color: var(--color-fill-button-icon);
+		border: none;
 		cursor: pointer;
 
-		&:hover,
-		&:focus {
-			outline: .2rem solid var(--color-border-brand, #9147ff);
-		}
-
-		&[disabled] {
-			cursor: default;
-			opacity: .5;
-		}
-
-		&.ffz--gif-item__sending {
-			opacity: 1;
-		}
-
-		img {
-			display: block;
-			width: 100%;
-			height: auto;
+		figure {
+			pointer-events: none;
+			font-size: 1.4rem;
 		}
 	}
+
+	.ffz--gif-embed__image {
+		border-radius: .4rem;
+		display: block;
+		max-height: var(--ffz-gif-size, 140px);
+		transition: filter .15s ease;
+		width: auto;
+	}
+}
+
+.ffz--gif-text-preview {
+	max-width: 20rem;
+	max-height: 15rem;
+	display: block;
+	border-radius: .4rem;
+}
+
+.ffz--gif-picker-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+	gap: .2rem;
+}
+
+.ffz--gif-picker-item--disabled {
+	cursor: default;
+	opacity: .5;
+	pointer-events: none;
 }

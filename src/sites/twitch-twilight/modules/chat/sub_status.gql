@@ -18,7 +18,6 @@ query FFZ_EmoteMenu_SubStatus($first: Int, $after: Cursor, $criteria: Subscripti
 					product {
 						id
 						emoteSetID
-						tier
 					}
 				}
 			}
