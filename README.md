@@ -133,7 +133,8 @@ under Chat > Emotes.
 Appearance settings on Kick, all opt-out, give the site Twitch's darker
 greys, tone Kick's green down a little, color usernames Twitch-style (with
 FFZ's readability adjustment), set chat's font size and message spacing,
-shrink badges, stripe alternate lines, show FFZ-formatted timestamps,
+shrink, reshape or hide badges (each type on its own, the way Twitch badges
+can be), stripe alternate lines, show FFZ-formatted timestamps,
 highlight lines that mention you, and hide the sidebar's recommended
 channels, the Gift Subs button, the banners above chat, the "New messages"
 divider, the row of emotes above the chat box and the counters below it.

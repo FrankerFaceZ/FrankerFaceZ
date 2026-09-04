@@ -13,6 +13,7 @@ import {createElement} from 'utilities/dom';
 import MenuButton from './menu_button';
 import Chat from './chat';
 import Appearance from './appearance';
+import Badges from './badges';
 
 import MAIN_URL from './styles/kick-main.scss';
 
@@ -86,14 +87,13 @@ export default class KickSite extends BaseSite {
 			'chat-banners': '#channel-chatroom div:has(> div > #chatroom-messages) > div:first-child, #channel-chatroom div:has(> #chatroom-messages) > div.absolute.w-full',
 			'chat-divider': '#chatroom-messages [data-index].ffz--kick-divider > div',
 			'quick-emotes': '#chatroom-footer > div > div:has(img[src*="/emotes/"]):not(:has(#chat-input-wrapper))',
-			'chat-stats': '#chatroom-footer div:has(> #chat-input-wrapper) + div > div:first-child',
-			'badges': '#chatroom-messages [data-testid^="identity-badge-"]',
-			'badges-subscriber': '#chatroom-messages [data-testid="identity-badge-subscriber"]'
+			'chat-stats': '#chatroom-footer div:has(> #chat-input-wrapper) + div > div:first-child'
 		};
 
 		this.inject('menu_button', MenuButton);
 		this.inject('chat', Chat);
 		this.inject(Appearance);
+		this.inject(Badges);
 
 		this.container = null;
 	}
