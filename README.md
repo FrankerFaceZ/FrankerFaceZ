@@ -89,6 +89,23 @@ server prints once to trust the certificate, and install `dist/script.min.js`
 as a userscript. HTTPS matters: Firefox refuses plain-HTTP scripts injected
 into twitch.tv.
 
+To publish on a static host, lay the build out first:
+
+```bash
+FFZ_CLIENT_HOST=https://ffz.example.pages.dev bun run build
+bun run layout:site
+```
+
+This writes `site/` with `static/` (every file), `script/` (copies under the
+stable names) and a `_headers` file carrying the CORS and caching rules, so any
+static host can serve it unchanged. The CI workflow runs the same layout and,
+on pushes to `master`, deploys `site/` to Cloudflare Pages when the
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets and the
+`CLOUDFLARE_PAGES_PROJECT` variable are set. Set `FFZ_CLIENT_HOST` to the Pages
+URL so the build loads from it, then install
+`https://<your project>.pages.dev/script/script.min.js` as a userscript once;
+every later merge updates what it loads.
+
 Only the client itself comes from your host. Emoji images, Twitch badge art,
 emote replacements, translations and add-ons are still loaded from the
 FrankerFaceZ CDN (`SERVER` in `src/utilities/constants.ts`), and emote and

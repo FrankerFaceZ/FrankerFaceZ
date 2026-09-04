@@ -11,3 +11,5 @@ stats.json
 *.iml
 credentials.json
 .fontello-session
+# Static-host layout produced by `bun run layout:site`.
+site
