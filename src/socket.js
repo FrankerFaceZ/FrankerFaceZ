@@ -216,7 +216,7 @@ export default class SocketClient extends Module {
 
 				clearTimeout(timer);
 
-				let token = null;
+				let token;
 				try {
 					token = JSON.parse(event.data);
 				} catch(err) {

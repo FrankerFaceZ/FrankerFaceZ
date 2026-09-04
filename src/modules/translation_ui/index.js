@@ -20,6 +20,11 @@ export default class TranslationUI extends Module {
 
 		this.load_requires = ['vue'];
 
+		/** @type {import('vue').default | null} */
+		this._vue = null;
+		/** @type {Element | null} */
+		this._dialog = null;
+
 		this.dialog = new Dialog(() => this.buildDialog());
 	}
 
@@ -90,6 +95,10 @@ export default class TranslationUI extends Module {
 	}
 
 
+	/**
+	 * The data object handed to the translation UI component.
+	 * @returns {Record<string, any>}
+	 */
 	getData() {
 		this.i18n.loadStrings();
 

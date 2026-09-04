@@ -19,7 +19,7 @@
 				<img
 					class="tw-block tw-image tw-image-avatar"
 					:src="image"
-				/>
+				>
 			</figure>
 			<div class="tw-flex-grow-1">
 				{{ collection.title }}
@@ -161,11 +161,11 @@ export default {
 					throw new Error('collection at limit');
 
 				const resp = await fetch(url, {
-						method: 'PUT',
-						headers: {
-							Authorization: `Bearer ${token}`
-						}
-					}).then(r => r.ok ? r.json() : null);
+					method: 'PUT',
+					headers: {
+						Authorization: `Bearer ${token}`
+					}
+				}).then(r => r.ok ? r.json() : null);
 
 				this.isInCollection = true;
 

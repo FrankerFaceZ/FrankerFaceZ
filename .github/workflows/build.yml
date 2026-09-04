@@ -29,12 +29,8 @@ jobs:
     - name: Install Dependencies
       run: bun install --frozen-lockfile
 
-    # Lint carries an inherited baseline of several hundred findings, so it
-    # reports without blocking until that is cleared. Typecheck is clean and
-    # blocks.
-    - name: Lint (non-blocking)
+    - name: Lint
       run: bun run eslint
-      continue-on-error: true
 
     - name: Typecheck
       run: bun run typecheck

@@ -105,7 +105,7 @@ export default class ModView extends Module {
 		const root = this.fine.getReactInstance(el);
 
 		let channel = null;
-		let node = this.fine.searchNode(root, n => {
+		this.fine.searchNode(root, n => {
 			let i = 0;
 			let state = n.memoizedState;
 			while(state != null && channel == null && i < 50) {
@@ -170,6 +170,7 @@ export default class ModView extends Module {
 			}
 		}
 
+		// eslint-disable-next-line no-async-promise-executor -- every await is caught and routed to the waiters
 		return new Promise(async (s, f) => {
 			if ( cache.updating ) {
 				cache.updating.push([s, f]);

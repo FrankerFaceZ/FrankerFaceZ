@@ -94,10 +94,12 @@
 						@click="toggleFavorite"
 					>
 						<span class="tw-button-icon__icon">
-							<figure :class="{
-								'ffz-i-star': isFavorite,
-								'ffz-i-star-empty': ! isFavorite
-							}" />
+							<figure
+								:class="{
+									'ffz-i-star': isFavorite,
+									'ffz-i-star-empty': ! isFavorite
+								}"
+							/>
 						</span>
 					</button>
 					<div class="tw-flex tw-flex-column tw-align-self-start">
@@ -175,20 +177,20 @@
 		<ReportForm
 			v-if="reporting"
 			:emote="emote"
-			:getFFZ="getFFZ"
+			:get-f-f-z="getFFZ"
 			@close="close"
 		/>
 		<component
-			v-if="! reporting && loaded && hasBody"
 			:is="bodyComponent"
+			v-if="! reporting && loaded && hasBody"
 			:emote="emote"
-			:getFFZ="getFFZ"
+			:get-f-f-z="getFFZ"
 			@close="close"
 		/>
 		<Modifiers
 			v-if="! reporting && raw_modifiers && raw_modifiers.length"
 			:raw_modifiers="raw_modifiers"
-			:getFFZ="getFFZ"
+			:get-f-f-z="getFFZ"
 		/>
 	</div>
 </template>
@@ -352,13 +354,13 @@ export default {
 
 			if ( entry.type === 'report-ffz' )
 				this.reporting = true;
-				this.$nextTick(() => this.handleResize());
+			this.$nextTick(() => this.handleResize());
 
 			if ( entry.type === 'report-twitch' ) {
 				if ( this.reportTwitchEmote(this.emote.id, this.emote.channel_id) )
 					this.close();
 
-				return;
+				
 			}
 		},
 
@@ -371,7 +373,7 @@ export default {
 				parent = document.body;
 
 			const box = el.getBoundingClientRect();
-			let pbox = parent.getBoundingClientRect();
+			const pbox = parent.getBoundingClientRect();
 
 			if ( box.top < pbox.top ) {
 				el.style.top = `${el.offsetTop + (pbox.top - box.top)}px`;

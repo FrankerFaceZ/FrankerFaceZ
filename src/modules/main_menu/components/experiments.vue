@@ -60,7 +60,9 @@
 			>
 				<div class="tw-elevation-1 tw-c-background-base tw-border tw-pd-y-05 tw-pd-x-1 tw-mg-y-05 tw-flex tw-flex-nowrap">
 					<div class="tw-flex-grow-1">
-						<h4 class="ffz-font-size-4">{{ exp.name ? exp.name : key }}</h4>
+						<h4 class="ffz-font-size-4">
+							{{ exp.name ? exp.name : key }}
+						</h4>
 						<div v-if="exp.description" class="description">
 							{{ exp.description }}
 						</div>
@@ -160,7 +162,9 @@
 						</div>
 
 						<div class="tw-flex-grow-1">
-							<h4 class="ffz-font-size-4">{{ exp.name }}</h4>
+							<h4 class="ffz-font-size-4">
+								{{ exp.name }}
+							</h4>
 							<div class="description">
 								{{ exp.remainder }}
 							</div>

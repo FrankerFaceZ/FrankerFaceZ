@@ -99,7 +99,7 @@ export default class Emotes extends Module {
 		const overrides = {},
 			warnings = {};
 
-		overrides.addFilter = (filter) => {
+		overrides.addFilter = filter => {
 			if ( filter )
 				filter.__source = addon_id;
 
@@ -108,7 +108,7 @@ export default class Emotes extends Module {
 
 		overrides.setProvider = (provider, data) => {
 			if ( is_dev && ! id_checker.test(provider) )
-					module.log.warn('[DEV-CHECK] Call to emotes.setProvider did not include addon ID in provider:', provider);
+				module.log.warn('[DEV-CHECK] Call to emotes.setProvider did not include addon ID in provider:', provider);
 
 			if ( data )
 				data.__source = addon_id;
@@ -167,7 +167,7 @@ export default class Emotes extends Module {
 		}
 
 		if ( is_dev ) {
-			overrides.removeFilter = (filter) => {
+			overrides.removeFilter = filter => {
 				let type;
 				if ( typeof filter === 'string' ) type = filter;
 				else type = filter.type;
@@ -533,7 +533,7 @@ export default class Emotes extends Module {
 			return;
 
 		// Get the current channel.
-		let room_id = this.parent.context.get('context.channelID'),
+		const room_id = this.parent.context.get('context.channelID'),
 			room_login = this.parent.context.get('context.channel');
 
 		// And now get the current user's available emote sets.
@@ -1742,9 +1742,9 @@ export default class Emotes extends Module {
 		if ( ! set )
 			throw new Error(`Invalid emote set "${set_id}"`);
 
-		let processed = this.processEmote(emote, set_id);
+		const processed = this.processEmote(emote, set_id);
 		if ( ! processed )
-			throw new Error("Invalid emote data object.");
+			throw new Error('Invalid emote data object.');
 
 		const is_disabled = this.shouldFilterEmote(processed, set, set_id);
 
@@ -1757,7 +1757,7 @@ export default class Emotes extends Module {
 		// 6. Old emote disabled. New emote disabled.
 
 		// Are we removing a disabled emote?
-		let removed = set.disabled_emotes[processed.id];
+		const removed = set.disabled_emotes[processed.id];
 		if ( removed ) {
 			delete set.disabled_emotes[processed.id];
 			set.disabled_count--;
@@ -1946,7 +1946,7 @@ export default class Emotes extends Module {
 		const bad_emotes = [];
 
 		for(const emote of ems) {
-			let processed = this.processEmote(emote, set_id);
+			const processed = this.processEmote(emote, set_id);
 			if ( ! processed ) {
 				bad_emotes.push(emote);
 				continue;
@@ -2044,7 +2044,7 @@ export default class Emotes extends Module {
 		}
 
 		if ( emote.modifier && emote.mask?.[1] ) {
-			output = (output || '') + `.modified-emote[data-modifiers~="${emote.id}"] > .chat-line__message--emote {
+			output = `${output || ''  }.modified-emote[data-modifiers~="${emote.id}"] > .chat-line__message--emote {
 	-webkit-mask-image: url("${emote.mask[1]}");
 	-webkit-mask-position: center center;
 }`

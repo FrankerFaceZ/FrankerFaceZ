@@ -244,17 +244,17 @@ export default class Chat extends Module {
 			user_ids: 'Please use getUser()'
 		}, true);
 
-		overrides.iterateUsers = function*() {
+		overrides.iterateUsers = function *() {
 			for(const user of this.iterateUsers())
 				yield new Proxy(user, user_proxy);
 		}
 
-		overrides.iterateRooms = function*() {
+		overrides.iterateRooms = function *() {
 			for(const room of this.iterateRooms())
 				yield new Proxy(room, room_proxy);
 		}
 
-		overrides.iterateAllRoomsAndUsers = function*() {
+		overrides.iterateAllRoomsAndUsers = function *() {
 			for(const thing of this.iterateAllRoomsAndUsers())
 				yield new Proxy(thing, (thing instanceof Room)
 					? room_proxy
@@ -303,13 +303,13 @@ export default class Chat extends Module {
 
 		if ( is_dev ) {
 			overrides.getUser = (...args) => {
-				let result = this.getUser(...args);
+				const result = this.getUser(...args);
 				if ( result )
 					return new Proxy(result, user_proxy);
 			}
 
 			overrides.getRoom = (...args) => {
-				let result = this.getRoom(...args);
+				const result = this.getRoom(...args);
 				if ( result )
 					return new Proxy(result, room_proxy);
 			}
@@ -419,7 +419,7 @@ export default class Chat extends Module {
 			this.emit('chat:reload-data');
 		});
 
-		this.on('load_tracker:complete:chat-data', (list) => {
+		this.on('load_tracker:complete:chat-data', list => {
 			if ( this.triggered_reload ) {
 				const sc = this.resolve('site.chat');
 				if ( sc?.addNotice )
@@ -489,7 +489,7 @@ export default class Chat extends Module {
 
 					result.then(value => {
 						// If something is already running, don't override it.
-						let info = this._link_info[url];
+						const info = this._link_info[url];
 						if ( info )
 							return;
 
@@ -883,7 +883,7 @@ export default class Chat extends Module {
 	}
 
 
-	standardizeMessage(msg) { // eslint-disable-line class-methods-use-this
+	standardizeMessage(msg) {  
 		if ( ! msg )
 			return msg;
 
@@ -974,7 +974,7 @@ export default class Chat extends Module {
 	}
 
 
-	standardizeEmotes(msg) { // eslint-disable-line class-methods-use-this
+	standardizeEmotes(msg) {  
 		if ( msg.emotes && msg.message ) {
 			const emotes = {},
 				chars = split_chars(msg.message);
@@ -1388,7 +1388,7 @@ export default class Chat extends Module {
 	}
 
 
-	pluckRichContent(tokens, msg) { // eslint-disable-line class-methods-use-this
+	pluckRichContent(tokens, msg) {  
 		if ( ! this.context.get('chat.rich.enabled') || this.context.get('chat.rich.minimum-level') > this.getUserLevel(msg) )
 			return;
 
@@ -1462,7 +1462,7 @@ export default class Chat extends Module {
 				emote = emote_set?.emotes?.[token.id];
 
 			if ( emote ) {
-				let urls = (animated ? emote.animated : null) ?? emote.urls;
+				const urls = (animated ? emote.animated : null) ?? emote.urls;
 				let pair = getBiggestImage(urls);
 				if (! pair )
 					return null;

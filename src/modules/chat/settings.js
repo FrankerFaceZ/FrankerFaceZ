@@ -65,9 +65,7 @@ export function defineSettings(chat) {
 	});*/
 
 	chat.settings.add('debug.link-resolver.source', {
-		process: (ctx, val) => {
-			return LINK_DATA_HOSTS[val] ?? LINK_DATA_HOSTS.Production;
-		},
+		process: (ctx, val) => LINK_DATA_HOSTS[val] ?? LINK_DATA_HOSTS.Production,
 
 		default: null,
 		ui: {

@@ -45,7 +45,7 @@ export function createEmojiTonePicker(t, React) {
 			}
 		}
 
-		pickRandomEmoji() { // eslint-disable-line class-methods-use-this
+		pickRandomEmoji() {  
 			const possibilities = this.props.choices,
 				pick = Math.floor(Math.random() * possibilities.length);
 

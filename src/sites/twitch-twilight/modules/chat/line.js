@@ -599,7 +599,7 @@ export default class ChatLine extends Module {
 								hl_position === 1
 									? 'ffz-highlight-tags__above'
 									: 'tw-mg-r-05'
-								}`
+							}`
 						}, highlight_tags);
 					else
 						highlight_tags = null;
@@ -656,7 +656,7 @@ export default class ChatLine extends Module {
 										className: 'ffz-font-size-8 tw-mg-t-05'
 									}, t.i18n.t('chat.sent-from-source', 'Sent from {source}', {source: source.displayName ?? source.login}))
 									: null
-								]
+							]
 							)
 						]
 						: want_source_tip

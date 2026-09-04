@@ -42,12 +42,16 @@
 		<div v-if="page == 'versions'">
 			<table>
 				<thead class="tw-border-b tw-pd-b-05 tw-mg-b-05 tw-strong">
-					<th class="tw-pd-r-1">{{ t('socket.info.version', 'Version') }}</th>
+					<th class="tw-pd-r-1">
+						{{ t('socket.info.version', 'Version') }}
+					</th>
 					<th>{{ t('socket.info.count', 'Count') }}</th>
 				</thead>
 				<tbody>
 					<tr v-for="entry in version_list" :key="entry[0]">
-						<td class="tw-pd-r-1">{{ entry[0] }}</td>
+						<td class="tw-pd-r-1">
+							{{ entry[0] }}
+						</td>
 						<td>{{ tNumber(entry[1]) }}</td>
 					</tr>
 				</tbody>
@@ -56,12 +60,16 @@
 		<div v-if="page == 'commands'">
 			<table>
 				<thead class="tw-border-b tw-pd-b-05 tw-mg-b-05 tw-strong">
-					<th class="tw-pd-r-1">{{ t('socket.info.command', 'Command') }}</th>
+					<th class="tw-pd-r-1">
+						{{ t('socket.info.command', 'Command') }}
+					</th>
 					<th>{{ t('socket.info.count', 'Count') }}</th>
 				</thead>
 				<tbody>
 					<tr v-for="entry in command_list" :key="entry[0]">
-						<td class="tw-pd-r-1">{{ entry[0] }}</td>
+						<td class="tw-pd-r-1">
+							{{ entry[0] }}
+						</td>
 						<td>{{ tNumber(entry[1]) }}</td>
 					</tr>
 				</tbody>

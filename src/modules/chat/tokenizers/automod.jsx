@@ -50,7 +50,7 @@ export const AutomoddedTerms = {
 
 
 		return [
-			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-border-b tw-mg-b-05">{  
 				this.i18n.t('chat.filtering.automod-term', 'AutoMod Blocked Term')
 			}</div>),
 			this.i18n.t('chat.filtering.automod-why', 'This was flagged as: '),
