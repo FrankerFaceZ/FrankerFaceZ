@@ -130,6 +130,11 @@ channel slug and its value a Twitch login, or `null` to show no channel
 emotes there. The whole behaviour can be turned off in the control center
 under Chat > Emotes.
 
+Appearance settings on Kick, all opt-out, give the site Twitch's darker
+greys, tone Kick's green down a little, color usernames Twitch-style (with
+FFZ's readability adjustment) and hide the sidebar's recommended channels,
+the banners above chat and the "New messages" divider.
+
 The loader picks the flavor by hostname, the same way it picks the clips
 and player flavors, and it is served as `kick.js` beside the other stable
 names. The site module lives in `src/sites/kick`; its stylesheet carries

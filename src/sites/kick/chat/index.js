@@ -17,6 +17,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
+import {ColorAdjuster} from 'utilities/color';
 import {DEBUG, CLIENT_SERVER} from 'utilities/constants';
 import {fetchJSON, has} from 'utilities/object';
 import {getBuster} from 'utilities/time';
@@ -30,6 +31,22 @@ import ROOMS_URL from '../kick-rooms.json';
 // Twitch logins: lowercase letters, digits and underscores.
 const TWITCH_LOGIN = /^[a-z0-9_]{1,25}$/;
 
+// The colors Twitch gives users who haven't picked one, chosen from the
+// first and last characters of the login.
+const TWITCH_DEFAULT_COLORS = [
+	'#FF0000', '#0000FF', '#008000', '#B22222', '#FF7F50',
+	'#9ACD32', '#FF4500', '#2E8B57', '#DAA520', '#D2691E',
+	'#5F9EA0', '#1E90FF', '#FF69B4', '#8A2BE2', '#00FF7F'
+];
+
+export function getTwitchDefaultColor(login) {
+	if ( ! login )
+		return null;
+
+	const n = login.charCodeAt(0) + login.charCodeAt(login.length - 1);
+	return TWITCH_DEFAULT_COLORS[n % TWITCH_DEFAULT_COLORS.length];
+}
+
 
 export default class Chat extends Module {
 	constructor(...args) {
@@ -39,6 +56,7 @@ export default class Chat extends Module {
 		this.inject('i18n');
 
 		this.inject('chat');
+		this.inject('chat.overrides');
 
 		// Registered rather than injected so it is enabled from here, after
 		// the tokenizer is in place, instead of as a prerequisite of this
@@ -49,6 +67,24 @@ export default class Chat extends Module {
 
 		this.channel = null;
 		this.channel_id = null;
+
+		// Adjusts username colors for readability against the chat
+		// background, per the Chat > Appearance > Colors settings.
+		this.colors = new ColorAdjuster('#0e0e10', 1, 4.5);
+
+		this.settings.add('kick.chat.username-colors', {
+			default: 1,
+			ui: {
+				path: 'Chat > Appearance >> Usernames',
+				title: 'Username Colors',
+				description: 'Kick lets users pick from a set of bright colors. Twitch-style colors are picked from the username instead, the way Twitch colors users who haven\'t chosen one. Both are adjusted for readability per the Colors section.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Kick\'s'},
+					{value: 1, title: 'Twitch-style'}
+				]
+			}
+		});
 
 		this.room = null;
 		this.room_login = null;
@@ -73,6 +109,12 @@ export default class Chat extends Module {
 	onEnable() {
 		this.chat.addTokenizer(KickEmotes);
 		this.loadMappings();
+
+		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
+		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
+		this.settings.getChanges('kick.chat.username-colors', this.recolorLines, this);
+		this.updateColors();
+
 		return this.line.enable();
 	}
 
@@ -81,6 +123,41 @@ export default class Chat extends Module {
 		this.setRoom(null);
 		this.updateContext(null, null);
 		return this.line.disable();
+	}
+
+
+	// ========================================================================
+	// Username Colors
+	// ========================================================================
+
+	updateColors() {
+		const c = this.colors;
+		c.mode = this.chat.context.get('chat.adjustment-mode');
+		c.contrast = this.chat.context.get('chat.adjustment-contrast');
+		this.recolorLines();
+	}
+
+	recolorLines() {
+		this.line.rerenderLines();
+	}
+
+	// The color to show a user's name in: an FFZ override if there is one,
+	// otherwise Kick's or a Twitch-style color per the setting, adjusted
+	// for readability.
+	getUserColor(user) {
+		if ( ! user )
+			return null;
+
+		let color = this.overrides.getColor(user.id);
+		if ( ! color )
+			color = this.settings.get('kick.chat.username-colors') === 1
+				? getTwitchDefaultColor(user.login || user.displayName)
+				: user.color;
+
+		if ( ! color )
+			return null;
+
+		return this.colors.process(color);
 	}
 
 
