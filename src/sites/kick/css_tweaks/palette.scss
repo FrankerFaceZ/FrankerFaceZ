@@ -27,3 +27,13 @@
 	// Kick's default text is pure white; Twitch's is this.
 	--edge-color-kick-asphaltBlack-50: #efeff1;
 }
+
+// Kick paints the chat column in the same grey as the page. Twitch's chat
+// sits a step lighter, so it reads as its own panel.
+#channel-chatroom {
+	background-color: var(--edge-color-kick-asphaltBlack-900) !important;
+
+	.bg-surface-bg-lowest {
+		background-color: var(--edge-color-kick-asphaltBlack-900) !important;
+	}
+}
