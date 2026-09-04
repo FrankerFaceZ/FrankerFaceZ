@@ -1,0 +1,9 @@
+// Kick draws badges at 18/13 of the font size; Twitch's are 18px at a 13px
+// font, but sit far lighter. One em reads closer to Twitch's weight.
+
+#chatroom-messages [data-testid^="identity-badge-"],
+#chatroom-messages [data-testid^="identity-badge-"] img,
+#chatroom-messages [data-testid^="identity-badge-"] svg {
+	width: 1em !important;
+	height: 1em !important;
+}

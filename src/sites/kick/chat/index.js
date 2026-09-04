@@ -57,6 +57,7 @@ export default class Chat extends Module {
 
 		this.inject('chat');
 		this.inject('chat.overrides');
+		this.inject('site.css_tweaks');
 
 		// Registered rather than injected so it is enabled from here, after
 		// the tokenizer is in place, instead of as a prerequisite of this
@@ -68,9 +69,11 @@ export default class Chat extends Module {
 		this.channel = null;
 		this.channel_id = null;
 
-		// Adjusts username colors for readability against the chat
-		// background, per the Chat > Appearance > Colors settings.
+		// Adjust username colors for readability against the chat
+		// background, and highlight backgrounds against the text, per the
+		// Chat > Appearance > Colors settings.
 		this.colors = new ColorAdjuster('#0e0e10', 1, 4.5);
+		this.inverse_colors = new ColorAdjuster('#dad8de', 1, 4.5);
 
 		this.settings.add('kick.chat.username-colors', {
 			default: 1,
@@ -122,8 +125,11 @@ export default class Chat extends Module {
 
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
+		this.chat.context.on('changed:chat.filtering.mention-color', this.updateMentionColor, this);
+		this.chat.context.on('changed:chat.filtering.highlight-mentions', this.recolorLines, this);
 		this.settings.getChanges('kick.chat.username-colors', this.recolorLines, this);
 		this.settings.getChanges('kick.chat.my-color', this.recolorLines, this);
+		this.settings.getChanges('kick.chat.timestamps', this.recolorLines, this);
 		this.updateColors();
 
 		return this.line.enable();
@@ -142,10 +148,26 @@ export default class Chat extends Module {
 	// ========================================================================
 
 	updateColors() {
-		const c = this.colors;
-		c.mode = this.chat.context.get('chat.adjustment-mode');
-		c.contrast = this.chat.context.get('chat.adjustment-contrast');
+		const mode = this.chat.context.get('chat.adjustment-mode'),
+			contrast = this.chat.context.get('chat.adjustment-contrast');
+
+		for(const c of [this.colors, this.inverse_colors]) {
+			c.mode = mode;
+			c.contrast = contrast;
+		}
+
+		this.updateMentionColor();
 		this.recolorLines();
+	}
+
+	// The custom highlight color for mentions, as a variable the
+	// chat-mention-bg tweak reads (see appearance.js).
+	updateMentionColor() {
+		const raw = this.chat.context.get('chat.filtering.mention-color');
+		if ( raw )
+			this.css_tweaks.setVariable('chat-mention-color', this.inverse_colors.process(raw));
+		else
+			this.css_tweaks.deleteVariable('chat-mention-color');
 	}
 
 	recolorLines() {

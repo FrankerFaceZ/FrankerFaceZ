@@ -1,0 +1,8 @@
+// The background for lines that mention the viewer: the custom highlight
+// color, which the chat module sets as a variable after adjusting it for
+// readability, or a translucent red without one. Lines with their own
+// highlight color get it inline from the line module instead.
+
+#chatroom-messages .ffz-mentioned:not(.ffz-custom-color) {
+	background-color: var(--ffz-chat-mention-color, rgba(255, 0, 0, 0.3));
+}

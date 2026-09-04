@@ -1,0 +1,9 @@
+// Alternating row backgrounds. Rows are marked even or odd by the line
+// module from their index in Kick's list, so the pattern holds as the
+// virtual list scrolls. Highlighted lines keep their own background, and
+// Kick's own hover color, a class with higher specificity, still shows on
+// top.
+
+#chatroom-messages [data-index].ffz--kick-even div[style*="--chatroom-font-size"]:not(.ffz-custom-color):not(.ffz-mentioned) {
+	background-color: rgba(255, 255, 255, 0.05);
+}
