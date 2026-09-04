@@ -16,47 +16,60 @@
 //
 // Served over HTTPS with a self-signed certificate, because Firefox refuses
 // a plain-HTTP script injected into the HTTPS twitch.tv page (Chrome allows
-// it for localhost). The certificate the dev server generated is reused when
-// present; otherwise one is created with openssl. Trust it once by opening
-// the loader URL printed below. Set HTTP=1 to serve plain HTTP instead.
+// it for localhost). The certificate is kept under ~/.frankerfacez/serve-dist
+// (created with openssl on first run) so reinstalls do not discard one the
+// browser already trusts. Trust it once by opening the loader URL printed
+// below. Set HTTP=1 to serve plain HTTP instead.
 // ============================================================================
 
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
 
 const { execSync } = require('node:child_process');
 
 const PORT = Number(process.env.PORT) || 8001;
 const USE_HTTP = process.env.HTTP === '1';
 
+// The certificate and the client log live outside the repository, so a
+// reinstall of node_modules or a fresh worktree does not throw away a
+// certificate the browser already trusts. Override with FFZ_SERVE_DIR.
+const SERVE_DIR = path.resolve(process.env.FFZ_SERVE_DIR || path.join(os.homedir(), '.frankerfacez', 'serve-dist'));
+fs.mkdirSync(SERVE_DIR, {recursive: true});
+
+const CERT_PATH = path.join(SERVE_DIR, 'localhost.pem');
+const CLIENT_LOG = path.join(SERVE_DIR, 'client.log');
+
 // Find or create a self-signed certificate for localhost.
 function findCertificate() {
+	if ( fs.existsSync(CERT_PATH) )
+		return CERT_PATH;
+
+	// Adopt a certificate an earlier version or the dev server left under
+	// node_modules, so the one the browser trusts keeps working.
 	const root = path.resolve(__dirname, '..');
-	const candidates = [
+	for(const legacy of [
+		path.join(root, 'node_modules', '.cache', 'ffz-serve-dist', 'server.pem'),
 		path.join(root, 'node_modules', '.cache', 'rspack-dev-server', 'server.pem'),
-		path.join(root, 'node_modules', '.cache', 'webpack-dev-server', 'server.pem'),
-		path.join(root, 'node_modules', '.cache', 'ffz-serve-dist', 'server.pem')
-	];
+		path.join(root, 'node_modules', '.cache', 'webpack-dev-server', 'server.pem')
+	]) {
+		if ( fs.existsSync(legacy) ) {
+			fs.copyFileSync(legacy, CERT_PATH);
+			return CERT_PATH;
+		}
+	}
 
-	for(const file of candidates)
-		if ( fs.existsSync(file) )
-			return file;
-
-	const target = candidates[candidates.length - 1];
-	fs.mkdirSync(path.dirname(target), {recursive: true});
 	try {
-		execSync(`openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" -keyout "${target}" -out "${target}.crt"`, {stdio: 'ignore'});
-		fs.appendFileSync(target, fs.readFileSync(`${target}.crt`));
-		fs.unlinkSync(`${target}.crt`);
-		return target;
+		execSync(`openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" -keyout "${CERT_PATH}" -out "${CERT_PATH}.crt"`, {stdio: 'ignore'});
+		fs.appendFileSync(CERT_PATH, fs.readFileSync(`${CERT_PATH}.crt`));
+		fs.unlinkSync(`${CERT_PATH}.crt`);
+		return CERT_PATH;
 	} catch(err) {
 		return null;
 	}
 }
 const DIST = path.resolve(__dirname, '..', 'dist');
 const MANIFEST_PATH = path.join(DIST, 'manifest.json');
-const CLIENT_LOG = path.resolve(__dirname, '..', 'node_modules', '.cache', 'ffz-serve-dist', 'client.log');
-fs.mkdirSync(path.dirname(CLIENT_LOG), {recursive: true});
 
 if ( ! fs.existsSync(MANIFEST_PATH) ) {
 	console.error(`No build found at ${DIST}. Run a production build first.`);
@@ -150,3 +163,4 @@ console.log(`  loader:  ${origin}/script/script.min.js  (open this once to trust
 console.log(`  client:  ${origin}/script/avalon.js`);
 console.log(`  build with: FFZ_CLIENT_HOST=${origin} bun run build`);
 console.log(`  client log: ${CLIENT_LOG}`);
+console.log(`  certificate: ${tls ? CERT_PATH : 'none (plain HTTP)'}`);
