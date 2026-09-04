@@ -204,7 +204,7 @@ export default class Line extends Module {
 
 		if ( ! force && state && state.key === key && state.original === original && state.el.previousSibling === original && original.classList.contains(HIDDEN_CLASS) ) {
 			// Kick may have rebuilt the name button; keep it our color.
-			this.colorUsername(body, state.msg);
+			this.colorUsername(body, state.msg, this.getSelf(props));
 			return;
 		}
 
@@ -238,7 +238,7 @@ export default class Line extends Module {
 
 		original.classList.add(HIDDEN_CLASS);
 		original.after(el);
-		this.colorUsername(body, msg);
+		this.colorUsername(body, msg, this.getSelf(props));
 
 		this.rows.set(row, {key, original, el, msg});
 	}
@@ -246,12 +246,12 @@ export default class Line extends Module {
 	// The username is Kick's own button, colored inline. Kick's React only
 	// rewrites that style when the color prop changes, so a color set here
 	// sticks until the row is rebuilt, which brings us back here.
-	colorUsername(body, msg) {
+	colorUsername(body, msg, self) {
 		const button = body.querySelector(':scope > div > button');
 		if ( ! button )
 			return;
 
-		const color = this.parent.getUserColor(msg.user);
+		const color = this.parent.getUserColor(msg.user, self);
 		if ( color && button.style.color !== color )
 			button.style.color = color;
 	}
