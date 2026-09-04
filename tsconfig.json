@@ -1,5 +1,8 @@
 {
 	"compilerOptions": {
+		// TypeScript 6 no longer includes every installed @types package;
+		// these two provide the webpack and extension ambient types.
+		"types": ["webpack-env", "chrome"],
 		"target": "ES2020",
 		"module": "ES2020",
 		"lib": [
