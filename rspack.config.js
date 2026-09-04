@@ -198,6 +198,12 @@ const config = {
 	},
 
 	optimization: {
+		// Module concatenation renames top-level bindings when it merges
+		// modules, and it renamed a module class (RichContent became
+		// rich_content_RichContent). The module system names class-injected
+		// children from constructor.name, so the renamed child could not be
+		// found. Keep every module in its own scope instead.
+		concatenateModules: false,
 		minimizer: [
 			new rspack.SwcJsMinimizerRspackPlugin({
 				minimizerOptions: {
