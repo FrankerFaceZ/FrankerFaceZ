@@ -28,6 +28,19 @@ const HIDDEN_CLASS = 'ffz--kick-hidden';
 // is random per page load, so it is found on the first row seen.
 let props_key = null;
 
+// Parts of a message body. Moderators get a row of mod-action buttons at
+// the front of the body, so nothing here goes by position: Kick marks the
+// timestamp with its display variable and the name button with an
+// attribute of its own.
+function findTimestamp(body) {
+	return body.querySelector(':scope > span[style*="--chatroom-timestamps-display"]');
+}
+
+function findName(body) {
+	return body.querySelector(':scope > div > button[data-prevent-expand]')
+		|| body.querySelector(':scope > div:not([style*="--chatroom-mod-actions-display"]) > button');
+}
+
 export function getRowProps(row) {
 	if ( ! props_key || ! (props_key in row) ) {
 		props_key = null;
@@ -253,8 +266,8 @@ export default class Line extends Module {
 	// a variable the appearance module sets. With FFZ timestamps on, its
 	// text is replaced with FFZ's format.
 	formatTimestamp(body, msg) {
-		const span = body.firstElementChild;
-		if ( ! span || span.tagName !== 'SPAN' )
+		const span = findTimestamp(body);
+		if ( ! span )
 			return;
 
 		if ( this.settings.get('kick.chat.timestamps') !== 1 ) {
@@ -296,7 +309,7 @@ export default class Line extends Module {
 	// rewrites that style when the color prop changes, so a color set here
 	// sticks until the row is rebuilt, which brings us back here.
 	colorUsername(body, msg, self) {
-		const button = body.querySelector(':scope > div > button');
+		const button = findName(body);
 		if ( ! button )
 			return;
 
@@ -318,7 +331,7 @@ export default class Line extends Module {
 			state.body.classList.remove('ffz-mentioned', 'ffz-custom-color');
 			state.body.style.backgroundColor = '';
 
-			const span = state.body.firstElementChild;
+			const span = findTimestamp(state.body);
 			if ( span?.dataset?.ffzOriginal != null ) {
 				span.textContent = span.dataset.ffzOriginal;
 				delete span.dataset.ffzOriginal;
