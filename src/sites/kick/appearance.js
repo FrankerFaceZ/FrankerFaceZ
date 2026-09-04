@@ -3,12 +3,13 @@
 // ============================================================================
 // Appearance
 //
-// Looks for Kick: a Twitch-like palette, a toned-down accent, chat density,
-// badge sizing, and hiding parts of Kick's layout. All of it is CSS. The
-// palette and accent override the design tokens Kick's own styles are built
-// on (see css_tweaks/), chat density sets the variables Kick's chat already
-// reads, and the hides are element rules (see the site module). Each is a
-// setting under Appearance or Chat in the control center.
+// Looks for Kick: a Twitch-like palette, a toned-down accent, chat density
+// and hiding parts of Kick's layout. All of it is CSS. The palette and
+// accent override the design tokens Kick's own styles are built on (see
+// css_tweaks/), chat density sets the variables Kick's chat already reads,
+// and the hides are element rules (see the site module). Each is a setting
+// under Appearance or Chat in the control center. Badges have their own
+// module (badges.js).
 // ============================================================================
 
 import Module from 'utilities/module';
@@ -160,37 +161,6 @@ export default class Appearance extends Module {
 				]
 			}
 		});
-
-		this.settings.add('kick.chat.badges.size', {
-			default: 1,
-			ui: {
-				path: 'Chat > Badges >> Appearance',
-				title: 'Badge Size',
-				component: 'setting-select-box',
-				data: [
-					{value: 0, title: 'Kick\'s Own'},
-					{value: 1, title: 'Small'}
-				]
-			}
-		});
-
-		this.settings.add('kick.chat.badges.hide-subscriber', {
-			default: false,
-			ui: {
-				path: 'Chat > Badges >> Appearance',
-				title: 'Hide subscriber badges.',
-				component: 'setting-check-box'
-			}
-		});
-
-		this.settings.add('kick.chat.badges.hide', {
-			default: false,
-			ui: {
-				path: 'Chat > Badges >> Appearance',
-				title: 'Hide all badges.',
-				component: 'setting-check-box'
-			}
-		});
 	}
 
 	onEnable() {
@@ -209,8 +179,6 @@ export default class Appearance extends Module {
 		hide('kick.layout.hide-new-messages', 'chat-divider');
 		hide('kick.layout.hide-quick-emotes', 'quick-emotes');
 		hide('kick.layout.hide-chat-stats', 'chat-stats');
-		hide('kick.chat.badges.hide-subscriber', 'badges-subscriber');
-		hide('kick.chat.badges.hide', 'badges');
 
 		// Kick sets these variables inline on the root element from its own
 		// chat settings; an !important rule on the root outranks that.
@@ -239,9 +207,6 @@ export default class Appearance extends Module {
 
 		this.settings.getChanges('kick.chat.lines.alternate', val =>
 			tweaks.toggle('chat-rows', val));
-
-		this.settings.getChanges('kick.chat.badges.size', val =>
-			tweaks.toggle('badges-small', val === 1));
 
 		this.settings.getChanges('chat.filtering.highlight-mentions', val =>
 			tweaks.toggle('chat-mention-bg', val));

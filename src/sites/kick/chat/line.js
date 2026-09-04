@@ -41,7 +41,7 @@ function findName(body) {
 		|| body.querySelector(':scope > div:not([style*="--chatroom-mod-actions-display"]) > button');
 }
 
-function getRowProps(row) {
+export function getRowProps(row) {
 	if ( ! props_key || ! (props_key in row) ) {
 		props_key = null;
 		for(const key in row)
