@@ -40,7 +40,7 @@ export const pin = {
 	},
 
 	hidden(data, message, current_room, current_user, mod_icons, instance) {
-		let line = instance;
+		const line = instance;
 
 		if ( ! line )
 			return true;
@@ -204,10 +204,10 @@ export const copy_message = {
 		const msg = this.replaceVariables(data.options.format, data);
 
 		return [
-			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-border-b tw-mg-b-05">{  
 				this.i18n.t('chat.actions.copy_message', 'Copy Message')
 			}</div>),
-			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-align-left">{  
 				msg
 			}</div>)
 		];
@@ -250,10 +250,10 @@ export const open_url = {
 		const url = this.replaceVariables(data.options.url, data);
 
 		return [
-			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-border-b tw-mg-b-05">{  
 				this.i18n.t('chat.actions.open_url', 'Open URL')
 			}</div>),
-			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-align-left">{  
 				url
 			}</div>)
 		]
@@ -317,12 +317,12 @@ export const chat = {
 			target = null;
 
 		return [
-			(<div class="tw-border-b tw-mg-b-05">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-border-b tw-mg-b-05">{  
 				target
 					? this.i18n.t('chat.actions.chat.with-target', 'Chat Command in Channel: {target}', {target})
 					: this.i18n.t('chat.actions.chat', 'Chat Command')
 			}</div>),
-			(<div class="tw-align-left">{ // eslint-disable-line react/jsx-key
+			(<div class="tw-align-left">{  
 				msg
 			}</div>)
 		]

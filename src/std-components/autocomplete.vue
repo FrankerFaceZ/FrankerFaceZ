@@ -243,7 +243,7 @@ export default {
 				if ( this.logger )
 					this.logger.capture(err);
 				else
-					console.error(err); // eslint-disable-line no-console
+					console.error(err);  
 			}
 
 			if ( result instanceof Promise ) {
@@ -255,7 +255,7 @@ export default {
 					if ( this.logger )
 						this.logger.capture(err);
 					else
-						console.error(err); // eslint-disable-line no-console
+						console.error(err);  
 
 					this.loading = false;
 					this.errored = true;

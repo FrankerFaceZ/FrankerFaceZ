@@ -883,7 +883,7 @@ export default class PlayerBase extends Module {
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
 					data-a-target="ffz-player-pip-button"
-					onClick={this.pipPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+					onClick={this.pipPlayer.bind(this, inst)}
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
@@ -1075,7 +1075,7 @@ export default class PlayerBase extends Module {
 					type="button"
 					data-a-target="ffz-player-reset-button"
 					onClick={rotateButton}
-					onDblClick={this.resetPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+					onDblClick={this.resetPlayer.bind(this, inst)}
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
@@ -1124,7 +1124,7 @@ export default class PlayerBase extends Module {
 			if ( tries < 2 )
 				this.parent.awaitElement(
 					'.autoplay-vod__content-container button',
-					this.props.containerRef || t.fine.getChildNode(this),
+					inst.props.containerRef || this.fine.getChildNode(inst),
 					1000
 				).then(() => {
 					this.addErrorResetButton(inst, (tries || 0) + 1);
@@ -1150,7 +1150,7 @@ export default class PlayerBase extends Module {
 					type="button"
 					data-a-target="ffz-player-reset-button"
 					onClick={rotateButton}
-					onDblClick={this.resetPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+					onDblClick={this.resetPlayer.bind(this, inst)}
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
@@ -1339,6 +1339,7 @@ export default class PlayerBase extends Module {
 				return Promise.resolve(cache.broadcast_id);
 		}
 
+		// eslint-disable-next-line no-async-promise-executor -- every await is caught and routed to the waiters
 		return new Promise(async (s, f) => {
 			if ( cache.updating ) {
 				cache.updating.push([s, f]);

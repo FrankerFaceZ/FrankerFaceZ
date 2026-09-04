@@ -87,7 +87,7 @@ export default {
 				return [];
 
 			//if ( ! this.context.matches_only )
-				return this.item.tabs;
+			return this.item.tabs;
 
 			//return this.item.tabs.filter(tab => this.shouldShow(tab));
 		},

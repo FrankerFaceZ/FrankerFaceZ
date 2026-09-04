@@ -7,7 +7,7 @@
 import Module from 'utilities/module';
 import { findReactFragment } from 'utilities/dom';
 
-import { SourcedSet, getTwitchEmoteSrcSet } from 'utilities/object';
+import { getTwitchEmoteSrcSet } from 'utilities/object';
 import { TWITCH_POINTS_SETS, TWITCH_GLOBAL_SETS, TWITCH_PRIME_SETS, KNOWN_CODES, REPLACEMENTS, REPLACEMENT_BASE, KEYS } from 'utilities/constants';
 
 import Twilight from 'site';
@@ -482,7 +482,7 @@ export default class Input extends Module {
 				this.updatePreview(inst, target);
 		}*/
 
-		for(const target of node.querySelectorAll?.('img.chat-line__message--emote')) {
+		for(const target of node.querySelectorAll?.('img.chat-line__message--emote') ?? []) {
 			if ( target && (target.dataset.ffzId || target.src.startsWith('https://static-cdn.jtvnw.net/emoticons/v2/__FFZ__')) )
 				this.updatePreview(inst, target);
 		}
@@ -933,7 +933,6 @@ export default class Input extends Module {
 			if ( ! set || ! set.emotes )
 				continue;
 
-			const source = set.source || 'ffz';
 
 			for(const emote of Object.values(set.emotes)) {
 				if ( ! emote || ! emote.id || ! emote.name || added_emotes.has(emote.name) )
@@ -1072,7 +1071,7 @@ export default class Input extends Module {
 	}
 
 
-	// eslint-disable-next-line class-methods-use-this
+	 
 	sortEmotes(emotes) {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
 		const canBeTriggeredByTab = this.chat.context.get('chat.tab-complete.emotes-without-colon');
@@ -1143,8 +1142,7 @@ export default class Input extends Module {
 			if ( set.id === 'FrankerFaceZWasHere' )
 				continue;
 
-			let key = `twitch-set-${set.id}`;
-			let extra = null;
+			let key, extra = null;
 
 			if ( channel?.login ) {
 				key = `twitch-${channel.id}`;

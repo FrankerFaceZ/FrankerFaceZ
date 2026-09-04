@@ -1,7 +1,5 @@
 'use strict';
 
-/* global FrankerFaceZ: false */
-
 // ============================================================================
 // Raven Logging
 // ============================================================================
@@ -310,7 +308,7 @@ export default class RavenLogger extends Module {
 	}
 
 
-	rewriteStack(errors) { // eslint-disable-line class-methods-use-this
+	rewriteStack(errors) {  
 		for(const err of errors) {
 			if ( Array.isArray(err?.stacktrace?.frames) )
 				this.rewriteFrames(err.stacktrace.frames);

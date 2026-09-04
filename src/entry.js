@@ -19,9 +19,9 @@
 		script = document.createElement('script');
 
 	let FLAVOR =
-			HOST.includes('player') ? 'player' :
-				HOST.includes('clips') ? 'clips' :
-					(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon');
+		HOST.includes('player') ? 'player' :
+			HOST.includes('clips') ? 'clips' :
+				(location.pathname === '/p/ffz_bridge/' ? 'bridge' : 'avalon');
 
 	if (FLAVOR === 'clips' && location.pathname === '/embed')
 		FLAVOR = 'player';

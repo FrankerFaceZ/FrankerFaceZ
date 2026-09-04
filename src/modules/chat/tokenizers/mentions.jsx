@@ -1,4 +1,5 @@
 'use strict';
+/* eslint-disable no-invalid-this -- these run with the chat module bound as `this` */
 
 import {MENTION_REGEX} from './constants';
 
@@ -10,14 +11,12 @@ function mention_processAll(tokens, msg, user, color_mentions) {
 	const can_highlight_user = user && user.login && user.login == msg.user.login && ! this.context.get('chat.filtering.process-own'),
 		priority = this.context.get('chat.filtering.mention-priority');
 
-	let login, display, mentionable = false;
+	let login, display;
 	if ( user && user.login && ! can_highlight_user ) {
 		login = user.login.toLowerCase();
 		display = user.displayName && user.displayName.toLowerCase();
 		if ( display === login )
 			display = null;
-
-		mentionable = true;
 	}
 
 	const out = [];

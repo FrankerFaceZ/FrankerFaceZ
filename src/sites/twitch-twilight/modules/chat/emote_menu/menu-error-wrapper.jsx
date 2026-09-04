@@ -22,7 +22,7 @@ export function createMenuErrorWrapper(t, React) {
 			}
 		}
 
-		componentDidCatch(error) { // eslint-disable-line class-methods-use-this
+		componentDidCatch(error) {  
 			t.log.capture(error);
 			t.log.error('Error rendering the FFZ Emote Menu.');
 			this.setState({

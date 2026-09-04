@@ -124,7 +124,7 @@ export default {
 	},
 
 	methods: {
-		displayAction(action) { // eslint-disable-line no-unused-vars
+		displayAction(action) {
 			return true;
 		},
 

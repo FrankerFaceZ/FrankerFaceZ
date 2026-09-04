@@ -27,7 +27,7 @@ export default class Actions extends Module {
 		this.actions = {};
 		this.renderers = {};
 
-		this.filterAction = (x) => x.appearance &&
+		this.filterAction = x => x.appearance &&
 			this.renderers[x.appearance.type] &&
 			(! this.renderers[x.appearance.type].load || this.renderers[x.appearance.type].load(x.appearance)) &&
 			(! x.action || this.actions[x.action]);
@@ -922,7 +922,7 @@ export default class Actions extends Module {
 					data-tooltip-type="action"
 					data-action={data.action}
 					data-options={data.options ? JSON.stringify(data.options) : null}
-					onClick={handle_click} // eslint-disable-line react/jsx-no-bind
+					onClick={handle_click}
 					onContextMenu={this.handleContext}
 				>
 					<span class="tw-button__text">

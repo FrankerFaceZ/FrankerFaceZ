@@ -213,7 +213,7 @@ export default class EmoteCard extends Module {
 				}
 
 				source = this.i18n.t('emote-card.sub', 'Tier {tier} Sub Emote ({source})', {
-					tier: tier,
+					tier,
 					source: data.owner?.displayName || data.owner?.login
 				});
 
@@ -287,12 +287,12 @@ export default class EmoteCard extends Module {
 
 				// Check if we can actually submit a report.
 				if ( this.canReportTwitch() )
-				out.more.push({
-					type: 'report-twitch',
-					title_i18n: 'emote-card.report',
-					title: 'Report Emote',
-					icon: 'ffz-i-flag'
-				});
+					out.more.push({
+						type: 'report-twitch',
+						title_i18n: 'emote-card.report',
+						title: 'Report Emote',
+						icon: 'ffz-i-flag'
+					});
 			}
 
 			if ( data.bitsBadgeTierSummary?.threshold ) {
@@ -511,7 +511,7 @@ export default class EmoteCard extends Module {
 				props: {
 					raw_emote: deep_copy(emote),
 					raw_modifiers: modifiers,
-					data: data,
+					data,
 
 					getFFZ: () => this,
 					reportTwitchEmote: (...args) => this.reportTwitchEmote(...args),

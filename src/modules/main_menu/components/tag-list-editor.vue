@@ -3,7 +3,7 @@
 		<div class="tw-align-items-center tw-flex tw-flex-nowrap tw-flex-row tw-full-width">
 			<div class="tw-flex-grow-1 tw-mg-r-05">
 				<autocomplete
-					v-slot="slot"
+					v-slot="{}"
 					v-model="adding"
 					:input-id="'tag$' + id"
 					:items="fetchTags"
@@ -59,7 +59,6 @@
 <script>
 
 import SettingMixin from '../setting-mixin';
-import {deep_copy} from 'utilities/object';
 
 let last_id = 0;
 

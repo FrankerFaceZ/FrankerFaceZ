@@ -149,20 +149,16 @@
 
 import {get} from 'utilities/object';
 
-const TITLE_MATCH = /^(.+?)?\s*v?(\d+\.\d+\.\d+(?:\-[a-z0-9-]+)?)$/i,
+const TITLE_MATCH = /^(.+?)?\s*v?(\d+\.\d+\.\d+(?:-[a-z0-9-]+)?)$/i,
 	SETTING_REGEX = /\]\(~([^)]+)\)/g,
 	CHANGE_REGEX = /^\*\s*([^:]+?):\s*(.+)$/i,
 	ISSUE_REGEX = /(^|\s)#(\d+)\b/g;
 
 
 function linkify(text, repo) {
-	text = text.replace(SETTING_REGEX, (_, link) => {
-		return `](~${link})`
-	});
+	text = text.replace(SETTING_REGEX, (_, link) => `](~${link})`);
 
-	return text.replace(ISSUE_REGEX, (_, space, number) => {
-		return `${space}[#${number}](https://github.com/FrankerFaceZ/${repo}/issues/${number})`;
-	});
+	return text.replace(ISSUE_REGEX, (_, space, number) => `${space}[#${number}](https://github.com/FrankerFaceZ/${repo}/issues/${number})`);
 }
 
 
@@ -248,7 +244,7 @@ export default {
 					description = lines;
 				}
 
-				let message = description.join('\n').trim();
+				const message = description.join('\n').trim();
 
 				const segments = [];
 

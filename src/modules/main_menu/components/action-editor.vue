@@ -6,7 +6,9 @@
 
 		<div class="tw-flex-grow-1">
 			<template v-if="! editing">
-				<h4 class="ffz-font-size-4">{{ title }}</h4>
+				<h4 class="ffz-font-size-4">
+					{{ title }}
+				</h4>
 				<div class="description">
 					{{ description }}
 				</div>
@@ -25,7 +27,9 @@
 			</template>
 			<template v-else>
 				<section>
-					<h5 class="ffz-font-size-5">{{ t('setting.actions.appearance', 'Appearance') }}</h5>
+					<h5 class="ffz-font-size-5">
+						{{ t('setting.actions.appearance', 'Appearance') }}
+					</h5>
 
 					<div class="tw-flex tw-align-items-center">
 						<label for="tooltip">
@@ -88,7 +92,9 @@
 				</section>
 
 				<section class="tw-mg-t-1 tw-border-t tw-pd-t-1">
-					<h5 class="ffz-font-size-5">{{ t('setting.actions.visibility', 'Visibility') }}</h5>
+					<h5 class="ffz-font-size-5">
+						{{ t('setting.actions.visibility', 'Visibility') }}
+					</h5>
 
 					<div class="tw-flex tw-align-items-center">
 						<label for="vis_mod">
@@ -380,7 +386,9 @@
 				</section>
 
 				<section class="tw-mg-t-1 tw-border-t tw-pd-t-1">
-					<h5 class="ffz-font-size-5">{{ t('setting.actions.action', 'Action') }}</h5>
+					<h5 class="ffz-font-size-5">
+						{{ t('setting.actions.action', 'Action') }}
+					</h5>
 
 					<div class="tw-flex tw-align-items-center">
 						<label for="action_type">
@@ -827,7 +835,7 @@ export default {
 		},
 
 		maybeDynamic(data) {
-			let ap = data.appearance;
+			const ap = data.appearance;
 			if (ap?.type === 'dynamic') {
 				const act = this.action_def,
 					ffz = this.vuectx.getFFZ(),
