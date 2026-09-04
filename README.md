@@ -132,8 +132,11 @@ under Chat > Emotes.
 
 Appearance settings on Kick, all opt-out, give the site Twitch's darker
 greys, tone Kick's green down a little, color usernames Twitch-style (with
-FFZ's readability adjustment) and hide the sidebar's recommended channels,
-the banners above chat and the "New messages" divider.
+FFZ's readability adjustment), set chat's font size and message spacing,
+shrink badges, stripe alternate lines, show FFZ-formatted timestamps,
+highlight lines that mention you, and hide the sidebar's recommended
+channels, the Gift Subs button, the banners above chat, the "New messages"
+divider, the row of emotes above the chat box and the counters below it.
 
 The loader picks the flavor by hostname, the same way it picks the clips
 and player flavors, and it is served as `kick.js` beside the other stable

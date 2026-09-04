@@ -3,11 +3,12 @@
 // ============================================================================
 // Appearance
 //
-// Looks for Kick: a Twitch-like palette, a toned-down accent, and hiding
-// parts of Kick's layout. All of it is CSS. The palette and accent override
-// the design tokens Kick's own styles are built on (see css_tweaks/), and
-// the layout tweaks hide elements by selector (see the rules in the site
-// module). Each is a setting under Appearance in the control center.
+// Looks for Kick: a Twitch-like palette, a toned-down accent, chat density,
+// badge sizing, and hiding parts of Kick's layout. All of it is CSS. The
+// palette and accent override the design tokens Kick's own styles are built
+// on (see css_tweaks/), chat density sets the variables Kick's chat already
+// reads, and the hides are element rules (see the site module). Each is a
+// setting under Appearance or Chat in the control center.
 // ============================================================================
 
 import Module from 'utilities/module';
@@ -21,6 +22,10 @@ export default class Appearance extends Module {
 		this.inject('site.css_tweaks');
 
 		this.should_enable = true;
+
+		// ------------------------------------------------------------------
+		// Theme
+		// ------------------------------------------------------------------
 
 		this.settings.add('kick.theme.palette', {
 			default: 1,
@@ -45,11 +50,24 @@ export default class Appearance extends Module {
 			}
 		});
 
+		// ------------------------------------------------------------------
+		// Layout
+		// ------------------------------------------------------------------
+
 		this.settings.add('kick.layout.hide-recommended', {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Sidebar',
 				title: 'Hide recommended channels.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('kick.layout.hide-gift-subs', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Channel',
+				title: 'Hide the Gift Subs button.',
 				component: 'setting-check-box'
 			}
 		});
@@ -72,22 +90,160 @@ export default class Appearance extends Module {
 				component: 'setting-check-box'
 			}
 		});
+
+		this.settings.add('kick.layout.hide-quick-emotes', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Chat',
+				title: 'Hide the row of emotes above the chat box.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('kick.layout.hide-chat-stats', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Chat',
+				title: 'Hide the viewer count and Kicks below the chat box.',
+				component: 'setting-check-box'
+			}
+		});
+
+		// ------------------------------------------------------------------
+		// Chat
+		// ------------------------------------------------------------------
+
+		this.settings.add('kick.chat.font-size', {
+			default: 13,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Font Size',
+				description: 'How large chat text should be, in pixels. Twitch uses 13; Kick\'s default is 14. Set to 0 to use Kick\'s own chat setting instead.',
+				component: 'setting-text-box',
+				process: 'to_int',
+				bounds: [0]
+			}
+		});
+
+		this.settings.add('kick.chat.message-spacing', {
+			default: 2,
+			ui: {
+				path: 'Chat > Appearance >> General',
+				title: 'Message Spacing',
+				description: 'Space above and below each message, in pixels. Kick\'s default is 4. Set to -1 to use Kick\'s own chat setting instead.',
+				component: 'setting-text-box',
+				process: 'to_int',
+				bounds: [-1]
+			}
+		});
+
+		this.settings.add('kick.chat.lines.alternate', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Display lines with alternating background colors.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('kick.chat.timestamps', {
+			default: 1,
+			ui: {
+				path: 'Chat > Appearance >> Chat Lines',
+				title: 'Timestamps',
+				description: 'FrankerFaceZ timestamps use the format chosen below.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Kick\'s Setting'},
+					{value: 1, title: 'Shown, FrankerFaceZ Format'},
+					{value: 2, title: 'Hidden'}
+				]
+			}
+		});
+
+		this.settings.add('kick.chat.badges.size', {
+			default: 1,
+			ui: {
+				path: 'Chat > Badges >> Appearance',
+				title: 'Badge Size',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Kick\'s Own'},
+					{value: 1, title: 'Small'}
+				]
+			}
+		});
+
+		this.settings.add('kick.chat.badges.hide-subscriber', {
+			default: false,
+			ui: {
+				path: 'Chat > Badges >> Appearance',
+				title: 'Hide subscriber badges.',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('kick.chat.badges.hide', {
+			default: false,
+			ui: {
+				path: 'Chat > Badges >> Appearance',
+				title: 'Hide all badges.',
+				component: 'setting-check-box'
+			}
+		});
 	}
 
 	onEnable() {
+		const tweaks = this.css_tweaks,
+			hide = (key, rule) => this.settings.getChanges(key, val => tweaks.toggleHide(rule, val));
+
 		this.settings.getChanges('kick.theme.palette', val =>
-			this.css_tweaks.toggle('palette', val === 1));
+			tweaks.toggle('palette', val === 1));
 
 		this.settings.getChanges('kick.theme.darker-accent', val =>
-			this.css_tweaks.toggle('accent', val));
+			tweaks.toggle('accent', val));
 
-		this.settings.getChanges('kick.layout.hide-recommended', val =>
-			this.css_tweaks.toggleHide('sidebar-recommended', val));
+		hide('kick.layout.hide-recommended', 'sidebar-recommended');
+		hide('kick.layout.hide-gift-subs', 'gift-subs');
+		hide('kick.layout.hide-chat-banners', 'chat-banners');
+		hide('kick.layout.hide-new-messages', 'chat-divider');
+		hide('kick.layout.hide-quick-emotes', 'quick-emotes');
+		hide('kick.layout.hide-chat-stats', 'chat-stats');
+		hide('kick.chat.badges.hide-subscriber', 'badges-subscriber');
+		hide('kick.chat.badges.hide', 'badges');
 
-		this.settings.getChanges('kick.layout.hide-chat-banners', val =>
-			this.css_tweaks.toggleHide('chat-banners', val));
+		// Kick sets these variables inline on the root element from its own
+		// chat settings; an !important rule on the root outranks that.
+		this.settings.getChanges('kick.chat.font-size', val => {
+			if ( val > 0 )
+				tweaks.set('chat-font', `html{--chatroom-font-size:${val}px !important}`);
+			else
+				tweaks.delete('chat-font');
+		});
 
-		this.settings.getChanges('kick.layout.hide-new-messages', val =>
-			this.css_tweaks.toggleHide('chat-divider', val));
+		this.settings.getChanges('kick.chat.message-spacing', val => {
+			if ( val >= 0 )
+				tweaks.set('chat-spacing', `html{--chatroom-message-spacing:${val}px !important}`);
+			else
+				tweaks.delete('chat-spacing');
+		});
+
+		this.settings.getChanges('kick.chat.timestamps', val => {
+			if ( val === 1 )
+				tweaks.set('chat-timestamps', 'html{--chatroom-timestamps-display:inline-block !important}');
+			else if ( val === 2 )
+				tweaks.set('chat-timestamps', 'html{--chatroom-timestamps-display:none !important}');
+			else
+				tweaks.delete('chat-timestamps');
+		});
+
+		this.settings.getChanges('kick.chat.lines.alternate', val =>
+			tweaks.toggle('chat-rows', val));
+
+		this.settings.getChanges('kick.chat.badges.size', val =>
+			tweaks.toggle('badges-small', val === 1));
+
+		this.settings.getChanges('chat.filtering.highlight-mentions', val =>
+			tweaks.toggle('chat-mention-bg', val));
 	}
 }

@@ -23,20 +23,19 @@ const ROOT_CLASSES = ['tw-root--theme-dark', 'tw-root--hover'];
 
 // Settings that can't do anything on Kick yet stay out of the control
 // center here. They configure parts of chat FFZ doesn't render on Kick
-// (badges, timestamps, mod actions, deleted messages, rich embeds) or
+// (Twitch badges, mod actions, deleted messages, rich embeds) or
 // Twitch-only features (bits, GIFs, AutoMod, GraphQL). Add-on changelogs
 // go too, since no add-on targets Kick yet.
 // Menu locations in key form; a location hides everything under it.
 const HIDDEN_SETTING_PATHS = [
 	'add_ons.changelog',
 	'chat.actions',
-	'chat.badges',
+	'chat.badges.behavior',
+	'chat.badges.tabs',
 	'chat.bits_and_cheering',
 	'chat.viewer_cards',
 	'chat.behavior.deleted_messages',
 	'chat.behavior.general',
-	'chat.appearance.chat_lines',
-	'chat.appearance.general',
 	'chat.appearance.gifs',
 	'chat.appearance.rich_content',
 	'chat.filtering.general.auto_mod_filters',
@@ -51,7 +50,12 @@ const HIDDEN_SETTING_PATHS = [
 const HIDDEN_SETTINGS = new Set([
 	'chat.fix-bad-emotes',
 	'chat.emotes.allow-gigantify',
-	'chat.name-format'
+	'chat.name-format',
+	'chat.font-size',
+	'chat.font-family',
+	'chat.timestamp-size',
+	'chat.lines.emote-alignment',
+	'chat.me-style'
 ]);
 
 
@@ -78,8 +82,13 @@ export default class KickSite extends BaseSite {
 		// test ids and structure instead.
 		this.css_tweaks.rules = {
 			'sidebar-recommended': '#sidebar-wrapper section:has([data-testid^="sidebar-recommended-channel-"])',
+			'gift-subs': '#channel-content button:has(svg[data-ds-icon^="Gift"])',
 			'chat-banners': '#channel-chatroom div:has(> div > #chatroom-messages) > div:first-child, #channel-chatroom div:has(> #chatroom-messages) > div.absolute.w-full',
-			'chat-divider': '#chatroom-messages [data-index].ffz--kick-divider > div'
+			'chat-divider': '#chatroom-messages [data-index].ffz--kick-divider > div',
+			'quick-emotes': '#chatroom-footer > div > div:has(img[src*="/emotes/"]):not(:has(#chat-input-wrapper))',
+			'chat-stats': '#chatroom-footer div:has(> #chat-input-wrapper) + div > div:first-child',
+			'badges': '#chatroom-messages [data-testid^="identity-badge-"]',
+			'badges-subscriber': '#chatroom-messages [data-testid="identity-badge-subscriber"]'
 		};
 
 		this.inject('menu_button', MenuButton);

@@ -184,8 +184,10 @@ export default class Line extends Module {
 			entry = props?.chatEntry,
 			data = entry?.data;
 
-		// The "New messages" divider is marked so it can be hidden by CSS.
+		// The "New messages" divider is marked so it can be hidden by CSS,
+		// and rows are marked even or odd for alternating backgrounds.
 		row.classList.toggle('ffz--kick-divider', entry?.type === 'divider');
+		row.classList.toggle('ffz--kick-even', (Number(row.dataset.index) & 1) === 0);
 
 		// Dividers, system entries and anything without a message body
 		// are left to Kick.
@@ -203,8 +205,10 @@ export default class Line extends Module {
 			state = this.rows.get(row);
 
 		if ( ! force && state && state.key === key && state.original === original && state.el.previousSibling === original && original.classList.contains(HIDDEN_CLASS) ) {
-			// Kick may have rebuilt the name button; keep it our color.
+			// Kick may have rebuilt the name button or timestamp; keep them
+			// ours.
 			this.colorUsername(body, state.msg, this.getSelf(props));
+			this.formatTimestamp(body, state.msg);
 			return;
 		}
 
@@ -239,8 +243,53 @@ export default class Line extends Module {
 		original.classList.add(HIDDEN_CLASS);
 		original.after(el);
 		this.colorUsername(body, msg, this.getSelf(props));
+		this.formatTimestamp(body, msg);
+		this.highlightLine(body, msg);
 
-		this.rows.set(row, {key, original, el, msg});
+		this.rows.set(row, {key, original, el, msg, body});
+	}
+
+	// Kick's timestamp is the first span of the body, shown or hidden by
+	// a variable the appearance module sets. With FFZ timestamps on, its
+	// text is replaced with FFZ's format.
+	formatTimestamp(body, msg) {
+		const span = body.firstElementChild;
+		if ( ! span || span.tagName !== 'SPAN' )
+			return;
+
+		if ( this.settings.get('kick.chat.timestamps') !== 1 ) {
+			// Back to Kick's own text, if we replaced it.
+			if ( span.dataset.ffzOriginal != null ) {
+				span.textContent = span.dataset.ffzOriginal;
+				delete span.dataset.ffzOriginal;
+			}
+			return;
+		}
+
+		if ( ! msg.timestamp )
+			return;
+
+		const text = this.chat.formatTime(msg.timestamp);
+		if ( span.textContent !== text ) {
+			if ( span.dataset.ffzOriginal == null )
+				span.dataset.ffzOriginal = span.textContent;
+			span.textContent = text;
+		}
+	}
+
+	// Lines that mention the viewer, or match a highlight term or user,
+	// get a background when mention highlighting is on: the line's own
+	// color, adjusted for readability, or the one the chat-mention-bg
+	// tweak provides.
+	highlightLine(body, msg) {
+		const mentioned = !! msg.mentioned && this.chat.context.get('chat.filtering.highlight-mentions'),
+			bg = mentioned && msg.mention_color
+				? this.parent.inverse_colors.process(msg.mention_color)
+				: null;
+
+		body.classList.toggle('ffz-mentioned', mentioned);
+		body.classList.toggle('ffz-custom-color', !! bg);
+		body.style.backgroundColor = bg || '';
 	}
 
 	// The username is Kick's own button, colored inline. Kick's React only
@@ -264,6 +313,17 @@ export default class Line extends Module {
 		this.rows.delete(row);
 		state.el.remove();
 		state.original.classList.remove(HIDDEN_CLASS);
+
+		if ( state.body ) {
+			state.body.classList.remove('ffz-mentioned', 'ffz-custom-color');
+			state.body.style.backgroundColor = '';
+
+			const span = state.body.firstElementChild;
+			if ( span?.dataset?.ffzOriginal != null ) {
+				span.textContent = span.dataset.ffzOriginal;
+				delete span.dataset.ffzOriginal;
+			}
+		}
 	}
 
 
