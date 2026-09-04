@@ -186,7 +186,22 @@ export default class Appearance extends Module {
 				data: [
 					{value: 0, title: 'Kick\'s Setting'},
 					{value: 1, title: 'Always Shown'},
+					{value: 3, title: 'Shown on Hover'},
 					{value: 2, title: 'Hidden'}
+				]
+			}
+		});
+
+		this.settings.add('kick.chat.mod-actions.style', {
+			default: 1,
+			ui: {
+				path: 'Chat > Behavior >> Moderation',
+				title: 'Mod Action Style',
+				description: 'Twitch-style draws them small and grey, lit when hovered, the way Twitch draws its mod icons.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Kick\'s Own'},
+					{value: 1, title: 'Twitch-style'}
 				]
 			}
 		});
@@ -228,13 +243,18 @@ export default class Appearance extends Module {
 			tweaks.toggle('chat-input', val));
 
 		this.settings.getChanges('kick.chat.mod-actions', val => {
-			if ( val === 1 )
+			if ( val === 1 || val === 3 )
 				tweaks.set('chat-mod-actions', 'html{--chatroom-mod-actions-display:inline-flex !important}');
 			else if ( val === 2 )
 				tweaks.set('chat-mod-actions', 'html{--chatroom-mod-actions-display:none !important}');
 			else
 				tweaks.delete('chat-mod-actions');
+
+			tweaks.toggle('mod-actions-hover', val === 3);
 		});
+
+		this.settings.getChanges('kick.chat.mod-actions.style', val =>
+			tweaks.toggle('mod-actions-compact', val === 1));
 		hide('kick.layout.hide-chat-banners', 'chat-banners');
 		hide('kick.layout.hide-new-messages', 'chat-divider');
 		hide('kick.layout.hide-quick-emotes', 'quick-emotes');
