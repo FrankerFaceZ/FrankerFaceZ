@@ -124,6 +124,8 @@ export default class Scroller extends Module {
 	async onEnable() {
 		this.on('i18n:update', () => this.ChatScroller.forceUpdate());
 
+		this.on('chat:image-load', this.handleImageLoad, this);
+
 		this.chat.context.on('changed:chat.actions.inline', this.updateUseKeys, this);
 		this.updateUseKeys();
 
@@ -700,6 +702,13 @@ export default class Scroller extends Module {
 
 		this.ChatScroller.on('mount', this.onMount, this);
 		this.ChatScroller.on('unmount', this.onUnmount, this);
+	}
+
+
+	handleImageLoad() {
+		for(const inst of this.ChatScroller.instances)
+			if ( inst.scrollToBottom )
+				inst.scrollToBottom();
 	}
 
 

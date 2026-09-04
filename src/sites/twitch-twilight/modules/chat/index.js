@@ -1385,7 +1385,7 @@ export default class ChatHook extends Module {
 
 	cleanHighlights() {
 		const types = {
-			'community_sub_gift': this.chat.context.get('chat.subs.gift-banner'),
+			'community_gift': this.chat.context.get('chat.subs.gift-banner'),
 			'megacheer': this.chat.context.get('chat.bits.show'),
 			'hype_train': this.chat.context.get('chat.banners.hype-train'),
 			'prediction': this.chat.context.get('chat.banners.prediction'),

@@ -84,6 +84,8 @@ export default class Chat extends Module {
 		this.addHighlightReason('badge', 'Highlight Badge', 'Badge');
 		this.addHighlightReason('term', 'Highlight Term', 'Term');
 
+		this.reportGif = this.reportGif.bind(this);
+
 		// ========================================================================
 		// Settings
 		// ========================================================================
@@ -1785,6 +1787,52 @@ export default class Chat extends Module {
 
 		return data;
 	}
+
+	canReportGif() {
+		const site = this.resolve('site'),
+		user = site.getUser(),
+		web_munch = this.resolve('site.web_munch');
+
+		let report_form;
+		try {
+			report_form = web_munch.getModule('user-report');
+		} catch(err) {
+			return false;
+		}
+
+		return !! report_form && !! user?.id && site?.store?.dispatch;
+	}
+
+	reportGif(event, token) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		if ( ! this.canReportGif() )
+			 return false;
+
+		const site = this.resolve('site'),
+		web_munch = this.resolve('site.web_munch'),
+		report_form = web_munch.getModule('user-report');
+
+		site.store.dispatch({
+			type: 'core.modal.MODAL_SHOWN',
+			modalComponent: report_form,
+			modalProps: {
+				reportContext: {
+					contentID: String(token.id),
+					contentMetadata: {
+						channelID: String(token.room_id)
+					},
+					contentType: 'GIF_MESSAGE_REPORT',
+					targetUserID: String(token.user_id),
+					trackingContext: 'channel_page'
+				}
+			}
+		});
+
+		return true;
+	}
+
 }
 
 

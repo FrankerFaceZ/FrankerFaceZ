@@ -1,9 +1,0 @@
-mutation FFZ_SendGifMessage($input: SendGifMessageInput!) {
-	sendGifMessage(input: $input) {
-		error
-		secondsUntilCanSend
-		message {
-			id
-		}
-	}
-}

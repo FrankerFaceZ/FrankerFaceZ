@@ -11,14 +11,12 @@ import {maybe_date} from './emote_menu/utils';
 import Twilight from 'site';
 import Module from 'utilities/module';
 import SUB_STATUS from './sub_status.gql';
-import SEND_GIF from './send_gif.gql';
-import GIF_CONFIG from './gif_picker_config.gql';
 import { createEmojiTonePicker } from './emote_menu/emoji-tone-picker';
 import { createMenuSection } from './emote_menu/menu-section';
 import { createEmojiSection } from './emote_menu/emoji-section';
 import { createMenuErrorWrapper } from './emote_menu/menu-error-wrapper';
 import { createMenuComponent } from './emote_menu/menu-component';
-import { createGifPanel } from './emote_menu/gif-panel';
+import { createGifSection } from './emote_menu/gif-section';
 
 export default class EmoteMenu extends Module {
 	constructor(...args) {
@@ -38,9 +36,6 @@ export default class EmoteMenu extends Module {
 		this.inject('site.css_tweaks');
 
 		this.SUB_STATUS = SUB_STATUS;
-
-		// Per-channel GIF picker configuration from Twitch, keyed by channel ID.
-		this._gif_configs = new Map();
 
 		this.settings.add('chat.emote-menu.shortcut', {
 			default: false,
@@ -250,43 +245,6 @@ export default class EmoteMenu extends Module {
 			}
 		});
 
-		this.settings.add('chat.emote-menu.gifs', {
-			default: true,
-			ui: {
-				path: 'Chat > Emote Menu >> GIFs',
-				title: 'Show a GIF tab when you can send GIFs in the current channel.',
-				description: 'Twitch lets Tier 2 and Tier 3 subscribers send GIFs in channels that allow them. The tab appears in the emote menu on those channels and searches GIPHY using the menu\'s search box.',
-				component: 'setting-check-box'
-			}
-		});
-
-		this.settings.add('chat.emote-menu.gifs.api-key', {
-			default: '',
-			ui: {
-				path: 'Chat > Emote Menu >> GIFs',
-				title: 'GIPHY API Key Override',
-				description: 'Twitch provides a GIPHY key for every channel that allows GIFs, so this is normally left empty. Enter a key only to search with your own instead.',
-				component: 'setting-text-box'
-			}
-		});
-
-		this.settings.add('chat.emote-menu.gifs.rating', {
-			default: 'channel',
-			ui: {
-				path: 'Chat > Emote Menu >> GIFs',
-				title: 'Maximum Content Rating',
-				description: 'Each channel sets the rating it allows. Twitch rejects GIFs above it, so a stricter choice here only narrows the search.',
-				component: 'setting-select-box',
-				data: [
-					{value: 'channel', title: 'Use the channel\'s setting'},
-					{value: 'g', title: 'G'},
-					{value: 'pg', title: 'PG'},
-					{value: 'pg-13', title: 'PG-13'}
-				]
-			}
-		});
-
-
 		this.EmoteMenu = this.fine.define(
 			'chat-emote-menu',
 			n => n.getAllEmoteSets && n.getSortedChannelEmotes && n.props?.emotePickerSource,
@@ -323,9 +281,6 @@ export default class EmoteMenu extends Module {
 		this.chat.context.on('changed:chat.emote-menu.effect-tab', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-emotes', rebuild);
 		this.chat.context.on('changed:chat.emote-menu.sort-tiers-last', rebuild);
-		this.chat.context.on('changed:chat.emote-menu.gifs', rebuild);
-		this.chat.context.on('changed:chat.emote-menu.gifs.api-key', rebuild);
-		this.chat.context.on('changed:chat.emote-menu.gifs.rating', rebuild);
 
 		this.chat.context.on('changed:chat.emoji.style', this.updateEmojiVariables, this);
 
@@ -333,6 +288,9 @@ export default class EmoteMenu extends Module {
 			this.css_tweaks.toggle('emote-menu', val));
 
 		this.updateEmojiVariables();
+
+		this.chat.context.on('changed:chat.gifs.size', this.updateGifSize, this);
+		this.updateGifSize();
 
 		this.css_tweaks.setVariable('emoji-menu--sheet', `//cdn.frankerfacez.com/static/emoji/images/sheet-twemoji-36.png`);
 		this.css_tweaks.setVariable('emoji-menu--count', 58);
@@ -373,7 +331,13 @@ export default class EmoteMenu extends Module {
 						channel_id={this.props.channelID}
 						loading={this.props.channelData?.loading || this.props.emoteSetsData?.loading}
 						error={this.props.channelData?.error || this.props.emoteSetsData?.error}
+						giphy_enabled={this.props.giphyIsEnabled}
+						giphy_allowlisted={this.props.giphyIsAllowlisted}
+						giphy_api_key={this.props.giphyApiKey}
+						giphy_rating={this.props.giphyContentRating}
+						giphy_cooldown={this.props.gifCooldownSecondsRemaining}
 						onClickToken={this.props.onClickToken}
+						onSelectGif={this.props.onSelectGif}
 					/>
 				</t.MenuErrorWrapper>)
 			}
@@ -405,6 +369,10 @@ export default class EmoteMenu extends Module {
 }`);
 	}
 
+	updateGifSize() {
+		this.css_tweaks.setVariable('gif-size', `${this.chat.context.get('chat.gifs.size')}px`);
+	}
+
 	maybeUpdate() {
 		if ( ! this.chat.context.get('chat.emote-menu.enabled') )
 			return;
@@ -423,7 +391,7 @@ export default class EmoteMenu extends Module {
 		this.EmojiSection = createEmojiSection(this, React, this.MenuSection);
 		this.MenuErrorWrapper = createMenuErrorWrapper(this, React);
 		this.MenuComponent = createMenuComponent(this, React);
-		this.GifPanel = createGifPanel(this, React);
+		this.GifSection = createGifSection(this, React);
 		this.fine.wrap('ffz-emote-menu', this.MenuComponent);
 	}
 
@@ -431,163 +399,6 @@ export default class EmoteMenu extends Module {
 	rebuildMenus() {
 		for(const inst of this.MenuWrapper.instances)
 			inst.rebuildData();
-	}
-
-	/**
-	 * Whether the current user can send GIFs in the channel the menu is
-	 * open for: the GIF tab is enabled, they hold a Tier 2 or Tier 3
-	 * subscription to the channel, and the channel allows GIFs. Twitch
-	 * validates again server-side.
-	 */
-	canSendGifs(props, state) {
-		if ( ! this.chat.context.get('chat.emote-menu.gifs') )
-			return false;
-
-		const products = props?.channel_data?.user?.subscriptionProducts,
-			set_data = state?.set_data;
-
-		if ( ! Array.isArray(products) || ! set_data )
-			return false;
-
-		let subscribed = false;
-		for(const product of products) {
-			const tier = parseInt(product?.tier, 10),
-				sub = product?.emoteSetID && set_data[product.emoteSetID];
-
-			if ( sub && tier >= 2000 ) {
-				subscribed = true;
-				break;
-			}
-		}
-
-		if ( ! subscribed )
-			return false;
-
-		// The channel's configuration loads on demand; the menu is rebuilt
-		// when it arrives.
-		const config = this.getGifConfig(props.channel_id);
-		return !! (config && config.isEnabled && config.isAllowlisted);
-	}
-
-	/**
-	 * Twitch's GIF picker configuration for a channel, or null while it is
-	 * loading or when the channel is unknown. Starts a load when needed.
-	 */
-	getGifConfig(channel_id) {
-		if ( ! channel_id )
-			return null;
-
-		const key = String(channel_id),
-			entry = this._gif_configs.get(key);
-
-		if ( entry && (entry.loading || Date.now() < entry.expires) )
-			return entry.config;
-
-		this.loadGifConfig(key);
-		return null;
-	}
-
-	async loadGifConfig(channel_id) {
-		const entry = {loading: true, config: null, expires: 0};
-		this._gif_configs.set(channel_id, entry);
-
-		let config = null, ttl = 60 * 1000;
-		try {
-			const result = await this.apollo.client.query({
-				query: GIF_CONFIG,
-				variables: {channelID: channel_id},
-				fetchPolicy: 'network-only'
-			});
-
-			const data = result?.data?.gifPickerConfig;
-			if ( data ) {
-				config = {
-					isEnabled: !! data.isEnabled,
-					isAllowlisted: !! data.isAllowlisted,
-					apiKey: typeof data.apiKey === 'string' && data.apiKey.length ? data.apiKey : null,
-					contentRating: data.contentRating ?? null
-				};
-				ttl = 10 * 60 * 1000;
-			}
-
-			this.log.debug('Loaded GIF picker configuration for channel', channel_id, config);
-
-		} catch(err) {
-			this.log.warn('Unable to load the GIF picker configuration.', err);
-		}
-
-		entry.loading = false;
-		entry.config = config;
-		entry.expires = Date.now() + ttl;
-
-		this.rebuildMenus();
-	}
-
-	/**
-	 * The GIPHY key to search with: the user's override when set, else the
-	 * key Twitch provides for the channel.
-	 */
-	getGiphyApiKey(channel_id) {
-		const key = this.settings.get('chat.emote-menu.gifs.api-key');
-		if ( typeof key === 'string' && key.trim().length )
-			return key.trim();
-
-		return this.getGifConfig(channel_id)?.apiKey ?? null;
-	}
-
-	/**
-	 * The GIPHY rating to search with. The setting can pin a rating;
-	 * otherwise the channel's configured rating applies, normalised from
-	 * Twitch's enum (G, PG, PG13) to GIPHY's names.
-	 */
-	getGifRating(channel_id) {
-		const setting = this.settings.get('chat.emote-menu.gifs.rating');
-		if ( setting && setting !== 'channel' )
-			return setting;
-
-		const raw = this.getGifConfig(channel_id)?.contentRating;
-		if ( raw == null )
-			return 'g';
-
-		const rating = String(raw).toLowerCase().replace(/[_\s]/g, '-');
-		if ( /^pg-?13$/.test(rating) )
-			return 'pg-13';
-		if ( rating === 'g' || rating === 'pg' || rating === 'r' )
-			return rating;
-
-		return 'g';
-	}
-
-	/**
-	 * Send a GIF to a channel's chat. Resolves to an object with `ok`, and
-	 * on failure the `error` code and any `seconds` until sending is allowed.
-	 */
-	async sendGif(channel_id, gif) {
-		let result;
-		try {
-			result = await this.apollo.client.mutate({
-				mutation: SEND_GIF,
-				variables: {
-					input: {
-						channelID: String(channel_id),
-						gifID: gif.id,
-						gifURL: gif.url
-					}
-				}
-			});
-		} catch(err) {
-			this.log.warn('Unable to send GIF message.', err);
-			return {ok: false, error: null};
-		}
-
-		const payload = result?.data?.sendGifMessage;
-		if ( ! payload )
-			return {ok: false, error: null};
-
-		if ( payload.error )
-			return {ok: false, error: payload.error, seconds: payload.secondsUntilCanSend};
-
-		return {ok: true, id: payload.message?.id};
 	}
 
 	async getFFZSubPrices() {
@@ -743,7 +554,6 @@ export default class EmoteMenu extends Module {
 					prime: node.purchasedWithPrime,
 					set_id,
 					type: product.type,
-					tier: product.tier,
 					gift: node.gift?.isGift
 				};
 			}
