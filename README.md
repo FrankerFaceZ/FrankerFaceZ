@@ -140,6 +140,9 @@ compact the channel header, restyle the chat box, and hide the sidebar's
 recommended channels, the Gift Subs button, the Kicks balance, the banners
 above chat, the "New messages" divider, the row of emotes above the chat
 box and the counters below it. Clicking an emote opens FFZ's emote card.
+7TV's global set and the channel's 7TV set load alongside FFZ's, Tab in
+the chat box completes FFZ, 7TV and Kick emote names, and an FFZ emote
+picker sits beside Kick's.
 
 The loader picks the flavor by hostname, the same way it picks the clips
 and player flavors, and it is served as `kick.js` beside the other stable
