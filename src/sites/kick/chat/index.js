@@ -266,7 +266,11 @@ export default class Chat extends Module {
 	}
 
 	updateRoom() {
-		this.setRoom(this.getRoomLogin());
+		// A channel without a Twitch namesake still gets a room of its own,
+		// so the sets other sources attach to the channel (7TV's) have
+		// somewhere to live. FFZ's API has nothing under that name.
+		const placeholder = this.channel ? `kick:${this.channel}` : null;
+		this.setRoom(this.getRoomLogin() || placeholder);
 	}
 
 	setRoom(login) {

@@ -14,6 +14,7 @@ import MenuButton from './menu_button';
 import Chat from './chat';
 import Appearance from './appearance';
 import Badges from './badges';
+import SevenTV from './seventv';
 
 import MAIN_URL from './styles/kick-main.scss';
 
@@ -94,6 +95,7 @@ export default class KickSite extends BaseSite {
 		this.inject('chat', Chat);
 		this.inject(Appearance);
 		this.inject(Badges);
+		this.inject(SevenTV);
 
 		this.container = null;
 	}
