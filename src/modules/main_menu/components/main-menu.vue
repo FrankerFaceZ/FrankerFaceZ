@@ -129,10 +129,15 @@
 import displace from 'displacejs';
 import { getDialogNextZ } from 'src/utilities/dialog';
 import { GITHUB_URL } from 'utilities/constants';
+import { computeMatches } from '../search';
 
 const VALID_FLAGS = [
 	'modified'
 ];
+
+// How long typing has to pause before the tree is searched. Every
+// keystroke used to re-walk the whole menu.
+const SEARCH_DELAY = 120;
 
 export default {
 	data() {
@@ -140,13 +145,14 @@ export default {
 
 		out.z = getDialogNextZ();
 		out.github_url = GITHUB_URL;
+		out.search_query = out.query || '';
 
 		return out;
 	},
 
 	computed: {
 		filter() {
-			let query = this.query.toLowerCase();
+			let query = this.search_query.toLowerCase();
 
 			let flags = new Set;
 			query = query.replace(/(?<=^|\s)@(\S+)(?:\s+|$)/g, (match, flag, index) => {
@@ -168,16 +174,36 @@ export default {
 			if ( ! query && ! flags )
 				return null;
 
-			return {
+			const filter = {
 				flags,
 				query
-			}
+			};
+
+			// Which nodes match, and how many settings match beneath each,
+			// are worked out once here rather than by every component in
+			// the tree on every render. They travel with the filter so
+			// nothing else has to be threaded through the components.
+			const matches = computeMatches(this.nav, filter, this.context.currentProfile);
+			filter.shown = matches.shown;
+			filter.counts = matches.counts;
+
+			return filter;
 		}
 	},
 
 	watch: {
 		maximized() {
 			this.updateDrag();
+		},
+
+		query(val) {
+			clearTimeout(this._search_timer);
+			if ( ! val )
+				this.search_query = '';
+			else
+				this._search_timer = setTimeout(() => {
+					this.search_query = val;
+				}, SEARCH_DELAY);
 		}
 	},
 
@@ -197,6 +223,7 @@ export default {
 	},
 
 	beforeUnmount() {
+		clearTimeout(this._search_timer);
 		this.destroyDrag();
 
 		if ( this._on_resize ) {

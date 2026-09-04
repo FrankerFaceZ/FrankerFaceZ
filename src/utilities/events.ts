@@ -518,8 +518,9 @@ export class EventEmitter<
 			throw new Error(`concurrent access: tried to emit event while event is running`);
 
 		// Track removals separately to make iteration over the event list
-		// much, much simpler.
-		const removed = new Set<ListenerInfo>;
+		// much, much simpler. Allocated only when something is actually
+		// removed, as emit runs for every chat line and removals are rare.
+		let removed: Set<ListenerInfo> | null = null;
 
 		// Set the current list of listeners to null because we don't want
 		// to enter some kind of loop if a new listener is added as the result
@@ -542,10 +543,10 @@ export class EventEmitter<
 			}
 
 			if ( ret === Detach )
-				removed.add(item);
+				(removed ??= new Set).add(item);
 			else if ( ttl !== false ) {
 				if ( ttl <= 1 )
-					removed.add(item);
+					(removed ??= new Set).add(item);
 				else
 					item[2] = ttl - 1;
 			}
@@ -562,7 +563,7 @@ export class EventEmitter<
 		}
 
 		// Remove any dead listeners from the list.
-		if ( removed.size ) {
+		if ( removed ) {
 			for(const item of removed) {
 				const idx = list.indexOf(item);
 				if ( idx !== -1 )

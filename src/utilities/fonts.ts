@@ -22,9 +22,22 @@ const KNOWN_FONTS = [
 	'Comic Sans MS',
 ];
 
-export const VALID_FONTS = document.fonts?.check
-	? KNOWN_FONTS.filter(font => document.fonts.check(`16px ${font}`)).sort()
-	: KNOWN_FONTS.sort();
+let VALID_FONTS: string[] | null = null;
+
+/**
+ * Get the list of known system fonts that are actually available. This
+ * calls `document.fonts.check` for every known font, which is not free,
+ * and the list is only needed when a font picker is rendered, so it is
+ * computed on first use rather than at import time.
+ */
+export function getValidFonts() {
+	if ( ! VALID_FONTS )
+		VALID_FONTS = document.fonts?.check
+			? KNOWN_FONTS.filter(font => document.fonts.check(`16px ${font}`)).sort()
+			: KNOWN_FONTS.sort();
+
+	return VALID_FONTS;
+}
 
 
 /* Google Font Handling */
@@ -160,7 +173,7 @@ export function getFontsList(): SettingSelectEntry<string>[] {
 		{separator: true, i18n_key: 'setting.font.builtin', title: 'Built-in Fonts'},
 	];
 
-	for(const font of VALID_FONTS)
+	for(const font of getValidFonts())
 		out.push({value: font, title: font});
 
 	out.push({

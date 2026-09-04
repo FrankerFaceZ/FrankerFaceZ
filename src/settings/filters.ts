@@ -38,7 +38,7 @@ export const Invert: FilterType<FilterData[], ContextData> = {
 	i18n: 'settings.filter.invert',
 
 	default: () => [],
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/nested.vue')
 };
 
 export const And: FilterType<FilterData[], ContextData> = {
@@ -53,7 +53,7 @@ export const And: FilterType<FilterData[], ContextData> = {
 	i18n: 'settings.filter.and',
 
 	default: () => [],
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/nested.vue')
 };
 
 export const Or: FilterType<FilterData[], ContextData> = {
@@ -68,7 +68,7 @@ export const Or: FilterType<FilterData[], ContextData> = {
 	i18n: 'settings.filter.or',
 
 	default: () => [],
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/nested.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/nested.vue')
 };
 
 type IfData = [
@@ -92,7 +92,7 @@ export const If: FilterType<IfData, ContextData> = {
 	i18n: 'settings.filter.if',
 
 	default: () => [[], [], []],
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/if.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/if.vue')
 };
 
 export const Constant: FilterType<boolean, ContextData> = {
@@ -107,7 +107,7 @@ export const Constant: FilterType<boolean, ContextData> = {
 
 	default: true,
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 
@@ -182,7 +182,7 @@ export const Time: TimeFilter = {
 
 	default: () => ['08:00', '18:00'],
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/time.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/time.vue')
 }
 
 export const TheaterMode: FilterType<boolean, ContextData> = {
@@ -199,7 +199,7 @@ export const TheaterMode: FilterType<boolean, ContextData> = {
 
 	default: true,
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 export const Fullscreen: FilterType<boolean, ContextData> = {
@@ -212,7 +212,7 @@ export const Fullscreen: FilterType<boolean, ContextData> = {
 
 	default: true,
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 export const Moderator: FilterType<boolean, ContextData> = {
@@ -224,7 +224,7 @@ export const Moderator: FilterType<boolean, ContextData> = {
 	i18n: 'settings.filter.moderator',
 
 	default: true,
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 export const Debug: FilterType<boolean, ContextData> = {
@@ -236,7 +236,7 @@ export const Debug: FilterType<boolean, ContextData> = {
 	i18n: 'settings.filter.dev',
 
 	default: true,
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 export const AddonDebug: FilterType<boolean, ContextData> = {
@@ -248,7 +248,7 @@ export const AddonDebug: FilterType<boolean, ContextData> = {
 	i18n: 'settings.filter.addon-dev',
 
 	default: true,
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 }
 
 export const SquadMode: FilterType<boolean, ContextData> = {
@@ -260,7 +260,7 @@ export const SquadMode: FilterType<boolean, ContextData> = {
 	i18n: 'settings.filter.squad',
 
 	default: true,
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 export const NativeDarkTheme: FilterType<boolean, ContextData> = {
@@ -273,7 +273,7 @@ export const NativeDarkTheme: FilterType<boolean, ContextData> = {
 	i18n: 'settings.filter.native-dark',
 
 	default: true,
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/basic-toggle.vue')
 };
 
 // TODO: Add typing.
@@ -338,7 +338,7 @@ export const Page: FilterType<PageData, ContextData> = {
 		route: 'front-page',
 		values: {}
 	}),
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/page.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/page.vue')
 };
 
 type ChannelData = {
@@ -372,7 +372,7 @@ export const Channel: FilterType<ChannelData, ContextData> = {
 		login: null,
 		id: null
 	}),
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/channel.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/channel.vue')
 };
 
 type CategoryData = {
@@ -407,7 +407,7 @@ export const Category: FilterType<CategoryData, ContextData> = {
 		id: null
 	}),
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/category.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/category.vue')
 }
 
 type TitleData = {
@@ -463,7 +463,7 @@ export const Title: FilterType<TitleData, ContextData> = {
 		sensitive: false
 	}),
 
-	editor: () => import(/* webpackChunkName: 'main-menu' */ './components/title.vue')
+	editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/title.vue')
 };
 
 // Monitor Stuff
@@ -525,7 +525,7 @@ if ( window.getScreenDetails ) {
 		title: 'Current Monitor',
 		i18n: 'settings.filter.monitor',
 
-		editor: () => import(/* webpackChunkName: 'main-menu' */ './components/monitor.vue')
+		editor: () => import(/* webpackChunkName: 'filter-editors' */ './components/monitor.vue')
 	};
 
 }

@@ -69,13 +69,25 @@ export default class BaseSite extends Module {
 			.then(() => this.findReact());
 	}
 
-	awaitElement(selector, parent, timeout = 60000) {
+	/**
+	 * Resolve with the first element matching `selector` under `parent`,
+	 * waiting for it to appear if needed.
+	 *
+	 * Callers waiting on a selector only need to know when nodes are
+	 * added, so the observer watches childList by default. Pass `opts`
+	 * to watch attributes or text as well; when several calls share a
+	 * parent, the observer watches the union of what they asked for.
+	 */
+	awaitElement(selector, parent, timeout = 60000, opts = null) {
 		if ( ! parent )
 			parent = document.documentElement;
 
 		const el = parent.querySelector(selector);
 		if ( el )
 			return Promise.resolve(el);
+
+		if ( ! opts )
+			opts = {childList: true, subtree: true};
 
 		return new Promise((resolve, reject) => {
 			const observer_name = `${this._id}$observer`,
@@ -106,6 +118,21 @@ export default class BaseSite extends Module {
 
 			if ( data ) {
 				data[1].push([call_id, selector, resolve, reject, timer]);
+
+				// Widen the existing observer if this caller needs more than
+				// it currently watches. Calling observe() again on the same
+				// node replaces its options.
+				const current = data[2];
+				let widened = false;
+				for(const key of Object.keys(opts))
+					if ( opts[key] && ! current[key] ) {
+						current[key] = opts[key];
+						widened = true;
+					}
+
+				if ( widened )
+					data[0].observe(parent, current);
+
 				return;
 			}
 
@@ -137,13 +164,9 @@ export default class BaseSite extends Module {
 				}
 			});
 
-			parent[observer_name] = [observer, [[call_id, selector, resolve, reject, timer]]];
-			observer.observe(parent, {
-				childList: true,
-				attributes: true,
-				characterData: true,
-				subtree: true
-			});
+			const options = Object.assign({}, opts);
+			parent[observer_name] = [observer, [[call_id, selector, resolve, reject, timer]], options];
+			observer.observe(parent, options);
 		});
 	}
 }

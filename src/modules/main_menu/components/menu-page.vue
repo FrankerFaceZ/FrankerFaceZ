@@ -186,57 +186,20 @@ export default {
 	},
 
 	methods: {
-		shouldShow(item, is_walking = false) {
+		// Which nodes match is computed once per search, in main-menu,
+		// and carried on the filter. See main_menu/search.js.
+		shouldShow(item) {
 			if ( ! this.filter || item.no_filter )
 				return true;
 
-			if ( this.filter.flags ) {
-				if ( this.filter.flags.has('modified') ) {
-					// We need to tree walk for this one.
-					if ( ! is_walking ) {
-						for(const key of ['tabs', 'contents', 'items'])
-							if ( item[key] )
-								for(const thing of item[key])
-									if ( this.shouldShow(thing) )
-										return true;
-					}
-
-					if ( ! item.setting || ! this.context.currentProfile.has(item.setting) )
-						return false;
-				}
-			}
-
-			if ( this.filter.query ) {
-				if ( ! item.search_terms || ! item.search_terms.includes(this.filter.query) )
-					return false;
-			}
-
-			return true;
+			return this.filter.shown.has(item);
 		},
 
-		countMatches(item, seen) {
+		countMatches(item) {
 			if ( ! this.filter || ! item )
 				return 0;
 
-			if ( seen && seen.has(item) )
-				return 0;
-
-			if ( ! seen )
-				seen = new Set;
-
-			seen.add(item);
-
-			let count = 0;
-
-			for(const key of ['tabs', 'contents', 'items'])
-				if ( item[key] )
-					for(const thing of item[key])
-						count += this.countMatches(thing, seen);
-
-			if ( item.setting && this.shouldShow(item, true) )
-				count++;
-
-			return count;
+			return this.filter.counts.get(item) || 0;
 		},
 
 		markSeen(item) {

@@ -174,10 +174,14 @@ export class VueModule extends Module<'vue'> {
 			});
 
 			this.on('i18n:loaded', keys => {
+				// One replacement rather than a $set per key: a loaded
+				// chunk can carry thousands of keys, and every $set on
+				// the shared object would re-render every mounted t().
 				const i = this._vue_i18n,
-					p = i.phrases;
+					p = Object.assign({}, i.phrases);
 				for(const key of keys)
-					i.$set(p, key, (p[key]||0) + 1);
+					p[key] = (p[key] || 0) + 1;
+				i.phrases = p;
 			});
 
 			vue.prototype.$i18n = this._vue_i18n;

@@ -9,6 +9,7 @@ import {createElement} from 'utilities/dom';
 import {get, has, deep_copy, set_equals} from 'utilities/object';
 
 import Dialog from 'utilities/dialog';
+import awaitMD from 'utilities/markdown';
 
 import SettingMixin from './setting-mixin';
 import ProviderMixin from './provider-mixin';
@@ -19,7 +20,10 @@ function format_term(term) {
 	if ( typeof term !== 'string' )
 		return term;
 
-	return term.replace(/<[^>]*>/g, '').toLocaleLowerCase();
+	// toLowerCase, not toLocaleLowerCase: the search box lowercases its
+	// query with toLowerCase, so the two must agree (they differ for
+	// Turkish dotted I), and the locale variant is noticeably slower.
+	return term.replace(/<[^>]*>/g, '').toLowerCase();
 }
 
 
@@ -48,12 +52,17 @@ export default class MainMenu extends Module {
 		this._settings_tree = null;
 		this._settings_count = 0;
 
+		// The built menu tree is kept between opens and only rebuilt when
+		// something that feeds it changes. See scheduleUpdate.
+		this._built_tree = null;
+		this._tree_dirty = true;
+
 		this.dialog = new Dialog(() => this.buildDialog());
 		this.has_update = false;
 		this.opened = false;
 		this.showing = false;
 
-		this.context = this.settings.context();
+		this.__ctx = null;
 
 		this.settings.addUI('profiles', {
 			path: 'Data Management @{"sort": 1000, "profile_warning": false} > Profiles @{"profile_warning": false}',
@@ -274,6 +283,17 @@ export default class MainMenu extends Module {
 	}
 
 
+	// The menu's settings context is created on first use. Every context
+	// rebuilds its cache whenever the main context changes, and most
+	// sessions never open the menu, so there's no point paying for one
+	// from page load.
+	get context() {
+		if ( ! this.__ctx )
+			this.__ctx = this.settings.context();
+
+		return this.__ctx;
+	}
+
 	openPopout(item) {
 		const win = window.open(
 			`https://twitch.tv/popout/frankerfacez/chat?ffz-settings${item ? `=${encodeURIComponent(item)}` : ''}`,
@@ -291,6 +311,10 @@ export default class MainMenu extends Module {
 	}
 
 	async onLoad() {
+		// Nearly every page renders markdown, so fetch the markdown chunk
+		// alongside the components rather than after the first render.
+		awaitMD().catch(() => {});
+
 		this.vue.component(
 			(await import(/* webpackChunkName: "main-menu" */ './components.js')).default
 		);
@@ -433,16 +457,29 @@ export default class MainMenu extends Module {
 
 
 	getUnseen() {
-		const pages = this.getSettingsTree();
-		if ( ! Array.isArray(pages) )
+		// This feeds the badge on the menu button and runs whenever a
+		// setting is added, so it counts from the raw definitions instead
+		// of building the entire menu tree (search terms and all).
+		const seen_list = this.new_seen ? null : this.settings.provider.get('cfg-seen');
+		if ( ! Array.isArray(seen_list) )
 			return 0;
 
-		let i=0;
-		for(const page of pages)
-			if ( page )
-				i += (page.unseen || 0);
+		if ( ! this._settings_tree )
+			this.rebuildSettingsTree();
 
-		return i;
+		const seen = new Set(seen_list);
+		let count = 0;
+
+		for(const node of Object.values(this._settings_tree)) {
+			if ( ! node?.settings )
+				continue;
+
+			for(const [key, def] of node.settings)
+				if ( key && def.ui && ! def.ui.force_seen && ! seen.has(key) )
+					count++;
+		}
+
+		return count;
 	}
 
 
@@ -467,6 +504,10 @@ export default class MainMenu extends Module {
 
 
 	scheduleUpdate() {
+		// Everything that calls this changes the menu's contents, so the
+		// cached tree has to be rebuilt on its next use.
+		this._tree_dirty = true;
+
 		if ( this._update_timer )
 			return;
 
@@ -539,6 +580,7 @@ export default class MainMenu extends Module {
 	rebuildSettingsTree() {
 		this._settings_tree = {};
 		this._settings_count = 0;
+		this._tree_dirty = true;
 
 		for(const [key, def] of this.settings.definitions)
 			this._addDefinitionToTree(key, def);
@@ -667,6 +709,9 @@ export default class MainMenu extends Module {
 
 
 	getSettingsTree() {
+		if ( this._built_tree && ! this._tree_dirty )
+			return this._built_tree;
+
 		const started = performance.now();
 
 		if ( ! this._settings_tree )
@@ -729,8 +774,11 @@ export default class MainMenu extends Module {
 
 						if ( has(def, 'default') && ! has(tok, 'default') ) {
 							const def_type = typeof def.default;
+							// Frozen so Vue doesn't make every default (some are
+							// large arrays of objects) reactive when the tree is
+							// handed to the menu. Readers copy before editing.
 							if ( def_type === 'object' )
-								tok.default = deep_copy(def.default);
+								tok.default = def.default === null ? null : Object.freeze(deep_copy(def.default));
 							else
 								tok.default = def.default;
 						}
@@ -789,7 +837,7 @@ export default class MainMenu extends Module {
 
 			if ( ! token.search_terms ) {
 				const formatted = token.title && (token.i18n_key ? this.i18n.t(token.i18n_key, token.title, null, true) : token.title);
-				let terms = [token.key];
+				const terms = [token.key];
 
 				if ( formatted && formatted.localeCompare(token.key, undefined, {sensitivity: 'base'}) )
 					terms.push(formatted);
@@ -804,21 +852,11 @@ export default class MainMenu extends Module {
 						terms.push(this.i18n.t(token.desc_i18n_key, token.description, null));
 				}
 
-				terms = terms.map(format_term);
-
-				for(const lk of ['tabs', 'contents', 'items'])
-					if ( token[lk] )
-						for(const tok of token[lk] )
-							if ( tok.search_terms )
-								terms.push(tok.search_terms);
-
-				terms = token.search_terms = terms.join('\n');
-
-				let p = parent;
-				while(p && p.search_terms) {
-					p.search_terms += `\n${terms}`;
-					p = p.parent;
-				}
+				// Only this node's own terms. Whether a node is shown because
+				// something beneath it matches is worked out per search in
+				// search.js, so ancestors no longer accumulate the text of
+				// their entire subtree.
+				token.search_terms = terms.map(format_term).join('\n');
 			}
 
 			const lk = token.tab ? 'tabs' : token.page ? 'contents' : 'items',
@@ -867,6 +905,9 @@ export default class MainMenu extends Module {
 		}
 
 		this.log.info(`Built Tree in ${(performance.now() - started).toFixed(5)}ms with ${Object.keys(tree).length} structure nodes and ${this._settings_count} settings nodes.`);
+
+		this._built_tree = items;
+		this._tree_dirty = false;
 		return items;
 	}
 

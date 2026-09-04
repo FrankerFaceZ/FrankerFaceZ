@@ -5,7 +5,7 @@
 // ============================================================================
 
 import {EventEmitter} from 'utilities/events';
-import {has, get as getter, array_equals, set_equals, map_equals, deep_equals} from 'utilities/object';
+import {has, get as getter, array_equals, set_equals, map_equals, deep_equals, shallow_object_equals} from 'utilities/object';
 
 import DEFINITIONS from './typehandlers';
 import type { AllSettingsKeys, ContextData, SettingMetadata, SettingType, SettingDefinition, SettingsKeys, SettingsTypeHandler } from './types';
@@ -172,9 +172,22 @@ export default class SettingsContext extends EventEmitter<SettingsContextEvents>
 	// ========================================================================
 
 	_rebuildContext() {
-		this.__context = this.parent ?
-			Object.assign({}, this.parent.__context || this.parent._context, this._context) :
-			this._context;
+		if ( this.parent ) {
+			const merged = Object.assign({}, this.parent.__context || this.parent._context, this._context);
+
+			// Our parent tells us to rebuild whenever *its* context changes,
+			// but the change may not be visible to us (a key we override, or
+			// one that isn't in our merged view). Rebuilding the cache is the
+			// expensive part and it cascades to our own children, so skip it
+			// when nothing we see has changed. updateContext only replaces a
+			// value when it differs, so comparing references is enough.
+			if ( this.__context && shallow_object_equals(merged, this.__context) )
+				return;
+
+			this.__context = merged;
+
+		} else
+			this.__context = this._context;
 
 		// Make sure we re-build the cache. Dependency hell.
 		if ( ! this.selectProfiles() )
@@ -414,6 +427,37 @@ export default class SettingsContext extends EventEmitter<SettingsContextEvents>
 			for(const req_key of definition.required_by)
 				if ( ! req_key.startsWith('context.') && ! req_key.startsWith('ls.') )
 					this._update(req_key as SettingsKeys, initial, Array.from(visited));
+	}
+
+
+	/**
+	 * Re-resolve a cached setting in place, along with anything cached that
+	 * requires it. This is used when a definition is added for a key that
+	 * was already read (and therefore cached as `undefined`) so the stale
+	 * value does not stick around. No events are emitted; a definition's
+	 * `changed` handler is not expected to run during registration.
+	 * @internal
+	 */
+	_refresh(key: SettingsKeys, visited?: Set<SettingsKeys>) {
+		if ( ! this.__cache.has(key) )
+			return;
+
+		if ( ! visited )
+			visited = new Set;
+		else if ( visited.has(key) )
+			return;
+
+		visited.add(key);
+
+		this._get(key, key, []);
+
+		const definition = this.manager.definitions.get(key),
+			required_by = Array.isArray(definition) ? definition : definition?.required_by;
+
+		if ( Array.isArray(required_by) )
+			for(const req_key of required_by)
+				if ( ! req_key.startsWith('context.') && ! req_key.startsWith('ls.') )
+					this._refresh(req_key as SettingsKeys, visited);
 	}
 
 

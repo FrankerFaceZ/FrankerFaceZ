@@ -87,6 +87,20 @@ export default class AddonManager extends Module<'addons'> {
 
 		this.target = (this.parent as unknown as FrankerFaceZ).flavor || 'unknown';
 
+		// This must be defined before loadAddonData reads it in onLoad.
+		// Defining it in onEnable meant the read happened first, and the
+		// settings context cached `undefined` for it.
+		if ( ! EXTENSION )
+			this.settings.add('addons.dev.server', {
+				default: false,
+				ui: {
+					path: 'Add-Ons >> Development',
+					title: 'Use Local Development Server',
+					description: 'Attempt to load add-ons from local development server on port 8001.',
+					component: 'setting-check-box'
+				}
+			});
+
 		this.has_dev = false;
 		this.reload_required = false;
 		this.addons = {};
@@ -129,17 +143,6 @@ export default class AddonManager extends Module<'addons'> {
 			on: (...args: Parameters<typeof this.on>) => this.on(...args),
 			off: (...args: Parameters<typeof this.off>) => this.off(...args)
 		});
-
-		if ( ! EXTENSION )
-			this.settings.add('addons.dev.server', {
-				default: false,
-				ui: {
-					path: 'Add-Ons >> Development',
-					title: 'Use Local Development Server',
-					description: 'Attempt to load add-ons from local development server on port 8001.',
-					component: 'setting-check-box'
-				}
-			});
 
 		this.on('i18n:update', this.rebuildAddonSearch, this);
 

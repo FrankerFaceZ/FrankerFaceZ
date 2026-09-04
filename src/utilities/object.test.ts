@@ -53,6 +53,37 @@ describe('equality helpers', () => {
 		const a: any = {}; a.self = a;
 		const b: any = {}; b.self = b;
 		expect(() => deep_equals(a, b)).toThrow(/recursive/);
+
+		// A cycle further down the tree is still caught.
+		const c: any = {list: [{}]}; c.list[0].back = c;
+		const d: any = {list: [{}]}; d.list[0].back = d;
+		expect(() => deep_equals(c, d)).toThrow(/recursive/);
+	});
+
+	it('deep_equals allows shared references that are not cycles', () => {
+		const shared = {x: 1};
+		const a = {left: shared, right: shared, nested: {again: shared}};
+		const b = {left: {x: 1}, right: {x: 1}, nested: {again: {x: 1}}};
+		expect(deep_equals(a, b)).toBe(true);
+		expect(deep_equals(b, a)).toBe(true);
+	});
+
+	it('deep_equals compares deeply nested structures', () => {
+		const make = () => ({
+			a: {b: {c: {d: [1, 2, {e: 'f', g: [null, {h: true}]}]}}},
+			list: [{k: 1}, {k: 2}],
+			empty: {}
+		});
+		expect(deep_equals(make(), make())).toBe(true);
+
+		const changed = make();
+		(changed.a.b.c.d[2] as any).g[1].h = false;
+		expect(deep_equals(make(), changed)).toBe(false);
+
+		const extra = make() as any;
+		extra.a.b.c.z = 1;
+		expect(deep_equals(make(), extra)).toBe(false);
+		expect(deep_equals(extra, make())).toBe(false);
 	});
 });
 

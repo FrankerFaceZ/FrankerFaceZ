@@ -7,6 +7,8 @@
 
 import {EventEmitter, type EventListener, type NamespacedEventArgs, type NamespacedEventKey} from 'utilities/events';
 import Module, { type GenericModule } from 'utilities/module';
+import { sleep } from 'utilities/object';
+import { pruneMutationTargets, scheduleFrame } from './elemental';
 import type { ReactAccessor, ReactNode, ReactRoot, ReactStateNode } from './react-types';
 import type { ClassType, ExtractFunctions, MaybeParameters, OptionalArray, RecursivePartial } from 'utilities/types';
 
@@ -48,6 +50,9 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 	private _waiting_crit?: FineCriteria<any>[] | null;
 	private _waiting_timer?: ReturnType<typeof setInterval> | null;
 
+	private _pending_targets: Set<Node> | null;
+	private _cancel_check: (() => void) | null;
+
 	/** @internal */
 	constructor(name?: string, parent?: GenericModule) {
 		super(name, parent);
@@ -57,10 +62,12 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		this._observer = null;
 		this._waiting = [];
 		this._live_waiting = null;
+		this._pending_targets = null;
+		this._cancel_check = null;
 	}
 
 	/** @internal */
-	async onEnable(tries=0): Promise<void> {
+	async onEnable(tries=0, waited=0): Promise<void> {
 		// TODO: Move awaitElement to utilities/dom
 		if ( ! this.root_element )
 			this.root_element = await (this.parent as any).awaitElement(this.selector || 'body #root');
@@ -72,6 +79,7 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		if ( root?.current ) {
 			this.react_root = root;
 			this.react = root?.current?.child;
+			this._onReactFound();
 			return;
 		}
 
@@ -80,17 +88,21 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 			if ( key ) {
 				this.react_root = null;
 				this.react = this.root_element[key];
+				this._onReactFound();
 				return;
 			}
 		}
 
 		//if ( ! this.root_element || ! this.root_element._reactRootContainer ) {
-		if ( tries > 500 )
+		if ( waited >= 25000 )
 			throw new Error('Unable to find React after 25 seconds');
 
+		// Back off between attempts so a slow mount isn't probed every
+		// 50ms for the whole wait; the overall 25 second budget is kept.
+		const delay = Math.min(50 * (2 ** tries), 1000);
+
 		this.root_element = null;
-		return new Promise<void>(r =>
-			setTimeout(r, 50)).then(() => this.onEnable(tries+1));
+		return sleep(delay).then(() => this.onEnable(tries + 1, waited + delay));
 		//}
 
 		/*this.react_root = this.root_element._reactRootContainer;
@@ -103,6 +115,16 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 	/** @internal */
 	onDisable() {
 		this.react_root = this.root_element = this.react = this.accessor = null;
+	}
+
+	private _onReactFound() {
+		// Anything defined before React mounted has been waiting with no
+		// observer, since there was no tree to watch. Start watching now
+		// and do a single scan for those waiters.
+		if ( this._waiting.length ) {
+			this._updateLiveWaiting();
+			this._checkWaiters();
+		}
 	}
 
 
@@ -617,7 +639,9 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 
 		if ( ! this._live_waiting.length )
 			this._stopWaiting();
-		else if ( ! this._waiting_timer )
+		// Don't watch the DOM before React is found; there is no fiber
+		// tree to search yet. onEnable starts the watch once there is.
+		else if ( ! this._waiting_timer && (this.react || this.react_root) )
 			this._startWaiting();
 	}
 
@@ -737,14 +761,36 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		this._waiting_timer = setInterval(() => this._checkWaiters(), 500);
 
 		if ( ! this._observer )
-			this._observer = new MutationObserver(mutations =>
-				this._checkWaiters(mutations.map(x => x.target))
-			);
+			this._observer = new MutationObserver(mutations => this._queueTargets(mutations));
 
 		this._observer.observe(document.body, {
 			childList: true,
 			subtree: true
 		});
+	}
+
+
+	private _queueTargets(mutations: MutationRecord[]) {
+		// Each target costs a fiber-subtree walk against every waiting
+		// criteria, so gather the targets from a frame's worth of callbacks
+		// and walk them once, with nested targets folded into their
+		// ancestors. The 500ms interval remains the fallback sweep.
+		if ( ! this._pending_targets )
+			this._pending_targets = new Set;
+
+		for(const mut of mutations)
+			this._pending_targets.add(mut.target);
+
+		if ( ! this._cancel_check )
+			this._cancel_check = scheduleFrame(() => {
+				this._cancel_check = null;
+
+				const targets = this._pending_targets;
+				this._pending_targets = null;
+
+				if ( targets && this._live_waiting )
+					this._checkWaiters(pruneMutationTargets(targets));
+			});
 	}
 
 
@@ -757,6 +803,12 @@ export default class Fine extends Module<'site.fine', FineEvents> {
 		if ( this._waiting_timer )
 			clearInterval(this._waiting_timer);
 
+		if ( this._cancel_check ) {
+			this._cancel_check();
+			this._cancel_check = null;
+		}
+
+		this._pending_targets = null;
 		this._live_waiting = null;
 		this._waiting_crit = null;
 		this._waiting_timer = null;

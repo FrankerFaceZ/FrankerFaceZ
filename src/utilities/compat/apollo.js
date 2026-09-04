@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {get} from 'utilities/object';
+import {get, sleep} from 'utilities/object';
 import merge from 'utilities/graphql';
 import { FFZEvent } from 'utilities/events';
 
@@ -77,7 +77,7 @@ export default class Apollo extends Module {
 		return printer;
 	}
 
-	onEnable() {
+	onEnable(tries = 0) {
 		// TODO: Come up with a better way to await something existing.
 		let client = this.client;
 
@@ -103,8 +103,11 @@ export default class Apollo extends Module {
 			this.client = client;
 		}
 
+		// Wait before retrying. The old `new Promise(() => this.onEnable(), 50)`
+		// ran its executor synchronously, recursing with no delay at all.
+		// Back off so the tree search above isn't repeated every 50ms.
 		if ( ! client )
-			return new Promise(() => this.onEnable(), 50);
+			return sleep(Math.min(50 * (2 ** tries), 1000)).then(() => this.onEnable(tries + 1));
 
 		// Register middleware so that we can intercept requests.
 		if ( ! this.client.link || ! this.client.queryManager || ! this.client.queryManager.link ) {

@@ -57,32 +57,13 @@ export default {
 			this.$emit('navigate', ...args);
 		},
 
-		shouldShow(item, is_walking = false) {
+		// Which nodes match is computed once per search, in main-menu,
+		// and carried on the filter. See main_menu/search.js.
+		shouldShow(item) {
 			if ( ! this.filter || item.no_filter )
 				return true;
 
-			if ( this.filter.flags ) {
-				if ( this.filter.flags.has('modified') ) {
-					// We need to tree walk for this one.
-					if ( ! is_walking ) {
-						for(const key of ['tabs', 'contents', 'items'])
-							if ( item[key] )
-								for(const thing of item[key])
-									if ( this.shouldShow(thing) )
-										return true;
-					}
-
-					if ( ! item.setting || ! this.context.currentProfile.has(item.setting) )
-						return false;
-				}
-			}
-
-			if ( this.filter.query ) {
-				if ( ! item.search_terms || ! item.search_terms.includes(this.filter.query) )
-					return false;
-			}
-
-			return true;
+			return this.filter.shown.has(item);
 		}
 	}
 }

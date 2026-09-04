@@ -73,11 +73,11 @@
 
 import {Color} from 'utilities/color';
 
-import {Sketch} from 'vue-color';
-
 export default {
 	components: {
-		'chrome-picker': Sketch
+		// vue-color is ~100KB and only needed once a picker is actually
+		// opened, so it loads on demand rather than with the Vue bundle.
+		'chrome-picker': () => import(/* webpackChunkName: "vue-color" */ 'vue-color').then(mod => mod.Sketch)
 	},
 
 	props: {

@@ -14,6 +14,65 @@ declare module 'utilities/types' {
 	}
 }
 
+
+/**
+ * Reduce a batch of MutationObserver targets to the ones worth scanning.
+ * A target nested inside another target is covered by the ancestor's
+ * subtree scan, so it is dropped. This walks each target's ancestors and
+ * checks set membership rather than comparing every pair with contains(),
+ * so the cost is bounded by depth, not by the square of the batch size.
+ */
+export function pruneMutationTargets(targets: Set<Node>): Node[] {
+	const out: Node[] = [];
+	for(const node of targets) {
+		let parent = node.parentNode,
+			covered = false;
+
+		while(parent) {
+			if ( targets.has(parent) ) {
+				covered = true;
+				break;
+			}
+			parent = parent.parentNode;
+		}
+
+		if ( ! covered )
+			out.push(node);
+	}
+
+	return out;
+}
+
+
+/**
+ * Run `fn` once, on the next animation frame. requestAnimationFrame does
+ * not fire in background tabs, so a timer is armed alongside it and
+ * whichever fires first wins; the other is cancelled.
+ */
+export function scheduleFrame(fn: () => void, fallback = 250): () => void {
+	let raf: ReturnType<typeof requestAnimationFrame> | null = null,
+		timer: ReturnType<typeof setTimeout> | null = null;
+
+	const cancel = () => {
+		if ( raf !== null )
+			cancelAnimationFrame(raf);
+		if ( timer !== null )
+			clearTimeout(timer);
+		raf = timer = null;
+	};
+
+	const run = () => {
+		cancel();
+		fn();
+	};
+
+	raf = requestAnimationFrame(run);
+	timer = setTimeout(run, fallback);
+
+	return cancel;
+}
+
+
 export default class Elemental extends Module<'site.elemental'> {
 
 	private _wrappers: Map<string, ElementalWrapper<any>>;
@@ -27,6 +86,9 @@ export default class Elemental extends Module<'site.elemental'> {
 	private _clean_timeout?: ReturnType<typeof setTimeout> | null;
 	private _clean_all?: ReturnType<typeof requestAnimationFrame> | null;
 
+	private _pending_targets: Set<Node> | null;
+	private _cancel_check: (() => void) | null;
+
 	constructor(name?: string, parent?: GenericModule) {
 		super(name, parent);
 
@@ -38,7 +100,11 @@ export default class Elemental extends Module<'site.elemental'> {
 		this._watching = new Set;
 		this._live_watching = null;
 
-		this.scheduleCleaning();
+		this._pending_targets = null;
+		this._cancel_check = null;
+
+		// The clean sweep is started by the first tracked element rather
+		// than here; there is nothing to sweep until then.
 	}
 
 	/** @internal */
@@ -78,14 +144,25 @@ export default class Elemental extends Module<'site.elemental'> {
 	}
 
 	scheduleCleaning() {
-		if ( this._clean_timeout )
-			clearTimeout(this._clean_timeout);
+		// The sweep only has work while some wrapper is tracking elements.
+		// It stops re-arming once nothing is tracked and add() starts it
+		// again, so an idle page doesn't wake up every second for nothing.
+		if ( this._clean_timeout || ! this._hasInstances() )
+			return;
 
 		this._clean_timeout = setTimeout(() => {
 			this._clean_timeout = null;
 			this.cleanAll();
 			this.scheduleCleaning();
 		}, 1000);
+	}
+
+	private _hasInstances() {
+		for(const wrapper of this._wrappers.values())
+			if ( wrapper.instances.size )
+				return true;
+
+		return false;
 	}
 
 	cleanAll() {
@@ -166,11 +243,33 @@ export default class Elemental extends Module<'site.elemental'> {
 				watcher.checkElements(muts as Element[]);
 	}
 
+	private _queueTargets(mutations: MutationRecord[]) {
+		// Every watcher runs querySelectorAll on every target, so collect
+		// the targets from all the callbacks in a frame and check them
+		// once, with nested targets folded into their ancestors.
+		if ( ! this._pending_targets )
+			this._pending_targets = new Set;
+
+		for(const mut of mutations)
+			this._pending_targets.add(mut.target);
+
+		if ( ! this._cancel_check )
+			this._cancel_check = scheduleFrame(() => {
+				this._cancel_check = null;
+
+				const targets = this._pending_targets;
+				this._pending_targets = null;
+
+				if ( targets && this._observer )
+					this._checkWatchers(pruneMutationTargets(targets));
+			});
+	}
+
 	private _startWatching() {
 		if ( ! this._observer && this._live_watching && this._live_watching.length ) {
 			this.log.info('Installing MutationObserver.');
 
-			this._observer = new MutationObserver(mutations => this._checkWatchers(mutations.map(x => x.target)));
+			this._observer = new MutationObserver(mutations => this._queueTargets(mutations));
 			this._observer.observe(document.body, {
 				childList: true,
 				subtree: true
@@ -189,6 +288,12 @@ export default class Elemental extends Module<'site.elemental'> {
 			this._timeout = null;
 		}
 
+		if ( this._cancel_check ) {
+			this._cancel_check();
+			this._cancel_check = null;
+		}
+
+		this._pending_targets = null;
 		this._live_watching = null;
 		this._observer = null;
 	}
@@ -397,6 +502,7 @@ export class ElementalWrapper<
 		}
 
 		this.schedule();
+		this.elemental.scheduleCleaning();
 		this.emit('mount', element);
 	}
 
