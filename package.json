@@ -63,7 +63,7 @@
 		"typedoc-plugin-mdn-links": "^5.1.1",
 		"typedoc-plugin-no-inherit": "^1.6.1",
 		"typedoc-plugin-rename-defaults": "^0.7.3",
-		"typescript": "^5.8.3",
+		"typescript": "6.0.3",
 		"typescript-eslint": "^8.69.0",
 		"vitest": "^4",
 		"vue-eslint-parser": "^10.4.1",
