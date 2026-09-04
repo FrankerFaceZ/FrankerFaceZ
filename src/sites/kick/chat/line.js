@@ -28,7 +28,7 @@ const HIDDEN_CLASS = 'ffz--kick-hidden';
 // is random per page load, so it is found on the first row seen.
 let props_key = null;
 
-function getRowProps(row) {
+export function getRowProps(row) {
 	if ( ! props_key || ! (props_key in row) ) {
 		props_key = null;
 		for(const key in row)
