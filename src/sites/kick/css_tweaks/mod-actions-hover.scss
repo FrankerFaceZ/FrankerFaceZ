@@ -1,0 +1,11 @@
+// Mod actions only while the pointer is over a line. Space stays reserved
+// so text doesn't jump when they appear.
+
+#chatroom-messages [data-index]:not(:hover) div[style*="--chatroom-mod-actions-display"] {
+	opacity: 0;
+	pointer-events: none;
+}
+
+#chatroom-messages div[style*="--chatroom-mod-actions-display"] {
+	transition: opacity 0.1s;
+}

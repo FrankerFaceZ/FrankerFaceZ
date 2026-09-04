@@ -1,0 +1,32 @@
+// Kick's mod actions (delete, timeout, ban) drawn the way Twitch draws its
+// mod icons: small, grey, lit on hover, tucked in before the name rather
+// than three 24px buttons with a wide gap. The row is the element Kick
+// shows or hides with its mod-actions variable.
+
+#chatroom-messages div[style*="--chatroom-mod-actions-display"] {
+	gap: 1px !important;
+	margin-right: 4px;
+	vertical-align: middle;
+
+	> button {
+		width: 18px !important;
+		height: 18px !important;
+		min-width: 0 !important;
+		padding: 0 !important;
+		border-radius: 2px !important;
+		font-size: 13px !important;
+		color: var(--edge-color-kick-asphaltBlack-300, #adadb8) !important;
+		background: none !important;
+		transition: color 0.1s, background-color 0.1s;
+
+		&:hover {
+			color: #fff !important;
+			background-color: rgba(255, 255, 255, 0.15) !important;
+		}
+
+		svg {
+			width: 14px;
+			height: 14px;
+		}
+	}
+}
