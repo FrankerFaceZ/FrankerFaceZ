@@ -446,7 +446,7 @@ export default class ThemeEngine extends Module {
 			this.css_tweaks.delete('accent-normal');
 	}
 
-	toggleNormalizer(enable) { // eslint-disable-line class-methods-use-this
+	toggleNormalizer(enable) {  
 		// Intentionally disabled~
 		/*if ( ! this._normalizer ) {
 			if ( ! enable )

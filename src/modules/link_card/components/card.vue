@@ -153,7 +153,7 @@
 		>
 			<table v-if="embed && embed.urls && embed.urls.length">
 				<tbody
-					v-for="(url, idx) in embed.urls"
+					v-for="(link, idx) in embed.urls"
 					:key="idx"
 				>
 					<tr>
@@ -162,26 +162,26 @@
 						</td>
 						<td class="tw-pd-x-05 tw-word-break-all">
 							<a
-								:data-url="url.url"
-								:href="url.url"
+								:data-link="link.link"
+								:href="link.link"
 								rel="noreferrer noopener"
 								target="_blank"
 								class="ffz-link--inherit"
 							>
-								<lc-url :url="url.url" :show-protocol="true" />
+								<lc-link :link="link.link" :show-protocol="true" />
 							</a>
 						</td>
 					</tr>
-					<tr v-if="url.shortened || (url.flags && url.flags.length)">
+					<tr v-if="link.shortened || (link.flags && link.flags.length)">
 						<td>&nbsp;</td>
 						<td class="tw-pd-x-05">
 							<span
-								v-if="url.shortened"
+								v-if="link.shortened"
 								class="ffz-pill"
 							>{{ t('link-card.shortened', 'shortened') }}</span>
 							<span
-								v-for="flag in url.flags"
-								v-if="url.flags"
+								v-for="(flag, fidx) in link.flags"
+								:key="fidx"
 								class="ffz-pill ffz-pill--live"
 							>{{ flag }}</span>
 						</td>

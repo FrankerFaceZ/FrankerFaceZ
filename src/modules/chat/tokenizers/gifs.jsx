@@ -36,7 +36,7 @@ export const Gifs = {
 					alt={token.title}
 					data-normal-src={hover ? token.staticUrl : undefined}
 					data-hover-src={hover ? token.animUrl : undefined}
-					onLoad={() => this.emit('chat:image-load')} // eslint-disable-line react/jsx-no-bind
+					onLoad={() => this.emit('chat:image-load')}
 				/>
 			</a>
 			<div class="ffz--gif-report-overlay">
@@ -44,7 +44,7 @@ export const Gifs = {
 					class="ffz-tooltip ffz--gif-report-btn"
 					data-tooltip-type="html"
 					data-title={this.i18n.t('chat.gif.report', 'Report GIF')}
-					onClick={e => this.reportGif(e, token)} // eslint-disable-line react/jsx-no-bind
+					onClick={e => this.reportGif(e, token)}
 				>
 					<figure class="ffz-i-flag" />
 				</button>

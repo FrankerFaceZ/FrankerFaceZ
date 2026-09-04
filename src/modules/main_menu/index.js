@@ -884,7 +884,7 @@ export default class MainMenu extends Module {
 	}
 
 
-	getProfileProxy(profile, context) { // eslint-disable-line class-methods-use-this
+	getProfileProxy(profile, context) {  
 		return {
 			id: profile.id,
 

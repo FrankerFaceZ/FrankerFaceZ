@@ -656,7 +656,7 @@ export default class Actions extends Module {
 	}
 
 
-	getUserLevel(room, user) { // eslint-disable-line class-methods-use-this
+	getUserLevel(room, user) {  
 		if ( ! room || ! user  )
 			return 0;
 

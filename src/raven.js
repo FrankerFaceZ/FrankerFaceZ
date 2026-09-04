@@ -302,7 +302,7 @@ export default class RavenLogger extends Module {
 	}
 
 
-	rewriteFrames(frames) { // eslint-disable-line class-methods-use-this
+	rewriteFrames(frames) {  
 		for(const frame of frames)
 			frame.filename = fix_url(frame.filename);
 	}

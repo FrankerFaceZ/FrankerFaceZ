@@ -628,7 +628,8 @@ export default class Emotes extends Module {
 		if ( ! this.parent.context.get('chat.effects.enable') )
 			return null;
 
-		let filter, transformOrigin, transform, animation, animations = [];
+		let filter, transformOrigin, transform, animation;
+		const animations = [];
 
 		for(const input of this.activeEffectStyles) {
 			if ( (flags & input.flags) !== input.flags )
@@ -814,7 +815,7 @@ export default class Emotes extends Module {
 	// Animation Hover
 	// ========================================================================
 
-	animHover(event) { // eslint-disable-line class-methods-use-this
+	animHover(event) {  
 		const target = event.currentTarget;
 		if ( target[HoverState] )
 			return;
@@ -844,7 +845,7 @@ export default class Emotes extends Module {
 	}
 
 
-	animLeave(event) { // eslint-disable-line class-methods-use-this
+	animLeave(event) {  
 		const target = event.currentTarget;
 		if ( ! target[HoverState] )
 			return;
@@ -1196,7 +1197,7 @@ export default class Emotes extends Module {
 			.map(set_id => this.emote_sets[set_id]);
 	}
 
-	_withSources(out, seen, emote_sets, room_id = null) { // eslint-disable-line class-methods-use-this
+	_withSources(out, seen, emote_sets, room_id = null) {  
 		if ( ! emote_sets?._sources )
 			return;
 
@@ -1787,7 +1788,7 @@ export default class Emotes extends Module {
 	 * any previous version. Returns false when nothing visible changed and
 	 * the CSS does not need updating.
 	 */
-	storeEmoteInSet(set, processed, is_disabled, old_emote) { // eslint-disable-line class-methods-use-this
+	storeEmoteInSet(set, processed, is_disabled, old_emote) {  
 		if ( is_disabled ) {
 			set.disabled_emotes[processed.id] = processed;
 			set.disabled_count++;
@@ -2019,7 +2020,7 @@ export default class Emotes extends Module {
 	// Emote CSS
 	// ========================================================================
 
-	generateEmoteCSS(emote) { // eslint-disable-line class-methods-use-this
+	generateEmoteCSS(emote) {  
 		if ( ! emote.mask && ! emote.margins && ( ! emote.modifier || ( ! emote.modifier_offset && ! emote.extra_width && ! emote.shrink_to_fit ) ) && ! emote.css )
 			return '';
 

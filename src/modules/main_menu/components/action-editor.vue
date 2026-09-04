@@ -54,8 +54,7 @@
 							class="tw-border-radius-medium ffz-font-size-6 tw-full-width ffz-select tw-pd-l-1 tw-pd-r-3 tw-pd-y-05 tw-mg-y-05"
 						>
 							<option
-								v-for="(r, key) in data.renderers"
-								v-if="supportsRenderer(key)"
+								v-for="(r, key) in supportedRenderers"
 								:key="key"
 								:value="key"
 							>
@@ -508,6 +507,14 @@ export default {
 	},
 
 	computed: {
+		supportedRenderers() {
+			const out = {};
+			for(const [key, renderer] of Object.entries(this.data.renderers))
+				if ( this.supportsRenderer(key) )
+					out[key] = renderer;
+			return out;
+		},
+
 		json() {
 			return JSON.stringify(this.display)
 		},

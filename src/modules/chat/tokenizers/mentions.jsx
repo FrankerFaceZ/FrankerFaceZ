@@ -31,9 +31,9 @@ function mention_processAll(tokens, msg, user, color_mentions) {
 		for(const segment of token.text.split(/ +/)) {
 			const match = /^(@?)(\S+?)(?:\b|$)/.exec(segment);
 			if ( match ) {
-				let recipient = match[2],
-					has_at = match[1] === '@',
-					mentioned = false;
+				const recipient = match[2],
+					has_at = match[1] === '@';
+				let mentioned = false;
 
 				const rlower = recipient ? recipient.toLowerCase() : '',
 					color = this.color_cache ? this.color_cache.get(rlower) : null;

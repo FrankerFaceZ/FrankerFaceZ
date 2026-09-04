@@ -757,7 +757,7 @@ export default class Chat extends Module {
 	}
 
 
-	standardizeWhisper(msg) { // eslint-disable-line class-methods-use-this
+	standardizeWhisper(msg) {  
 		if ( ! msg )
 			return msg;
 
@@ -796,7 +796,7 @@ export default class Chat extends Module {
 	}
 
 
-	getUserLevel(msg) { // eslint-disable-line class-methods-use-this
+	getUserLevel(msg) {  
 		if ( ! msg || ! msg.user )
 			return 0;
 
@@ -846,7 +846,7 @@ export default class Chat extends Module {
 	}
 
 
-	applyHighlight(msg, priority, color, reason, use_null_color = false) { // eslint-disable-line class-methods-use-this
+	applyHighlight(msg, priority, color, reason, use_null_color = false) {  
 		if ( ! msg )
 			return msg;
 
@@ -1016,7 +1016,7 @@ export default class Chat extends Module {
 	}
 
 
-	detokenizeContent(msg, emotes_only = false) { // eslint-disable-line class-methods-use-this
+	detokenizeContent(msg, emotes_only = false) {  
 		const out = [],
 			parts = msg.content.fragments,
 			l = parts.length,
@@ -1059,7 +1059,7 @@ export default class Chat extends Module {
 	}
 
 
-	detokenizeMessage(msg, emotes_only = false) { // eslint-disable-line class-methods-use-this
+	detokenizeMessage(msg, emotes_only = false) {  
 		const out = [],
 			parts = msg.messageParts,
 			l = parts.length,
@@ -1790,8 +1790,8 @@ export default class Chat extends Module {
 
 	canReportGif() {
 		const site = this.resolve('site'),
-		user = site.getUser(),
-		web_munch = this.resolve('site.web_munch');
+			user = site.getUser(),
+			web_munch = this.resolve('site.web_munch');
 
 		let report_form;
 		try {
@@ -1808,11 +1808,11 @@ export default class Chat extends Module {
 		event.stopPropagation();
 
 		if ( ! this.canReportGif() )
-			 return false;
+			return false;
 
 		const site = this.resolve('site'),
-		web_munch = this.resolve('site.web_munch'),
-		report_form = web_munch.getModule('user-report');
+			web_munch = this.resolve('site.web_munch'),
+			report_form = web_munch.getModule('user-report');
 
 		site.store.dispatch({
 			type: 'core.modal.MODAL_SHOWN',

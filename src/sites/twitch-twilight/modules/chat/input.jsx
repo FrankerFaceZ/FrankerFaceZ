@@ -601,8 +601,6 @@ export default class Input extends Module {
 				this.props.emotes.splice(idx, 1, data);
 			else if ( idx !== -1 && ! data )
 				this.props.emotes.splice(idx, 1);
-			else
-				return;
 
 			// TODO: Somehow update other React state to deal with our
 			// injected changes. Making a shallow copy of the array

@@ -347,7 +347,7 @@ export default class PlayerBase extends Module {
 	}
 
 	/** Attach and remove the DOM listeners FFZ adds to the player, plus delayed pause. */
-	installPlayerListeners(cls) { // eslint-disable-line class-methods-use-this
+	installPlayerListeners(cls) {  
 		cls.prototype.ffzAttachListeners = function() {
 			const cont = this.props.containerRef;
 			if ( ! cont || this._ffz_listeners )
@@ -604,7 +604,7 @@ export default class PlayerBase extends Module {
 		}
 	}
 
-	shouldStopAutoplay() { // eslint-disable-line class-methods-use-this
+	shouldStopAutoplay() {  
 		return false;
 	}
 
@@ -1226,7 +1226,7 @@ export default class PlayerBase extends Module {
 		this.PlayerSource.check();
 		for(const inst of this.PlayerSource.instances) {
 			if ( ! player || player === findPlayer(inst.props) )
-				await inst.setSrc({isNewMediaPlayerInstance: false});
+				await inst.setSrc({isNewMediaPlayerInstance: false}); // eslint-disable-line no-await-in-loop -- players reset one at a time
 		}
 
 		if ( position > 0 )
@@ -1243,7 +1243,7 @@ export default class PlayerBase extends Module {
 		inst._ffz_md_update();
 	}
 
-	wantsMetadata() { // eslint-disable-line class-methods-use-this
+	wantsMetadata() {  
 		return false;
 	}
 

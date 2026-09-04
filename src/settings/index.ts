@@ -337,7 +337,7 @@ export default class SettingsManager extends Module<'settings', SettingsEvents> 
 		this.updateRoutes();
 	}
 
-	getFilterBasicEditor() { // eslint-disable-line class-methods-use-this
+	getFilterBasicEditor() {  
 		return () => import(/* webpackChunkName: 'main-menu' */ './components/basic-toggle.vue')
 	}
 

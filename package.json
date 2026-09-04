@@ -7,7 +7,7 @@
 	"license": "Apache-2.0",
 	"scripts": {
 		"start": "bun run dev",
-		"eslint": "eslint \"src/**/*.{js,jsx,vue,ts,tsx}\" \"types/**/*.ts\"",
+		"eslint": "eslint --max-warnings 0 \"src/**/*.{js,jsx,vue,ts,tsx}\" \"types/**/*.ts\"",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",

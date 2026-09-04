@@ -594,7 +594,7 @@ export default class TranslationManager extends Module {
 	}
 
 
-	recordCall(store, stack) { // eslint-disable-line class-methods-use-this
+	recordCall(store, stack) {  
 		if ( ! Array.isArray(stack) )
 			return;
 

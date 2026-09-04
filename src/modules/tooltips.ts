@@ -214,7 +214,7 @@ export default class TooltipProvider extends Module<'tooltips', TooltipEvents> {
 	}
 
 
-	getRoot() { // eslint-disable-line class-methods-use-this
+	getRoot() {  
 		return document.querySelector<HTMLElement>('.sunlight-root') ||
 			//document.querySelector('#root>div') ||
 			document.querySelector('#root') ||

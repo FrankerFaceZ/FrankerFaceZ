@@ -66,7 +66,7 @@ export default class Switchboard extends Module {
 	}
 
 
-	getPossibleRoutes(switches) { // eslint-disable-line class-methods-use-this
+	getPossibleRoutes(switches) {  
 		const routes = new Set;
 		for(const switchy of switches) {
 			if ( Array.isArray(switchy?.props?.children) )

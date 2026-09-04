@@ -10,11 +10,9 @@
 				v-model="selected"
 				class="tw-flex-grow-1 tw-mg-l-1 tw-border-radius-medium tw-font-size-6 tw-pd-x-1 tw-pd-y-05 ffz-select"
 			>
-				<template v-for="(mon, idx) in monitors">
-					<option :value="mon">
-						{{ idx + 1 }}. {{ mon.label }} ({{ mon.width }}&times;{{ mon.height }})
-					</option>
-				</template>
+				<option v-for="(mon, idx) in monitors" :key="idx" :value="mon">
+					{{ idx + 1 }}. {{ mon.label }} ({{ mon.width }}&times;{{ mon.height }})
+				</option>
 			</select>
 		</div>
 		<div class="tw-c-text-alt-2">

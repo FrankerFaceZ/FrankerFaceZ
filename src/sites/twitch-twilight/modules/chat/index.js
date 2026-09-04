@@ -1304,6 +1304,7 @@ export default class ChatHook extends Module {
 
 				this.log.info(`Claiming: "${drop.name}" from "${campaign.name}"`);
 
+				/* eslint-disable no-await-in-loop -- one claim at a time, paced to avoid rate limits */
 				try {
 					const claimResult = await apollo.client.mutate({
 						mutation: await import(/* webpackChunkName: 'queries' */ '../../../../utilities/mutations/drops-claim.gql'),
@@ -1321,6 +1322,7 @@ export default class ChatHook extends Module {
 				}
 
 				await sleep(3000);
+				/* eslint-enable no-await-in-loop */
 			}
 		}
 	}
@@ -2134,7 +2136,7 @@ export default class ChatHook extends Module {
 	}
 
 
-	scheduleMystery(mystery) { // eslint-disable-line class-methods-use-this
+	scheduleMystery(mystery) {  
 		if ( ! mystery.line )
 			return;
 
@@ -2856,7 +2858,7 @@ export default class ChatHook extends Module {
 	}
 
 
-	removeRoom(thing) { // eslint-disable-line class-methods-use-this
+	removeRoom(thing) {  
 		if ( ! thing._ffz_room )
 			return;
 
@@ -3002,13 +3004,13 @@ export default class ChatHook extends Module {
 	// Chat Buffer Connector
 	// ========================================================================
 
-	connectorMounted(inst) { // eslint-disable-line class-methods-use-this
+	connectorMounted(inst) {  
 		const buffer = inst.props.messageBufferAPI;
 		if ( buffer && buffer._ffz_inst && buffer._ffz_inst._ffz_connector !== inst )
 			buffer._ffz_inst._ffz_connector = inst;
 	}
 
-	connectorUpdated(inst, props) { // eslint-disable-line class-methods-use-this
+	connectorUpdated(inst, props) {  
 		const buffer = props.messageBufferAPI,
 			new_buffer = inst.props.messageBufferAPI;
 
@@ -3022,7 +3024,7 @@ export default class ChatHook extends Module {
 			buffer._ffz_inst._ffz_connector = inst;
 	}
 
-	connectorUnmounted(inst) { // eslint-disable-line class-methods-use-this
+	connectorUnmounted(inst) {  
 		const buffer = inst.props.messageBufferAPI;
 		if ( buffer && buffer._ffz_inst && buffer._ffz_inst._ffz_connector === inst )
 			buffer._ffz_inst._ffz_connector = null;
@@ -3238,7 +3240,7 @@ export default class ChatHook extends Module {
 		this.updateRoomRules(cont, props.chatRules);
 	}
 
-	hasRoomBadges(cont) { // eslint-disable-line class-methods-use-this
+	hasRoomBadges(cont) {  
 		const room = cont._ffz_room;
 		if ( ! room )
 			return false;
@@ -3256,7 +3258,7 @@ export default class ChatHook extends Module {
 		//this.updateChatLines();
 	}
 
-	updateRoomRules(cont, rules) { // eslint-disable-line class-methods-use-this
+	updateRoomRules(cont, rules) {  
 		const room = cont._ffz_room;
 		if ( ! room )
 			return;

@@ -142,48 +142,49 @@
 		</div>
 
 		<div
-			v-for="item in log"
-			:key="item._id"
+			v-for="entry in log"
+			:key="entry._id"
 			class="tw-elevation-1 tw-border tw-pd-y-05 tw-pd-r-1 tw-mg-y-05 tw-flex tw-flex-nowrap tw-align-items-center"
-			:class="{'tw-c-background-base': item.pubsub, 'tw-c-background-alt-2': !item.pubsub}"
+			:class="{'tw-c-background-base': entry.pubsub, 'tw-c-background-alt-2': !entry.pubsub}"
 		>
 			<time class="tw-mg-l-05 tw-mg-r-1 tw-flex-shrink-0">
-				{{ tTime(item.timestamp, 'HH:mm:ss') }}
+				{{ tTime(entry.timestamp, 'HH:mm:ss') }}
 			</time>
-			<div v-if="item.pubsub" class="tw-flex-grow-1">
+			<div v-if="entry.pubsub" class="tw-flex-grow-1">
 				<div class="tw-mg-b-05 tw-border-b tw-pd-b-05">
-					{{ item.topic }}
+					{{ entry.topic }}
 				</div>
-				<div v-html="highlightJson(item.data)" />
+				<!-- eslint-disable-next-line vue/no-v-html -- highlightJson escapes its input -->
+				<div v-html="highlightJson(entry.data)" />
 			</div>
-			<div v-else-if="item.chat" class="tw-flex-grow-1">
-				<div v-if="item.tags" class="ffz-ct--tags">
-					@<template v-for="(tag, key) in item.tags">
+			<div v-else-if="entry.chat" class="tw-flex-grow-1">
+				<div v-if="entry.tags" class="ffz-ct--tags">
+					@<span v-for="(tag, key) in entry.tags" :key="key">
 						<span class="ffz-ct--tag">{{ key }}</span>=<span class="ffz-ct--tag-value">{{ tag }}</span>;
-					</template>
+					</span>
 				</div>
 				<div class="ffz-ct--prefix">
-					<template v-if="item.prefix">
-						:<span v-if="item.user" class="ffz-ct--user">{{ item.user }}</span><span class="ffz-ct--prefix">{{ item.prefix }}</span>
+					<template v-if="entry.prefix">
+						:<span v-if="entry.user" class="ffz-ct--user">{{ entry.user }}</span><span class="ffz-ct--prefix">{{ entry.prefix }}</span>
 					</template>
-					<span class="ffz-ct--command">{{ item.command }}</span>
-					<template v-if="item.channel">
-						#<span class="ffz-ct--channel">{{ item.channel }}</span>
+					<span class="ffz-ct--command">{{ entry.command }}</span>
+					<template v-if="entry.channel">
+						#<span class="ffz-ct--channel">{{ entry.channel }}</span>
 					</template>
 				</div>
-				<div v-if="item.last_param" class="ffz-ct--params">
-					<span v-for="para in item.params" class="ffz-ct--param">{{ para }}</span>
-					:<span class="ffz-ct--param">{{ item.last_param }}</span>
+				<div v-if="entry.last_param" class="ffz-ct--params">
+					<span v-for="(para, pidx) in entry.params" :key="pidx" class="ffz-ct--param">{{ para }}</span>
+					:<span class="ffz-ct--param">{{ entry.last_param }}</span>
 				</div>
 			</div>
 			<div v-else class="tw-flex-grow-1">
-				{{ item.data }}
+				{{ entry.data }}
 			</div>
 			<div class="tw-mg-l-1 tw-flex tw-flex-wrap tw-flex-column tw-justify-content-start tw-align-items-start">
 				<button
-					v-if="item.chat || item.pubsub"
+					v-if="entry.chat || entry.pubsub"
 					class="tw-button tw-button--text"
-					@click="replayItem(item)"
+					@click="replayItem(entry)"
 				>
 					<span class="tw-button__text ffz-i-arrows-cw">
 						{{ t('debug.chat-tester.replay', 'Replay') }}
@@ -191,7 +192,7 @@
 				</button>
 				<button
 					class="tw-button tw-button--text"
-					@click="copyItem(item)"
+					@click="copyItem(entry)"
 				>
 					<span class="tw-button__text ffz-i-docs">
 						{{ t('setting.copy-json', 'Copy') }}

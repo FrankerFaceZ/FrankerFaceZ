@@ -386,7 +386,7 @@ export class TranslationCore {
 		return formatter.format(value);
 	}
 
-	formatDuration(value: number) { // eslint-disable-line class-methods-use-this
+	formatDuration(value: number) {  
 		return duration_to_string(value);
 	}
 

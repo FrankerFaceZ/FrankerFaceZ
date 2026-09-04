@@ -1,14 +1,14 @@
 <template>
 	<section class="viewer-card__actions tw-bottom-0">
 		<div
-			v-for="(actions, idx) in display"
-			:key="idx"
-			:class="[idx === 0 ? 'tw-c-background-alt tw-pd-y-1' : 'tw-c-background-alt-2 tw-pd-y-05']"
+			v-for="(group, gidx) in display"
+			:key="gidx"
+			:class="[gidx === 0 ? 'tw-c-background-alt tw-pd-y-1' : 'tw-c-background-alt-2 tw-pd-y-05']"
 			class="tw-full-width tw-flex tw-flex-row tw-pd-x-05"
 		>
 			<action
-				v-for="(act, idx) in actions"
-				:key="idx"
+				v-for="(act, aidx) in group"
+				:key="aidx"
 				:act="act"
 				:renderers="renderers"
 			/>
