@@ -80,7 +80,6 @@ export const CHAT_TYPES = make_enum(
 	'CommunityChallengeContribution',
 	'LiveMessageSeparator',
 	'RestrictedLowTrustUserMessage',
-	'CommunityIntroduction',
 	'Shoutout',
 	'AnnouncementMessage',
 	'CharityDonation',
