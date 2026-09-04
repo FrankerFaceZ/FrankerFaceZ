@@ -4,10 +4,12 @@ on:
   push:
   pull_request:
 
-# A newer push to the same branch supersedes an in-flight run.
+# A newer push to the same branch supersedes an in-flight run, except on
+# master, whose runs deploy and must finish: a queued duplicate once got
+# GitHub to cancel the deploying run instead.
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   build:
