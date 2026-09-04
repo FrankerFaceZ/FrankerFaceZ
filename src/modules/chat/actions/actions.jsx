@@ -12,6 +12,7 @@ import Tooltip from 'utilities/tooltip';
 
 import * as ACTIONS from './types';
 import * as RENDERERS from './renderers';
+import { hasLeadModPermissions } from './permissions';
 import { transformPhrase } from 'src/i18n';
 
 const VAR_REPLACE = /\{\{(.*?)(?:\|(.*?))?\}\}/g;
@@ -648,19 +649,7 @@ export default class Actions extends Module {
 	isCurrentUserLeadMod() {
 		try {
 			const input = this.resolve('site.chat.input');
-			const perms = input?.CommandSuggestions?.first?.props?.chatCommandPermissions;
-			// Twitch's permissionLevel is the same for lead and regular
-			// moderators. What sets lead moderators apart is the set of
-			// chat command permissions, which holds the role-management
-			// entries (moderation.roles.mod:add and friends) only for them.
-			if ( ! (perms instanceof Set) )
-				return false;
-
-			for(const perm of perms)
-				if ( typeof perm === 'string' && perm.startsWith('moderation.roles.') )
-					return true;
-
-			return false;
+			return hasLeadModPermissions(input?.CommandSuggestions?.first?.props?.chatCommandPermissions);
 		} catch (err) {
 			return false;
 		}
