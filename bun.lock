@@ -28,9 +28,7 @@
         "sourcemapped-stacktrace": "^1.1.11",
         "text-diff": "^1.0.1",
         "vue": "^2.7.16",
-        "vue-clickaway": "^2.2.2",
         "vue-color": "^2.8.2",
-        "vue-observe-visibility": "^1.0.0",
         "vuedraggable": "^2.24.3",
       },
       "devDependencies": {
@@ -44,7 +42,6 @@
         "@types/crypto-js": "^4.2.2",
         "@types/js-cookie": "^3.0.6",
         "@types/safe-regex": "^1.1.6",
-        "@types/vue-clickaway": "^2.2.4",
         "@types/webpack-env": "^1.18.8",
         "browserslist": "^4.25.0",
         "css-loader": "^7.1.5",
@@ -424,8 +421,6 @@
     "@types/sockjs": ["@types/sockjs@0.3.36", "", { "dependencies": { "@types/node": "*" } }, "sha512-MK9V6NzAS1+Ud7JV9lJLFqW85VbC9dq3LmwZCuBe4wBDgKC0Kj/jd8Xl+nSviU+Qc3+m7umHHyHg//2KSa0a0Q=="],
 
     "@types/unist": ["@types/unist@3.0.3", "", {}, "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="],
-
-    "@types/vue-clickaway": ["@types/vue-clickaway@2.2.4", "", { "dependencies": { "vue": "^2.0.0" } }, "sha512-Jy0dGNUrm/Fya1hY8bHM5lXJvZvlyU/rvgLEFVcjQkwNp2Z2IGNnRKS6ZH9orMDkUI7Qj0oyWp0b89VTErAS9Q=="],
 
     "@types/webpack-env": ["@types/webpack-env@1.18.8", "", {}, "sha512-G9eAoJRMLjcvN4I08wB5I7YofOb/kaJNd5uoCMX+LbKXTPCF+ZIHuqTnFaK9Jz1rgs035f9JUPUhNFtqgucy/A=="],
 
@@ -1467,8 +1462,6 @@
 
     "vue": ["vue@2.7.16", "", { "dependencies": { "@vue/compiler-sfc": "2.7.16", "csstype": "^3.1.0" } }, "sha512-4gCtFXaAA3zYZdTp5s4Hl2sozuySsgz4jy1EnpBHNfpMa9dK1ZCG7viqBPCwXtmgc8nHqUsAu3G4gtmXkkY3Sw=="],
 
-    "vue-clickaway": ["vue-clickaway@2.2.2", "", { "dependencies": { "loose-envify": "^1.2.0" }, "peerDependencies": { "vue": "^2.0.0" } }, "sha512-25SpjXKetL06GLYoLoC8pqAV6Cur9cQ//2g35GRFBV4FgoljbZZjTINR8g2NuVXXDMLSUXaKx5dutgO4PaDE7A=="],
-
     "vue-color": ["vue-color@2.8.2", "", { "dependencies": { "clamp": "^1.0.1", "lodash.throttle": "^4.0.0", "material-colors": "^1.0.0", "tinycolor2": "^1.1.2" } }, "sha512-1qmsxl5GiIjx/jApBbTGr2r4bN/7WRKUTl3tc53vkXb9Ua0rZmiqsdq6VdG1e7dVNTLJahdsRGWcjeU2+98+NA=="],
 
     "vue-eslint-parser": ["vue-eslint-parser@10.4.1", "", { "dependencies": { "debug": "^4.4.0", "eslint-scope": "^8.2.0 || ^9.0.0", "eslint-visitor-keys": "^4.2.0 || ^5.0.0", "espree": "^10.3.0 || ^11.0.0", "esquery": "^1.6.0", "semver": "^7.6.3" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0" } }, "sha512-Gk6gRDj0n/fkRa3C3l0bBheoBckUq/Rs0F/TvMWIS6nzzx67amAViMe9CkNgsP2tXyQONvGiHQESHwFtZ3aYDA=="],
@@ -1476,8 +1469,6 @@
     "vue-hot-reload-api": ["vue-hot-reload-api@2.3.4", "", {}, "sha512-BXq3jwIagosjgNVae6tkHzzIk6a8MHFtzAdwhnV5VlvPTFxDCvIttgSiHWjdGoTJvXtmRu5HacExfdarRcFhog=="],
 
     "vue-loader": ["vue-loader@15.11.1", "", { "dependencies": { "@vue/component-compiler-utils": "^3.1.0", "hash-sum": "^1.0.2", "loader-utils": "^1.1.0", "vue-hot-reload-api": "^2.3.0", "vue-style-loader": "^4.1.0" }, "peerDependencies": { "cache-loader": "*", "css-loader": "*", "prettier": "*", "vue-template-compiler": "*", "webpack": "^3.0.0 || ^4.1.0 || ^5.0.0-0" }, "optionalPeers": ["cache-loader", "prettier", "vue-template-compiler"] }, "sha512-0iw4VchYLePqJfJu9s62ACWUXeSqM30SQqlIftbYWM3C+jpPcEHKSPUZBLjSF9au4HTHQ/naF6OGnO3Q/qGR3Q=="],
-
-    "vue-observe-visibility": ["vue-observe-visibility@1.0.0", "", {}, "sha512-s5TFh3s3h3Mhd3jaz3zGzkVHKHnc/0C/gNr30olO99+yw2hl3WBhK3ng3/f9OF+qkW4+l7GkmwfAzDAcY3lCFg=="],
 
     "vue-style-loader": ["vue-style-loader@4.1.3", "", { "dependencies": { "hash-sum": "^1.0.2", "loader-utils": "^1.0.2" } }, "sha512-sFuh0xfbtpRlKfm39ss/ikqs9AbKCoXZBpHeVZ8Tx650o0k0q/YCM7FRvigtxpACezfq6af+a7JeqVTWvncqDg=="],
 
