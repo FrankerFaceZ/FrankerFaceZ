@@ -3,7 +3,7 @@
 // than three 24px buttons with a wide gap, and with FFZ's own glyphs in
 // place of Kick's, the ones FFZ uses for the same actions on Twitch. The
 // row is the element Kick shows or hides with its mod-actions variable;
-// its buttons come in that order.
+// each button is told apart by the icon Kick gives it.
 
 #chatroom-messages div[style*="--chatroom-mod-actions-display"] {
 	gap: 1px !important;
@@ -26,10 +26,6 @@
 			background-color: rgba(255, 255, 255, 0.15) !important;
 		}
 
-		svg {
-			display: none;
-		}
-
 		&::before {
 			font-family: 'ffz-fontello';
 			font-style: normal;
@@ -39,8 +35,20 @@
 			speak: none;
 		}
 
-		&:nth-child(1)::before { content: '\f1f8'; } // trash
-		&:nth-child(2)::before { content: '\e803'; } // clock
-		&:nth-child(3)::before { content: '\e824'; } // block
+		// Kick's icon names, with FFZ's glyphs for the same actions.
+		&:has(svg[data-ds-icon="Trash"]) {
+			svg { display: none; }
+			&::before { content: '\f1f8'; }
+		}
+
+		&:has(svg[data-ds-icon="Hourglass"]) {
+			svg { display: none; }
+			&::before { content: '\e803'; }
+		}
+
+		&:has(svg[data-ds-icon="Prohibited"]) {
+			svg { display: none; }
+			&::before { content: '\e824'; }
+		}
 	}
 }
