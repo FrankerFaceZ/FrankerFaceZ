@@ -7,6 +7,7 @@
 // Where our UI lives: the root container (see kick-main.scss), tooltips
 // (attached to the body) and the button in Kick's top bar.
 .ffz-kick-root,
+.ffz--kick-rich,
 .ffz__tooltip,
 .ffz-top-nav {
 	// Type. Sizes are in rem, which inside the zoomed root is 10px, as on

@@ -1,0 +1,21 @@
+// The chat box, closer to Twitch's: a thin border on a slightly lifted
+// background, and a plain accent border when focused instead of Kick's
+// white ring.
+
+#chat-input-wrapper {
+	border-width: 1px !important;
+	border-color: rgba(255, 255, 255, 0.15) !important;
+	border-radius: 4px !important;
+	background-color: rgba(255, 255, 255, 0.05) !important;
+	box-shadow: none !important;
+
+	&:hover {
+		border-color: rgba(255, 255, 255, 0.3) !important;
+	}
+
+	&:focus-within {
+		border-color: var(--edge-color-kick-voltGreen-150) !important;
+		background-color: var(--edge-color-kick-asphaltBlack-950) !important;
+		box-shadow: none !important;
+	}
+}

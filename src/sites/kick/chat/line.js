@@ -18,6 +18,8 @@ import {createElement} from 'utilities/dom';
 import {split_chars} from 'utilities/object';
 import {RERENDER_SETTINGS, UPDATE_BADGE_SETTINGS, UPDATE_TOKEN_SETTINGS} from 'utilities/constants';
 
+import {renderRichCard} from './rich';
+
 
 const EMOTE_PATTERN = /\[emote:(\d+):([^\]]*)\]/g;
 
@@ -229,14 +231,23 @@ export default class Line extends Module {
 
 		this.parent.updateContext(props.channelSlug, data.chat_id ?? data.chatroom_id);
 
-		let msg, el;
+		let msg, el, rich_el = null;
 		try {
 			msg = this.standardizeMessage(entry, props);
 			const tokens = msg.ffz_tokens = this.chat.tokenizeMessage(msg, this.getSelf(props));
 
+			// A link preview, if the message has a link the resolver knows.
+			// Plucked before rendering, since it may hide the link's token.
+			const rich = this.chat.pluckRichContent(tokens, msg);
+
 			el = createElement('span', {
 				className: `${original.className} ffz--kick-message`
 			}, this.chat.renderTokens(tokens, createElement));
+
+			if ( rich )
+				rich_el = createElement('div', {
+					className: 'ffz--kick-rich'
+				}, renderRichCard(this.chat, rich));
 
 		} catch(err) {
 			this.log.error('Error rendering chat line.', err);
@@ -255,11 +266,14 @@ export default class Line extends Module {
 
 		original.classList.add(HIDDEN_CLASS);
 		original.after(el);
+		if ( rich_el )
+			el.after(rich_el);
+
 		this.colorUsername(body, msg, this.getSelf(props));
 		this.formatTimestamp(body, msg);
 		this.highlightLine(body, msg);
 
-		this.rows.set(row, {key, original, el, msg, body});
+		this.rows.set(row, {key, original, el, rich: rich_el, msg, body});
 	}
 
 	// Kick's timestamp is the first span of the body, shown or hidden by
@@ -325,6 +339,7 @@ export default class Line extends Module {
 
 		this.rows.delete(row);
 		state.el.remove();
+		state.rich?.remove();
 		state.original.classList.remove(HIDDEN_CLASS);
 
 		if ( state.body ) {

@@ -1,0 +1,42 @@
+// The channel header, closer to Twitch's: a smaller avatar, pill-shaped
+// buttons and tighter spacing. Kick's class names are generated, so this
+// leans on the header's ids and structure: the first block of the channel
+// content is the header, its last column holds the action buttons.
+
+#channel-content {
+	row-gap: 12px !important;
+
+	> div:first-child {
+		// The avatar sits in a button at the start of the header.
+		> div:first-child > div:first-child > button {
+			height: 64px !important;
+			width: 64px !important;
+			margin: 0 !important;
+		}
+
+		#channel-username {
+			font-size: 18px !important;
+			line-height: 1.2 !important;
+		}
+
+		[data-testid="livestream-title"] {
+			font-size: 14px !important;
+		}
+
+		// Follow, subscribe, notifications and the like.
+		> div:last-child button {
+			height: 32px !important;
+			min-height: 0 !important;
+			padding: 0 12px !important;
+			border-radius: 9999px !important;
+			font-size: 13px !important;
+		}
+
+		// Icon-only buttons stay square-ish.
+		> div:last-child button:not(:has(span)) {
+			width: 32px !important;
+			min-width: 32px !important;
+			padding: 0 !important;
+		}
+	}
+}

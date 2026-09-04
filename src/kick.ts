@@ -31,6 +31,7 @@ import Site from './sites/kick';
 import Tooltips from 'src/modules/tooltips';
 import MainMenu from 'src/modules/main_menu';
 import Chat from 'src/modules/chat';
+import EmoteCard from 'src/modules/emote_card';
 
 import type { ClientVersion } from 'utilities/types';
 
@@ -133,6 +134,7 @@ class FrankerFaceZ extends Module {
 		this.inject('tooltips', Tooltips);
 		this.register('main_menu', MainMenu);
 		this.register('chat', Chat);
+		this.register('emote_card', EmoteCard);
 
 		Promise.resolve(this.enable())
 			.then(() => this.enableInitialModules())
