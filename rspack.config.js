@@ -150,9 +150,11 @@ const config = {
 	mode: DEV_BUILD
 		? 'development'
 		: 'production',
+	// Production source maps come from the plugin below rather than the
+	// 'source-map' preset, so the reference the bundle carries can be set.
 	devtool: DEV_BUILD
 		? 'inline-source-map'
-		: 'source-map',
+		: false,
 
 	target: ['web', TARGET],
 
@@ -265,8 +267,18 @@ const config = {
 		}),
 		new RspackManifestPlugin({
 			publicPath: ''
+		}),
+		// Hosts serve the bundles from /script/ under their stable names,
+		// while the maps sit beside the hashed files under /static/. A
+		// relative map reference would point into /script/, so it is made
+		// absolute with the public path. For the extension, the public path
+		// is empty and the reference stays relative, as before.
+		! DEV_BUILD && new rspack.SourceMapDevToolPlugin({
+			filename: '[file].map[query]',
+			append: `
+//# sourceMappingURL=${FILE_PATH}[url]`
 		})
-	],
+	].filter(Boolean),
 
 	module: {
 		rules: [

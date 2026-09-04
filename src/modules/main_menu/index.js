@@ -614,6 +614,9 @@ export default class MainMenu extends Module {
 		if ( ! def.ui || ! def.ui.path_tokens || ! this._settings_tree )
 			return;
 
+		if ( ! this.isSettingVisible(key, def) )
+			return;
+
 		const tree = this._settings_tree,
 			tokens = def.ui.path_tokens,
 			len = tokens.length;
@@ -647,6 +650,19 @@ export default class MainMenu extends Module {
 		token.settings = token.settings || [];
 		token.settings.push([key, def]);
 		this._settings_count++;
+	}
+
+
+	// A site can keep settings that can't do anything there out of the
+	// menu. The settings still exist and work if set some other way. The
+	// path is the menu location in key form, like "chat.appearance.emotes".
+	isSettingVisible(key, def) {
+		const site = this.site;
+		if ( ! site?.isSettingVisible )
+			return true;
+
+		const path = def.ui.path_tokens.map(token => token.key).join('.');
+		return site.isSettingVisible(key, path, def) !== false;
 	}
 
 
