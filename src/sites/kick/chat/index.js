@@ -86,6 +86,16 @@ export default class Chat extends Module {
 			}
 		});
 
+		this.settings.add('kick.chat.my-color', {
+			default: '',
+			ui: {
+				path: 'Chat > Appearance >> Usernames',
+				title: 'My Name Color',
+				description: 'Show your own name in chat in this color. Only you see it; the color everyone else sees is set in Kick\'s profile settings. Adjusted for readability like every other name.',
+				component: 'setting-color-box'
+			}
+		});
+
 		this.room = null;
 		this.room_login = null;
 		this.mappings = null;
@@ -113,6 +123,7 @@ export default class Chat extends Module {
 		this.chat.context.on('changed:chat.adjustment-mode', this.updateColors, this);
 		this.chat.context.on('changed:chat.adjustment-contrast', this.updateColors, this);
 		this.settings.getChanges('kick.chat.username-colors', this.recolorLines, this);
+		this.settings.getChanges('kick.chat.my-color', this.recolorLines, this);
 		this.updateColors();
 
 		return this.line.enable();
@@ -141,14 +152,20 @@ export default class Chat extends Module {
 		this.line.rerenderLines();
 	}
 
-	// The color to show a user's name in: an FFZ override if there is one,
-	// otherwise Kick's or a Twitch-style color per the setting, adjusted
-	// for readability.
-	getUserColor(user) {
+	// The color to show a user's name in: the viewer's own pick for their
+	// own name, else an FFZ override if there is one, otherwise Kick's or
+	// a Twitch-style color per the setting. All adjusted for readability.
+	getUserColor(user, self) {
 		if ( ! user )
 			return null;
 
-		let color = this.overrides.getColor(user.id);
+		let color = null;
+		if ( self && user.displayName && self.displayName && user.displayName.toLowerCase() === self.displayName.toLowerCase() )
+			color = this.settings.get('kick.chat.my-color') || null;
+
+		if ( ! color )
+			color = this.overrides.getColor(user.id);
+
 		if ( ! color )
 			color = this.settings.get('kick.chat.username-colors') === 1
 				? getTwitchDefaultColor(user.login || user.displayName)
