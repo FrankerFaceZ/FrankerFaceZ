@@ -35,6 +35,7 @@ export default defineConfig({
 		__version_prerelease__: '[]',
 		__version_build__: 'null',
 		__git_commit__: '"test"',
+		__git_repository__: '"Example/FrankerFaceZ"',
 		__extension__: 'false',
 		__client_host__: '"https://cdn2.frankerfacez.com"',
 		__webpack_hash__: '"test"'

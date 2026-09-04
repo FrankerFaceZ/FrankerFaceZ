@@ -179,7 +179,7 @@
 				<a
 					:data-title="t('home.github', 'GitHub')"
 					class="tw-flex-grow-1 tw-button ffz-tooltip ffz--github-button"
-					href="https://github.com/FrankerFaceZ/FrankerFaceZ"
+					:href="github_url"
 					target="_blank"
 					rel="noopener noreferrer"
 				>
@@ -189,8 +189,8 @@
 				</a>
 			</div>
 
-			<rich-feed
-				url="https://bsky-feed.special.frankerfacez.com/user::frankerfacez.com"
+			<recent-changes
+				:item="item"
 				:context="context"
 			/>
 
@@ -214,7 +214,7 @@
 import HOME_MD from '../home.md';
 
 import {createElement as e} from 'utilities/dom';
-import { EXTENSION } from 'utilities/constants';
+import { EXTENSION, GITHUB_URL } from 'utilities/constants';
 
 export default {
 	props: ['item', 'context'],
@@ -222,6 +222,7 @@ export default {
 	data() {
 		return {
 			md: HOME_MD,
+			github_url: GITHUB_URL,
 			theme: '',
 			addons: null,
 			new_addons: null,
