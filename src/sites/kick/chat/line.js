@@ -94,7 +94,13 @@ export default class Line extends Module {
 		// they have, coalescing the bursts of sets loading together.
 		this.on('chat.emotes:loaded', this.scheduleRerender, this);
 		this.on('chat.emotes:update-default-sets', this.scheduleRerender, this);
+		this.on('chat.emotes:update-room-sets', this.scheduleRerender, this);
 		this.on('chat.emoji:populated', this.scheduleRerender, this);
+		this.on('load_tracker:complete:chat-data', this.scheduleRerender, this);
+
+		// The FFZ room standing in for the channel changed (see the parent
+		// module); every line's emotes come from it.
+		this.on('site.chat:room-changed', this.scheduleRerender, this);
 
 		this.on('chat:get-messages', (include_chat, include_whisper, include_video, messages) => {
 			if ( ! include_chat )
@@ -270,6 +276,10 @@ export default class Line extends Module {
 		// from history carry the chatroom's id instead.
 		const room_id = data.chat_id ?? data.chatroom_id;
 
+		// The FFZ room is the Twitch channel standing in for this one; the
+		// Kick channel itself is kept under its own names.
+		const room = this.parent.room;
+
 		const msg = {
 			id: data.id,
 			kick_entry: entry.id,
@@ -287,8 +297,11 @@ export default class Line extends Module {
 			// by the shared standardization below.
 			badges: {},
 
-			roomID: room_id != null ? `${room_id}` : null,
-			roomLogin: props.channelSlug || null,
+			roomID: room?.id ?? null,
+			roomLogin: room?.login ?? null,
+
+			kick_channel_id: room_id != null ? `${room_id}` : null,
+			kick_channel: props.channelSlug || null,
 
 			message,
 			kick_emotes: emotes,
