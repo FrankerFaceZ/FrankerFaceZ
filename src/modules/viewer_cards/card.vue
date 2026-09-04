@@ -66,9 +66,8 @@
 								v-if="subscription"
 								:data-title="t('viewer-card.months-tip', 'Subscribed for {months, plural, one {# month} other {# months}}', {months: subscription.months})"
 								class="ffz-tooltip ffz-i-star viewer-card-drag-cancel"
-							>
-								{{ t('viewer-card.months', '{months, plural, one {# month} other {# months}}', {months: subscription.months}) }}
-							</span>
+								v-text="t('viewer-card.months', '{months, plural, one {# month} other {# months}}', {months: subscription.months})"
+							/>
 						</div>
 					</div>
 					<div class="tw-flex tw-flex-column">
@@ -120,7 +119,7 @@
 					:channel="channel"
 					:user="user"
 					:self="self"
-					:getFFZ="getFFZ"
+					:get-f-f-z="getFFZ"
 					@close="close"
 				/>
 			</keep-alive>
@@ -215,7 +214,7 @@ export default {
 			this.$emit('emit', ':load', this);
 
 		}).catch(err => {
-			console.error(err); // eslint-disable-line no-console
+			console.error(err);  
 			this.errored = true;
 		});
 

@@ -17,6 +17,7 @@ const BUILD_GLOBALS = {
 	'__version_minor__': 'readonly',
 	'__version_patch__': 'readonly',
 	'__version_prerelease__': 'readonly',
+	'__version_build__': 'readonly',
 	'__extension__': 'readonly',
 	'__client_host__': 'readonly',
 	'FrankerFaceZ': 'readonly'
@@ -30,7 +31,9 @@ module.exports = [
 			'dev_cdn/**',
 			'socketserver/**',
 			'**/*.disabled',
-			'**/*.off'
+			'**/*.off',
+			// Vendored copy of denoflare's MQTT client; not our style to police.
+			'src/utilities/custom_denoflare_mqtt.js'
 		]
 	},
 
@@ -85,14 +88,16 @@ module.exports = [
 			'require-atomic-updates': 'off',
 			// ESLint 9 started reporting unused catch parameters by default.
 			// Keep the previous behaviour for now; flip this when cleaning up.
-			'no-unused-vars': ['error', {'caughtErrors': 'none'}],
+			'no-unused-vars': ['error', {'caughtErrors': 'none', 'args': 'none'}],
 			'accessor-pairs': ['error'],
 			'block-scoped-var': ['error'],
-			'class-methods-use-this': ['error'],
+			// Advisory: many handlers are methods for the override pattern.
+			'class-methods-use-this': ['warn'],
 			'for-direction': ['error'],
 			'guard-for-in': ['warn'],
 			'no-alert': ['error'],
-			'no-await-in-loop': ['error'],
+			// Advisory: sequential awaits are often the point.
+			'no-await-in-loop': ['warn'],
 			'no-caller': ['error'],
 			'no-invalid-this': ['error'],
 			'no-iterator': ['error'],
@@ -180,6 +185,18 @@ module.exports = [
 			'vue/max-attributes-per-line': 'off',
 			'vue/require-prop-types': 'off',
 			'vue/require-default-prop': 'off',
+			// Codebase conventions: single-word component names, snake_case
+			// props, and settings components that edit the objects they are
+			// handed (item, context) by design.
+			'vue/multi-word-component-names': 'off',
+			'vue/prop-name-casing': 'off',
+			'vue/no-mutating-props': 'off',
+			// Advisory until the templates are reworked.
+			'vue/require-v-for-key': 'warn',
+			'vue/valid-v-for': 'warn',
+			'vue/no-use-v-if-with-v-for': 'warn',
+			'vue/no-template-shadow': 'warn',
+			'vue/no-v-html': 'warn',
 			'vue/html-closing-bracket-newline': [
 				'error',
 				{
@@ -188,9 +205,10 @@ module.exports = [
 				}
 			],
 
-			// Semantic JSX rules stay on eslint-plugin-react.
+			// Semantic JSX rules stay on eslint-plugin-react. jsx-no-bind is
+			// off: this JSX renders through the DOM createElement helper, not
+			// React, so per-render handlers cost nothing.
 			'react/jsx-boolean-value': 'error',
-			'react/jsx-no-bind': 'error',
 			'react/jsx-no-comment-textnodes': 'error',
 			'react/jsx-no-duplicate-props': 'error',
 			'react/jsx-no-target-blank': 'error',

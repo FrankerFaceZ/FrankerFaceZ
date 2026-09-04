@@ -182,7 +182,7 @@ export default class Chat extends Module {
 	}
 
 
-	removeRoom(thing) { // eslint-disable-line class-methods-use-this
+	removeRoom(thing) {  
 		if ( ! thing._ffz_room )
 			return;
 

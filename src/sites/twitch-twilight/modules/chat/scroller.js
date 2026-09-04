@@ -709,7 +709,7 @@ export default class Scroller extends Module {
 		inst.ffzInstallCleaner();
 	}
 
-	onUnmount(inst) { // eslint-disable-line class-methods-use-this
+	onUnmount(inst) {  
 		this.off('tooltips:hover', inst.ffzTooltipHover, inst);
 		this.off('tooltips:leave', inst.ffzTooltipLeave, inst);
 
@@ -731,7 +731,7 @@ export default class Scroller extends Module {
 
 
 	cleanMessages(el) {
-		const react = ffz.site.fine.getReactInstance(el);
+		const react = this.fine.getReactInstance(el);
 
 		// Make sure we have the right thing.
 		if (!react || !Array.isArray(react.child?.memoizedProps))

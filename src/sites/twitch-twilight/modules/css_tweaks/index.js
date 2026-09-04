@@ -658,8 +658,8 @@ export default class CSSTweaks extends Module {
 		if ( this.chunks_loaded )
 			return;
 
-		return new Promise(async r => {
-			const raw = (await import(/* webpackChunkName: "site-css-tweaks" */ './styles.js')).default;
+		return import(/* webpackChunkName: "site-css-tweaks" */ './styles.js').then(mod => {
+			const raw = mod.default;
 			for(const key of raw.keys()) {
 				const k = key.slice(2, key.length - (key.endsWith('.scss') ? 5 : 4));
 				this.chunks[k] = raw(key).default;
@@ -668,7 +668,6 @@ export default class CSSTweaks extends Module {
 			this.emit('site.layout:resize');
 
 			this.chunks_loaded = true;
-			r();
 		})
 	}
 }

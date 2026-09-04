@@ -179,7 +179,7 @@ export default class RichContent extends Module {
 				let doc;
 				if ( this.props.force_full === true || (this.props.force_full !== false && this.props.want_full && this.state.full) )
 					doc = this.state.full;
-				if ( this.props.force_mid === true || (this.props.force_mid !== false && this.props.want_mid && this.state.mid) )
+				else if ( this.props.force_mid === true || (this.props.force_mid !== false && this.props.want_mid && this.state.mid) )
 					doc = this.state.mid;
 				else
 					doc = this.state.short;

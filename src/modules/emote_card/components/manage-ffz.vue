@@ -9,7 +9,9 @@
 			@click="toggle"
 		>
 			<div class="tw-flex-grow-1">
-				<h4 class="ffz-font-size-4">{{ t('emote-card.manage', 'Manage My Collections') }}</h4>
+				<h4 class="ffz-font-size-4">
+					{{ t('emote-card.manage', 'Manage My Collections') }}
+				</h4>
 			</div>
 
 			<figure
@@ -36,12 +38,12 @@
 				{{ t('emote-card.error', 'There was an error loading data.') }}
 			</div>
 			<CollectionEntry
-				v-else
 				v-for="collection in collections"
+				v-else
 				:key="collection.id"
 				:collection="collection"
 				:emote="emote"
-				:getFFZ="getFFZ"
+				:get-f-f-z="getFFZ"
 				:initial="presence.includes(collection.id)"
 			/>
 		</simplebar>

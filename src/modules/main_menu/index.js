@@ -1183,19 +1183,15 @@ export default class MainMenu extends Module {
 			context = this.getContext(),
 			state = window.history.state;
 
-		let current, restored = true;
+		let current;
 		if ( this._wanted_page )
 			current = settings.keys[this._wanted_page];
 		if ( ! current && state?.ffzcc ) {
 			current = settings.keys[state.ffzcc];
-			if ( ! current )
-				restored = false;
 		} if ( ! current ) {
 			const params = new URL(window.location).searchParams,
 				key = params?.get('ffz-settings');
 			current = key && settings.keys[key];
-			if ( ! current )
-				restored = false;
 		}
 		if ( ! current )
 			current = this.has_update ?

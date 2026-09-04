@@ -40,7 +40,7 @@ class FFZBridge extends Module {
 		// Core Systems
 		// ========================================================================
 
-		if (!! document.body.dataset.ffzExtension)
+		if (document.body.dataset.ffzExtension)
 			installPort(this);
 
 		this.inject('settings', SettingsManager);
@@ -170,7 +170,7 @@ class FFZBridge extends Module {
 		}
 	}
 
-	send(msg, blob) { // eslint-disable-line class-methods-use-this
+	send(msg, blob) {  
 		try {
 			window.parent.postMessage(msg, '*', blob ? [blob] : undefined)
 		} catch(err) { this.log.error('send error', err); /* no-op */ }

@@ -896,7 +896,7 @@ export default class ChatHook extends Module {
 							return;
 
 						t.insertChannelPointMessage(msg);
-						return;
+						
 
 					} catch(err) {
 						t.log.error('Error handling reward event:', err);
@@ -1125,7 +1125,7 @@ export default class ChatHook extends Module {
 
 		let rewardID;
 		if (isAutomaticReward)
-			rewardID = `${inst.props.channelID}:${data.reward.reward_type}`;
+			rewardID = `${service.props.channelID}:${data.reward.reward_type}`;
 		else
 			rewardID = data.reward.id;
 
@@ -2730,7 +2730,7 @@ export default class ChatHook extends Module {
 									id: out.id,
 									displayName: out.user.userDisplayName,
 									login: out.user.userLogin,
-									reward: reward,
+									reward,
 									message: out,
 									userID: out.user.userID,
 									animationID: e.animationID,
@@ -2972,7 +2972,7 @@ export default class ChatHook extends Module {
 	}
 
 
-	updateRoomBitsConfig(chat, config) { // eslint-disable-line class-methods-use-this
+	updateRoomBitsConfig(chat, config) {  
 		const room = chat._ffz_room;
 		if ( ! room )
 			return;
@@ -3074,11 +3074,8 @@ export default class ChatHook extends Module {
 				// a little to get the count.
 				let count = 0;
 				if (bd) {
-					for(const entry of bd.values()) {
-						for(const _ of entry.values()) {
-							count++;
-						}
-					}
+					for(const entry of bd.values())
+						count += entry.size;
 				}
 
 				if ( room.badgeCount() !== count ) {
@@ -3249,7 +3246,7 @@ export default class ChatHook extends Module {
 		return room.hasBadges();
 	}
 
-	updateRoomBadges(cont, badges) { // eslint-disable-line class-methods-use-this
+	updateRoomBadges(cont, badges) {  
 		const room = cont._ffz_room;
 		if ( ! room )
 			return;

@@ -39,7 +39,7 @@ export const PlayerAudio = {
 		if ( min >= max || max <= min )
 			gain = null;
 
-		let tip, tipcont, input, extra, fill, cont = container.querySelector('.ffz--player-gain');
+		let tip, input, extra, fill, cont = container.querySelector('.ffz--player-gain');
 		if ( ! gain ) {
 			if ( cont )
 				cont.remove();
@@ -103,7 +103,7 @@ export const PlayerAudio = {
 						</div>
 					</div>
 				</div>
-				{tipcont = (<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up" role="tooltip">
+				{(<div class="ffz-il-tooltip ffz-il-tooltip--align-center ffz-il-tooltip--up" role="tooltip">
 					<div>
 						{tip = (<div class="ffz--p-tip" />)}
 						{extra = (<div class="tw-regular ffz--p-value" />)}
@@ -124,7 +124,6 @@ export const PlayerAudio = {
 		else {
 			input = cont.querySelector('input');
 			fill = cont.querySelector('.ffz--gain-value');
-			tipcont = cont.querySelector('.ffz-il-tooltip');
 			tip = cont.querySelector('.ffz-il-tooltip .ffz--p-tip');
 			extra = cont.querySelector('.ffz-il-tooltip .ffz--p-value');
 		}
@@ -175,7 +174,7 @@ export const PlayerAudio = {
 					class="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay ffz-core-button ffz-core-button--border ffz-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
 					type="button"
 					data-a-target="ffz-player-comp-button"
-					onClick={this.compressPlayer.bind(this, inst)} // eslint-disable-line react/jsx-no-bind
+					onClick={this.compressPlayer.bind(this, inst)}
 				>
 					<div class="tw-align-items-center tw-flex tw-flex-grow-0">
 						<div class="tw-button-icon__icon">
@@ -474,7 +473,7 @@ export const PlayerAudio = {
 				try {
 					ctx.addEventListener('statechange', evt);
 					ctx.resume();
-				} catch(err) { }
+				} catch(err) { /* the context may already be closed */ }
 
 				return;
 			}

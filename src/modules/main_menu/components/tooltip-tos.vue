@@ -1,14 +1,16 @@
 <template lang="html">
 	<section class="ffz--widget ffz--service-tos">
-		<h4 class="ffz-font-size-4">{{ key }}</h4>
+		<h4 class="ffz-font-size-4">
+			{{ key }}
+		</h4>
 		<markdown class="tw-mg-b-05" :source="linkText" />
 		<div v-if="hasAccepted">
 			{{ t('tooltip.has-accepted', 'You have accepted the Terms of Service.') }}
 		</div>
 		<template v-else>
 			<button
-				@click="accept"
 				class="tw-button tw-mg-b-05"
+				@click="accept"
 			>
 				<span class="tw-button__text">
 					{{ acceptText }}
@@ -16,8 +18,8 @@
 			</button>
 			<button
 				v-if="! declined"
-				@click="reject"
 				class="tw-button tw-button--text tw-block"
+				@click="reject"
 			>
 				<span class="tw-button__text">
 					{{ t('tooltip.decline-tos', 'I do not accept.') }}
@@ -33,7 +35,6 @@
 <script>
 
 import ProviderMixin from '../provider-mixin';
-import { deep_copy } from 'utilities/object';
 
 let last_id = 0;
 

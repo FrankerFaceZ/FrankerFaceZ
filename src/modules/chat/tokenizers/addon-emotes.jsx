@@ -109,13 +109,13 @@ export const AddonEmotes = {
 			hoverSrcSet = big ? token.animSrcSet2 : token.animSrcSet;
 		}
 
-		let style = undefined, outerStyle = undefined;
+		let style, outerStyle;
 		const mods = token.modifiers || [], ml = mods.length,
 			effects = token.modifier_flags,
 			is_big = (token.big && ! token.can_big && token.height);
 
 		let as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
-		let no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
+		const no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
 
 		if ( no_wide || effects || ml ) {
 			// We need to calculate the size of the emote and the biggest
@@ -417,19 +417,19 @@ export const AddonEmotes = {
 
 					const target = this.emotes.getTargetEmote();
 
-					let style = {
+					const style = {
 						width: (target.width ?? 28) * 2,
 						height: (target.height ?? 28) * 2
 					};
 
-					let outerStyle = {
+					const outerStyle = {
 						width: style.width,
 						height: style.height
 					};
 
 
-					let as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
-					let no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
+					const as_bg = (this.emotes.activeAsBackgroundMask & effects) !== 0;
+					const no_wide = (this.emotes.activeNoWideMask & effects) !== 0;
 
 					let changed = false;
 
@@ -510,16 +510,16 @@ export const AddonEmotes = {
 						>
 							{as_bg
 								? <div
-									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
-									style={style}
+										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+										style={style}
 								/>
 								: <img
-									class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
-									src={target.src}
-									srcSet={target.srcSet}
-									style={style}
-									height={style ? undefined : `${target.height * 2}px`}
-									onLoad={tip.update}
+										class={`${EMOTE_CLASS} ffz--pointer-events ffz-tooltip ffz-emote`}
+										src={target.src}
+										srcSet={target.srcSet}
+										style={style}
+										height={style ? undefined : `${target.height * 2}px`}
+										onLoad={tip.update}
 								/>
 							}
 						</div>
@@ -658,10 +658,10 @@ export const AddonEmotes = {
 
 							last_token.modifiers.push(
 								Object.assign({
-										big,
-										anim
-									},
-									emote.token
+									big,
+									anim
+								},
+								emote.token
 								)
 							);
 						}
@@ -671,11 +671,8 @@ export const AddonEmotes = {
 
 					if ( text.length ) {
 						// We have pending text. Join it together, with an extra space.
-						const t = {type: 'text', text: `${text.join(' ')} `};
-						out.push(t);
-						if ( t.text.trim().length )
-							last_token = t;
-
+						// The emote pushed next becomes the last token.
+						out.push({type: 'text', text: `${text.join(' ')} `});
 						text = [];
 					}
 

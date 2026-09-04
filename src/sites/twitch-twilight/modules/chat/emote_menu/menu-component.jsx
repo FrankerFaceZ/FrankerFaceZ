@@ -16,10 +16,8 @@ export function createMenuComponent(t, React) {
 	const createElement = React && React.createElement;
 	const storage = t.settings.provider;
 
-	let timer;
 	const doClear = () => requestAnimationFrame(() => t.emit('tooltips:cleanup')),
 		clearTooltips = () => {
-			clearTimeout(timer);
 			setTimeout(doClear, 100);
 		};
 
@@ -1191,7 +1189,7 @@ export function createMenuComponent(t, React) {
 			return {wants_resub_info, wants_plan_info, has_new_effects, unlocked_effects};
 		}
 
-		processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state, source_id, host_id = null) { // eslint-disable-line class-methods-use-this
+		processFFZSet(emote_set, provider, favorites, seen_favorites, grouped_sets, locked = false, state, source_id, host_id = null) {  
 			if ( ! emote_set || ! emote_set.emotes )
 				return null;
 
@@ -1216,8 +1214,8 @@ export function createMenuComponent(t, React) {
 
 				title = (provider === 'ffz-main' || emote_set.title_is_channel)
 					? source_name
-							? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
-							: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
+						? t.i18n.t('emote-menu.source-set', '{channel}\'s Emotes', {channel: source_name})
+						: t.i18n.t('emote-menu.main-set', 'Channel Emotes')
 					: (emote_set.title || t.i18n.t('emote-menu.unknown-set', `Set #{set_id}`, {set_id: emote_set.id}));
 
 			let sort_key = pdata && pdata.sort_key || emote_set.sort;
@@ -1297,7 +1295,7 @@ export function createMenuComponent(t, React) {
 							effect_prefix: emote.modifier ? emote.modifier_prefix : false,
 							name: emote.name,
 							favorite: is_fav,
-							locked: locked,
+							locked,
 							hidden: known_hidden.includes(emote.id),
 							height: emote.height,
 							width: emote.width
@@ -1387,7 +1385,7 @@ export function createMenuComponent(t, React) {
 			</div>)
 		}
 
-		renderEmpty() { // eslint-disable-line class-methods-use-this
+		renderEmpty() {  
 			return (<div class="tw-align-center tw-pd-1">
 				<div class="tw-mg-2">
 					<img

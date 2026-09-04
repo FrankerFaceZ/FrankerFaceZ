@@ -57,7 +57,7 @@ class FrankerFaceZ extends Module {
 		// Core Systems
 		// ========================================================================
 
-		if (!! document.body.dataset.ffzExtension)
+		if (document.body.dataset.ffzExtension)
 			installPort(this);
 
 		this.inject('settings', SettingsManager);
@@ -115,7 +115,7 @@ class FrankerFaceZ extends Module {
 
 	async generateLog() {
 		const promises = [];
-		for(const key in this.__modules) { // eslint-disable-line guard-for-in
+		for(const key in this.__modules) {  
 			const module = this.__modules[key];
 			if ( module instanceof Module && module.generateLog && module != this )
 				promises.push((async () => {
