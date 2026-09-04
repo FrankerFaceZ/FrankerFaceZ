@@ -178,11 +178,11 @@ export default class Chat extends Module {
 	// ========================================================================
 
 	// Notices in chat and sending messages aren't wired up on Kick yet.
-	addNotice() { // eslint-disable-line class-methods-use-this
+	addNotice() {  
 		return false;
 	}
 
-	sendMessage() { // eslint-disable-line class-methods-use-this
+	sendMessage() {  
 		return null;
 	}
 }

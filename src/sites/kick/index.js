@@ -134,7 +134,7 @@ export default class KickSite extends BaseSite {
 	}
 
 	// Asked by the control center for every setting it lists.
-	isSettingVisible(key, path) { // eslint-disable-line class-methods-use-this
+	isSettingVisible(key, path) {  
 		if ( HIDDEN_SETTINGS.has(key) )
 			return false;
 
@@ -146,9 +146,9 @@ export default class KickSite extends BaseSite {
 	}
 
 	// The site API shared modules expect. Kick's session isn't wired up yet.
-	getCore() { return null; } // eslint-disable-line class-methods-use-this
-	getSession() { return null; } // eslint-disable-line class-methods-use-this
-	getUser() { return null; } // eslint-disable-line class-methods-use-this
+	getCore() { return null; }  
+	getSession() { return null; }  
+	getUser() { return null; }  
 }
 
 

@@ -318,7 +318,7 @@ export default class Line extends Module {
 	// Turns "[emote:123:Name]" markup into plain text, keeping track of
 	// where each emote's name lands so the tokenizer can find it. Offsets
 	// count characters the way the tokenizers do.
-	parseContent(content) { // eslint-disable-line class-methods-use-this
+	parseContent(content) {  
 		const emotes = [];
 		let out = '',
 			idx = 0,
