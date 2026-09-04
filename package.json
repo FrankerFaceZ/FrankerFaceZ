@@ -65,7 +65,7 @@
 		"typedoc-plugin-rename-defaults": "^0.7.3",
 		"typescript": "6.0.3",
 		"typescript-eslint": "^8.69.0",
-		"vitest": "^4",
+		"vitest": "5",
 		"vue-eslint-parser": "^10.4.1",
 		"vue-loader": "^15.11.1",
 		"vue-template-compiler": "^2.7.16"
