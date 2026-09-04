@@ -5,3 +5,31 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+  # Package updates from the Bun lockfile. Minor and patch bumps arrive as
+  # one grouped pull request a week; majors come on their own.
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Vue 2 stays until the migration in docs/vue3-migration.md.
+      - dependency-name: vue
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vue-loader
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vue-color
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vuedraggable
+        update-types: ["version-update:semver-major"]
+      # Types track the React that Twitch ships.
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      # The router is built on this version's API.
+      - dependency-name: path-to-regexp
+        update-types: ["version-update:semver-major"]

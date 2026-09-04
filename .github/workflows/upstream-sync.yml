@@ -1,0 +1,75 @@
+name: Sync Upstream
+
+# Once a day, and on demand: if FrankerFaceZ/FrankerFaceZ has commits this
+# fork lacks, mirror its master to the sync/upstream branch and open (or
+# refresh) a pull request from it, so merging upstream is a review rather
+# than a chore. GitHub shows conflicts on the pull request itself.
+#
+# Needs "Allow GitHub Actions to create and approve pull requests" enabled
+# under Settings > Actions > General. Pull requests opened with the
+# workflow token do not trigger the build workflow; push any commit to the
+# branch, or merge, to run it.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - name: Fetch Upstream
+      run: |
+        git remote add upstream https://github.com/FrankerFaceZ/FrankerFaceZ.git
+        git fetch --no-tags upstream master
+
+    - name: Compare
+      id: compare
+      run: |
+        count=$(git rev-list --count origin/master..upstream/master)
+        echo "count=$count" >> "$GITHUB_OUTPUT"
+        if [ "$count" = "0" ]; then
+          echo "Upstream has nothing new."
+        else
+          echo "Upstream is ahead by $count commit(s)."
+          {
+            echo 'commits<<EOF'
+            git log --format='- %h %s' origin/master..upstream/master | head -50
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Mirror Upstream to sync/upstream
+      if: steps.compare.outputs.count != '0'
+      run: git push --force origin upstream/master:refs/heads/sync/upstream
+
+    - name: Open or Refresh the Pull Request
+      if: steps.compare.outputs.count != '0'
+      env:
+        GH_TOKEN: ${{ github.token }}
+        COUNT: ${{ steps.compare.outputs.count }}
+        COMMITS: ${{ steps.compare.outputs.commits }}
+      run: |
+        title="Sync upstream: $COUNT new commit(s)"
+        body=$(printf 'Commits on FrankerFaceZ/FrankerFaceZ master that this fork lacks:\n\n%s\n\nThe sync/upstream branch mirrors upstream master; conflicts, if any, show on this pull request.' "$COMMITS")
+        existing=$(gh pr list --head sync/upstream --base master --state open --json number --jq '.[0].number')
+        if [ -n "$existing" ]; then
+          gh pr edit "$existing" --title "$title" --body "$body"
+          echo "Refreshed pull request #$existing."
+        else
+          gh pr create --base master --head sync/upstream --title "$title" --body "$body"
+        fi
