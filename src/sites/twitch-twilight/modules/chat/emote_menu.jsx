@@ -472,6 +472,13 @@ export default class EmoteMenu extends Module {
 					return old_render.call(this);
 				}
 
+				let gif_tier = null;
+				try {
+					gif_tier = this.getTier?.() ?? null;
+				} catch(err) {
+					t.log.error('Error calling native getTier() on the Twitch Emote Menu.', err);
+				}
+
 				return (<t.MenuErrorWrapper visible={this.props.visible}>
 					<t.MenuComponent
 						source={this.props.emotePickerSource}
@@ -490,6 +497,9 @@ export default class EmoteMenu extends Module {
 						giphy_rating={this.props.giphyContentRating}
 						giphy_cooldown={this.props.gifCooldownSecondsRemaining}
 						onSelectGif={this.props.onSelectGif}
+						gif_tier={gif_tier}
+						show_gif_dot={this.props.showGifNewItemDot}
+						dismiss_gif_dot={this.props.onDismissGifNewItemDot}
 					/>
 				</t.MenuErrorWrapper>)
 			}
@@ -1499,6 +1509,8 @@ export default class EmoteMenu extends Module {
 				t.chat.context.on('changed:chat.emote-menu.clear-search', this.updateSettingState, this);
 				t.chat.context.on('changed:chat.emote-menu.tall', this.updateSettingState, this);
 
+				this.maybeDismissGifDot();
+
 				window.ffz_menu = this;
 			}
 
@@ -1531,6 +1543,19 @@ export default class EmoteMenu extends Module {
 					clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
 					tall: t.chat.context.get('chat.emote-menu.tall')
 				});
+			}
+
+			maybeDismissGifDot() {
+				if ( ! this.props.show_gif_dot || this._dismissedGifDot )
+					return;
+
+				this._dismissedGifDot = true;
+
+				try {
+					this.props.dismiss_gif_dot?.();
+				} catch(err) {
+					t.log.error('Error calling native onDismissGifNewItemDot().', err);
+				}
 			}
 
 			seeEffects() {
@@ -2634,7 +2659,7 @@ export default class EmoteMenu extends Module {
 
 				state.has_channel_tab = channel.length > 0;
 				state.has_effect_tab = effects.length > 0;
-				state.has_gif_tab = !!(props.giphy_enabled && props.giphy_allowlisted);
+				state.has_gif_tab = !!(props.giphy_enabled && props.giphy_allowlisted && props.gif_tier >= 2);
 				state.hasNewEffects = effects.length > 0 && has_new_effects;
 				state.unlockedEffects = unlocked_effects;
 
@@ -2825,10 +2850,13 @@ export default class EmoteMenu extends Module {
 						this.props.user_id !== old_props.user_id ||
 						this.props.channel_id !== old_props.channel_id ||
 						this.props.loading !== old_props.loading ||
-						this.props.error !== old_props.error ) {
+						this.props.error !== old_props.error ||
+						this.props.gif_tier !== old_props.gif_tier ) {
 					t.log.debug('Updating emote menu data. cd', cd_diff, ', ed', ed_diff);
 					this.rebuildData();
 				}
+
+				this.maybeDismissGifDot();
 			}
 
 			renderError() {
