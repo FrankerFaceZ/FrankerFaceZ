@@ -2659,7 +2659,7 @@ export default class EmoteMenu extends Module {
 
 				state.has_channel_tab = channel.length > 0;
 				state.has_effect_tab = effects.length > 0;
-				state.has_gif_tab = !!(props.giphy_enabled && props.giphy_allowlisted && props.gif_tier >= 2);
+				state.has_gif_tab = !!(props.giphy_enabled && props.giphy_allowlisted && props.gif_tier >= 2 && Array.isArray(products) && products.some(p => p?.hasGifs));
 				state.hasNewEffects = effects.length > 0 && has_new_effects;
 				state.unlockedEffects = unlocked_effects;
 
