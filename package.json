@@ -81,7 +81,7 @@
 		"file-saver": "^2.0.5",
 		"graphql": "^16.11.0",
 		"graphql-tag": "^2.12.6",
-		"js-cookie": "^3.0.5",
+		"js-cookie": "^3.0.7",
 		"jszip": "^3.10.1",
 		"markdown-it": "^12.3.2",
 		"markdown-it-link-attributes": "^3.0.0",
