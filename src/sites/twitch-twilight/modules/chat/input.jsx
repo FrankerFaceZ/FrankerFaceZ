@@ -25,6 +25,8 @@ const NON_PREFIX_MATCH = 2;
 const CASE_INSENSITIVE_PREFIX_MATCH = 3;
 const EXACT_PREFIX_MATCH = 4;
 
+const DEFAULT_CASE_SENSITIVE_VALUE = true;
+
 function getNodeText(node) {
 	if ( ! node )
 		return '';
@@ -147,8 +149,28 @@ export default class Input extends Module {
 			}
 		});
 
+		const outerThis = this;
 		this.settings.add('chat.tab-complete.prioritize-prefix-matches', {
 			default: false,
+			// using process() to detect changes because changed() never triggers
+			process(ctx, val) {
+				// Only show the case-sensitive setting because it depends on the prefix matches setting.
+				if (val) {
+					outerThis.settings.add('chat.tab-complete.prioritize-prefix-matches.case-sensitive', {
+						default: DEFAULT_CASE_SENSITIVE_VALUE,
+						requires: ['chat.tab-complete.prioritize-prefix-matches'],
+						ui: {
+							path: 'Chat > Input >> Tab Completion',
+							title: 'Matching start input is case-sensitive.',
+							component: 'setting-check-box'
+						},
+					});
+				} else {
+					outerThis.settings.remove('chat.tab-complete.prioritize-prefix-matches.case-sensitive');
+				}
+
+				return val;
+			},
 			ui: {
 				path: 'Chat > Input >> Tab Completion',
 				title: 'Prioritize emotes that start with user input.',
@@ -1077,6 +1099,9 @@ export default class Input extends Module {
 		const preferFavorites = this.chat.context.get('chat.tab-complete.prioritize-favorites');
 		const canBeTriggeredByTab = this.chat.context.get('chat.tab-complete.emotes-without-colon');
 		const prioritizePrefixMatches = this.chat.context.get('chat.tab-complete.prioritize-prefix-matches');
+		// Check if the setting is enabled, if true get value otherwise use default
+		const caseDefinition = this.settings.definitions.get('chat.tab-complete.prioritize-prefix-matches.case-sensitive');
+		const caseSensitive = caseDefinition ? this.chat.context.get('chat.tab-complete.prioritize-prefix-matches.case-sensitive') : DEFAULT_CASE_SENSITIVE_VALUE;
 
 		return emotes.sort((a, b) => {
 			const aStr = a.matched || a.replacement;
@@ -1095,11 +1120,13 @@ export default class Input extends Module {
 					else return 0 - bIsEmoji + aIsEmoji;
 				}
 
-				// Prefer case-sensitive prefix matches
-				const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH);
-				const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH);
+				// If the sort is case-insensitive then treat both cases as equal, otherwise prefer the case-sensitive matches
+				const aStartsWithInput = (a.match_type === EXACT_PREFIX_MATCH 
+					|| (!caseSensitive && a.match_type === CASE_INSENSITIVE_PREFIX_MATCH));
+				const bStartsWithInput = (b.match_type === EXACT_PREFIX_MATCH 
+					|| (!caseSensitive && b.match_type === CASE_INSENSITIVE_PREFIX_MATCH));
 				if (aStartsWithInput && bStartsWithInput)
-					return locale.compare(aStr, bStr);
+					return caseSensitive ? locale.compare(aStr, bStr) : localeCaseInsensitive.compare(aStr, bStr);
 				else if (aStartsWithInput) return -1;
 				else if (bStartsWithInput) return 1;
 
