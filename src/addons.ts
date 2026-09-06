@@ -572,10 +572,12 @@ export default class AddonManager extends Module<'addons'> {
 			return;
 		}
 
+		// If cache busting is enabled, add timestamp suffix.
+		const script_filename =  `script.js${addon.disable_cache_busting ? '' : `?_=${getBuster(30)}`}`;
 		document.head.appendChild(createElement('script', {
 			id: `ffz-loaded-addon-${addon.id}`,
 			type: 'text/javascript',
-			src: addon.src || `${addon.dev ? 'https://localhost:8001/script' : SERVER_OR_EXT}/addons/${addon.id}/script.js?_=${getBuster(30)}`,
+			src: addon.src || `${addon.dev ? 'https://localhost:8001/script' : SERVER_OR_EXT}/addons/${addon.id}/${script_filename}`,
 			crossorigin: 'anonymous'
 		}));
 
