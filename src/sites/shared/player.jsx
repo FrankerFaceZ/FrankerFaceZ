@@ -1579,6 +1579,13 @@ export default class PlayerBase extends Module {
 		if ( muted )
 			new_vid.muted = true;
 		new_vid.playsInline = true;
+		// Carry playback intent onto the replacement element so it resumes after the
+		// following player.load() instead of landing paused — otherwise, when something
+		// recreates the element mid-session (e.g. a player reload), the fresh element can
+		// stay paused and require a manual play click. Twitch drives playback with
+		// programmatic play() and does not set the autoplay attribute, so also derive
+		// intent from whether the old element was actually playing.
+		new_vid.autoplay = video.autoplay || ( video && ! video.paused && ! video.ended );
 
 		this.installPlaybackRate(new_vid);
 		video.replaceWith(new_vid);
