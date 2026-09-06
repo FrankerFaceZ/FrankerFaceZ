@@ -1486,7 +1486,7 @@ other {# messages were deleted by a moderator.}
 						);
 					}
 
-					klass = `${klass} ffz-notice-line user-notice-line tw-pd-y-05`;
+					klass = `${klass} ffz-notice-line user-notice-line tw-pd-x-1 tw-pd-y-05`;
 
 					if ( ! is_raw )
 						notice = e('div', {
