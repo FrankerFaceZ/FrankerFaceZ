@@ -538,7 +538,7 @@ export default class ChatLine extends Module {
 					className: 'tw-c-text-alt-2'
 				}, this.i18n.tList(
 					'chat.watch-streak.body',
-					'{user} is currently on a {streak,number}-stream streak!',
+					'{user} is currently on a {streak, plural, one {#-stream streak} other {#-stream streak}}!',
 					{
 						streak,
 						user: e('span', {
