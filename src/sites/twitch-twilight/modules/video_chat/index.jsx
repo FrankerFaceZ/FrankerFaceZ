@@ -57,11 +57,11 @@ export default class VideoChatHook extends Module {
 			['user-video', 'user-clip', 'video']
 		);
 
-		/*this.VideoChatMenu = this.fine.define(
+		this.VideoChatMenu = this.fine.define(
 			'video-chat-menu',
-			n => n.onToggleMenu && n.getContent && n.props && has(n.props, 'isExpandedLayout'),
+			n => n.onToggleMenu && n.getContent && n.closeMenu && n.props && has(n.props, 'onDeleteCommentClick'),
 			['user-video', 'user-clip', 'video']
-		);*/
+		);
 
 		this.VideoChatLine = this.fine.define(
 			'video-chat-line',
@@ -85,7 +85,7 @@ export default class VideoChatHook extends Module {
 			ui: {
 				path: 'Chat > Chat on Videos @{"description": "This feature is currently in beta. As such, you may experience issues when using FFZ features with Chat on Videos."} >> General',
 				title: 'Enable FrankerFaceZ features for Chat on Videos.',
-				description: 'Display FFZ badges, emotes, and other features in Chat on Videos. Moderation features may be unavailable when this is enabled.',
+				description: 'Display FFZ badges, emotes, and other features in Chat on Videos.',
 				component: 'setting-check-box'
 			}
 		});
@@ -155,8 +155,8 @@ export default class VideoChatHook extends Module {
 
 				this.onBanUser = () => {
 					this.props.onBanUserClick({
-						bannedUser: this.props.context.comment.commenter,
-						targetChannel: this.props.context.comment.channelId,
+						bannedUserId: this.props.context.comment.commenter,
+						targetChannelId: this.props.context.comment.channelId,
 						comment: this.props.context.comment
 					});
 				}
@@ -184,21 +184,22 @@ export default class VideoChatHook extends Module {
 			}
 
 			render() {
-				//if ( ! t.VideoChatMenu._class )
+				if ( ! t.VideoChatMenu._class )
 					return null;
 
-				/*return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
+				return (<div class={`tw-flex-shrink-0 video-chat__message-menu${this.state.force ? ' video-chat__message-menu--force-visible' : ''}`}>
 					<t.VideoChatMenu._class
 						context={this.props.context}
-						isCurrentUserModerator={this.props.isCurrentUserModerator}
-						isExpandedLayout={this.props.isExpandedLayout}
+						canCurrentUserDelete={this.props.canCurrentUserDelete}
+						canCurrentUserBan={this.props.canCurrentUserBan}
+						isLoggedIn={this.props.isLoggedIn}
+						countryCode={this.props.countryCode}
 						onBanUserClick={this.onBanUser}
 						onClose={this.onClose}
 						onDeleteCommentClick={this.onDeleteComment}
 						onOpen={this.onOpen}
-						onReplyClick={this.props.onReplyClick}
 					/>
-				</div>);*/
+				</div>);
 			}
 		}
 
@@ -339,12 +340,13 @@ export default class VideoChatHook extends Module {
 					{ out }
 					{ reply ? (<t.MenuContainer
 						context={reply}
-						isCurrentUserModerator={this.props.isCurrentUserModerator}
-						isExpandedLayout={this.props.isExpandedLayout}
+						canCurrentUserDelete={this.props.canCurrentUserDelete}
+						canCurrentUserBan={this.props.canCurrentUserBan}
+						isLoggedIn={!!this.props.currentUser}
+						countryCode={this.props.countryCode}
 						onBanUserClick={this.props.onBanUserClick}
 						onDeleteCommentClick={this.props.onDeleteCommentClick}
 						onDisableSync={this.props.onDisableSync}
-						onReplyClick={this.onReplyClickHandler}
 					/>) : null}
 				</div>);
 			}
