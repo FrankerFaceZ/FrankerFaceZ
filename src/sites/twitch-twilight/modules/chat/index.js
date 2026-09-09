@@ -3085,6 +3085,7 @@ export default class ChatHook extends Module {
 							ffz_type: 'raid_notice',
 							ffz_no_actions: false,
 							sharedChat: e.sharedChat,
+							sourceRoomID: e.sharedChat?.sourceRoomID,
 							raid_viewer_count: parseInt(e.params.viewerCount, 10) || 0,
 							timestamp: Date.now(),
 							message: '',
