@@ -139,13 +139,19 @@ func C2SHello(_ *websocket.Conn, client *ClientInfo, msg ClientMessage) (_ Clien
 	if clientIDStr, ok := ary[1].(string); ok {
 		clientID = uuid.FromStringOrNil(clientIDStr)
 		if clientID == uuid.Nil {
-			clientID = uuid.NewV4()
+			clientID, err = uuid.NewV4()
+			if err != nil {
+				panic(err) // randomness should not fail
+			}
 		}
 	} else if _, ok := ary[1].(bool); ok {
 		// opt out
 		clientID = AnonymousClientID
 	} else if ary[1] == nil {
-		clientID = uuid.NewV4()
+		clientID, err = uuid.NewV4()
+		if err != nil {
+			panic(err) // randomness should not fail
+		}
 	} else {
 		err = ErrExpectedTwoStrings
 		return
