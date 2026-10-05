@@ -1233,7 +1233,7 @@ export default class Chat extends Module {
 			ui: {
 				path: 'Chat > Appearance >> GIFs',
 				title: 'Display GIFs in chat.',
-				description: 'Twitch subscribers (Tier 2 and 3) can post [animated GIFs](https://help.twitch.tv/s/article/gif-keyboard). When this is disabled, those messages are shown as a link instead.',
+				description: 'Twitch subscribers (Tier 2 and 3) can post [animated GIFs](https://help.twitch.tv/s/article/gif-keyboard). When this is disabled, those messages are shown as a link instead.\n\n**Note:** This doesn\'t work when "**Display all emotes on one tab**" is enabled.',
 				component: 'setting-check-box'
 			}
 		});

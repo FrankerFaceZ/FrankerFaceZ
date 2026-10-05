@@ -25,8 +25,11 @@ declare module 'utilities/types' {
 		'chat.bits.show-pinned-progression': boolean;
 		'chat.hype.show-pinned': boolean;
 		'chat.input.show-shield': boolean;
+		'layout.notifications-btn': boolean;
 		'layout.turbo-cta': boolean;
+		'layout.shouts-btn': boolean;
 		'layout.subtember': boolean;
+		'layout.whispers-btn': boolean;
 	}
 }
 
@@ -125,12 +128,24 @@ export default class Loadable extends Module {
 			this.toggle('ShieldModeShortcut', val);
 		});
 
+		this.settings.getChanges('layout.notifications-btn', val => {
+			this.toggle('OnsiteNotificationsContainer', val);
+		});
+
 		this.settings.getChanges('layout.turbo-cta', val => {
 			this.toggle('TopNav__TurboButton_Available', val);
 		});
 
+		this.settings.getChanges('layout.shouts-btn', val => {
+			this.toggle('CreatorMessagesNavButton', val);
+		});
+
 		this.settings.getChanges('layout.subtember', val => {
 			this.toggle('TokenizedCommerceBanner', val);
+		});
+
+		this.settings.getChanges('layout.whispers-btn', val => {
+			this.toggle('Whispers', val);
 		});
 
 		this.ErrorBoundaryComponent.ready((cls, instances) => {
