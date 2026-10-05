@@ -365,6 +365,33 @@ export default class CSSTweaks extends Module {
 			}
 		});
 
+		this.settings.add('layout.notifications-btn', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Show Notifications button',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('layout.shouts-btn', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Show Streamer Shouts button',
+				component: 'setting-check-box'
+			}
+		});
+
+		this.settings.add('layout.whispers-btn', {
+			default: true,
+			ui: {
+				path: 'Appearance > Layout >> Top Navigation',
+				title: 'Show Whispers button',
+				component: 'setting-check-box'
+			}
+		});
+
 		this.settings.add('layout.prime-offers', {
 			default: true,
 			ui: {
