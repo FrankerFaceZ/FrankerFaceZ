@@ -41,7 +41,9 @@
 					...msg
 				}, window.location.origin);
 			});
+			const ka = setInterval(() => { try { port.postMessage({ ffz_keepalive: true }); } catch (e) {} }, 25000);
 			port.onDisconnect.addListener(() => {
+				clearInterval(ka);
 				// Try to re-establish the connection.
 				console.log('FFZ-CS-Bridge: Disconnected, attempting to reconnect.');
 				setTimeout(initialize, 0);
