@@ -83,10 +83,10 @@ export default class Directory extends Module {
 			DIR_ROUTES
 		);
 
-		this.DirectorySorter = this.fine.define(
+		this.DirectorySorter = this.elemental.define(
 			'directory-sorter',
-			n => n.getSortOptionLink && n.getSortOptionText && n.getSortOptionOnClick && n.getFilterIDs,
-			DIR_ROUTES
+			'#browse-sort-drop-down',
+			DIR_ROUTES, null, 0, 0
 		);
 
 		this.settings.add('directory.hidden.style', {
@@ -555,7 +555,7 @@ export default class Directory extends Module {
 		this.DirectoryGameCard.each(el => this.updateGameCard(el));
 
 		this.DirectorySorter.on('mount', this.updateSorting, this);
-		this.DirectorySorter.ready(() => this.updateSorting());
+		this.DirectorySorter.each(el => this.updateSorting(el));
 
 		const t = this;
 
@@ -600,28 +600,29 @@ export default class Directory extends Module {
 		});
 	}
 
-	updateSorting(inst) {
-		if ( ! inst ) {
-			for(const inst of this.DirectorySorter.instances)
-				this.updateSorting(inst);
+	updateSorting(el) {
+		const mode = this.settings.get('directory.default-sort');
+		if ( ! mode )
+			return;
+
+		if ( ! el ) {
+			this.DirectorySorter.each(e => this.updateSorting(e));
 			return;
 		}
 
-		const mode = this.settings.get('directory.default-sort');
-		if ( ! mode || mode === inst.state?.activeOption )
+		const node = this.fine.searchParentNode(el, n => typeof n.stateNode?.getSortOptionOnClick === 'function');
+		const inst = node?.stateNode;
+		if ( ! inst || mode === inst.state?.activeOption )
 			return;
 
-		const link = inst.getSortOptionLink(mode, false, inst.props);
-		if ( ! link?.props?.linkTo )
-			return;
+		// dont force a sort mode this page's comp doesnt have
+		if ( typeof inst.getAllSortOptions === 'function' ) {
+			const options = inst.getAllSortOptions();
+			if ( ! Array.isArray(options) || ! options.some(opt => opt?.value === mode) )
+				return;
+		}
 
-		// Handle the onClick logic. This sets localStorage values
-		// to restore this sort in the future.
-		if ( link.props.onClick )
-			link.props.onClick();
-
-		// And follow the generated link.
-		this.router.push(link.props.linkTo);
+		inst.getSortOptionOnClick(mode);
 	}
 
 	updateGameCard(el) {
