@@ -346,6 +346,7 @@ export default class Badges extends Module {
 
 	getSettingsBadges(include_addons, callback) {
 		const twitch = [],
+			channel = [],
 			social = [],
 			tcon = [],
 			game = [],
@@ -364,9 +365,12 @@ export default class Badges extends Module {
 				});
 		}
 
-		for(const key in this.twitch_badges)
-			if ( has(this.twitch_badges, key) ) {
-				const badge = this.twitch_badges[key],
+		// include channel-specific sets
+		const all_badges = Object.assign({}, ...Array.from(this.parent.iterateRooms(), room => room.badges), this.twitch_badges);
+
+		for(const key in all_badges)
+			if ( has(all_badges, key) ) {
+				const badge = all_badges[key],
 					vs = [];
 				let v = badge && (badge[1] || badge[0]);
 
@@ -386,8 +390,13 @@ export default class Badges extends Module {
 					}
 
 				if ( v ) {
+					// channel-specific sets
+					const is_channel = ! (this.twitch_badges && has(this.twitch_badges, key));
+
 					let cat;
-					if ( badge.__cat === 'm-social' )
+					if ( is_channel )
+						cat = channel;
+					else if ( badge.__cat === 'm-social' )
 						cat = social;
 					else if ( badge.__cat === 'm-other' )
 						cat = other;
@@ -503,6 +512,7 @@ export default class Badges extends Module {
 
 		const out = [
 			{title: 'Twitch: Core', id: 'm-twitch', badges: twitch},
+			{title: 'Twitch: Channel', id: 'm-channel', badges: channel},
 			{title: 'Twitch: Social', id: 'm-social', badges: social},
 			{title: 'Twitch: TwitchCon', id: 'm-tcon', badges: tcon},
 			{title: 'Twitch: Other', id: 'm-other', badges: other},
@@ -908,7 +918,9 @@ export default class Badges extends Module {
 				const version = twitch_badges[badge_id],
 					is_hidden = hidden_badges[badge_id],
 					bdata = tb && tb[badge_id],
-					cat = bdata && bdata.__cat || 'm-twitch';
+					cat = bdata
+						? (bdata.__cat || 'm-twitch')
+						: (room?.badges?.[badge_id] ? 'm-channel' : 'm-twitch');
 
 				if ( ! badge_id || is_hidden || (is_hidden == null && hidden_badges[cat]) )
 					continue;
