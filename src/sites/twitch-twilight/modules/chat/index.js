@@ -2773,20 +2773,19 @@ export default class ChatHook extends Module {
 								type !== ct.Connected ||
 								msg.event.type === ct.Connected ||
 								this.buffer.find(e => e.type === ct.LiveMessageSeparator)
-						) )
+						) ) {
 							this.buffer.push({
 								type: ct.LiveMessageSeparator,
 								id: 'live-message-separator'
 							});
 
-						/*if ( type === ct.Connected ) {
-							const non_null = this.buffer.filter(x => x && ct[x.type] && ! NULL_TYPES.includes(ct[x.type]));
-							if ( non_null.length > 1 )
-								this.buffer.push({
-									type: ct.LiveMessageSeparator,
-									id: 'live-message-separator'
-								});
-						}*/
+							if ( ! this.paused ) {
+								if ( this.buffer.length > max_size )
+									added++;
+								else
+									buffered++;
+							}
+						}
 
 						this.buffer.push(msg.event);
 						changed = true;
