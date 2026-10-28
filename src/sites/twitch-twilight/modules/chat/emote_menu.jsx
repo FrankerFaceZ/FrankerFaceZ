@@ -665,16 +665,24 @@ export default class EmoteMenu extends Module {
 			}
 		}
 
+		// twitch only reports a cooldown when a send is rejected for it, and clears
+		// its own stored cooldown after every successful send. We learn the length
+		// per channel from those rejections and predict it after a success.
+		this.gif_cooldown_until = new Map();
+		this.gif_last_sent = new Map();
+
 		this.GifSection = class FFZGifSection extends React.Component {
 			constructor(props) {
 				super(props);
-				this.state = { query: props.query || '', results: [], loading: false, loadingMore: false, offset: 0, total: 0, cooldown: props.cooldown || 0, unavailable: false };
+				this.state = { query: props.query || '', results: [], loading: false, loadingMore: false, offset: 0, total: 0, predicted: 0, unavailable: false, failed: false };
+				this.handleResponse = this.handleResponse.bind(this);
 			}
 
 			buildURL(query, offset) {
-				const valid_ratings = ['g', 'pg'],
-				raw = (this.props.rating || '').toLowerCase(),
-				rating = valid_ratings.includes(raw) ? raw : 'g';
+				// twitch's gifPickerConfig.contentRating. 'G_PG' allows 'G' and 'PG' and
+				// giphy's rating parameter is a ceiling, so request up to PG.
+				const ratings = {G_PG: 'pg'},
+				rating = ratings[this.props.rating] || 'g';
 
 				return query 
 				? `https://api.giphy.com/v1/gifs/search?api_key=${this.props.apiKey}&q=${encodeURIComponent(query)}&rating=${rating}&limit=50&offset=${offset}`
@@ -731,73 +739,158 @@ export default class EmoteMenu extends Module {
 			}
 
 			componentDidMount() {
-				this.search(this.props.query || '');
+				t.apollo.on(':response.sendGifMessage', this.handleResponse, this);
 
-				if ( this.state.cooldown > 0 )
-					this.startCooldownTimer();
+				this.search(this.props.query || '');
+				this.updateCooldown();
+				this.reportNotice();
+			}
+
+			componentDidUpdate() {
+				this.reportNotice();
 			}
 
 			componentWillUnmount() {
+				this.props.onNotice?.(null);
+				t.apollo.off(':response.sendGifMessage', this.handleResponse, this);
 				clearInterval(this._cooldown_timer);
+				this._cooldown_timer = null;
 			}
 
-			startCooldownTimer() {
-				clearInterval(this._cooldown_timer);
-				this._cooldown_timer = setInterval(() => {
-					this.setState(prev => {
-						const next = prev.cooldown - 1;
-						if ( next <= 0 ) {
-							clearInterval(this._cooldown_timer);
-							return { cooldown: 0 };
-						}
-						return { cooldown: next };
-					});
-				}, 1000);
+			getCooldownLength() {
+				const lengths = storage.get('emote-menu.gif-cooldown-length');
+				return lengths?.[this.props.channelID] || 0;
+			}
+
+			setCooldownLength(seconds) {
+				const lengths = {...(storage.get('emote-menu.gif-cooldown-length') || {})};
+				if ( lengths[this.props.channelID] === seconds )
+					return;
+
+				lengths[this.props.channelID] = seconds;
+				storage.set('emote-menu.gif-cooldown-length', lengths);
+			}
+
+			applyCooldown(seconds) {
+				t.gif_cooldown_until.set(this.props.channelID, Date.now() + seconds * 1000);
+				this.updateCooldown();
+			}
+
+			updateCooldown() {
+				const until = t.gif_cooldown_until.get(this.props.channelID) || 0,
+					predicted = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+
+				if ( predicted !== this.state.predicted )
+					this.setState({ predicted });
+
+				if ( predicted > 0 ) {
+					if ( ! this._cooldown_timer )
+						this._cooldown_timer = setInterval(() => this.updateCooldown(), 1000);
+
+				} else if ( this._cooldown_timer ) {
+					clearInterval(this._cooldown_timer);
+					this._cooldown_timer = null;
+				}
+			}
+
+			handleResponse(data) {
+				const result = data?.sendGifMessage;
+				if ( ! result )
+					return;
+
+				const channel = this.props.channelID,
+					now = Date.now();
+
+				if ( ! result.error ) {
+					t.gif_last_sent.set(channel, now);
+					this._sent = true;
+					this.setState({ failed: false });
+
+					const length = this.getCooldownLength();
+					if ( length > 0 )
+						this.applyCooldown(length);
+					return;
+				}
+
+				const remaining = result.secondsUntilCanSend;
+				if ( remaining > 0 ) {
+					const last = t.gif_last_sent.get(channel);
+					if ( last ) {
+						t.gif_last_sent.delete(channel);
+						this.setCooldownLength(Math.round((now - last) / 1000) + remaining);
+					}
+
+					this.setState({ failed: false });
+					this.applyCooldown(remaining);
+					return;
+				}
+
+				// rejected without a cooldown. twitch gives no reason for this, and its
+				// own menu silently ignores it.
+				this.setState({ failed: true });
+			}
+
+			getCooldown() {
+				return Math.max(this.props.cooldown || 0, this.state.predicted);
+			}
+
+			// the notice is rendered by the menu above the controls, outside the
+			// scroll area, so it stays visible while scrolling.
+			reportNotice() {
+				const cooldown = this.getCooldown();
+				let notice = null;
+
+				if ( this.state.unavailable )
+					notice = {type: 'error', reason: 'unavailable'};
+				else if ( cooldown > 0 )
+					notice = {type: 'warn', reason: 'cooldown', seconds: cooldown};
+				else if ( this.state.failed )
+					notice = {type: 'error', reason: 'failed'};
+
+				const key = notice ? `${notice.reason}:${notice.seconds || 0}` : null;
+				if ( key === this._notice_key )
+					return;
+
+				this._notice_key = key;
+				this.props.onNotice?.(notice);
 			}
 
 			async handleSelect(gif) {
-				if ( ! this.props.onSelectGif || this.state.cooldown > 0 )
+				if ( ! this.props.onSelectGif || this.getCooldown() > 0 )
 					return;
 
 				const media_url = gif.images?.original?.url
 				|| gif.images?.fixed_width?.url
 				|| gif.url;
 
+				if ( this.state.failed )
+					this.setState({ failed: false });
+
+				this._sent = false;
+
 				let remaining;
 				try {
 					remaining = await this.props.onSelectGif({
 						...gif,
-						url: media_url
+						url: media_url,
+						searchTerm: this.state.query || undefined
 					});
 				} catch(err) {
 					return;
 				}
 
-				if ( remaining === -1 ) {
+				if ( remaining === -1 )
 					this.setState({ unavailable: true });
-					return;
-				}
 
-				if ( remaining ) {
-					this.setState({ cooldown: remaining });
-					this.startCooldownTimer();
-				}
+				// close the menu after successful send, like twitch own picker.
+				else if ( this._sent )
+					this.props.onSent?.();
 			}
 
 			render() {
-				const disabled = this.state.cooldown > 0;
-					
+				const disabled = this.getCooldown() > 0;
+
 				return (<div class="tw-pd-1">
-					{disabled && (
-						<div class="ffz--gif-cooldown-notice tw-mg-b-1 tw-c-text-alt-2">
-							{t.i18n.t('emote-menu.gif-cooldown', 'You can send another GIF in {seconds}s.', {seconds: this.state.cooldown})}
-						</div>
-					)}
-					{this.state.unavailable && (
-						<div class="ffz--gif-cooldown-notice tw-mg-b-1 tw-c-text-alt-2">
-							{t.i18n.t('emote-menu.gif-unavailable', 'GIFs are temporarily unavailable.')}
-						</div>
-					)}
 					{this.state.loading && (
 						<div class="tw-align-center tw-pd-1">
 							{t.i18n.t('emote-menu.gif-loading', 'Loading...')}
@@ -812,10 +905,16 @@ export default class EmoteMenu extends Module {
 						{this.state.results.map(gif => (
 							<button
 								key={gif.id}
-								class={disabled ? 'ffz--gif-picker-item--disabled' : ''}
+								class={`ffz--gif-picker-item${disabled ? ' ffz--gif-picker-item--disabled' : ''}`}
 								onClick={() => this.handleSelect(gif)}
 							>
 								<img src={gif.images.fixed_width_small.url} alt={gif.title} />
+								<span class="ffz--gif-picker-send">
+									<svg class="ffz--gif-picker-send__icon" viewBox="0 0 20 20" aria-hidden="true">
+										<path d="M3 3.5 17 10 3 16.5 5 10Z M5 10h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+									</svg>
+									<span>{t.i18n.t('emote-menu.gif-send', 'Send')}</span>
+								</span>
 							</button>
 						))}
 					</div>
@@ -1337,7 +1436,12 @@ export default class EmoteMenu extends Module {
 				this.sections = [];
 				this.activeSection = -1;
 
+				this.setGifNotice = notice => {
+					this.setState({gif_notice: notice});
+				}
+
 				this.state = {
+					gif_notice: null,
 					tab: null,
 					active_nav: null,
 					stayLoaded: t.chat.context.get('chat.emote-menu.stay-loaded'),
@@ -1543,6 +1647,25 @@ export default class EmoteMenu extends Module {
 					clearSearch: t.chat.context.get('chat.emote-menu.clear-search'),
 					tall: t.chat.context.get('chat.emote-menu.tall')
 				});
+			}
+
+			renderGifNotice() {
+				const notice = this.state.gif_notice;
+				if ( ! notice )
+					return null;
+
+				let text;
+				if ( notice.reason === 'cooldown' )
+					text = t.i18n.t('emote-menu.gif-cooldown', 'You can send another GIF in {seconds}s.', {seconds: notice.seconds});
+				else if ( notice.reason === 'failed' )
+					text = t.i18n.t('emote-menu.gif-failed', 'That GIF couldn\'t be sent. Try a different one.');
+				else
+					text = t.i18n.t('emote-menu.gif-unavailable', 'GIFs are temporarily unavailable.');
+
+				return (<div class={`ffz--gif-notice ffz--gif-notice--${notice.type} tw-mg-l-05 tw-mg-r-05`}>
+					<figure class="ffz-i-attention" />
+					<span>{text}</span>
+				</div>);
 			}
 
 			maybeDismissGifDot() {
@@ -2976,8 +3099,11 @@ export default class EmoteMenu extends Module {
 												apiKey={this.props.giphy_api_key}
 												rating={this.props.giphy_rating}
 												cooldown={this.props.giphy_cooldown}
+												channelID={this.props.channel_id}
 												query={this.state.filter}
 												onSelectGif={this.props.onSelectGif}
+												onNotice={this.setGifNotice}
+												onSent={this.props.toggleVisibility}
 											/>
 										) : (
 											<>
@@ -3050,6 +3176,7 @@ export default class EmoteMenu extends Module {
 										</div>
 									</div>)}
 								</div>
+								{is_gif && this.renderGifNotice()}
 								<div class="emote-picker__controls-container tw-relative">
 									{(is_emoji || this.state.showSearch) && (<div class="tw-border-t tw-pd-1">
 										<div class="tw-flex">
