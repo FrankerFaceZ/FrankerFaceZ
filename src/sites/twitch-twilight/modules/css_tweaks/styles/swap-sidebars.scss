@@ -1,5 +1,11 @@
 .twilight-main { order: 2 }
-.top-nav + div > div:first-child:not(.celebration__overlay),
+/* The element that must be reordered is the sidebar's wrapper: it is the
+ * actual flex item next to .right-column and .twilight-main. .side-nav
+ * itself sits inside a display:block parent, where order is a no-op, and
+ * the old positional .top-nav + div > div:first-child selector misses
+ * whenever Twitch restructures the layout root (the chat still swaps, the
+ * sidebar stops). :has() targets the wrapper directly in either structure. */
+div:has(> .side-nav),
 .side-nav { order: 3 }
 .right-column {
 	order: 1;
