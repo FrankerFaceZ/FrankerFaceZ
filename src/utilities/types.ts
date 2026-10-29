@@ -91,6 +91,9 @@ export type AddonInfo = {
 	/** Optional. List of load tracker events that this add-on should hold while it's being loaded. */
 	load_events?: string[];
 
+	/** Flag to configure whether script filenames have a timestamp suffix that prevents caching*/
+	disable_cache_busting: boolean;
+
 };
 
 export type BasicAddonInfo = Pick<AddonInfo, 'id'> & Partial<AddonInfo>;
