@@ -637,7 +637,7 @@ export default class Metadata extends Module {
 					return `${delayed}${data.delay.toFixed(2)}s`;
 			},
 
-			click() {
+			/*click() {
 				const Player = this.resolve('site.player') as any,
 					fine = this.resolve('site.fine') as any,
 					player = Player.Player?.first,
@@ -649,17 +649,17 @@ export default class Metadata extends Module {
 					return;
 
 				inst.props.setStatsOverlay(el ? 0 : 1);
-			},
+			},*/
 
-			/*click() {
-				const Player = this.resolve('site.player'),
+			click() {
+				const Player = this.resolve('site.player') as any,
 					ui = Player.playerUI;
 
 				if ( ! ui )
 					return;
 
 				ui.setStatsOverlay(ui.statsOverlay === 1 ? 0 : 1);
-			},*/
+			},
 
 			color(data) {
 				const setting = this.settings.get('metadata.stream-delay-warning');
