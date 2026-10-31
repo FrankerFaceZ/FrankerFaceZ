@@ -18,6 +18,11 @@ const HoverState = Symbol('FFZ:Hover:State');
 
 const MOD_KEY = IS_OSX ? 'metaKey' : 'ctrlKey';
 
+// Bound the number of set combinations and retained name-to-emote references.
+const EMOTE_CACHE_MAX_SIZE = 32;
+const EMOTE_CACHE_MAX_REFS = 50_000;
+const EMOTE_CACHE_ADMISSION_INTERVAL = 8;
+
 const Flags = make_enum_flags(
 	'Hidden',
 	'FlipX',
@@ -476,6 +481,9 @@ export default class Emotes extends Module {
 		});*/
 
 		this.emote_sets = {};
+		this._emote_cache = new Map;
+		this._emote_cache_refs = 0;
+		this._emote_cache_misses = 0;
 		this._set_refs = {};
 		this._set_timers = {};
 
@@ -1013,6 +1021,7 @@ export default class Emotes extends Module {
 				continue;
 
 			// Save the changes.
+			this._clearEmoteCache();
 			this.log.info(`Filtered emote set #${set.id}: ${set.title} (total: ${count+fcount}, old: ${set.disabled_count}, new: ${fcount})`);
 
 			set.emotes = emotes;
@@ -1879,6 +1888,66 @@ export default class Emotes extends Module {
 			.map(set_id => this.emote_sets[set_id]);
 	}
 
+	_clearEmoteCache() {
+		this._emote_cache.clear();
+		this._emote_cache_refs = 0;
+		this._emote_cache_misses = 0;
+	}
+
+	// Internal, read-only lookup shared by messages with the same ordered sets.
+	// Resolve membership on every call so room/user/bulk/shared-chat changes do
+	// not need their own invalidation hooks. Keep getEmotes() returning a fresh
+	// object for add-ons that modify the result.
+	_getEmoteMap(user_id, user_login, room_id, room_login) {
+		const sets = this.getSetIDs(user_id, user_login, room_id, room_login),
+			key = JSON.stringify(sets.map(String)),
+			cache = this._emote_cache;
+
+		const cached = cache.get(key);
+		if ( cached ) {
+			// Refresh LRU order.
+			cache.delete(key);
+			cache.set(key, cached);
+			return cached.emotes;
+		}
+
+		// Build from the already-resolved IDs and count references in one pass.
+		const emotes = {};
+		let refs = 0;
+		for(const set_id of sets) {
+			const set = this.emote_sets[set_id];
+			if ( set?.emotes )
+				for(const emote of Object.values(set.emotes))
+					if ( emote && ! has(emotes, emote.name) ) {
+						emotes[emote.name] = emote;
+						refs++;
+					}
+		}
+
+		// A single enormous set must not defeat the memory budget.
+		if ( refs > EMOTE_CACHE_MAX_REFS )
+			return emotes;
+
+		// Limit admission when full so uncommon personal sets do not constantly
+		// evict combinations that other messages can reuse.
+		const cache_full = cache.size >= EMOTE_CACHE_MAX_SIZE || this._emote_cache_refs + refs > EMOTE_CACHE_MAX_REFS;
+		if ( cache_full ) {
+			this._emote_cache_misses++;
+			if ( this._emote_cache_misses % EMOTE_CACHE_ADMISSION_INTERVAL !== 0 )
+				return emotes;
+		}
+
+		while(cache.size >= EMOTE_CACHE_MAX_SIZE || this._emote_cache_refs + refs > EMOTE_CACHE_MAX_REFS) {
+			const oldest = cache.keys().next().value;
+			this._emote_cache_refs -= cache.get(oldest).refs;
+			cache.delete(oldest);
+		}
+
+		cache.set(key, {emotes, refs});
+		this._emote_cache_refs += refs;
+		return emotes;
+	}
+
 	getEmotes(user_id, user_login, room_id, room_login) {
 		const emotes = {};
 		for(const emote_set of this.getSets(user_id, user_login, room_id, room_login))
@@ -2274,6 +2343,7 @@ export default class Emotes extends Module {
 			throw new Error("Invalid emote data object.");
 
 		const is_disabled = this.shouldFilterEmote(processed, set, set_id);
+		this._clearEmoteCache();
 
 		// Possible logic paths:
 		// 1. No old emote. New emote accepted.
@@ -2389,6 +2459,7 @@ export default class Emotes extends Module {
 		if ( ! emote )
 			return;
 
+		this._clearEmoteCache();
 		const emote_css = this.generateEmoteCSS(emote);
 		const css = (emote_css && emote_css.length) ? [] : null;
 
@@ -2430,6 +2501,7 @@ export default class Emotes extends Module {
 
 
 	loadSetData(set_id, data, suppress_log = false) {
+		this._clearEmoteCache();
 		const old_set = this.emote_sets[set_id];
 		if ( ! data ) {
 			if ( old_set ) {
@@ -2522,6 +2594,7 @@ export default class Emotes extends Module {
 
 		this.emit(':unloaded', set_id, old_set);
 		this.emote_sets[set_id] = null;
+		this._clearEmoteCache();
 	}
 
 
