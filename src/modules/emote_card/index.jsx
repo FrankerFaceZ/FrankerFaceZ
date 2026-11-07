@@ -407,6 +407,7 @@ export default class EmoteCard extends Module {
 			id: data.id,
 			fav_source: emote_set.source ?? 'ffz',
 			more: [],
+			aliases: Array.isArray(data.aliases) ? data.aliases.filter(x => x !== data.name) : [data.name],
 			src: data.animSrc2 ?? data.src2,
 			srcSet: data.animSrcSet2 ?? data.srcSet2,
 			width: data.width,

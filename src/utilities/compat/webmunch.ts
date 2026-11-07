@@ -92,7 +92,9 @@ const NAMES = [
 	'webpackJsonp',
 	'webpackChunktwitch_twilight',
 	'webpackChunktwitch_sunlight',
-	'webpackJsonp_N_E'
+	'rspackChunktwitch_twilight',
+	'rspackChunktwitch_sunlight',
+	'webpackJsonp_N_E',
 ];
 
 const HARD_MODULES = [
@@ -460,9 +462,16 @@ export default class WebMunch extends Module<'site.web_munch', WebMunchEvents> {
 
 	private _detectRequirements(node: GraphNode, fn: WebpackModuleLoaderV4) {
 		const str = fn.toString();
+
+		// Webpack emits module factories as arrow or regular functions.
 		let name_match = /^\([^,)]+,[^,)]+,([^,)]+)\)=>/.exec(str);
 		if ( ! name_match )
 			name_match = /^function\([^,)]+,[^,)]+,([^,)]+)/.exec(str);
+
+		// Rspack emits module factories as object methods, including the
+		// module ID in Function.prototype.toString().
+		if ( ! name_match )
+			name_match = /^[^(]+\([^,)]+,[^,)]+,([^,)]+)\)\s*\{/.exec(str);
 
 		if ( name_match ) {
 			const regex = getRequireRegex(name_match[1]);

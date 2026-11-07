@@ -1331,23 +1331,28 @@ export default class Input extends Module {
 				favorites = this.emotes.getFavorites(source);
 
 			for(const emote of Object.values(set.emotes)) {
-				if ( ! emote || ! emote.id || emote.hidden || hidden_emotes.includes(emote.id) || added_emotes.has(emote.name) )
+				if ( ! emote || ! emote.id || emote.hidden || hidden_emotes.includes(emote.id) )
 					continue;
 
-				if ( ! emote.name )
+				if ( ! Array.isArray(emote.filtered_aliases) )
 					continue;
 
-				added_emotes.add(emote.name);
+				for(const alias of emote.filtered_aliases) {
+					if ( ! alias )
+						continue;
 
-				out.push({
-					id: `${source}-${emote.id}`,
-					source,
-					extra: source_line,
-					token: emote.name,
-					tokenLower: emote.name.toLowerCase(),
-					srcSet: anim && emote.animSrcSet || emote.srcSet,
-					favorite: favorites.includes(emote.id)
-				});
+					added_emotes.add(alias);
+
+					out.push({
+						id: `${source}-${emote.id}`,
+						source,
+						extra: source_line,
+						token: alias,
+						tokenLower: alias.toLowerCase(),
+						srcSet: anim && emote.animSrcSet || emote.srcSet,
+						favorite: favorites.includes(emote.id)
+					});
+				}
 			}
 		}
 

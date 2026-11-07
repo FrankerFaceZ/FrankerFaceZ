@@ -85,6 +85,16 @@
 								</template>
 							</t-list>
 						</p>
+						<p v-if="loaded && Array.isArray(emote.aliases) && emote.aliases.length > 0" class="tw-c-text-alt-2 ffz-font-size-6 tw-ellipsis">
+							<t-list
+								phrase="emote-card.aliases"
+								default="Aliases: {aliases}"
+							>
+								<template #aliases>
+									{{ emote.aliases.join(', ') }}
+								</template>
+							</t-list>
+						</p>
 					</div>
 					<button
 						v-if="canFavorite"
@@ -350,9 +360,10 @@ export default {
 
 			evt.preventDefault();
 
-			if ( entry.type === 'report-ffz' )
+			if ( entry.type === 'report-ffz' ) {
 				this.reporting = true;
 				this.$nextTick(() => this.handleResize());
+			}
 
 			if ( entry.type === 'report-twitch' ) {
 				if ( this.reportTwitchEmote(this.emote.id, this.emote.channel_id) )

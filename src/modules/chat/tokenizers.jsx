@@ -1587,10 +1587,18 @@ export const AddonEmotes = {
 				if ( emote.artist )
 					artist = emote.artist.display_name || emote.artist.name;
 
-				if ( emote.original_name && emote.original_name !== emote.name )
+				const check_name = (ds.name || target.alt) || emote.name;
+
+				if ( emote.original_name && emote.original_name !== check_name )
 					original_name = this.i18n.t(
 						'emote.original-name', 'Name: {name}',
 						{name: emote.original_name}
+					);
+
+				else if ( check_name !== emote.name )
+					original_name = this.i18n.t(
+						'emote.original-name', 'Name: {name}',
+						{name: emote.name}
 					);
 
 				if ( emote.owner )
@@ -1861,11 +1869,13 @@ export const AddonEmotes = {
 
 							last_token.modifiers.push(
 								Object.assign({
-										big,
-										anim
-									},
-									emote.token
-								)
+									big,
+									anim
+								},
+								emote.token,
+								{
+									text: emote.hidden ? '???' : segment
+								})
 							);
 						}
 
@@ -1887,7 +1897,9 @@ export const AddonEmotes = {
 						modifier_flags: 0,
 						big,
 						anim
-					}, emote.token);
+					}, emote.token, {
+						text: emote.hidden ? '???' : segment
+					});
 					out.push(t);
 					last_token = t;
 

@@ -32,7 +32,7 @@ export const STAGING_API = 'https://api-staging.frankerfacez.com';
 export const STAGING_CDN = 'https://cdn-staging.frankerfacez.com';
 
 /** The base URL of the FrankerFaceZ testing API used for load testing. */
-export const NEW_API = 'https://api2.frankerfacez.com';
+export const NEW_API = 'https://api-test.frankerfacez.com';
 
 /** The base URL provided to Sentry integrations for automatic error reporting. */
 export const SENTRY_ID = 'https://74b46b3894114f399d51949c6d237489@sentry.frankerfacez.com/2';

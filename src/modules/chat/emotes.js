@@ -437,6 +437,9 @@ export default class Emotes extends Module {
 		this.filters = {};
 		this.__filters = [];
 
+		this.alias_filters = {};
+		this.__alias_filters = [];
+
 		this.inject('i18n');
 		this.inject('settings');
 		this.inject('experiments');
@@ -646,9 +649,16 @@ export default class Emotes extends Module {
 			return this.addFilter(filter);
 		}
 
+		overrides.addAliasFilter = (filter) => {
+			if ( filter )
+				filter.__source = addon_id;
+
+			return this.addAliasFilter(filter);
+		}
+
 		overrides.setProvider = (provider, data) => {
 			if ( is_dev && ! id_checker.test(provider) )
-					module.log.warn('[DEV-CHECK] Call to emotes.setProvider did not include addon ID in provider:', provider);
+				module.log.warn('[DEV-CHECK] Call to emotes.setProvider did not include addon ID in provider:', provider);
 
 			if ( data )
 				data.__source = addon_id;
@@ -717,6 +727,18 @@ export default class Emotes extends Module {
 					module.log.warn('[DEV-CHECK] Removed un-owned emote filter with emotes.removeFilter:', type, ' owner:', existing.__source ?? 'ffz');
 
 				return this.removeFilter(filter);
+			}
+
+			overrides.removeAliasFilter = (filter) => {
+				let type;
+				if ( typeof filter === 'string' ) type = filter;
+				else type = filter.type;
+
+				const existing = this.alias_filters[type];
+				if ( existing && existing.__source !== addon_id )
+					module.log.warn('[DEV-CHECK] Removed un-owned emote alias filter with emotes.removeAliasFilter:', type, ' owner:', existing.__source ?? 'ffz');
+
+				return this.removeAliasFilter(filter);
 			}
 
 			overrides.removeDefaultSet = (provider, ...args) => {
@@ -846,6 +868,13 @@ export default class Emotes extends Module {
 				}
 			}
 
+			for(const [key, def] of Object.entries(this.alias_filters)) {
+				if ( def?.__source === addon_id ) {
+					removed++;
+					this.removeAliasFilter(key);
+				}
+			}
+
 			for(const [key, data] of this.providers.entries()) {
 				if ( data?.__source === addon_id ) {
 					removed++;
@@ -967,11 +996,76 @@ export default class Emotes extends Module {
 	}
 
 	shouldFilterEmote(emote, set, set_id) {
+		if ( emote.filtered_aliases.length === 0 )
+			return true;
+
 		for(const filter of this.__filters)
 			if ( filter.test(emote, set, set_id) )
 				return true;
 
 		return false;
+	}
+
+	addAliasFilter(filter, should_update = true) {
+		const type = filter.type;
+		if ( has(this.alias_filters, type) ) {
+			this.log.warn(`Tried adding emote alias filter of type '${type}' when one was already present.`);
+			return;
+		}
+
+		this.alias_filters[type] = filter;
+		if ( filter.priority == null )
+			filter.priotiy = 0;
+
+		this.__alias_filters.push(filter);
+		this.__alias_filters.sort((a, b) => {
+			if ( a.priority > b.priority ) return -1;
+			if ( a.priority < b.priority ) return 1;
+			return a.type < b.type;
+		});
+
+		if ( should_update )
+			this.updateFiltered();
+	}
+
+	removeAliasFilter(filter, should_update = true) {
+		let type;
+		if ( typeof filter === 'string' ) type = filter;
+		else type = filter.type;
+
+		filter = this.alias_filters[type];
+		if ( ! filter )
+			return null;
+
+		delete this.alias_filters[type];
+
+		const idx = this.__alias_filters.indexOf(filter);
+		if ( idx !== -1 ) {
+			this.__alias_filters.splice(idx, 1);
+			if ( should_update )
+				this.updateFiltered();
+		}
+
+		return filter;
+	}
+
+	shouldFilterEmoteAlias(alias, emote, set, set_id) {
+		for(const filter of this.__alias_filters)
+			if (filter.test(alias, emote, set, set_id) )
+				return true;
+
+		return false;
+	}
+
+	updateEmoteAliases(emote, set, set_id) {
+		if ( this.__alias_filters.length === 0 )
+			emote.filtered_aliases = emote.aliases;
+		else {
+			const filter = alias => this.shouldFilterEmoteAlias(alias, emote, set, set_id);
+			emote.filtered_aliases = emote.aliases.filter(filter);
+		}
+
+		return emote.filtered_aliases.length;
 	}
 
 	updateFiltered() {
@@ -983,9 +1077,13 @@ export default class Emotes extends Module {
 
 			let count = 0,
 				fcount = 0,
+				acount = 0,
 				changed = false;
 
 			for(const em of Object.values(set.emotes)) {
+				if ( em.filtered_aliases.length !== this.updateEmoteAliases(em, set, set.id) )
+					acount++;
+
 				if ( ! this.shouldFilterEmote(em, set, set.id) ) {
 					emotes[em.id] = em;
 					count++;
@@ -998,6 +1096,9 @@ export default class Emotes extends Module {
 			}
 
 			for(const em of Object.values(set.disabled_emotes)) {
+				if ( em.filtered_aliases.length !== this.updateEmoteAliases(em, set, set.id) )
+					acount++;
+
 				if ( this.shouldFilterEmote(em, set, set.id)) {
 					filtered[em.id] = em;
 					fcount++;
@@ -1008,6 +1109,9 @@ export default class Emotes extends Module {
 					changed = true;
 				}
 			}
+
+			if ( acount !== 0 )
+				this.log.info(`Filtered alises of emote set #${set.id}: ${set.title} (alias changes: ${acount})`);
 
 			if ( ! changed )
 				continue;
@@ -1884,8 +1988,10 @@ export default class Emotes extends Module {
 		for(const emote_set of this.getSets(user_id, user_login, room_id, room_login))
 			if ( emote_set && emote_set.emotes )
 				for(const emote of Object.values(emote_set.emotes) )
-					if ( emote && ! has(emotes, emote.name) )
-						emotes[emote.name] = emote;
+					if ( emote && Array.isArray(emote.filtered_aliases) )
+						for(const alias of emote.filtered_aliases)
+							if ( ! has(emotes, alias) )
+								emotes[alias] = emote;
 
 		return emotes;
 	}
@@ -2219,6 +2325,30 @@ export default class Emotes extends Module {
 			}
 		}
 
+		// Aliases
+		if ( ! Array.isArray(emote.aliases) )
+			emote.aliases = [emote.name];
+		else {
+			let had_name = false;
+			for(let i = 0; i < emote.aliases.length; i++) {
+				const alias = emote.aliases[i];
+				if ( typeof alias !== 'string') {
+					emote.aliases.splice(i, 1);
+					i--;
+				} else if ( alias === emote.name )
+					had_name = true;
+			}
+
+			if ( ! had_name )
+				emote.aliases.unshift(emote.name);
+		}
+
+		emote.filtered_aliases = emote.aliases;
+
+		// TODO: Remove, test data.
+		if ( emote.name === 'CatBag' )
+			emote.aliases.push('BagCat');
+
 		// Check to see if this emote applies any effects with as_background.
 		/*let as_background = false;
 		if ( emote.modifier_flags ) {
@@ -2269,9 +2399,12 @@ export default class Emotes extends Module {
 		if ( ! set )
 			throw new Error(`Invalid emote set "${set_id}"`);
 
-		let processed = this.processEmote(emote, set_id);
+		const processed = this.processEmote(emote, set_id);
 		if ( ! processed )
-			throw new Error("Invalid emote data object.");
+			throw new Error('Invalid emote data object.');
+
+		// Handle the alises.
+		this.updateEmoteAliases(processed, set, set_id);
 
 		const is_disabled = this.shouldFilterEmote(processed, set, set_id);
 
@@ -2284,7 +2417,7 @@ export default class Emotes extends Module {
 		// 6. Old emote disabled. New emote disabled.
 
 		// Are we removing a disabled emote?
-		let removed = set.disabled_emotes[processed.id];
+		const removed = set.disabled_emotes[processed.id];
 		if ( removed ) {
 			delete set.disabled_emotes[processed.id];
 			set.disabled_count--;
@@ -2461,6 +2594,9 @@ export default class Emotes extends Module {
 				bad_emotes.push(emote);
 				continue;
 			}
+
+			// Handle aliases
+			this.updateEmoteAliases(processed, data, set_id);
 
 			if ( this.shouldFilterEmote(processed, data, set_id) ) {
 				filtered[processed.id] = processed;
