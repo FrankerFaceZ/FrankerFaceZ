@@ -1061,7 +1061,7 @@ export default class Emotes extends Module {
 		if ( this.__alias_filters.length === 0 )
 			emote.filtered_aliases = emote.aliases;
 		else {
-			const filter = alias => this.shouldFilterEmoteAlias(alias, emote, set, set_id);
+			const filter = alias => ! this.shouldFilterEmoteAlias(alias, emote, set, set_id);
 			emote.filtered_aliases = emote.aliases.filter(filter);
 		}
 
