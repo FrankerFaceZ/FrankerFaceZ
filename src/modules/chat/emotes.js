@@ -2345,10 +2345,6 @@ export default class Emotes extends Module {
 
 		emote.filtered_aliases = emote.aliases;
 
-		// TODO: Remove, test data.
-		if ( emote.name === 'CatBag' )
-			emote.aliases.push('BagCat');
-
 		// Check to see if this emote applies any effects with as_background.
 		/*let as_background = false;
 		if ( emote.modifier_flags ) {

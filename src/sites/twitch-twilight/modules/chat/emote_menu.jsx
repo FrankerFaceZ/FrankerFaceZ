@@ -684,7 +684,7 @@ export default class EmoteMenu extends Module {
 				const ratings = {G_PG: 'pg'},
 				rating = ratings[this.props.rating] || 'g';
 
-				return query 
+				return query
 				? `https://api.giphy.com/v1/gifs/search?api_key=${this.props.apiKey}&q=${encodeURIComponent(query)}&rating=${rating}&limit=50&offset=${offset}`
 				: `https://api.giphy.com/v1/gifs/trending?api_key=${this.props.apiKey}&rating=${rating}&limit=50&offset=${offset}`;
 			}
@@ -2907,6 +2907,7 @@ export default class EmoteMenu extends Module {
 								effects: emote.modifier ? emote.modifier_flags : 0,
 								effect_prefix: emote.modifier ? emote.modifier_prefix : false,
 								name: emote.name,
+								extra: emote.filtered_aliases.map(alias => alias.toLowerCase()),
 								favorite: is_fav,
 								locked: locked,
 								hidden: known_hidden.includes(emote.id),
