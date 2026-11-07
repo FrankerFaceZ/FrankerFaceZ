@@ -15,7 +15,6 @@ jobs:
     - name: Uses PNPM
       uses: pnpm/action-setup@v4
       with:
-        version: 10
         run_install: false
 
     - name: Uses Node.js 22.x
@@ -65,3 +64,32 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  # The new server.
+  deploy-new-server:
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-new-server
+      cancel-in-progress: false
+    steps:
+    - name: Download the Build
+      uses: actions/download-artifact@v4
+      with:
+        name: client
+        path: dist
+
+    - name: Deploy
+      env:
+        DEPLOY_HOST: ${{ secrets.FFZ_DEPLOY_HOST }}
+        DEPLOY_KEY: ${{ secrets.FFZ_DEPLOY_KEY }}
+        DEPLOY_KNOWN_HOSTS: ${{ secrets.FFZ_DEPLOY_KNOWN_HOSTS }}
+      run: |
+        install -m 700 -d ~/.ssh
+        printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/ffz_deploy
+        chmod 600 ~/.ssh/ffz_deploy
+        printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+        tar -czf - -C dist . | ssh -i ~/.ssh/ffz_deploy -o IdentitiesOnly=yes \
+          -o StrictHostKeyChecking=yes -o BatchMode=yes \
+          "githubci@$DEPLOY_HOST" deploy client
