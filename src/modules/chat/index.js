@@ -1229,21 +1229,63 @@ export default class Chat extends Module {
 		});
 
 		this.settings.add('chat.gifs.enabled', {
-			default: true,
+			default: null,
+			requires: ['ls.gifsEnabled'],
+			process(ctx, val) {
+				if ( val == null )
+					return ctx.get('ls.gifsEnabled') ?? true;
+				return val
+			},
 			ui: {
+				sort: 0,
 				path: 'Chat > Appearance >> GIFs',
-				title: 'Display GIFs in chat.',
-				description: 'Twitch subscribers (Tier 2 and 3) can post [animated GIFs](https://help.twitch.tv/s/article/gif-keyboard). When this is disabled, those messages are shown as a link instead.\n\n**Note:** This doesn\'t work when "**Display all emotes on one tab**" is enabled.',
+				title: 'Display GIFs',
+
+				default(ctx) {
+					return ctx.get('ls.gifsEnabled') ?? true;
+				},
+
+				description: 'Twitch subscribers (Tier 2 and 3) can post [animated GIFs](https://help.twitch.tv/s/article/gif-keyboard). When this is disabled, those messages are shown as a link instead.\n\nIf this is not overridden, it follows Twitch\'s "Show GIFs in Chat" setting.\n\n**Note:** This doesn\'t work when "**Display all emotes on one tab**" is enabled.',
 				component: 'setting-check-box'
 			}
 		});
 
+		this.settings.add('chat.gifs.animated', {
+			default: null,
+			requires: ['ls.gifAnimationsEnabled'],
+			process(ctx, val) {
+				if ( val == null )
+					return (ctx.get('ls.gifAnimationsEnabled') ?? true) ? 1 : 0;
+				return val;
+			},
+			ui: {
+				sort: 1,
+				path: 'Chat > Appearance >> GIFs',
+				title: 'Animated GIFs',
+
+				default(ctx) {
+					return (ctx.get('ls.gifAnimationsEnabled') ?? true) ? 1 : 0;
+				},
+
+				getExtraTerms: () => GIF_TERMS,
+
+				description: 'This controls whether or not GIFs are allowed to play in chat. When this is `Disabled`, GIFs will appear as static images.\n\nSetting this to `Enable on Hover` may cause performance issues.\n\nIf this is not overridden, it follows Twitch\'s "GIF Animations" setting.',
+				component: 'setting-select-box',
+				data: [
+					{value: 0, title: 'Disabled'},
+					{value: 1, title: 'Enabled'},
+					{value: 2, title: 'Enable on Hover'}
+				]
+			}
+		})
+
 		this.settings.add('chat.gifs.size', {
 			default: 140,
 			ui: {
+				sort: 2,
 				path: 'Chat > Appearance >> GIFs',
 				title: 'GIF Size',
-				description: 'How large GIFs should be, in pixels, as their maximum height.',
+				description: 'The maximum height of GIFs, in pixels.',
 				component: 'setting-text-box',
 				process: 'to_int',
 				bounds: [1]

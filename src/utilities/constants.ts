@@ -161,6 +161,7 @@ export const UPDATE_TOKEN_SETTINGS = [
 	'chat.emotes.2x',
 	'chat.emotes.animated',
 	'chat.gifs.enabled',
+	'chat.gifs.animated',
 	'chat.emoji.style',
 	'chat.emoji.replace-joiner',
 	'chat.bits.stack',

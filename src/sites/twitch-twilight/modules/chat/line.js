@@ -1161,7 +1161,7 @@ other {# messages were deleted by a moderator.}
 
 				// Render the line.
 				const user = msg.user,
-					anim_hover = t.chat.context.get('chat.emotes.animated') === 2;
+					anim_hover = t.chat.context.get('chat.emotes.animated') === 2 || (msg.ffz_gif && t.chat.context.get('chat.gifs.animated') === 2);
 
 				// Cache the lower login
 				if ( user && ! user.lowerLogin && user.userLogin )
