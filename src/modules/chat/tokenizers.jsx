@@ -2308,7 +2308,7 @@ export const Gifs = {
 			return;
 
 		const gif = msg.ffz_gif,
-		anim = this.context.get('chat.emotes.animated'),
+		anim = this.context.get('chat.gifs.animated'),
 		static_url = getStaticGifUrl(gif.url);
 
 		if ( ! this.context.get('chat.gifs.enabled') )
@@ -2322,7 +2322,7 @@ export const Gifs = {
 
 			return [{
 				type: 'gif',
-				url: anim === 0 ? static_url : gif.url,
+				url: anim === 1 ? gif.url : static_url,
 				staticUrl: static_url,
 				animUrl: gif.url,
 				anim,
