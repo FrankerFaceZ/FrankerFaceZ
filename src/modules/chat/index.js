@@ -1234,7 +1234,7 @@ export default class Chat extends Module {
 			process(ctx, val) {
 				if ( val == null )
 					return ctx.get('ls.gifsEnabled') ?? true;
-				return val
+				return val;
 			},
 			ui: {
 				sort: 0,
@@ -1277,7 +1277,7 @@ export default class Chat extends Module {
 					{value: 2, title: 'Enable on Hover'}
 				]
 			}
-		})
+		});
 
 		this.settings.add('chat.gifs.size', {
 			default: 140,
