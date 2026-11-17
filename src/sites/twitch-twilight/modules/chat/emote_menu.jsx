@@ -3306,7 +3306,12 @@ export default class EmoteMenu extends Module {
 												onClick={this.clickTab}
 											>
 												<div class="tw-inline-flex tw-pd-x-1 tw-pd-y-05 ffz-font-size-4">
-													<figure class="ffz-i-keyboard" />
+													<figure class="ffz--gif-tab-icon">
+														<svg viewBox="0 0 24" aria-hidden="true" focusable="false">
+															<path fillRule="evenodd" clipRule="evenodd" fill="currentColor" d="M8 11a1 1 0 1 1 2 0h1a2 2 0 1 0-4 0v2a2 2 0 0 0 3 1.732V15h1v-2a1 1 0 0 0-1-1H9v1h1a1 1 0 1 1-2 0v-2Zm5 4h-1V9h1v6Zm1-6h3v1h-2v1h2v1h-2v3h-1V9Z" />
+															<path fillRule="evenodd" clipRule="evenodd" fill="currentColor" d="M2 4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4Zm2 0h16v16H4V4Z" />
+														</svg>
+													</figure>
 												</div>
 											</button>
 										</div>}
