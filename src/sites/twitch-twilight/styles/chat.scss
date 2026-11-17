@@ -648,6 +648,14 @@
 	border-radius: .4rem;
 }
 
+.ffz--gif-tab-icon svg {
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	margin: 0 .2em;
+	vertical-align: -.15em;
+}
+
 .ffz--gif-picker-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
