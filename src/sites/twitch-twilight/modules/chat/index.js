@@ -2114,7 +2114,7 @@ export default class ChatHook extends Module {
 		inst._ffz_no_raid = setTimeout(() => {
 			inst._ffz_no_raid = null;
 
-			if ( inst.props && inst.props.raid && ! inst.isRaidCreator && inst.hasJoinedCurrentRaid ) {
+			if ( inst.props && inst.props.raid && ! inst.canManageRaid && inst.hasJoinedCurrentRaid ) {
 				const id = inst.props.raid.id;
 				if ( this.joined_raids.has(id) )
 					return;
