@@ -31,6 +31,9 @@ export const STAGING_API = 'https://api-staging.frankerfacez.com';
 /** The base URL of the FrankerFaceZ staging CDN. */
 export const STAGING_CDN = 'https://cdn-staging.frankerfacez.com';
 
+/** The base URL of the new FrankerFaceZ CDN, which is guaranteed to have the new emoji data format. */
+export const SERVER3 = 'https://cdn3.frankerfacez.com';
+
 /** The base URL of the FrankerFaceZ testing API used for load testing. */
 export const NEW_API = 'https://api-test.frankerfacez.com';
 

@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Module from 'utilities/module';
-import {SERVER} from 'utilities/constants';
+import {SERVER, SERVER3} from 'utilities/constants';
 import {has} from 'utilities/object';
 import { getBuster } from 'utilities/time';
 
@@ -64,11 +64,13 @@ export const EMOJI_JOINER = '\u{E0002}';
 
 export const IMAGE_PATHS = {
 	google: 'noto',
+	google3d: 'noto3d',
 	twitter: 'twemoji',
 	open: 'openmoji',
 	blob: 'blob'
 };
 
+const LEGACY_GRID = [58, 58];
 
 export function codepoint_to_emoji(cp) {
 	let code = typeof cp === 'number' ? cp : parseInt(cp, 16);
@@ -132,6 +134,7 @@ export default class Emoji extends Module {
 				data: [
 					{value: 'twitter', title: 'Twitter (Twemoji)'},
 					{value: 'google', title: 'Google (Noto)'},
+					{value: 'google3d', title: 'Google (Noto 3D)'},
 					{value: 'blob', title: 'Blob'},
 					{value: 'open', title: 'OpenMoji'},
 					{value: 0, title: 'Native'}
@@ -147,6 +150,10 @@ export default class Emoji extends Module {
 		this.emoji = {};
 		this.names = {};
 		this.chars = new Map;
+
+		// Sprite sheet layout, from the emoji data once it loads.
+		this.sheet_grid = LEGACY_GRID;
+		this.sheet_version = null;
 	}
 
 	onEnable() {
@@ -163,7 +170,7 @@ export default class Emoji extends Module {
 	async loadEmojiData(tries = 0) {
 		let data;
 		try {
-			data = await fetch(`${SERVER}/script/emoji/v3.2.json?_${getBuster(60)}`).then(r =>
+			data = await fetch(`${SERVER3}/script/emoji/v3.3.json?_${getBuster(60)}`).then(r =>
 				r.ok ? r.json() : null
 			);
 
@@ -253,41 +260,48 @@ export default class Emoji extends Module {
 		this.names = names;
 		this.chars = chars;
 
+		this.sheet_grid = data.g;
+		this.sheet_version = data.s;
+
 		this.log.info(`Loaded data about ${Object.keys(out).length} emoji.`);
 		this.emit(':populated');
 		return true;
+	}
+
+	/**
+	 * The image folder for an emoji style.
+	 * @param {string|number} style A chat.emoji.style value.
+	 * @returns {string} The folder under /static/emoji/images/.
+	 */
+	getImagePath(style) {
+		if ( ! has(IMAGE_PATHS, style) )
+			style = 'twitter';
+
+		return IMAGE_PATHS[style];
+	}
+
+	/**
+	 * Sprite sheet URL for a style, without the "<size>.png" at the end.
+	 * @param {string|number} style A chat.emoji.style value.
+	 * @returns {string} The URL prefix.
+	 */
+	getSheetBase(style) {
+		const path = this.getImagePath(style);
+		return `${SERVER3}/static/emoji/images/sheets/${this.sheet_version}/sheet-${path}-`;
 	}
 
 	getFullImage(image, style) {
 		if ( ! style )
 			style = this.parent.context.get('chat.emoji.style');
 
-		if ( ! has(IMAGE_PATHS, style) )
-			style = 'twitter';
-
-		return `${SERVER}/static/emoji/images/${IMAGE_PATHS[style]}/${image}`;
-
-		/*if ( ! has(SIZES, style) )
-			style = 'twitter';
-
-		return `${SERVER}/static/emoji/img-${style}-${SIZES[style][0]}/${image}`;*/
+		return `${SERVER3}/static/emoji/images/${this.getImagePath(style)}/${image}`;
 	}
 
 	getFullImageSet(image, style) {
 		if ( ! style )
 			style = this.parent.context.get('chat.emoji.style');
 
-		if ( ! has(IMAGE_PATHS, style) )
-			style = 'twitter';
-
-		return `${SERVER}/static/emoji/images/${IMAGE_PATHS[style]}/${image} 72w`;
-
-		/*if ( ! has(SIZES, style) )
-			style = 'twitter';
-
-		return SIZES[style].map(w =>
-			`${SERVER}/static/emoji/img-${style}-${w}/${image} ${w}w`
-		).join(', ');*/
+		return `${SERVER3}/static/emoji/images/${this.getImagePath(style)}/${image} 72w`;
 	}
 }
 
@@ -306,6 +320,7 @@ function hydrate_emoji(data) {
 
 		has: {
 			google: !!(0b1000 & data[2]),
+			google3d: !!(0b10000 & data[2]) || !!(0b1000 & data[2]), // Noto 3D falls back to Noto
 			blob: !!(0b0100 & data[2]) || !!(0b1000 & data[2]), // Blob falls back to Noto
 			twitter: !!(0b0010 & data[2]),
 			open: !!(0b0001 & data[2])

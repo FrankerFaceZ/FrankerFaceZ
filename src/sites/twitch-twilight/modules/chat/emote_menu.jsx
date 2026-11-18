@@ -415,6 +415,7 @@ export default class EmoteMenu extends Module {
 		this.on('chat.emotes:loaded', this.maybeUpdate, this);
 		this.on('chat.emotes:change-favorite', this.maybeUpdate, this);
 		this.on('chat.emotes:change-hidden', this.maybeUpdate, this);
+		this.on('chat.emoji:populated', this.updateEmojiVariables, this);
 		this.on('chat.emoji:populated', this.maybeUpdate, this);
 
 		this.chat.context.on('changed:chat.emote-menu.enabled', () =>
@@ -511,17 +512,19 @@ export default class EmoteMenu extends Module {
 	updateEmojiVariables() {
 
 		const style = this.chat.context.get('chat.emoji.style') || 'twitter',
-			base = `//cdn.frankerfacez.com/static/emoji/images/sheet-${IMAGE_PATHS[style] || 'twemoji'}-`;
+			base = this.emoji.getSheetBase(style);
 
-		const emoji_size = this.emoji_size = 36,
-			sheet_count = this.emoji_sheet_count = 58,
-			sheet_size = this.emoji_sheet_size = sheet_count * (emoji_size + 2),
-			sheet_pct = this.emoji_sheet_pct = 100 * sheet_size / emoji_size;
+		const [columns, rows] = this.emoji.sheet_grid,
+			emoji_size = this.emoji_size = 36,
+			cell = emoji_size + 2,
+			width = columns * cell,
+			height = rows * cell;
 
-		this.emoji_sheet_remain = sheet_size - emoji_size;
+		this.emoji_sheet_remain_x = width - emoji_size;
+		this.emoji_sheet_remain_y = height - emoji_size;
 
 		this.css_tweaks.set('emoji-menu', `.ffz--emoji-tone-picker__emoji,.emote-picker__emoji .emote-picker__emote-figure {
-	background-size: ${sheet_pct}% ${sheet_pct}%;
+	background-size: ${100 * width / emoji_size}% ${100 * height / emoji_size}%;
 	background-image: url("${base}36.png");
 	background-image: ${WEBKIT}image-set(
 		url("${base}18.png") 0.5x,
@@ -631,8 +634,8 @@ export default class EmoteMenu extends Module {
 				const emoji_x = (data.sheet_x * (t.emoji_size + 2)) + 1,
 					emoji_y = (data.sheet_y * (t.emoji_size + 2)) + 1,
 
-					x_pct = 100 * emoji_x / t.emoji_sheet_remain,
-					y_pct = 100 * emoji_y / t.emoji_sheet_remain;
+					x_pct = 100 * emoji_x / t.emoji_sheet_remain_x,
+					y_pct = 100 * emoji_y / t.emoji_sheet_remain_y;
 
 				return (<figure
 					class="ffz--emoji-tone-picker__emoji"
@@ -1311,8 +1314,8 @@ export default class EmoteMenu extends Module {
 				const emoji_x = (emote.x * (t.emoji_size + 2)) + 1,
 					emoji_y = (emote.y * (t.emoji_size + 2)) + 1,
 
-					x_pct = 100 * emoji_x / t.emoji_sheet_remain,
-					y_pct = 100 * emoji_y / t.emoji_sheet_remain,
+					x_pct = 100 * emoji_x / t.emoji_sheet_remain_x,
+					y_pct = 100 * emoji_y / t.emoji_sheet_remain_y,
 
 					tt = t.chat.context.get('chat.emote-menu.tooltips');
 
