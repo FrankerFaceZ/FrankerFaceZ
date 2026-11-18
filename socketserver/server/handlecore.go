@@ -90,6 +90,7 @@ func SetupServerAndHandle(config *ConfigFile, serveMux *http.ServeMux) {
 	serveMux.Handle("/.well-known/", http.FileServer(http.Dir("/tmp/letsencrypt/")))
 	serveMux.HandleFunc("/healthcheck", HTTPSayOK)
 	serveMux.HandleFunc("/stats", HTTPShowStatistics)
+	serveMux.HandleFunc("/metrics", HTTPShowStatisticsPrometheus)
 	serveMux.HandleFunc("/hll/", HTTPShowHLL)
 	serveMux.HandleFunc("/hll_force_write", HTTPWriteHLL)
 
