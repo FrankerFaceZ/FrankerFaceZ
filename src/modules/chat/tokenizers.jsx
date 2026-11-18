@@ -1813,7 +1813,7 @@ export const AddonEmotes = {
 		if ( this.context.get('chat.emotes.enabled') !== 2 )
 			return;
 
-		const emotes = this.emotes.getEmotes(
+		const emotes = this.emotes._getEmoteMap(
 			msg.user.id,
 			msg.user.login,
 			msg.roomID,
