@@ -648,9 +648,9 @@ export default class Actions extends Module {
 		try {
 			const input = this.resolve('site.chat.input');
 			const perms = input?.CommandSuggestions?.first?.props?.chatCommandPermissions;
-			// Lead mods have a non-empty chatCommandPermissions Set;
-			// regular mods and viewers have an empty one or none at all.
-			return perms instanceof Set && perms.size > 0;
+			// Regular mods also get a non-empty chatCommandPermissions Set now,
+			// but only lead mods (and the broadcaster) can add/remove mods and VIPs.
+			return perms instanceof Set && perms.has('moderation.roles.mod:add');
 		} catch (err) {
 			return false;
 		}
