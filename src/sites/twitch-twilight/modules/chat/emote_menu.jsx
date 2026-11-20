@@ -1116,7 +1116,7 @@ export default class EmoteMenu extends Module {
 					if ( data.prime )
 						calendar = {
 							icon: 'crown',
-							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime Gaming.\nIt ends {seconds,humantime}.', {seconds: ends})
+							message: t.i18n.t('emote-menu.sub-prime', 'This is your free sub with Prime.\nIt ends {seconds,humantime}.', {seconds: ends})
 						}
 					else if ( data.gift )
 						calendar = {

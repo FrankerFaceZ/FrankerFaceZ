@@ -267,7 +267,7 @@ export default class ChatLine extends Module {
 							className: 'tw-c-text-base tw-strong'
 						}, user.displayName)),
 						plan: plan.prime ?
-							this.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
+							this.i18n.t('chat.sub.twitch-prime', 'with Prime') :
 							this.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier}),
 						multi: has_multi
 							? multi.count

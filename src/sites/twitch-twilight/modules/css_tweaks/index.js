@@ -396,7 +396,7 @@ export default class CSSTweaks extends Module {
 			default: true,
 			ui: {
 				path: 'Appearance > Layout >> Top Navigation',
-				title: 'Show Prime Gaming Loot.',
+				title: 'Show Prime Loot.',
 				component: 'setting-check-box'
 			},
 			changed: val => this.toggleHide('prime-offers', !val)

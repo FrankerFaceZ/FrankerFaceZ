@@ -246,7 +246,7 @@ export default class EmoteCard extends Module {
 				body = 'twitch';
 
 			} else if ( type === EmoteTypes.Prime || type === EmoteTypes.Turbo )
-				source = this.i18n.t('emote.prime', 'Prime Gaming');
+				source = this.i18n.t('emote.prime', 'Prime');
 
 			else
 				source = data.type;
