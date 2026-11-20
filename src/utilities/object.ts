@@ -1032,9 +1032,9 @@ export function glob_to_regex(input: string) {
 			}
 
 			if ( count > 1 )
-				output += '.*?';
+				output += '.*';
 			else
-				output += '[^\\s]*?';
+				output += '[^\\s]*';
 
 		} else
 			output += char;
