@@ -274,7 +274,7 @@ export default class Badges extends Module {
 			ui: {
 				path: 'Chat > Badges >> Behavior',
 				title: 'Allow clicking badges.',
-				description: 'Certain badges, such as Prime Gaming, act as links when this is enabled.',
+				description: 'Certain badges, such as Prime, act as links when this is enabled.',
 				component: 'setting-select-box',
 				data: [
 					{value: 0, title: 'Disabled'},

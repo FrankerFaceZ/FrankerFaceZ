@@ -248,7 +248,7 @@ export default class VideoChatHook extends Module {
 							system_msg = t.i18n.tList('chat.sub.main', '{user} subscribed {plan}. ', {
 								user: <span class="tw-c-text-base tw-strong">{user.displayName}</span>,
 								plan: prime ?
-									t.i18n.t('chat.sub.twitch-prime', 'with Prime Gaming') :
+									t.i18n.t('chat.sub.twitch-prime', 'with Prime') :
 									t.i18n.t('chat.sub.plan', 'at Tier {tier}', {tier})
 							});
 
