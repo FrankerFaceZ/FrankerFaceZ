@@ -569,6 +569,15 @@ export default class ChatHook extends Module {
 			}
 		});
 
+		this.settings.add('chat.banners.pinata', {
+			default: true,
+			ui: {
+				path: 'Chat > Appearance >> Community',
+				title: 'Allow the Piñata to be displayed in chat.',
+				component: 'setting-check-box',
+			}
+		});
+
 		/*this.settings.add('chat.banners.kappa-train', {
 			default: false,
 			ui: {
@@ -1250,6 +1259,7 @@ export default class ChatHook extends Module {
 		});
 
 		this.chat.context.on('changed:chat.banners.hype-train', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.pinata', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.subs.gift-banner', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
@@ -2149,6 +2159,7 @@ export default class ChatHook extends Module {
 			'community_gift': this.chat.context.get('chat.subs.gift-banner'),
 			'megacheer': this.chat.context.get('chat.bits.show'),
 			'hype_train': this.chat.context.get('chat.banners.hype-train'),
+			'pinata': this.chat.context.get('chat.banners.pinata'),
 			'prediction': this.chat.context.get('chat.banners.prediction'),
 			'poll': this.chat.context.get('chat.banners.polls'),
 			'pinned_chat': this.chat.context.get('chat.banners.pinned-message'),
@@ -2236,7 +2247,9 @@ export default class ChatHook extends Module {
 				t.community_stack = stack;
 				t.community_dispatch = dispatch;
 
-				t.cleanHighlights();
+				React.useLayoutEffect(() => {
+					t.cleanHighlights();
+				});
 
 				return null;
 			}
