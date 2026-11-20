@@ -578,15 +578,14 @@ export default class ChatHook extends Module {
 			}
 		});
 
-		/*this.settings.add('chat.banners.kappa-train', {
+		this.settings.add('chat.banners.kappa-train', {
 			default: false,
 			ui: {
 				path: 'Chat > Appearance >> Community',
-				title: 'Attempt to always display the Golden Kappa Train, even if other Hype Trains are hidden.',
-				description: '**Note**: This setting is currently theoretical and may not work, or may cause non-Kappa hype trains to appear. Due to the infrequent nature of hype trains, and especially the golden kappa hype train, it is very hard to test.',
+				title: 'Always display the Golden Kappa Train, even if other Hype Trains are hidden.',
 				component: 'setting-check-box'
 			}
-		});*/
+		});
 
 		this.settings.add('chat.banners.shared-chat', {
 			default: true,
@@ -1260,6 +1259,7 @@ export default class ChatHook extends Module {
 
 		this.chat.context.on('changed:chat.banners.hype-train', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.pinata', this.cleanHighlights, this);
+		this.chat.context.on('changed:chat.banners.kappa-train', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.subs.gift-banner', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.polls', this.cleanHighlights, this);
 		this.chat.context.on('changed:chat.banners.prediction', this.cleanHighlights, this);
@@ -2177,9 +2177,9 @@ export default class ChatHook extends Module {
 
 			const type = entry.event.type;
 			if ( type && has(types, type) && ! types[type] ) {
-				// Attempt to allow Golden Kappa hype trains?
-				//if ( type === 'hype_train' && entry.event.typeDetails === '0' && this.chat.context.get('chat.banners.kappa-train') )
-				//	continue;
+				// Allow Golden Kappa Trains through when the Hype Train is hidden.
+				if ( type === 'hype_train' && entry.event.hypeTrainType === 'GOLDEN_KAPPA' && this.chat.context.get('chat.banners.kappa-train') )
+					continue;
 
 				this.log.info('Removing community highlight:', type, '#', entry.id);
 				this.community_dispatch({
