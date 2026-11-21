@@ -80,8 +80,11 @@ export default {
 						if ( ! has(term.v, 'p') )
 							term.v.p = 0;
 
-						if ( term.v.t === 'raw' )
-							term.v.t = 'regex';
+						// Legacy "Regex (Word)" terms are a regex with Match Whole Words,
+						// which `w` now holds. The editor has no option for 'regex', and
+						// the user highlight matcher escapes it as plain text.
+						if ( term.v.t === 'regex' )
+							term.v.t = 'raw';
 					}
 
 					if ( term && term.t !== 'inherit' )
