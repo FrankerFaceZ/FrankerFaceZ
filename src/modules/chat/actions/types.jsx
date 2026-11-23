@@ -366,6 +366,11 @@ export const msg_delete = {
 
 	can_self: true,
 
+	// Messages held by AutoMod aren't regular chat messages, so there's nothing to delete
+	hidden(data, message) {
+		return !! message?.ffz_held;
+	},
+
 	tooltip(data) {
 		return this.i18n.t('chat.actions.delete.tooltip', "Delete {user.login}'s message", {user: data.user});
 	},

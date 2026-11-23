@@ -1,5 +1,6 @@
 .vod-message,
 .chat-line__message:not(.chat-line--inline),
+.ffz--held-message,
 .user-notice-line {
 	&.ffz-mentioned:not(.ffz-custom-color) {
 		&,
