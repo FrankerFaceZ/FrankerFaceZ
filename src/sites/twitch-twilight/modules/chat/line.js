@@ -640,6 +640,12 @@ export default class ChatLine extends Module {
 			Twilight.CHAT_ROUTES
 		);
 
+		this.HeldMessageLine = this.fine.define(
+			'held-message-line',
+			n => n.renderMessageBody && n.renderModerationIcons && n.showDeleted && n.props && has(n.props, 'hasModPermissions'),
+			Twilight.CHAT_ROUTES
+		);
+
 		this.WhisperLine = this.fine.define(
 			'whisper-line',
 			n => n.props && n.props.message && has(n.props, 'reportOutgoingWhisperRendered')
@@ -698,6 +704,16 @@ export default class ChatLine extends Module {
 
 				for(const inst of this.ExtensionLine.instances) {
 					const msg = inst.props.message;
+					if ( msg )
+						messages.push({
+							message: msg,
+							_instance: inst,
+							update: () => inst.forceUpdate()
+						});
+				}
+
+				for(const inst of this.HeldMessageLine.instances) {
+					const msg = inst.ffz_held_message;
 					if ( msg )
 						messages.push({
 							message: msg,
@@ -1657,6 +1673,187 @@ other {# messages were deleted by a moderator.}
 			// Do this after a short delay to hopefully reduce the chance of React
 			// freaking out on us.
 			setTimeout(() => this.ExtensionLine.forceUpdate());
+		});
+
+		this.HeldMessageLine.ready(cls => {
+			const old_render = cls.prototype.render;
+
+			cls.prototype.ffzGetHeldMessage = function() {
+				const raw = this.props.message;
+				if ( ! raw || ! raw.id || ! raw.sender )
+					return null;
+
+				let msg = this.ffz_held_message;
+				if ( msg && msg.id === raw.id )
+					return msg;
+
+				const room_id = this.props.channelID,
+					room = room_id ? t.chat.getRoom(room_id, null, true) : null;
+
+				msg = this.ffz_held_message = t.chat.standardizeMessage({
+					...raw,
+					sender: {...raw.sender},
+					content: raw.content ? {...raw.content} : raw.content,
+					roomID: room_id,
+					roomLogin: room?.login
+				});
+
+				msg.ffz_held = true;
+				return msg;
+			}
+
+			cls.prototype.ffzHeldUserClick = function(event) {
+				if ( event && event.keyCode !== undefined && event.keyCode !== KEYS.Space && event.keyCode !== KEYS.Enter )
+					return;
+
+				const msg = this.ffz_held_message;
+				if ( msg ) {
+					const room = {id: msg.roomID, login: msg.roomLogin};
+
+					const fe = t.makeEvent({
+						inst: this,
+						event,
+						message: msg,
+						user: msg.user,
+						room,
+						source: room
+					});
+
+					t.emit('chat:user-click', fe);
+
+					if ( fe.defaultPrevented )
+						return;
+				}
+
+				if ( this.props.onUsernameClick )
+					this.props.onUsernameClick(event);
+			}
+
+			cls.prototype.render = function() { try {
+				this._ffz_no_scan = true;
+
+				const msg = this.ffzGetHeldMessage();
+				if ( ! msg )
+					return old_render.call(this);
+
+				if ( ! this.ffz_user_click_handler )
+					this.ffz_user_click_handler = this.ffzHeldUserClick.bind(this);
+
+				const user = msg.user,
+					current_user = t.site.getUser(),
+					current_room = {id: msg.roomID, login: msg.roomLogin},
+					anim_hover = t.chat.context.get('chat.emotes.animated') === 2 || (msg.ffz_gif && t.chat.context.get('chat.gifs.animated') === 2);
+
+				// Held lines don't get isCurrentUserModerator, only hasModPermissions
+				if ( current_user ) {
+					current_user.moderator = this.props.hasModPermissions;
+					current_user.lead_moderator = t.actions.isCurrentUserLeadMod();
+					current_user.reply_mode = t.chat.context.get('chat.replies.style');
+					current_user.can_reply = false;
+				}
+
+				const tokens = msg.ffz_tokens = msg.ffz_tokens || t.chat.tokenizeMessage(msg, current_user),
+					rich_content = FFZRichContent && t.chat.pluckRichContent(tokens, msg);
+
+				const raw_color = t.overrides.getColor(user.id) || user.color,
+					color = t.parent.colors.process(raw_color),
+					username = t.chat.formatUser(user, e),
+					override_name = t.overrides.getName(user.id);
+
+				let user_class = msg.ffz_user_class;
+				if ( user_class instanceof Set )
+					user_class = [...user_class].join(' ');
+				else if ( Array.isArray(user_class) )
+					user_class = user_class.join(' ');
+
+				const user_props = {
+					className: `chat-line__username notranslate${override_name ? ' ffz--name-override tw-relative ffz-il-tooltip__container' : ''} ${user_class ?? ''}`,
+					role: 'button',
+					tabIndex: 0,
+					style: { color },
+					onClick: this.ffz_user_click_handler,
+					onContextMenu: t.actions.handleUserContext
+				};
+
+				if ( msg.ffz_user_props )
+					Object.assign(user_props, msg.ffz_user_props);
+
+				if ( msg.ffz_user_style )
+					Object.assign(user_props.style, msg.ffz_user_style);
+
+				const user_block = e('span', user_props, override_name ? [
+					e('span', {
+						className: 'chat-author__display-name'
+					}, override_name),
+					e('div', {
+						className: 'ffz-il-tooltip ffz-il-tooltip--down ffz-il-tooltip--align-center'
+					}, username)
+				] : username);
+
+				const out = [
+					this.props.showTimestamps
+						? e('span', { className: 'chat-line__timestamp' }, t.chat.formatTime(msg.timestamp))
+						: null,
+					msg.ffz_no_actions ? null : t.actions.renderInline(msg, this.props.showModerationIcons, current_user, current_room, e, this),
+					e('span', {
+						className: 'chat-line__message--badges'
+					}, t.chat.badges.render(msg, e)),
+					user_block,
+					// Held messages don't say whether they were /me actions, Twitch strips that
+					e('span', {'aria-hidden': true}, ': '),
+					e('span', {
+						className: 'message'
+					}, t.chat.renderTokens(tokens, e)),
+					rich_content && e(FFZRichContent, rich_content)
+				];
+
+				const hover_actions = (user && msg.id && ! msg.ffz_no_actions)
+					? t.actions.renderHover(msg, this.props.showModerationIcons, current_user, current_room, e, this)
+					: null;
+
+				const bg_css = msg.mentioned && msg.mention_color
+					? t.parent.inverse_colors.process(msg.mention_color)
+					: null;
+
+				return e('div', {
+					id: msg.id,
+					// Not positioned, so hover actions anchor to the AutoMod line
+					className: `ffz--held-message${msg.mentioned ? ' ffz-mentioned' : ''}${bg_css ? ' ffz-custom-color' : ''}`,
+					ref: node => {
+						if ( node )
+							node.message = msg;
+					},
+					style: {
+						padding: '0.25rem 1rem',
+						backgroundColor: bg_css
+					},
+					'data-room-id': current_room.id,
+					'data-room': current_room.login,
+					'data-user-id': user.id,
+					'data-user': user.login && user.login.toLowerCase(),
+					onMouseOver: anim_hover ? t.chat.emotes.animHover : null,
+					onMouseOut: anim_hover ? t.chat.emotes.animLeave : null
+				}, hover_actions ? [
+					e('div', {
+						className: 'chat-line__message-container tw-relative'
+					}, out),
+					hover_actions
+				] : out);
+
+			} catch(err) {
+				t.log.error(err);
+				t.log.capture(err, {
+					extra: {
+						props: this.props
+					}
+				});
+
+				return old_render.call(this);
+			} }
+
+			// Do this after a short delay to hopefully reduce the chance of React
+			// freaking out on us.
+			setTimeout(() => this.HeldMessageLine.forceUpdate());
 		})
 	}
 
@@ -1737,6 +1934,20 @@ other {# messages were deleted by a moderator.}
 			}
 		}
 
+		for(const inst of this.HeldMessageLine.instances) {
+			const msg = inst.ffz_held_message,
+				user = msg?.user;
+			if ( user && ((id && id == user.id) || (login && login == user.login)) ) {
+				if ( clear_badges )
+					msg.ffz_badges = msg.ffz_badge_cache = null;
+
+				if ( clear_tokens )
+					msg.ffz_tokens = null;
+
+				inst.forceUpdate();
+			}
+		}
+
 		for(const inst of this.WhisperLine.instances) {
 			const msg = inst.props.message?._ffz_message,
 				user = msg?.user;
@@ -1798,6 +2009,19 @@ other {# messages were deleted by a moderator.}
 			}
 		}
 
+		for(const inst of this.HeldMessageLine.instances) {
+			const msg = inst.ffz_held_message;
+			if ( msg ) {
+				if ( clear_badges )
+					msg.ffz_badge_cache = msg.ffz_badges = null;
+
+				if ( clear_tokens ) {
+					msg.ffz_tokens = null;
+					msg.highlights = msg.mentioned = msg.mention_color = msg.mention_priority = msg.clear_priority = null;
+				}
+			}
+		}
+
 		for(const inst of this.WhisperLine.instances) {
 			const msg = inst.props.message;
 			if ( msg && msg._ffz_message )
@@ -1806,6 +2030,7 @@ other {# messages were deleted by a moderator.}
 
 		this.ChatLine.forceUpdate();
 		this.ExtensionLine.forceUpdate();
+		this.HeldMessageLine.forceUpdate();
 		this.WhisperLine.forceUpdate();
 
 		this.emit('chat:updated-lines');

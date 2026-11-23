@@ -791,7 +791,7 @@ export default class Actions extends Module {
 			chat = this.resolve('site.chat'),
 			line = fine && fine.searchParent(target, n => n.props && n.props.message);
 
-		const msg = line?.props?.message;
+		const msg = line?.ffz_held_message ?? line?.props?.message;
 		if ( ! msg || ! site || ! chat )
 			return;
 
@@ -806,13 +806,15 @@ export default class Actions extends Module {
 			r = {id: line.props.channelID, login: room};
 
 		const has_replies = !!(line.props.hasReply || line.props.reply || ! line.props.replyRestrictedReason),
-			can_replies = has_replies && msg.message && ! msg.deleted && ! line.props.disableReplyClick,
+			// Held AutoMod messages aren't regular chat messages, so they can't be replied to
+			can_replies = has_replies && msg.message && ! msg.deleted && ! msg.ffz_held && ! line.props.disableReplyClick,
 			can_reply = can_replies && (has_replies || (u && u.login !== msg.user?.login));
 
 		msg.roomId = r.id;
 
 		if ( u ) {
-			u.moderator = line.props.isCurrentUserModerator;
+			// Held AutoMod lines have hasModPermissions instead of isCurrentUserModerator
+			u.moderator = line.props.isCurrentUserModerator ?? line.props.hasModPermissions;
 			u.staff = line.props.isCurrentUserStaff;
 			u.lead_moderator = this.isCurrentUserLeadMod();
 			u.reply_mode = this.parent.context.get('chat.replies.style'),
@@ -1188,7 +1190,7 @@ export default class Actions extends Module {
 				if ( line && line.props && line.props.message ) {
 					loaded = true;
 
-					const msg = line.props.message;
+					const msg = line.ffz_held_message ?? line.props.message;
 
 					user = msg.user ? {
 						color: msg.user.color,
@@ -1199,8 +1201,9 @@ export default class Actions extends Module {
 					} : null;
 
 					room = {
-						login: line.props.channelLogin,
-						id: line.props.channelID
+						// Held AutoMod lines have no channelLogin, so use the room from the message
+						login: line.props.channelLogin ?? msg.roomLogin,
+						id: line.props.channelID ?? msg.roomID
 					}
 
 					message = {
